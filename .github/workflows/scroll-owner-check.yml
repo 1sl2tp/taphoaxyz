@@ -1,0 +1,20 @@
+name: TAPHOA scroll owner check
+
+on:
+  push:
+    branches:
+      - feat/scroll-owner-standardization
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - name: Parse scroll owner runtime
+        run: |
+          node --check src/core/scroll-owner.js
