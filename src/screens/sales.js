@@ -130,6 +130,11 @@ function deriveInitial(context){
 export async function mount(context){
   const root=context.root;let state=deriveInitial(context);let busy=false;
   const render=()=>{root.innerHTML=salesMarkup(state);};
+  const unsubscribeData=context.subscribeData?.(({state:next,changed})=>{
+    if(!changed.some(x=>x==='bootstrap'||x==='products'||x==='customers'))return;
+    state={...state,products:next.products||[],customers:next.customers||[]};
+    render();
+  });
   const customerIdByName=name=>name==='Khách lẻ'?'le':(state.customers.find(c=>c.ten===name)?.id||state.selectedCustomer);
   const setQty=(id,value)=>{state={...state,cart:{...state.cart,[id]:Math.max(0,Math.min(999,Number(value)||0))}};render();};
   const submit=async status=>{
@@ -170,5 +175,5 @@ export async function mount(context){
     if(event.target.dataset.qtyInput||event.target.dataset.priceId)render();
   };
   root.addEventListener('click',onClick);root.addEventListener('input',onInput);root.addEventListener('change',onChange);render();
-  return ()=>{root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);root.removeEventListener('change',onChange);};
+  return ()=>{unsubscribeData?.();root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);root.removeEventListener('change',onChange);};
 }
