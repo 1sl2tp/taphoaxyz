@@ -32,16 +32,23 @@ test('App Shell locks viewport scroll ownership to Active Screen regions',()=>{
 test('four primary screens assign scroll to their data lists, not screen roots',()=>{
   const css=read('src/styles/scroll-owner.css');
   const cases=[
-    ['[data-screen-id="sales"]','.sales-products'],
-    ['[data-screen-id="delivered"]','.delivered-list'],
-    ['[data-screen-id="pending"]','.pending-list'],
-    ['[data-screen-id="debt"]','.debt-list']
+    ['sales','[data-ui-id="sales-product-list"]'],
+    ['delivered','.delivered-list'],
+    ['pending','.pending-list'],
+    ['debt','.debt-list']
   ];
   for(const [screen,list] of cases){
-    mustContain(css,screen,'height:100%','min-height:0','overflow:hidden','display:grid');
-    mustNotContain(css,screen,'overflow:auto');
-    mustContain(css,`[data-screen-id="${screen.match(/"([^"]+)"/)[1]}"] ${list}`,'min-height:0','overflow:auto');
+    const root=`[data-screen-id="${screen}"]`;
+    mustContain(css,root,'height:100%','min-height:0','overflow:hidden','display:grid');
+    mustNotContain(css,root,'overflow:auto');
+    mustContain(css,`${root} ${list}`,'min-height:0','overflow:auto');
   }
+});
+
+test('Sales semantic lists independently own product and cart scrolling',()=>{
+  const css=read('src/styles/scroll-owner.css');
+  mustContain(css,'[data-screen-id="sales"] [data-ui-id="sales-product-list"]','min-height:0','overflow:auto');
+  mustContain(css,'[data-screen-id="sales"] [data-ui-id="sales-cart-list"]','min-height:0','overflow:auto');
 });
 
 test('detail panels keep chrome fixed and give long inner lists the scroll',()=>{
@@ -64,34 +71,33 @@ test('index activates scroll owner CSS after screen CSS and starts runtime',()=>
   assert.ok(runtime>=0,'scroll-owner runtime must be loaded');
 });
 
-test('scroll owner runtime restores scrollTop after screen re-render',async()=>{
-  let mod;
-  try{mod=await import('../src/core/scroll-owner.js');}
-  catch(error){assert.fail(`scroll-owner runtime missing: ${error.message}`);}
+test('scroll owner runtime restores Sales semantic scrollTop after screen re-render',async()=>{
+  const mod=await import('../src/core/scroll-owner.js');
+  const productSelector='[data-ui-id="sales-product-list"]';
+  const cartSelector='[data-ui-id="sales-cart-list"]';
   const positions=new Map([
-    ['sales::.sales-products::0',146],
-    ['sales::.sales-cart-body::0',32]
+    [`sales::${productSelector}::0`,146],
+    [`sales::${cartSelector}::0`,32]
   ]);
   const product={scrollTop:0},cart={scrollTop:0};
-  const screen={dataset:{screenId:'sales'},querySelectorAll(selector){return selector==='.sales-products'?[product]:selector==='.sales-cart-body'?[cart]:[];}};
+  const screen={dataset:{screenId:'sales'},querySelectorAll(selector){return selector===productSelector?[product]:selector===cartSelector?[cart]:[];}};
   mod.restoreScrollOwners(screen,positions);
   assert.equal(product.scrollTop,146);
   assert.equal(cart.scrollTop,32);
 });
 
-test('scroll owner runtime records each repeated list independently',async()=>{
-  let mod;
-  try{mod=await import('../src/core/scroll-owner.js');}
-  catch(error){assert.fail(`scroll-owner runtime missing: ${error.message}`);}
+test('scroll owner runtime records repeated semantic lists independently',async()=>{
+  const mod=await import('../src/core/scroll-owner.js');
+  const selector='[data-ui-id="sales-cart-list"]';
   const positions=new Map();
   const listeners=[];
   const nodeA={scrollTop:11,addEventListener(type,fn){listeners.push([type,fn,this]);}};
   const nodeB={scrollTop:27,addEventListener(type,fn){listeners.push([type,fn,this]);}};
-  const screen={dataset:{screenId:'sales'},querySelectorAll(selector){return selector==='.sales-cart-body'?[nodeA,nodeB]:[];}};
-  mod.bindScrollOwners(screen,positions,new WeakSet(),{sales:['.sales-cart-body']});
+  const screen={dataset:{screenId:'sales'},querySelectorAll(value){return value===selector?[nodeA,nodeB]:[];}};
+  mod.bindScrollOwners(screen,positions,new WeakSet(),{sales:[selector]});
   assert.equal(listeners.length,2);
   nodeA.scrollTop=91;listeners[0][1]();
   nodeB.scrollTop=53;listeners[1][1]();
-  assert.equal(positions.get('sales::.sales-cart-body::0'),91);
-  assert.equal(positions.get('sales::.sales-cart-body::1'),53);
+  assert.equal(positions.get(`sales::${selector}::0`),91);
+  assert.equal(positions.get(`sales::${selector}::1`),53);
 });
