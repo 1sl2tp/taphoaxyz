@@ -10,14 +10,12 @@ html,body{height:100%;overflow:hidden}
 [data-screen-id="sales"] [data-ui-id="sales-cart-list"]{min-height:0;overflow:auto}
 [data-screen-id="sales"] .sales-product-list{align-content:start}
 
-[data-screen-id="delivered"]{height:100%;min-height:0;overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr)}
-[data-screen-id="delivered"] .delivered-filter{min-height:0}
-[data-screen-id="delivered"] .delivered-summary{min-height:0}
-[data-screen-id="delivered"] .delivered-list{min-height:0;overflow:auto;align-content:start}
-.delivered-detail-panel{min-height:0;overflow:hidden;display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto auto}
-.delivered-print-panel{min-height:0;overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto}
-.delivered-detail-lines{min-height:0;max-height:none;overflow:auto}
-.delivered-print-lines{min-height:0;overflow:auto}
+[data-screen-id="delivered"]{height:100%;min-height:0;overflow:hidden;display:grid;grid-template-rows:minmax(0,1fr)}
+[data-screen-id="delivered"] .delivered-workspace{height:100%;min-height:0;overflow:hidden}
+[data-screen-id="delivered"] [data-ui-id="delivered-list-surface"],[data-screen-id="delivered"] [data-ui-id="delivered-detail-surface"],[data-screen-id="delivered"] [data-ui-id="delivered-print-surface"]{height:100%;min-height:0;overflow:hidden}
+[data-screen-id="delivered"] [data-ui-id="delivered-order-list"]{min-height:0;overflow:auto;align-content:start}
+[data-screen-id="delivered"] [data-ui-id="delivered-detail-lines"]{min-height:0;max-height:none;overflow:auto}
+[data-screen-id="delivered"] [data-ui-id="delivered-print-lines"]{min-height:0;overflow:auto}
 
 [data-screen-id="pending"]{height:100%;min-height:0;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr)}
 [data-screen-id="pending"] .pending-summary{min-height:0}
@@ -40,9 +38,9 @@ html,body{height:100%;overflow:hidden}
 
 [data-screen-id="sales"] [data-ui-id="sales-product-list"],
 [data-screen-id="sales"] [data-ui-id="sales-cart-list"],
-[data-screen-id="delivered"] .delivered-list,
-.delivered-detail-lines,
-.delivered-print-lines,
+[data-screen-id="delivered"] [data-ui-id="delivered-order-list"],
+[data-screen-id="delivered"] [data-ui-id="delivered-detail-lines"],
+[data-screen-id="delivered"] [data-ui-id="delivered-print-lines"],
 [data-screen-id="pending"] .pending-list,
 .pending-source-detail-lines,
 .pending-detail-lines,
