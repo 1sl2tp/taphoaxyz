@@ -54,6 +54,16 @@ test('detail panels keep chrome fixed and give long inner lists the scroll',()=>
   }
 });
 
+test('index activates scroll owner CSS after screen CSS and starts runtime',()=>{
+  const html=read('index.html');
+  const debtCss=html.indexOf('./src/styles/debt.css');
+  const ownerCss=html.indexOf('./src/styles/scroll-owner.css');
+  const runtime=html.indexOf('./src/core/scroll-owner.js');
+  assert.ok(debtCss>=0,'debt.css must stay loaded');
+  assert.ok(ownerCss>debtCss,'scroll-owner.css must load after screen styles so ownership overrides win');
+  assert.ok(runtime>=0,'scroll-owner runtime must be loaded');
+});
+
 test('scroll owner runtime restores scrollTop after screen re-render',async()=>{
   let mod;
   try{mod=await import('../src/core/scroll-owner.js');}
