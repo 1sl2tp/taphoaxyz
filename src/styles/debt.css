@@ -1,0 +1,96 @@
+[data-screen-id="debt"]{min-height:100%;background:#f7f8fa;color:#1e293b;overflow:auto;padding-bottom:20px}
+[data-screen-id="debt"] button, [data-screen-id="debt"] input{font:inherit}
+[data-screen-id="debt"] .debt-hero{padding:16px 14px;background:linear-gradient(135deg,#1565c0,#00897b)}
+[data-screen-id="debt"] .debt-total-row{display:flex;gap:10px;margin-bottom:10px}
+[data-screen-id="debt"] .debt-total-row>div{flex:1;min-width:0;background:rgba(255,255,255,.18);border-radius:14px;padding:10px 12px;color:#fff;display:grid;gap:2px}
+[data-screen-id="debt"] .debt-total-row small{font-size:11px;font-weight:700;color:rgba(255,255,255,.8)}
+[data-screen-id="debt"] .debt-total-row strong{font-size:22px;font-weight:900;letter-spacing:-.5px}
+[data-screen-id="debt"] .debt-total-row span{font-size:11px;color:rgba(255,255,255,.72)}
+[data-screen-id="debt"] .debt-quick{background:rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;color:#fff}
+[data-screen-id="debt"] .debt-quick>b{display:block;font-size:12px;color:rgba(255,255,255,.82);margin-bottom:8px}
+[data-screen-id="debt"] .debt-customer-picker{position:relative}
+[data-screen-id="debt"] .debt-customer-picker>input{width:100%;min-height:38px;border:0;border-radius:10px;padding:8px 30px 8px 12px;font-size:13px;font-weight:700;box-sizing:border-box}
+[data-screen-id="debt"] .debt-customer-picker>span{position:absolute;right:10px;top:10px;color:#64748b;pointer-events:none}
+[data-screen-id="debt"] .debt-customer-options{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:60;max-height:220px;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,.18);color:#1e293b}
+[data-screen-id="debt"] .debt-customer-option{width:100%;border:0;border-bottom:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;gap:10px;padding:9px 12px;text-align:left}
+[data-screen-id="debt"] .debt-customer-option>span{width:28px;height:28px;border-radius:50%;background:#64748b;color:#fff;display:grid;place-items:center;font-size:10px}
+[data-screen-id="debt"] .debt-quick-actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;margin-top:6px}
+[data-screen-id="debt"] .debt-quick-actions input{min-width:0;border:0;border-radius:10px;padding:10px 12px}
+[data-screen-id="debt"] .debt-quick-actions button{border:0;border-radius:12px;padding:9px 14px;color:#fff;font-weight:700}
+[data-screen-id="debt"] .debt-quick-actions button:nth-of-type(1){background:#16a34a}
+[data-screen-id="debt"] .debt-quick-actions button:nth-of-type(2){background:#dc2626}
+[data-screen-id="debt"] .debt-list{padding:8px 12px;display:flex;flex-direction:column;gap:8px}
+[data-screen-id="debt"] .debt-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 2px 0;font-size:11px;font-weight:700;letter-spacing:.4px;position:relative}
+[data-screen-id="debt"] .debt-group-head.owed{color:#64748b}
+[data-screen-id="debt"] .debt-group-head.credit{color:#16a34a;padding-top:8px}
+[data-screen-id="debt"] .debt-group-head.clear{color:#64748b;padding-top:8px}
+[data-screen-id="debt"] .debt-sort{display:flex;align-items:center;gap:6px;color:#64748b;font-weight:600;position:relative;letter-spacing:0}
+[data-screen-id="debt"] .debt-sort button{border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:4px 9px;font-size:11px;font-weight:700;color:#334155}
+[data-screen-id="debt"] .debt-sort-menu{position:absolute;right:32px;top:30px;z-index:40;min-width:150px;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,.18);overflow:hidden}
+[data-screen-id="debt"] .debt-sort-menu button{display:block;width:100%;border:0;border-bottom:1px solid #e2e8f0;border-radius:0;text-align:left;padding:9px 12px;font-size:13px}
+[data-screen-id="debt"] .debt-customer-row{width:100%;display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:16px;background:#fff;text-align:left;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+[data-screen-id="debt"] .debt-avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#e2e8f0;color:#334155;font-size:11px;font-weight:800}
+[data-screen-id="debt"] .debt-customer-copy{min-width:0;display:grid;gap:2px}
+[data-screen-id="debt"] .debt-customer-copy b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-screen-id="debt"] .debt-customer-copy small{font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-screen-id="debt"] .debt-customer-row>strong{font-size:15px;white-space:nowrap}
+[data-screen-id="debt"] .debt-customer-row>strong.is-owed{color:#dc2626}
+[data-screen-id="debt"] .debt-customer-row>strong.is-credit{color:#16a34a}
+[data-screen-id="debt"] .debt-empty{text-align:center;color:#64748b;padding:40px}
+[data-screen-id="debt"] .debt-overlay{position:fixed;inset:0;z-index:130;display:grid;place-items:center;padding:16px}
+[data-screen-id="debt"] .debt-order-overlay{z-index:140}
+[data-screen-id="debt"] .debt-backdrop{position:absolute;inset:0;border:0;background:rgba(15,23,42,.5)}
+[data-screen-id="debt"] .debt-detail-panel, [data-screen-id="debt"] .debt-order-panel{position:relative;z-index:1;width:min(400px,100%);max-height:90dvh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 20px 50px rgba(15,23,42,.2)}
+[data-screen-id="debt"] .debt-detail-panel>header{position:sticky;top:0;z-index:3;background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+[data-screen-id="debt"] .debt-detail-panel>header button{border:0;border-radius:20px;min-height:30px;padding:6px 12px;font-size:12px;font-weight:700}
+[data-screen-id="debt"] .debt-detail-panel>header button:first-child{width:30px;padding:0;background:#f1f5f9;color:#475569;border-radius:50%}
+[data-screen-id="debt"] .debt-detail-panel>header button:last-child{background:#4caf50;color:#fff}
+[data-screen-id="debt"] .debt-receipt{padding:16px 12px;background:#fff}
+[data-screen-id="debt"] .debt-shop{text-align:center;margin-bottom:10px}
+[data-screen-id="debt"] .debt-shop-avatar{width:64px;height:64px;border-radius:50%;margin:0 auto 6px;background:#1565c0;color:#fff;display:grid;place-items:center;font-size:18px;font-weight:900}
+[data-screen-id="debt"] .debt-shop strong{font-size:18px;color:#1565c0}
+[data-screen-id="debt"] .debt-shop:after{content:"";display:block;border-bottom:2px solid #222;margin:8px 0}
+[data-screen-id="debt"] .debt-receipt-summary{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin-bottom:8px}
+[data-screen-id="debt"] .debt-receipt-summary>span{display:grid;gap:2px}
+[data-screen-id="debt"] .debt-receipt-summary>span:last-child{text-align:right}
+[data-screen-id="debt"] .debt-receipt-summary>span:last-child strong{font-size:26px}
+[data-screen-id="debt"] .debt-receipt-summary small{font-size:11px;color:#64748b;font-weight:700}
+[data-screen-id="debt"] .debt-ledger-head, [data-screen-id="debt"] .debt-transaction-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 68px;gap:4px;align-items:center}
+[data-screen-id="debt"] .debt-ledger-head{border-top:1px dashed #94a3b8;border-bottom:1px dashed #94a3b8;padding:5px 2px;font-size:11px;font-weight:700;color:#475569}
+[data-screen-id="debt"] .debt-ledger-head>span:nth-child(n+2){text-align:right}
+[data-screen-id="debt"] .debt-ledger{max-height:520px;overflow:auto}
+[data-screen-id="debt"] .debt-transaction-row{width:100%;border:0;border-bottom:1px solid #f1f5f9;background:#fff;padding:7px 2px;text-align:left}
+[data-screen-id="debt"] .debt-transaction-row:disabled{opacity:1;color:inherit;cursor:default}
+[data-screen-id="debt"] .debt-transaction-row>span:first-child{display:grid;gap:1px;min-width:0}
+[data-screen-id="debt"] .debt-transaction-row>span:first-child b{font-size:13px}
+[data-screen-id="debt"] .debt-transaction-row small{font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-screen-id="debt"] .debt-transaction-row>span:nth-child(2), [data-screen-id="debt"] .debt-transaction-row>span:last-child{text-align:right;font-size:11px}
+[data-screen-id="debt"] .debt-transaction-row>span:last-child{display:grid;gap:1px}
+[data-screen-id="debt"] .debt-transaction-row>span:last-child>strong{font-size:13px}
+[data-screen-id="debt"] .debt-detail-panel>footer{position:sticky;bottom:0;background:#fff;border-top:1px solid #e2e8f0;padding:10px 14px;display:grid;gap:8px}
+[data-screen-id="debt"] .debt-detail-panel>footer>input{width:100%;min-height:42px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 12px;box-sizing:border-box}
+[data-screen-id="debt"] .debt-detail-panel>footer>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+[data-screen-id="debt"] .debt-detail-panel>footer button{border:0;border-radius:12px;min-height:42px;color:#fff;font-weight:700}
+[data-screen-id="debt"] .debt-detail-panel>footer button:first-child{background:#16a34a}
+[data-screen-id="debt"] .debt-detail-panel>footer button:last-child{background:#dc2626}
+[data-screen-id="debt"] .debt-order-panel{padding:20px}
+[data-screen-id="debt"] .debt-order-panel>header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+[data-screen-id="debt"] .debt-order-panel>header>strong{flex:1;font-size:16px;color:#1565c0}
+[data-screen-id="debt"] .debt-order-panel>header>span{font-size:11px;color:#16a34a;background:#dcfce7;border-radius:12px;padding:3px 8px;font-weight:700}
+[data-screen-id="debt"] .debt-order-panel>header button{width:32px;height:32px;border:0;border-radius:50%;background:#f1f5f9}
+[data-screen-id="debt"] .debt-order-panel>header button[data-order-share]{background:#4caf50;color:#fff}
+[data-screen-id="debt"] .debt-order-meta{font-size:13px;margin-bottom:8px}
+[data-screen-id="debt"] .debt-order-head, [data-screen-id="debt"] .debt-order-lines>div{display:grid;grid-template-columns:22px minmax(0,1fr) 34px 56px 64px;gap:4px;align-items:start}
+[data-screen-id="debt"] .debt-order-head{padding:4px 0;border-top:1px dashed #94a3b8;border-bottom:1px dashed #94a3b8;font-size:11px;font-weight:700;color:#64748b}
+[data-screen-id="debt"] .debt-order-head>span:nth-child(n+3), [data-screen-id="debt"] .debt-order-lines>div>*:nth-child(n+3){text-align:right}
+[data-screen-id="debt"] .debt-order-lines{max-height:380px;overflow:auto}
+[data-screen-id="debt"] .debt-order-lines>div{padding:6px 0;border-bottom:1px solid #e2e8f0;font-size:13px}
+[data-screen-id="debt"] .debt-order-lines small{display:block;font-size:10px;color:#64748b}
+[data-screen-id="debt"] .debt-order-lines strong{color:#1565c0}
+[data-screen-id="debt"] .debt-order-total{display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;border-top:1px dashed #94a3b8;margin-top:4px}
+[data-screen-id="debt"] .debt-order-total strong{font-size:19px;color:#1565c0}
+@container screen-host (max-width:480px){
+  [data-screen-id="debt"] .debt-overlay{padding:0;place-items:end center}
+  [data-screen-id="debt"] .debt-detail-panel, [data-screen-id="debt"] .debt-order-panel{width:100%;max-height:94dvh;border-radius:20px 20px 0 0}
+  [data-screen-id="debt"] .debt-order-panel{padding:16px 12px 18px}
+}
