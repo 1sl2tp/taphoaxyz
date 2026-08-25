@@ -18,10 +18,10 @@ Mục tiêu: frontend rõ cây Cha–Con, rõ placement Mobile/PC, rõ owner, r�
 ============================================================
 1. AUTH ROOT / APP ROOT
 ============================================================
-1.1. Browser / Visual Viewport chỉ có hai application root state thay thế nhau:
+1.1. Browser / Visual Viewport chỉ có hai application root state:
 - Auth Root: khi chưa có session/identity hợp lệ hoặc cần đăng nhập lại.
 - App Root: khi session/identity hợp lệ và ứng dụng được mở.
-1.2. Auth Root và App Root là sibling state, không phải Cha–Con và không cùng active về interaction.
+1.2. Auth Root và App Root thay thế nhau; chúng là sibling state, không phải Cha–Con và không cùng active về interaction.
 1.3. Login/Auth nằm ngoài App Root và không phải Screen nghiệp vụ.
 1.4. Login/Auth không nằm trong Slot 1/2/3.
 1.5. Auth Workspace chia semantic tối thiểu: Brand Region, Credential Region, Preference Region, Auth Status Region, Auth Action Region.
