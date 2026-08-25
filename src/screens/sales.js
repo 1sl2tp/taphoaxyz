@@ -1,0 +1,174 @@
+const money=n=>Number(n||0).toLocaleString('vi-VN');
+const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+
+export function filterProducts(products=[],search='',group='Tất cả'){
+  const words=norm(search).trim().split(/\s+/).filter(Boolean);
+  return products.filter(p=>p?.ten&&(!group||group==='Tất cả'||p.nhom===group)&&words.every(w=>norm(p.ten).includes(w)));
+}
+
+export function cartTotals(products=[],cart={},prices={}){
+  const map=new Map(products.map(p=>[p.id,p]));
+  let totalQty=0,total=0,totalCost=0;
+  for(const [id,rawQty] of Object.entries(cart||{})){
+    const qty=Number(rawQty)||0;if(qty<=0)continue;
+    const p=map.get(id);if(!p)continue;
+    const price=Number(prices[id]??p.gia)||0,cost=Number(p.von)||0;
+    totalQty+=qty;total+=price*qty;totalCost+=cost*qty;
+  }
+  return {totalQty,total,totalCost,profit:total-totalCost};
+}
+
+export function buildOrderDraft({customerId,status='pending',note='',cart={},prices={},lineNos={},notes={},products=[],editOrderId=''}={}){
+  const map=new Map(products.map(p=>[p.id,p]));
+  const items=[];let next=1;
+  for(const [id,rawQty] of Object.entries(cart)){
+    const qty=Number(rawQty)||0,p=map.get(id);if(!p||qty<=0)continue;
+    const lineNo=Math.max(1,Number(lineNos[id])||next++);
+    items.push({maSP:id,sl:qty,gia:Number(prices[id]??p.gia)||0,lineNo,ghiChu:String(notes[id]||'')});
+  }
+  items.sort((a,b)=>a.lineNo-b.lineNo);
+  return {maKH:String(customerId||''),status:String(status||'pending'),ghiChu:String(note||''),editOrderId:String(editOrderId||''),items};
+}
+
+function customerOptions(customers=[]){
+  return [`<option value="Khách lẻ"></option>`,...customers.map(c=>`<option value="${esc(c.ten)}"></option>`)].join('');
+}
+
+function groupButtons(products=[],active='Tất cả'){
+  const groups=['Tất cả',...new Set(products.map(p=>p.nhom).filter(Boolean))];
+  return groups.map(g=>`<button type="button" class="sales-group" data-group="${esc(g)}" aria-pressed="${g===active}">${esc(g)}</button>`).join('');
+}
+
+function productRows(state){
+  const rows=filterProducts(state.products,state.search,state.group);
+  if(!rows.length)return `<div class="sales-empty">Không tìm thấy sản phẩm</div>`;
+  return rows.map(p=>{
+    const qty=Number(state.cart[p.id]||0),price=Number(state.prices[p.id]??p.gia)||0;
+    const meta=[p.von!==undefined&&p.von!==null?`<span class="sales-cost">${money(p.von)}</span><span>→</span>`:'',
+      `<input class="sales-price-input" data-price-id="${esc(p.id)}" inputmode="numeric" value="${esc(price)}" aria-label="Giá ${esc(p.ten)}">`,
+      p.donVi?`<span class="sales-unit">${esc(p.donVi)}</span>`:''].join('');
+    return `<article class="sales-product-row" data-product-row="${esc(p.id)}">
+      <div class="sales-product-info"><div class="sales-product-name">${esc(p.ten)}</div><div class="sales-product-meta">${meta}</div></div>
+      <div class="sales-qty" data-qty-id="${esc(p.id)}">
+        <button type="button" data-qty-action="dec" ${qty<=0?'disabled':''}>−</button>
+        <input class="sales-qty-value" data-qty-input="${esc(p.id)}" inputmode="numeric" value="${qty>0?qty:''}" aria-label="Số lượng ${esc(p.ten)}">
+        <button type="button" data-qty-action="add">+</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function cartBody(state){
+  const selected=state.products.filter(p=>Number(state.cart[p.id]||0)>0);
+  const totals=cartTotals(state.products,state.cart,state.prices);
+  if(!selected.length)return `<div class="sales-cart-empty">Chưa có sản phẩm nào</div>`;
+  return `<div class="sales-cart-table-head"><span>TÊN</span><span>Đ.GIÁ</span><span>SL</span><span>T.TIỀN</span></div>
+  <div class="sales-cart-lines">${selected.map(p=>{
+    const qty=Number(state.cart[p.id]||0),price=Number(state.prices[p.id]??p.gia)||0;
+    return `<div class="sales-cart-line" data-cart-line="${esc(p.id)}">
+      <div class="sales-cart-name"><b>${esc(p.ten)}</b><input data-note-id="${esc(p.id)}" value="${esc(state.notes[p.id]||'')}" placeholder="..."></div>
+      <input class="sales-cart-price" data-price-id="${esc(p.id)}" inputmode="numeric" value="${esc(price)}" aria-label="Đơn giá ${esc(p.ten)}">
+      <div class="sales-cart-qty"><button type="button" data-cart-dec="${esc(p.id)}">−</button><input data-qty-input="${esc(p.id)}" inputmode="numeric" value="${qty}"><button type="button" data-cart-add="${esc(p.id)}">+</button></div>
+      <strong>${money(price*qty)}</strong>
+    </div>`;
+  }).join('')}</div>
+  <div class="sales-cart-total"><span>Số lượng <b>${totals.totalQty} sp</b></span><span>Tổng tiền <b>${money(totals.total)}</b></span></div>`;
+}
+
+function cartActions(state){
+  if(state.editOrder)return `<div class="sales-cart-actions"><button type="button" data-sales-action="cancel-edit">Huỷ</button><button type="button" data-sales-action="update">Cập nhật đơn</button></div>`;
+  return `<div class="sales-cart-actions"><button type="button" data-sales-action="clear">Xoá</button><button type="button" data-sales-action="pending">Đặt</button><button type="button" data-sales-action="done">Bán</button></div>`;
+}
+
+function cartPanel(state,{mobile=false}={}){
+  const totals=cartTotals(state.products,state.cart,state.prices);
+  return `<section class="sales-cart-panel ${mobile?'sales-cart-mobile':''}">
+    <header class="sales-cart-head"><strong>🛒 Giỏ hàng</strong>${totals.totalQty?`<span>${totals.totalQty} sp</span>`:''}${mobile?'<button type="button" data-cart-close>✕</button>':''}</header>
+    <div class="sales-cart-body">${cartBody(state)}</div>
+    ${totals.totalQty?cartActions(state):''}
+  </section>`;
+}
+
+export function salesMarkup(input={}){
+  const state={products:[],customers:[],cart:{},prices:{},notes:{},lineNos:{},selectedCustomer:'le',group:'Tất cả',search:'',editOrder:null,cartOpen:false,...input};
+  const totals=cartTotals(state.products,state.cart,state.prices);
+  const selectedCustomerName=state.selectedCustomer==='le'?'Khách lẻ':(state.customers.find(c=>c.id===state.selectedCustomer)?.ten||'');
+  const now=new Date();const stamp=now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+  return `<section class="sales-screen" data-screen-id="sales">
+    <header class="sales-pinned-head">
+      <div class="sales-customer-row">
+        <input class="sales-customer-input" list="salesCustomerList" value="${esc(selectedCustomerName)}" placeholder="Chọn khách..." aria-label="Chọn khách"><datalist id="salesCustomerList">${customerOptions(state.customers)}</datalist>
+        <span class="sales-time">${esc(stamp)}</span>
+        <button class="sales-cart-quick" type="button" data-cart-open>${totals.totalQty?`🛒 <span>${totals.totalQty}</span> ${money(totals.total)}`:'🛒 Trống'}</button>
+      </div>
+      <div class="sales-search-row"><input data-sales-search value="${esc(state.search)}" placeholder="Tìm sản phẩm..."><button type="button" data-search-clear ${state.search?'':'hidden'}>✕</button></div>
+      <div class="sales-groups">${groupButtons(state.products,state.group)}</div>
+    </header>
+    <div class="sales-workspace">
+      <section class="sales-products"><div class="sales-product-list">${productRows(state)}</div></section>
+      <aside class="sales-cart-desktop">${cartPanel(state)}</aside>
+    </div>
+    <div class="sales-cart-overlay" data-cart-overlay aria-hidden="${state.cartOpen?'false':'true'}"><button class="sales-cart-backdrop" type="button" data-cart-close aria-label="Đóng"></button>${cartPanel(state,{mobile:true})}</div>
+  </section>`;
+}
+
+function deriveInitial(context){
+  const data=context.getData?.()||context.data||{};
+  const editOrder=context.consumeEditOrder?.()||context.editOrder||null;
+  const state={products:data.products||[],customers:data.customers||[],cart:{},prices:{},notes:{},lineNos:{},selectedCustomer:'le',group:'Tất cả',search:'',editOrder,cartOpen:Boolean(editOrder)};
+  if(editOrder){
+    state.selectedCustomer=editOrder.maKH||'le';
+    for(const item of editOrder.items||[]){
+      const id=item.maSP||item.product_id;if(!id)continue;
+      state.cart[id]=Number(item.sl||item.qty)||0;state.prices[id]=Number(item.gia||item.unit_price)||0;state.notes[id]=item.ghiChu||item.note||'';state.lineNos[id]=Number(item.lineNo||item.line_no)||0;
+    }
+  }
+  return state;
+}
+
+export async function mount(context){
+  const root=context.root;let state=deriveInitial(context);let busy=false;
+  const render=()=>{root.innerHTML=salesMarkup(state);};
+  const customerIdByName=name=>name==='Khách lẻ'?'le':(state.customers.find(c=>c.ten===name)?.id||state.selectedCustomer);
+  const setQty=(id,value)=>{state={...state,cart:{...state.cart,[id]:Math.max(0,Math.min(999,Number(value)||0))}};render();};
+  const submit=async status=>{
+    if(busy)return;const totals=cartTotals(state.products,state.cart,state.prices);if(!totals.totalQty){context.system?.toast('Chưa có sản phẩm!');return;}
+    busy=true;
+    try{
+      const editStatus=state.editOrder?.trangThai||state.editOrder?.status||status;
+      await context.business.saveOrder(buildOrderDraft({customerId:state.selectedCustomer,status:state.editOrder?editStatus:status,cart:state.cart,prices:state.prices,lineNos:state.lineNos,notes:state.notes,products:state.products,editOrderId:state.editOrder?.id||''}));
+      await context.refresh?.(['orders','debt']);
+      state={...state,cart:{},prices:{},notes:{},lineNos:{},editOrder:null,cartOpen:false};render();
+    }catch(e){context.system?.toast(e?.message||'Không thực hiện được');}finally{busy=false;}
+  };
+  const onClick=event=>{
+    const group=event.target.closest('[data-group]');if(group){state={...state,group:group.dataset.group};render();return;}
+    if(event.target.closest('[data-search-clear]')){state={...state,search:''};render();return;}
+    if(event.target.closest('[data-cart-open]')){state={...state,cartOpen:true};render();return;}
+    if(event.target.closest('[data-cart-close]')){state={...state,cartOpen:false};render();return;}
+    const qtyBox=event.target.closest('[data-qty-id]');const qtyAction=event.target.closest('[data-qty-action]');
+    if(qtyBox&&qtyAction){const id=qtyBox.dataset.qtyId,current=Number(state.cart[id]||0);setQty(id,current+(qtyAction.dataset.qtyAction==='add'?1:-1));return;}
+    const add=event.target.closest('[data-cart-add]');if(add){const id=add.dataset.cartAdd;setQty(id,Number(state.cart[id]||0)+1);return;}
+    const dec=event.target.closest('[data-cart-dec]');if(dec){const id=dec.dataset.cartDec;setQty(id,Number(state.cart[id]||0)-1);return;}
+    const action=event.target.closest('[data-sales-action]')?.dataset.salesAction;
+    if(action==='clear'){state={...state,cart:{},prices:{},notes:{},lineNos:{},cartOpen:false};render();}
+    else if(action==='pending')submit('pending');
+    else if(action==='done')submit('done');
+    else if(action==='update')submit(state.editOrder?.trangThai||'pending');
+    else if(action==='cancel-edit'){state={...state,cart:{},prices:{},notes:{},lineNos:{},editOrder:null,cartOpen:false};render();}
+  };
+  const onInput=event=>{
+    if(event.target.matches('[data-sales-search]')){state={...state,search:event.target.value};render();return;}
+    if(event.target.matches('.sales-customer-input')){state={...state,selectedCustomer:customerIdByName(event.target.value)};return;}
+    const priceId=event.target.dataset.priceId;if(priceId){state={...state,prices:{...state.prices,[priceId]:Number(String(event.target.value).replace(/\D/g,''))||0}};return;}
+    const qtyId=event.target.dataset.qtyInput;if(qtyId){state={...state,cart:{...state.cart,[qtyId]:Math.max(0,Math.min(999,Number(String(event.target.value).replace(/\D/g,''))||0)}};return;}
+    const noteId=event.target.dataset.noteId;if(noteId){state={...state,notes:{...state.notes,[noteId]:event.target.value}};}
+  };
+  const onChange=event=>{
+    if(event.target.matches('.sales-customer-input')){state={...state,selectedCustomer:customerIdByName(event.target.value)};render();}
+    if(event.target.dataset.qtyInput||event.target.dataset.priceId)render();
+  };
+  root.addEventListener('click',onClick);root.addEventListener('input',onInput);root.addEventListener('change',onChange);render();
+  return ()=>{root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);root.removeEventListener('change',onChange);};
+}
