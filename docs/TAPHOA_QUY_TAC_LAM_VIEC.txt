@@ -1,0 +1,18 @@
+TAPHOA — QUY TẮC LÀM VIỆC
+
+1. Viết mới 100% implementation; mẫu cũ chỉ là chuẩn UI/UX và business behavior tham khảo.
+2. Dựng từ Cha lớn nhất: Viewport → Login/Auth hoặc App Shell → Navigation/Screen Host/System Layer → Active Screen → Region → Cha → Con → Cháu → Control.
+3. Parent sở hữu quan hệ hình học giữa các Con: grid/flex/tỷ lệ/gap/gutter/alignment.
+4. Không chữa lỗi Cha bằng margin/top/z-index/fixed/width hack ở Con.
+5. Trước khi xét tỷ lệ của một nhóm phải biết Cha trực tiếp và sibling cùng cấp.
+6. CSS Screen phải scope theo data-screen-id; một quyết định geometry chỉ có một owner chính.
+7. Responsive quyết ở owner gần nhất; ưu tiên container query khi phụ thuộc container.
+8. Không để @media + container query + JS cùng tranh một geometry khi không có phân quyền rõ.
+9. Chỉ hiển thị đúng UI đã duyệt. Không render Region/Owner/Semantic/Debug/Preview/PASS ra giao diện.
+10. Chỉ có 4 Screen nghiệp vụ: Bán hàng, Đã giao, Đơn tạm, Công nợ.
+11. Login/Auth nằm ngoài App Shell và không tính là Screen nghiệp vụ.
+12. Giữ business contract backend hiện tại; không tự đổi nghiệp vụ tài chính/Auth/data.
+13. UI → Screen Controller → Business Service → Supabase RPC gateway.
+14. Chỗ nghiệp vụ không chắc chắn phải ghi Business Question, không tự suy đoán.
+15. Test geometry tối thiểu 280, 320, 390, 480, 760/761, 999/1000, 1280, 1440 khi phạm vi liên quan.
+16. PASS static/syntax không đồng nghĩa browser/device PASS; preview đúng không đồng nghĩa backend PASS.
