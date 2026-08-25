@@ -4,9 +4,9 @@
 
 **Goal:** Biến đặc tả phân vùng TAPHOA thành một guardrail có thể kiểm tra bằng code/CI, rồi chuẩn hóa Auth + 4 Screen theo cùng Semantic Tree, Slot 1/2/3, Parent–Child, owner và function-flow contract mà không đổi business/data/backend contract.
 
-**Architecture:** Tách hai lớp rõ ràng: `src/core/ui-structure.js` chỉ cung cấp validator/auditor thuần, còn `src/contracts/ui-structure.js` khai báo Root/Screen/Surface/Region/Flow cụ thể. DOM dùng các marker semantic ổn định (`data-ui-node`, `data-ui-id`, `data-parent-id`, `data-slot-mobile`, `data-slot-wide`) để auditor so với contract; CSS vẫn thuộc owner của từng Screen. `src/core/screen-registry.js` là registry top-level duy nhất cho 4 Screen và loader, còn Router chỉ xử lý route/lifecycle.
+**Architecture:** `src/core/ui-structure.js` chỉ chứa validator/auditor thuần; `src/contracts/ui-structure.js` khai báo Root/Screen/Surface/Region/Flow cụ thể; DOM mang marker semantic ổn định (`data-ui-node`, `data-ui-id`, `data-parent-id`, `data-slot-mobile`, `data-slot-wide`). `src/core/screen-registry.js` là registry top-level duy nhất của 4 Screen. Slot là placement identity; Slot 2/3 không tạo cột rỗng khi Surface tương ứng không tồn tại — workspace compact các track đang active nhưng semantic slot identity không đổi.
 
-**Tech Stack:** HTML5, CSS Container Queries, JavaScript ES modules, Node.js 22 `node:test`, GitHub Actions; không thêm runtime dependency và không thêm parser/browser library chỉ để audit static.
+**Tech Stack:** HTML5, CSS Container Queries, JavaScript ES modules, Node.js 22 `node:test`, GitHub Actions; không thêm runtime dependency, UI framework hoặc DOM parser library chỉ để audit static.
 
 **Spec:** `docs/superpowers/specs/2026-08-25-taphoa-structural-region-flow-guardrail-design.md`
 
@@ -16,6 +16,7 @@
 - Login/Auth là Root thay thế App Root, không phải Screen và không nằm trong Slot 1/2/3.
 - Mobile chỉ dùng placement Slot 1; PC/Wide có thể dùng Slot 2/3 nhưng không tạo business flow thứ hai.
 - Semantic parent không đổi khi responsive đổi placement.
+- Slot 2/3 vắng mặt phải co geometry hoàn toàn; không dựng cột/wrapper rỗng chỉ để “dự trữ”.
 - Bố cục/UX đang hiển thị là reference; không tự đổi nghiệp vụ, tài chính, giá, quyền, Supabase schema/RPC/RLS, dữ liệu thật hoặc deploy production.
 - Backend/Auth/Data contract đang đúng phải giữ nguyên. UI không được tự quyết quyền nghiệp vụ.
 - `Lưu mật khẩu` hiện mâu thuẫn với runtime chỉ lưu username; sửa copy thành `Nhớ tên đăng nhập`, tuyệt đối không thêm lưu password.
@@ -32,84 +33,74 @@
 
 ### Create
 
-- `src/core/ui-structure.js` — validator/auditor thuần cho contract + markup, không biết business cụ thể.
-- `src/contracts/ui-structure.js` — Auth/App/4 Screen structural contracts + flow contracts.
-- `src/core/screen-registry.js` — registry duy nhất của 4 Screen, nav metadata và lazy loader.
-- `scripts/audit-ui-structure.mjs` — CLI trả gate report và exit code cho CI.
-- `tests/rules-source-contract.test.js` — khóa nguồn quy tắc TAPHOA duy nhất.
-- `tests/ui-structure-model.test.js` — validator model, parent/owner/slot/flow invariants.
-- `tests/screen-registry.test.js` — registry/router boundary.
-- `tests/auth-structure-contract.test.js` — Auth Root/App Root/copy remember-user contract.
-- `tests/sales-structure-contract.test.js` — Sales semantic/placement/scroll contract.
-- `tests/delivered-structure-contract.test.js` — Delivered list/detail/print surface contract.
-- `tests/pending-structure-contract.test.js` — Pending list/source/order/print surface contract.
-- `tests/debt-structure-contract.test.js` — Debt customer/ledger/order surface contract.
-- `.github/workflows/ui-guardrail-check.yml` — CI cho tests + audit + parse.
+- `src/core/ui-structure.js` — generic structure validator/auditor + gate classification.
+- `src/contracts/ui-structure.js` — Auth/App/4 Screen structural + function-flow contracts.
+- `src/core/screen-registry.js` — single top-level registry/nav/loader.
+- `scripts/audit-ui-structure.mjs` — CLI static audit with truthful gate report.
+- `tests/rules-source-contract.test.js`
+- `tests/ui-structure-model.test.js`
+- `tests/screen-registry.test.js`
+- `tests/auth-structure-contract.test.js`
+- `tests/sales-structure-contract.test.js`
+- `tests/delivered-structure-contract.test.js`
+- `tests/pending-structure-contract.test.js`
+- `tests/debt-structure-contract.test.js`
+- `.github/workflows/ui-guardrail-check.yml`
 
 ### Modify
 
-- `docs/TAPHOA_QUY_TAC_LAM_VIEC.txt` — merge đặc tả đã duyệt vào nguồn quy tắc vận hành duy nhất.
-- `index.html` — Auth/App semantic root markers; chia Auth regions; System Layer wrapper; copy `Nhớ tên đăng nhập`.
-- `src/app.js` — dùng Screen Registry; giữ root state lifecycle hiện tại.
-- `src/core/router.js` — bỏ ownership của Screen metadata; nhận allowed screen IDs từ registry.
-- `src/screens/sales.js`, `src/styles/sales.css` — Sales Workspace/Surface/Region/Slot placement.
-- `src/screens/delivered.js`, `src/styles/delivered.css` — Delivered Surface placement + back path.
-- `src/screens/pending.js`, `src/styles/pending.css` — Pending Surface placement + back path.
-- `src/screens/debt.js`, `src/styles/debt.css` — Debt 3-level Surface placement + back path.
-- `src/core/scroll-owner.js`, `src/styles/scroll-owner.css` — selectors theo semantic region IDs; giữ restore `scrollTop`.
-- `tests/scroll-owner-contract.test.js` — đổi selector contract sang region IDs mới.
-- `package.json` — thêm `audit:ui` script.
+- `docs/TAPHOA_QUY_TAC_LAM_VIEC.txt`
+- `index.html`
+- `src/app.js`
+- `src/core/router.js`
+- `src/core/scroll-owner.js`
+- `src/styles/shell.css`
+- `src/styles/sales.css`
+- `src/styles/delivered.css`
+- `src/styles/pending.css`
+- `src/styles/debt.css`
+- `src/styles/scroll-owner.css`
+- `src/screens/sales.js`
+- `src/screens/delivered.js`
+- `src/screens/pending.js`
+- `src/screens/debt.js`
+- `tests/scroll-owner-contract.test.js`
+- `package.json`
 
-### Remove after replacement is green
+### Remove after replacement CI is green
 
-- `.github/workflows/scroll-owner-check.yml` — workflow branch-specific cũ, vì `ui-guardrail-check.yml` bao gồm scroll-owner test.
+- `.github/workflows/scroll-owner-check.yml`
 
 ---
 
-## Contract Marker Convention
+## Marker Contract
 
-Mọi node cấu trúc dùng marker sau; marker không render ra UI:
+Root:
 
 ```html
-<section
-  data-ui-node="region"
-  data-ui-id="sales-product-list"
-  data-parent-id="sales-primary-surface"
-  data-slot-mobile="1"
-  data-slot-wide="1">
-</section>
+<section data-ui-node="root" data-root-id="auth">...</section>
+<section data-ui-node="root" data-root-id="app">...</section>
 ```
 
-`data-slot-*` chỉ đặt ở `surface`; Region thừa hưởng placement từ Surface cha. Root dùng `data-root-id`, Screen tiếp tục dùng `data-screen-id`.
+Screen root keeps `data-screen-id`:
 
-Node kinds hợp lệ:
-
-```js
-export const UI_NODE_KINDS = Object.freeze([
-  'root', 'navigation', 'screen-host', 'system-layer',
-  'workspace', 'surface', 'region'
-]);
+```html
+<section data-ui-node="screen" data-screen-id="sales">...</section>
 ```
 
-Owners bắt buộc:
+Workspace/Surface/Region:
 
-```js
-export const REQUIRED_OWNER_KEYS = Object.freeze([
-  'geometry', 'paint', 'interaction', 'state', 'scroll', 'focus'
-]);
+```html
+<div data-ui-node="workspace" data-ui-id="sales-workspace" data-parent-id="sales-root">...</div>
+<section data-ui-node="surface" data-ui-id="sales-primary-surface" data-parent-id="sales-workspace" data-slot-mobile="1" data-slot-wide="1">...</section>
+<section data-ui-node="region" data-ui-id="sales-product-list" data-parent-id="sales-primary-surface">...</section>
 ```
 
-Flow fields bắt buộc:
-
-```js
-export const REQUIRED_FLOW_KEYS = Object.freeze([
-  'id', 'source', 'action', 'mutationOwner', 'targetState', 'targetRegion', 'back'
-]);
-```
+Only Surface carries `data-slot-*`. Region inherits placement from its Surface parent.
 
 ---
 
-### Task 1: Merge Approved Rules into the Single TAPHOA Rule Source
+### Task 1: Merge the Approved Design into the Single TAPHOA Rule Source
 
 **Files:**
 - Modify: `docs/TAPHOA_QUY_TAC_LAM_VIEC.txt`
@@ -117,11 +108,9 @@ export const REQUIRED_FLOW_KEYS = Object.freeze([
 
 **Interfaces:**
 - Consumes: approved design spec.
-- Produces: one operational rule source containing Root/Slot/Region/Flow/Naming/Gate contracts; later tasks must not create a competing rule file.
+- Produces: one operational rule source; no second rules file becomes authoritative.
 
 - [ ] **Step 1: Write the failing rule-source test**
-
-Create `tests/rules-source-contract.test.js`:
 
 ```js
 import test from 'node:test';
@@ -129,7 +118,6 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const rules=readFileSync(new URL('../docs/TAPHOA_QUY_TAC_LAM_VIEC.txt',import.meta.url),'utf8');
-
 const required=[
   'AUTH ROOT / APP ROOT',
   'SLOT 1 / SLOT 2 / SLOT 3',
@@ -142,34 +130,30 @@ const required=[
   'STRUCTURE GATE'
 ];
 
-test('TAPHOA single rule source contains the approved structural guardrail',()=>{
-  for(const token of required)assert.ok(rules.includes(token),`missing rule section: ${token}`);
+test('single TAPHOA rule source contains the approved structural guardrail',()=>{
+  for(const token of required)assert.ok(rules.includes(token),`missing ${token}`);
 });
 
-test('rule source keeps Auth outside business Screens',()=>{
+test('Auth remains outside business Screen tree',()=>{
   assert.match(rules,/Login\/Auth.+không phải Screen nghiệp vụ/s);
   assert.match(rules,/Auth Root.+App Root.+thay thế nhau/s);
 });
 
-test('rule source forbids password persistence copy mismatch',()=>{
+test('remember-user rule never becomes password persistence',()=>{
   assert.match(rules,/Nhớ tên đăng nhập/);
   assert.match(rules,/không lưu password|không lưu mật khẩu/i);
 });
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
-
-Run:
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test tests/rules-source-contract.test.js
 ```
 
-Expected: FAIL because the current short rule file does not contain all approved sections.
+Expected: FAIL because the current compact rule file does not contain the new approved sections.
 
-- [ ] **Step 3: Merge the approved design into the existing rule file, do not append a competing document**
-
-Keep the current 16 rules, then merge/expand them under these exact headings:
+- [ ] **Step 3: Merge rules under these exact headings**
 
 ```text
 0. NGUỒN / THỨ TỰ HIỆU LỰC
@@ -190,30 +174,23 @@ Keep the current 16 rules, then merge/expand them under these exact headings:
 15. TEST / PASS LANGUAGE
 ```
 
-The Login copy rule must say exactly in meaning:
+The Login rule must explicitly say:
 
 ```text
 Checkbox hiện chỉ lưu username/local hint phải hiển thị "Nhớ tên đăng nhập".
 Không được đổi implementation sang lưu password để khớp nhãn cũ.
 ```
 
-- [ ] **Step 4: Run rule-source test**
+- [ ] **Step 4: Verify GREEN and full regression**
 
 ```bash
 node --test tests/rules-source-contract.test.js
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Run full existing suite to prove documentation work did not affect runtime**
-
-```bash
 npm test
 ```
 
-Expected: all pre-existing tests + rule-source tests PASS.
+Expected: all PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add docs/TAPHOA_QUY_TAC_LAM_VIEC.txt tests/rules-source-contract.test.js
@@ -222,7 +199,7 @@ git commit -m "docs: merge TAPHOA structural guardrail rules"
 
 ---
 
-### Task 2: Build the Structural Contract Model, Screen Registry, and Static Auditor API
+### Task 2: Build the Structural Model, Contracts, Screen Registry, and Static Auditor API
 
 **Files:**
 - Create: `src/core/ui-structure.js`
@@ -234,15 +211,12 @@ git commit -m "docs: merge TAPHOA structural guardrail rules"
 - Create: `tests/screen-registry.test.js`
 
 **Interfaces:**
-- Produces: `validateStructureContract(contract) -> string[]`
-- Produces: `auditMarkupStructure(html, contract) -> {pass:boolean, errors:string[], gates:object}`
-- Produces: `AUTH_STRUCTURE_CONTRACT`, `APP_STRUCTURE_CONTRACT`, `SCREEN_STRUCTURE_CONTRACTS`
-- Produces: `SCREEN_REGISTRY`, `NAV_ITEMS`, `SCREEN_IDS`, `loadRegisteredScreen(id)`
-- Router consumes: `screenIds` and `fallback`; router no longer owns Screen metadata.
+- `validateStructureContract(contract) -> Array<{gate:string,message:string}>`
+- `auditMarkupStructure(html, contract) -> {pass:boolean, issues:Array, gates:Record<string,boolean>}`
+- `AUTH_STRUCTURE_CONTRACT`, `APP_STRUCTURE_CONTRACT`, `SCREEN_STRUCTURE_CONTRACTS`
+- `SCREEN_REGISTRY`, `SCREEN_IDS`, `NAV_ITEMS`, `loadRegisteredScreen(id)`
 
-- [ ] **Step 1: Write validator tests first**
-
-Create `tests/ui-structure-model.test.js`:
+- [ ] **Step 1: Write model tests first**
 
 ```js
 import test from 'node:test';
@@ -250,145 +224,157 @@ import assert from 'node:assert/strict';
 import {validateStructureContract,auditMarkupStructure} from '../src/core/ui-structure.js';
 import {AUTH_STRUCTURE_CONTRACT,APP_STRUCTURE_CONTRACT,SCREEN_STRUCTURE_CONTRACTS} from '../src/contracts/ui-structure.js';
 
+const owners={geometry:'parent',paint:'self',interaction:'probe-controller',state:'probe-controller',scroll:'none',focus:'none'};
 const good={
   id:'probe',
-  root:{id:'probe-root',kind:'root',attribute:'data-root-id',value:'probe'},
+  root:{id:'probe-root',kind:'root',attribute:'data-root-id',value:'probe',children:['probe-workspace']},
   nodes:[
-    {id:'probe-workspace',kind:'workspace',parent:'probe-root',children:['probe-list'],purpose:'workspace',owners:{geometry:'self',paint:'self',interaction:'none',state:'probe-controller',scroll:'none',focus:'none'},order:1},
-    {id:'probe-list',kind:'region',parent:'probe-workspace',children:[],purpose:'data list',owners:{geometry:'probe-workspace',paint:'self',interaction:'probe-controller',state:'probe-controller',scroll:'self',focus:'none'},order:1}
+    {id:'probe-workspace',kind:'workspace',parent:'probe-root',children:['probe-list'],purpose:'workspace',owners,order:1},
+    {id:'probe-list',kind:'region',parent:'probe-workspace',children:[],purpose:'data list',owners:{...owners,scroll:'self'},order:1}
   ],
   flows:[{id:'probe.open',source:'probe-list',action:'open',mutationOwner:'probe-controller',targetState:'selected',targetRegion:'probe-list',back:'stay:probe'}]
 };
 
-test('validator accepts a complete contract',()=>assert.deepEqual(validateStructureContract(good),[]));
+test('complete contract is valid',()=>assert.deepEqual(validateStructureContract(good),[]));
 
-test('validator rejects a missing owner',()=>{
+test('missing owner is OWNER FAIL',()=>{
   const bad=structuredClone(good);delete bad.nodes[1].owners.scroll;
-  assert.match(validateStructureContract(bad).join('\n'),/probe-list.+scroll/);
+  const issues=validateStructureContract(bad);
+  assert.ok(issues.some(x=>x.gate==='owner'&&/scroll/.test(x.message)));
 });
 
-test('validator rejects unresolved parent',()=>{
+test('unresolved parent is TREE FAIL',()=>{
   const bad=structuredClone(good);bad.nodes[1].parent='missing-parent';
-  assert.match(validateStructureContract(bad).join('\n'),/missing-parent/);
+  assert.ok(validateStructureContract(bad).some(x=>x.gate==='tree'));
 });
 
-test('validator rejects mobile placement outside Slot 1',()=>{
+test('mobile Surface outside Slot 1 is PLACEMENT FAIL',()=>{
   const bad=structuredClone(good);bad.nodes[1].kind='surface';bad.nodes[1].placement={mobile:2,wide:2};
-  assert.match(validateStructureContract(bad).join('\n'),/mobile.+Slot 1/i);
+  assert.ok(validateStructureContract(bad).some(x=>x.gate==='placement'));
 });
 
-test('all approved TAPHOA contracts are structurally valid',()=>{
-  const all=[AUTH_STRUCTURE_CONTRACT,APP_STRUCTURE_CONTRACT,...Object.values(SCREEN_STRUCTURE_CONTRACTS)];
-  for(const contract of all)assert.deepEqual(validateStructureContract(contract),[],contract.id);
+test('all TAPHOA declared contracts validate',()=>{
+  for(const contract of [AUTH_STRUCTURE_CONTRACT,APP_STRUCTURE_CONTRACT,...Object.values(SCREEN_STRUCTURE_CONTRACTS)]){
+    assert.deepEqual(validateStructureContract(contract),[],contract.id);
+  }
 });
 
-test('markup audit verifies semantic markers and parent ids',()=>{
+test('markup audit checks markers and source order',()=>{
   const html='<section data-root-id="probe"><div data-ui-node="workspace" data-ui-id="probe-workspace" data-parent-id="probe-root"><div data-ui-node="region" data-ui-id="probe-list" data-parent-id="probe-workspace"></div></div></section>';
   const result=auditMarkupStructure(html,good);
-  assert.equal(result.pass,true,result.errors.join('\n'));
+  assert.equal(result.pass,true,result.issues.map(x=>x.message).join('\n'));
 });
 ```
 
-- [ ] **Step 2: Run model tests and verify RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test tests/ui-structure-model.test.js
 ```
 
-Expected: FAIL because `ui-structure.js` and contract modules do not exist.
+Expected: module-not-found FAIL.
 
-- [ ] **Step 3: Implement `src/core/ui-structure.js` with no DOM/runtime dependency**
-
-Use this public shape:
+- [ ] **Step 3: Implement `src/core/ui-structure.js`**
 
 ```js
-export const UI_NODE_KINDS=Object.freeze(['root','navigation','screen-host','system-layer','workspace','surface','region']);
+export const UI_NODE_KINDS=Object.freeze(['root','navigation','screen-host','system-layer','screen','workspace','surface','region']);
 export const REQUIRED_OWNER_KEYS=Object.freeze(['geometry','paint','interaction','state','scroll','focus']);
 export const REQUIRED_FLOW_KEYS=Object.freeze(['id','source','action','mutationOwner','targetState','targetRegion','back']);
+export const STRUCTURE_GATES=Object.freeze(['tree','naming','owner','placement','flow']);
 
-const attrMap=tag=>{
-  const out={};
-  for(const match of tag.matchAll(/([\w:-]+)="([^"]*)"/g))out[match[1]]=match[2];
-  return out;
+const issue=(gate,message)=>({gate,message});
+const semanticId=/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/;
+const attrsFromTag=tag=>{
+  const attrs={};
+  for(const match of tag.matchAll(/([\w:-]+)="([^"]*)"/g))attrs[match[1]]=match[2];
+  return attrs;
 };
 
 export function validateStructureContract(contract){
-  const errors=[];
-  if(!contract?.id)errors.push('contract.id missing');
-  if(!contract?.root?.id)errors.push(`${contract?.id||'contract'} root.id missing`);
+  const issues=[];
+  if(!contract?.id)issues.push(issue('tree','contract.id missing'));
+  if(!contract?.root?.id)issues.push(issue('tree',`${contract?.id||'contract'} root.id missing`));
+  if(!Array.isArray(contract?.root?.children))issues.push(issue('tree',`${contract?.id||'contract'} root.children must be explicit`));
+
   const nodes=Array.isArray(contract?.nodes)?contract.nodes:[];
-  const known=new Set([contract?.root?.id,...nodes.map(node=>node?.id)].filter(Boolean));
   const byId=new Map(nodes.map(node=>[node.id,node]));
+  const known=new Set([contract?.root?.id,...byId.keys()].filter(Boolean));
+
+  for(const child of contract?.root?.children||[]){
+    const node=byId.get(child);
+    if(!node)issues.push(issue('tree',`${contract.root.id} child ${child} missing`));
+    else if(node.parent!==contract.root.id)issues.push(issue('tree',`${child} root parent mismatch`));
+  }
 
   for(const node of nodes){
-    if(!node.id)errors.push(`${contract.id} node id missing`);
-    if(!UI_NODE_KINDS.includes(node.kind))errors.push(`${node.id} invalid kind ${node.kind}`);
-    if(!known.has(node.parent))errors.push(`${node.id} unresolved parent ${node.parent}`);
-    if(!Array.isArray(node.children))errors.push(`${node.id} children must be explicit array`);
-    if(!String(node.purpose||'').trim())errors.push(`${node.id} purpose missing`);
-    for(const key of REQUIRED_OWNER_KEYS)if(!String(node.owners?.[key]||'').trim())errors.push(`${node.id} owner ${key} missing`);
-    if(node.kind==='surface'){
-      if(Number(node.placement?.mobile)!==1)errors.push(`${node.id} mobile placement must use Slot 1`);
-      if(![1,2,3].includes(Number(node.placement?.wide)))errors.push(`${node.id} wide placement must use Slot 1/2/3`);
+    if(!semanticId.test(String(node.id||'')))issues.push(issue('naming',`${node.id||'?'} must use semantic kebab-case id`));
+    if(!UI_NODE_KINDS.includes(node.kind))issues.push(issue('tree',`${node.id} invalid kind ${node.kind}`));
+    if(!known.has(node.parent))issues.push(issue('tree',`${node.id} unresolved parent ${node.parent}`));
+    if(!Array.isArray(node.children))issues.push(issue('tree',`${node.id} children must be explicit array`));
+    if(!String(node.purpose||'').trim())issues.push(issue('tree',`${node.id} purpose missing`));
+    for(const key of REQUIRED_OWNER_KEYS){
+      if(!String(node.owners?.[key]||'').trim())issues.push(issue('owner',`${node.id} owner ${key} missing`));
     }
     for(const child of node.children||[]){
-      if(!byId.has(child))errors.push(`${node.id} child ${child} missing`);
-      else if(byId.get(child).parent!==node.id)errors.push(`${node.id} child ${child} parent mismatch`);
+      const childNode=byId.get(child);
+      if(!childNode)issues.push(issue('tree',`${node.id} child ${child} missing`));
+      else if(childNode.parent!==node.id)issues.push(issue('tree',`${node.id} child ${child} parent mismatch`));
+    }
+    if(node.kind==='surface'){
+      if(Number(node.placement?.mobile)!==1)issues.push(issue('placement',`${node.id} mobile Surface must use Slot 1`));
+      if(![1,2,3].includes(Number(node.placement?.wide)))issues.push(issue('placement',`${node.id} wide Surface must use Slot 1/2/3`));
     }
   }
 
   for(const flow of contract?.flows||[]){
-    for(const key of REQUIRED_FLOW_KEYS)if(!String(flow?.[key]||'').trim())errors.push(`${contract.id} flow ${flow?.id||'?'} field ${key} missing`);
+    for(const key of REQUIRED_FLOW_KEYS){
+      if(!String(flow?.[key]||'').trim())issues.push(issue('flow',`${contract.id} flow ${flow?.id||'?'} missing ${key}`));
+    }
   }
-  return errors;
+  return issues;
 }
 
 export function auditMarkupStructure(html='',contract){
-  const errors=[...validateStructureContract(contract)];
+  const issues=[...validateStructureContract(contract)];
   const rootToken=`${contract.root.attribute}="${contract.root.value}"`;
-  if(!html.includes(rootToken))errors.push(`${contract.id} root marker missing: ${rootToken}`);
+  if(!html.includes(rootToken))issues.push(issue('tree',`${contract.id} missing root marker ${rootToken}`));
+  const found=[];
 
-  const positions=[];
   for(const node of contract.nodes||[]){
-    const token=`data-ui-id="${node.id}"`;
-    const index=html.indexOf(token);
-    if(index<0){errors.push(`${contract.id} markup missing ${node.id}`);continue;}
+    const token=`data-ui-id="${node.id}"`,index=html.indexOf(token);
+    if(index<0){issues.push(issue('tree',`${contract.id} markup missing ${node.id}`));continue;}
     const start=html.lastIndexOf('<',index),end=html.indexOf('>',index);
-    const attrs=attrMap(html.slice(start,end+1));
-    if(attrs['data-ui-node']!==node.kind)errors.push(`${node.id} kind marker mismatch`);
-    if(attrs['data-parent-id']!==node.parent)errors.push(`${node.id} parent marker mismatch`);
+    const attrs=attrsFromTag(html.slice(start,end+1));
+    if(attrs['data-ui-node']!==node.kind)issues.push(issue('tree',`${node.id} kind marker mismatch`));
+    if(attrs['data-parent-id']!==node.parent)issues.push(issue('tree',`${node.id} parent marker mismatch`));
     if(node.kind==='surface'){
-      if(Number(attrs['data-slot-mobile'])!==node.placement.mobile)errors.push(`${node.id} mobile slot marker mismatch`);
-      if(Number(attrs['data-slot-wide'])!==node.placement.wide)errors.push(`${node.id} wide slot marker mismatch`);
+      if(Number(attrs['data-slot-mobile'])!==node.placement.mobile)issues.push(issue('placement',`${node.id} mobile slot marker mismatch`));
+      if(Number(attrs['data-slot-wide'])!==node.placement.wide)issues.push(issue('placement',`${node.id} wide slot marker mismatch`));
     }
-    positions.push({node,index});
+    found.push({node,index});
   }
 
   const groups=new Map();
-  for(const item of positions){
-    const list=groups.get(item.node.parent)||[];list.push(item);groups.set(item.node.parent,list);
-  }
+  for(const item of found){const list=groups.get(item.node.parent)||[];list.push(item);groups.set(item.node.parent,list);}
   for(const list of groups.values()){
     const expected=[...list].sort((a,b)=>a.node.order-b.node.order).map(x=>x.node.id);
     const actual=[...list].sort((a,b)=>a.index-b.index).map(x=>x.node.id);
-    if(expected.join('|')!==actual.join('|'))errors.push(`${contract.id} source order mismatch for parent ${list[0]?.node.parent}`);
+    if(expected.join('|')!==actual.join('|'))issues.push(issue('tree',`${contract.id} source order mismatch under ${list[0].node.parent}`));
   }
 
-  return {
-    pass:errors.length===0,
-    errors,
-    gates:{tree:errors.length===0,naming:errors.length===0,owner:errors.length===0,placement:errors.length===0,flow:errors.length===0}
-  };
+  const gates=Object.fromEntries(STRUCTURE_GATES.map(gate=>[gate,!issues.some(x=>x.gate===gate)]));
+  return {pass:issues.length===0,issues,gates};
 }
 ```
 
-- [ ] **Step 4: Define exact Root/Screen contract IDs in `src/contracts/ui-structure.js`**
+- [ ] **Step 4: Define exact contracts in `src/contracts/ui-structure.js`**
 
-Use these node IDs and placements exactly; every node gets explicit `children`, `purpose`, `owners`, `order`:
+Use explicit `children`, `purpose`, `owners`, `order` for every node. Owner values may be `none` when responsibility truly does not exist; blank is invalid.
+
+Node matrix:
 
 ```text
-AUTH
-root: auth-root
+AUTH root auth-root
   auth-workspace
     auth-brand-region
     auth-credential-region
@@ -396,86 +382,81 @@ root: auth-root
     auth-status-region
     auth-action-region
 
-APP
-root: app-root
+APP root app-root
   app-navigation
   app-screen-host
   app-system-layer
 
-SALES
-root: sales-root
+SALES root sales-root
   sales-workspace
-    sales-primary-surface      mobile=1 wide=1
+    sales-primary-surface       m1 w1
       sales-context-region
       sales-product-controls
-      sales-product-list      scroll=self
-    sales-cart-surface         mobile=1 wide=2
-      sales-cart-list          scroll=self
+      sales-product-list        scroll=self
+    sales-cart-surface          m1 w2
+      sales-cart-list           scroll=self
       sales-cart-total
       sales-cart-actions
 
-DELIVERED
-root: delivered-root
+DELIVERED root delivered-root
   delivered-workspace
-    delivered-list-surface     mobile=1 wide=1
+    delivered-list-surface      m1 w1
       delivered-filter-region
       delivered-summary-region
-      delivered-order-list     scroll=self
-    delivered-detail-surface   mobile=1 wide=2
+      delivered-order-list      scroll=self
+    delivered-detail-surface    m1 w2
       delivered-detail-meta
-      delivered-detail-lines   scroll=self
+      delivered-detail-lines    scroll=self
       delivered-detail-actions
-    delivered-print-surface    mobile=1 wide=3
+    delivered-print-surface     m1 w3
       delivered-print-meta
-      delivered-print-lines    scroll=self
+      delivered-print-lines     scroll=self
       delivered-print-actions
 
-PENDING
-root: pending-root
+PENDING root pending-root
   pending-workspace
-    pending-list-surface       mobile=1 wide=1
+    pending-list-surface        m1 w1
       pending-summary-region
-      pending-order-list       scroll=self
-    pending-source-surface     mobile=1 wide=2
+      pending-order-list        scroll=self
+    pending-source-surface      m1 w2
       pending-source-meta
-      pending-source-lines     scroll=self
+      pending-source-lines      scroll=self
       pending-source-actions
-    pending-detail-surface     mobile=1 wide=2
+    pending-detail-surface      m1 w2
       pending-detail-meta
-      pending-detail-lines     scroll=self
+      pending-detail-lines      scroll=self
       pending-detail-actions
-    pending-print-surface      mobile=1 wide=3
+    pending-print-surface       m1 w3
       pending-print-meta
-      pending-print-lines      scroll=self
+      pending-print-lines       scroll=self
       pending-print-actions
 
-DEBT
-root: debt-root
+DEBT root debt-root
   debt-workspace
-    debt-list-surface          mobile=1 wide=1
+    debt-list-surface           m1 w1
       debt-summary-region
       debt-quick-action-region
-      debt-customer-list       scroll=self
-    debt-ledger-surface        mobile=1 wide=2
+      debt-customer-list        scroll=self
+    debt-ledger-surface         m1 w2
       debt-ledger-meta
-      debt-ledger-list         scroll=self
+      debt-ledger-list          scroll=self
       debt-ledger-actions
-    debt-order-surface         mobile=1 wide=3
+    debt-order-surface          m1 w3
       debt-order-meta
-      debt-order-lines         scroll=self
+      debt-order-lines          scroll=self
       debt-order-actions
 ```
 
-Owner rules used in the contract module:
+Use this owner helper:
 
 ```js
 const owners=({geometry='parent',paint='self',interaction='none',state='screen-controller',scroll='none',focus='none'}={})=>
   Object.freeze({geometry,paint,interaction,state,scroll,focus});
 ```
 
-Use `interaction:'sales-controller'`, `state:'sales-controller'` etc. for Screen interactive regions; use `interaction:'auth-controller'`, `state:'auth-service'` for Auth; use `interaction:'app-shell'` for navigation; use `state:'app-state'` where the region only reads shared state. Input-containing regions set `focus:'self'`. Lists set `scroll:'self'`. Non-interactive presentational regions must use explicit `interaction:'none'`, never blank.
+Interactive Auth regions use `auth-controller`/`auth-service`; Navigation uses `app-shell`; Screen interactive regions use `<screen>-controller`; input-containing regions set `focus:'self'`; list regions set `scroll:'self'`.
 
-Declare these primary flow IDs exactly:
+Required flow IDs:
 
 ```text
 sales.search
@@ -515,7 +496,7 @@ debt.order.back
 debt.share
 ```
 
-Each flow object must provide all seven required fields. `back` uses one of `stay:<screen>`, `surface:<surface-id>`, or `route:<screen-id>`; no empty back path.
+Every flow has all seven required fields; `back` is one of `stay:<screen>`, `surface:<surface-id>`, `route:<screen-id>`.
 
 - [ ] **Step 5: Run model tests**
 
@@ -527,27 +508,25 @@ Expected: PASS.
 
 - [ ] **Step 6: Write Screen Registry tests**
 
-Create `tests/screen-registry.test.js`:
-
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SCREEN_IDS,SCREEN_REGISTRY,NAV_ITEMS} from '../src/core/screen-registry.js';
 import {normalizeRoute} from '../src/core/router.js';
 
-test('registry contains exactly the four approved business screens',()=>{
+test('registry contains exactly four approved Screens',()=>{
   assert.deepEqual(SCREEN_IDS,['sales','delivered','pending','debt']);
   assert.deepEqual(Object.keys(SCREEN_REGISTRY),SCREEN_IDS);
   assert.deepEqual(NAV_ITEMS.map(x=>x.id),SCREEN_IDS);
 });
 
-test('router uses caller supplied screen ids instead of owning screen metadata',()=>{
+test('router accepts caller supplied Screen IDs',()=>{
   assert.equal(normalizeRoute('#debt',SCREEN_IDS),'debt');
   assert.equal(normalizeRoute('#unknown',SCREEN_IDS),'sales');
 });
 ```
 
-- [ ] **Step 7: Implement `src/core/screen-registry.js` and make Router generic**
+- [ ] **Step 7: Implement Screen Registry and make Router generic**
 
 `src/core/screen-registry.js`:
 
@@ -563,7 +542,7 @@ export const NAV_ITEMS=Object.freeze(SCREEN_IDS.map(id=>Object.freeze({id,icon:S
 export const loadRegisteredScreen=id=>SCREEN_REGISTRY[id]?.load?.();
 ```
 
-Modify `src/core/router.js` public signatures to:
+`src/core/router.js`:
 
 ```js
 export function normalizeRoute(value='',screenIds=['sales','delivered','pending','debt'],fallback='sales'){
@@ -583,37 +562,23 @@ export function createRouter({onRoute,screenIds=['sales','delivered','pending','
 }
 ```
 
-Update `src/app.js` imports and loader only; do not alter business/sync/auth behavior:
+Update `src/app.js` to import `SCREEN_IDS,NAV_ITEMS,loadRegisteredScreen`; delete the local screen-module map; pass `SCREEN_IDS` into Router/normalizeRoute. Do not modify auth, data sync, snapshot or business calls.
 
-```js
-import {SCREEN_IDS,NAV_ITEMS,loadRegisteredScreen} from './core/screen-registry.js';
-import {createRouter,normalizeRoute} from './core/router.js';
-```
-
-Replace the local `loadScreen()` map with `loadRegisteredScreen()`, pass `SCREEN_IDS` into `normalizeRoute()` and `createRouter()`.
-
-- [ ] **Step 8: Run registry + full tests**
+- [ ] **Step 8: Verify registry/core GREEN**
 
 ```bash
 node --test tests/ui-structure-model.test.js tests/screen-registry.test.js
-npm test
-```
-
-Expected: PASS.
-
-- [ ] **Step 9: Parse new core files**
-
-```bash
 node --check src/core/ui-structure.js
 node --check src/contracts/ui-structure.js
 node --check src/core/screen-registry.js
 node --check src/core/router.js
 node --check src/app.js
+npm test
 ```
 
-Expected: all exit 0.
+Expected: PASS / exit 0.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/core/ui-structure.js src/contracts/ui-structure.js src/core/screen-registry.js src/core/router.js src/app.js tests/ui-structure-model.test.js tests/screen-registry.test.js
@@ -622,7 +587,7 @@ git commit -m "feat: add TAPHOA structural contract model"
 
 ---
 
-### Task 3: Normalize Auth Root and App Root Without Changing Auth Behavior
+### Task 3: Normalize Auth Root and App Root without Changing Auth Runtime
 
 **Files:**
 - Modify: `index.html`
@@ -630,10 +595,10 @@ git commit -m "feat: add TAPHOA structural contract model"
 - Create: `tests/auth-structure-contract.test.js`
 
 **Interfaces:**
-- Consumes: `AUTH_STRUCTURE_CONTRACT`, `APP_STRUCTURE_CONTRACT`, `auditMarkupStructure()`.
-- Produces: semantic Auth/App root markup with the same existing IDs used by `src/app.js` and `src/core/auth.js`.
+- Consumes: Auth/App contracts + auditor.
+- Produces: direct semantic children under Auth Workspace; no extra visual wrapper between semantic parent/children.
 
-- [ ] **Step 1: Write failing Auth/App markup tests**
+- [ ] **Step 1: Write failing Auth/App tests**
 
 ```js
 import test from 'node:test';
@@ -644,60 +609,56 @@ import {AUTH_STRUCTURE_CONTRACT,APP_STRUCTURE_CONTRACT} from '../src/contracts/u
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 
-test('Auth Root matches approved semantic tree',()=>{
+test('Auth Root matches semantic tree',()=>{
   const result=auditMarkupStructure(html,AUTH_STRUCTURE_CONTRACT);
-  assert.equal(result.pass,true,result.errors.join('\n'));
+  assert.equal(result.pass,true,result.issues.map(x=>x.message).join('\n'));
 });
 
-test('App Root matches Navigation Screen Host System Layer tree',()=>{
+test('App Root has Navigation, Screen Host and System Layer siblings',()=>{
   const result=auditMarkupStructure(html,APP_STRUCTURE_CONTRACT);
-  assert.equal(result.pass,true,result.errors.join('\n'));
+  assert.equal(result.pass,true,result.issues.map(x=>x.message).join('\n'));
 });
 
-test('remember copy describes what runtime actually persists',()=>{
+test('remember copy matches username-only persistence',()=>{
   assert.match(html,/Nhớ tên đăng nhập/);
   assert.doesNotMatch(html,/Lưu mật khẩu/);
 });
 
-test('existing auth control ids remain stable',()=>{
+test('existing runtime control IDs stay stable',()=>{
   for(const id of ['loginForm','loginUsername','loginPassword','loginEye','loginRemember','loginError','loginSubmit','loginScreen','appShell','appNav','screenHost','systemToast']){
     assert.ok(html.includes(`id="${id}"`),id);
   }
 });
 ```
 
-- [ ] **Step 2: Run and verify RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test tests/auth-structure-contract.test.js
 ```
 
-Expected: FAIL because semantic markers and new copy are absent.
+Expected: FAIL on markers/copy.
 
-- [ ] **Step 3: Rewrite Auth markup semantically while preserving existing control IDs**
-
-Target structure:
+- [ ] **Step 3: Rewrite Auth DOM with direct semantic children**
 
 ```html
-<section class="login-screen" id="loginScreen" data-root-id="auth" data-ui-node="root">
+<section class="login-screen" id="loginScreen" data-ui-node="root" data-root-id="auth">
   <form class="auth-workspace" id="loginForm" data-ui-node="workspace" data-ui-id="auth-workspace" data-parent-id="auth-root">
     <header class="auth-brand-region" data-ui-node="region" data-ui-id="auth-brand-region" data-parent-id="auth-workspace">...</header>
-    <div class="auth-card-surface">
-      <section class="auth-credential-region" data-ui-node="region" data-ui-id="auth-credential-region" data-parent-id="auth-workspace">...</section>
-      <section class="auth-preference-region" data-ui-node="region" data-ui-id="auth-preference-region" data-parent-id="auth-workspace">
-        <label><input id="loginRemember" type="checkbox">Nhớ tên đăng nhập</label>
-      </section>
-      <section class="auth-status-region" data-ui-node="region" data-ui-id="auth-status-region" data-parent-id="auth-workspace">
-        <div class="login-error" id="loginError" hidden></div>
-      </section>
-      <section class="auth-action-region" data-ui-node="region" data-ui-id="auth-action-region" data-parent-id="auth-workspace">
-        <button class="login-submit" id="loginSubmit" type="submit">Đăng nhập →</button>
-      </section>
-    </div>
+    <section class="auth-credential-region auth-card-part" data-ui-node="region" data-ui-id="auth-credential-region" data-parent-id="auth-workspace">...</section>
+    <section class="auth-preference-region auth-card-part" data-ui-node="region" data-ui-id="auth-preference-region" data-parent-id="auth-workspace">
+      <label><input id="loginRemember" type="checkbox">Nhớ tên đăng nhập</label>
+    </section>
+    <section class="auth-status-region auth-card-part" data-ui-node="region" data-ui-id="auth-status-region" data-parent-id="auth-workspace">
+      <div class="login-error" id="loginError" hidden></div>
+    </section>
+    <section class="auth-action-region auth-card-part" data-ui-node="region" data-ui-id="auth-action-region" data-parent-id="auth-workspace">
+      <button class="login-submit" id="loginSubmit" type="submit">Đăng nhập →</button>
+    </section>
   </form>
 </section>
 
-<section class="app-shell" id="appShell" hidden data-root-id="app" data-ui-node="root">
+<section class="app-shell" id="appShell" hidden data-ui-node="root" data-root-id="app">
   <nav class="app-nav" id="appNav" data-ui-node="navigation" data-ui-id="app-navigation" data-parent-id="app-root"></nav>
   <main class="screen-host" id="screenHost" data-ui-node="screen-host" data-ui-id="app-screen-host" data-parent-id="app-root"></main>
   <section class="system-layer" data-ui-node="system-layer" data-ui-id="app-system-layer" data-parent-id="app-root">
@@ -706,46 +667,36 @@ Target structure:
 </section>
 ```
 
-`auth-card-surface` is a visual grouping container only; do not give it a fake Region ID.
+No `auth-card-surface` wrapper is allowed between Auth Workspace and its Regions.
 
-- [ ] **Step 4: Update `shell.css` names/geometry without visual redesign**
+- [ ] **Step 4: Preserve the visual card with contiguous Region paint, not a structural wrapper**
 
-Map old geometry:
-
-```text
-.login-wrap            -> .auth-workspace
-.login-brand           -> .auth-brand-region
-.login-card            -> .auth-card-surface
-.login-remember        -> .auth-preference-region label
-```
-
-Keep the same max-width, logo size, card radius, input geometry and colors. `.system-layer` must not occupy layout space:
+Use CSS like:
 
 ```css
+.auth-workspace{width:100%;max-width:360px}
+.auth-brand-region{text-align:center;color:#fff;margin-bottom:26px}
+.auth-card-part{background:#fff;padding-inline:26px}
+.auth-credential-region{padding-top:26px;border-radius:24px 24px 0 0}
+.auth-preference-region,.auth-status-region{padding-top:0}
+.auth-action-region{padding-top:0;padding-bottom:26px;border-radius:0 0 24px 24px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .system-layer{position:fixed;inset:0;pointer-events:none;z-index:500}
 .system-layer .system-toast{pointer-events:auto}
 ```
 
-- [ ] **Step 5: Run Auth + full tests**
+Keep current logo/input/button geometry and existing IDs.
+
+- [ ] **Step 5: Verify Auth runtime safety**
 
 ```bash
 node --test tests/auth-structure-contract.test.js
 npm test
-```
-
-Expected: PASS.
-
-- [ ] **Step 6: Static safety check that password is still never stored by the remember checkbox**
-
-Run:
-
-```bash
 grep -n "loginRemember\|usernameStorageKey\|loginPassword" src/app.js src/core/auth.js
 ```
 
-Expected: `loginRemember` controls only `CONFIG.usernameStorageKey`; no new `localStorage.setItem(...password...)` appears.
+Expected: tests PASS; remember checkbox still only controls username key; no password persistence is introduced.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add index.html src/styles/shell.css tests/auth-structure-contract.test.js
@@ -754,7 +705,7 @@ git commit -m "refactor: normalize TAPHOA auth and app roots"
 
 ---
 
-### Task 4: Restructure Sales into Semantic Surfaces and Slot Placement
+### Task 4: Restructure Sales into Primary and Cart Surfaces
 
 **Files:**
 - Modify: `src/screens/sales.js`
@@ -765,130 +716,113 @@ git commit -m "refactor: normalize TAPHOA auth and app roots"
 - Create: `tests/sales-structure-contract.test.js`
 
 **Interfaces:**
-- Consumes: `SCREEN_STRUCTURE_CONTRACTS.sales`, `auditMarkupStructure()`.
-- Produces: Sales Primary Surface in Slot 1; Cart Surface mobile Slot 1 / wide Slot 2; list-level scroll owners.
-- Existing pure business helpers remain API-compatible: `filterProducts`, `cartTotals`, `buildOrderDraft`, `salesMarkup`, `mount`.
+- Preserve exports: `filterProducts`, `cartTotals`, `buildOrderDraft`, `salesMarkup`, `mount`.
+- Add: `salesActiveSurface(state) -> 'products'|'cart'`.
+- Primary Surface: m1/w1. Cart Surface: m1/w2.
 
-- [ ] **Step 1: Write failing Sales structure test**
+- [ ] **Step 1: Write failing Sales contract tests**
 
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {salesMarkup} from '../src/screens/sales.js';
+import {salesMarkup,salesActiveSurface} from '../src/screens/sales.js';
 import {auditMarkupStructure} from '../src/core/ui-structure.js';
 import {SCREEN_STRUCTURE_CONTRACTS} from '../src/contracts/ui-structure.js';
 
 const html=salesMarkup({products:[{id:'p1',ten:'SP 1',gia:125,nhom:'N1'}],customers:[]});
 
-test('Sales markup matches Semantic Tree and Slot contract',()=>{
+test('Sales markup matches contract',()=>{
   const result=auditMarkupStructure(html,SCREEN_STRUCTURE_CONTRACTS.sales);
-  assert.equal(result.pass,true,result.errors.join('\n'));
+  assert.equal(result.pass,true,result.issues.map(x=>x.message).join('\n'));
 });
 
-test('Sales primary source order is context -> controls -> product list',()=>{
+test('Sales source order is Context -> Controls -> Product List',()=>{
   const ids=['sales-context-region','sales-product-controls','sales-product-list'];
-  const positions=ids.map(id=>html.indexOf(`data-ui-id="${id}"`));
-  assert.ok(positions.every(x=>x>=0));
-  assert.deepEqual([...positions].sort((a,b)=>a-b),positions);
+  const p=ids.map(id=>html.indexOf(`data-ui-id="${id}"`));
+  assert.ok(p.every(x=>x>=0));assert.deepEqual([...p].sort((a,b)=>a-b),p);
 });
 
-test('Sales cart is a semantic Surface, not a modal navigation overlay',()=>{
+test('Cart is a Surface, not navigation overlay',()=>{
   assert.match(html,/data-ui-id="sales-cart-surface"/);
   assert.doesNotMatch(html,/sales-cart-backdrop/);
 });
+
+test('mobile active Surface derives from cartOpen only',()=>{
+  assert.equal(salesActiveSurface({cartOpen:false}),'products');
+  assert.equal(salesActiveSurface({cartOpen:true}),'cart');
+});
 ```
 
-- [ ] **Step 2: Run Sales structure test and verify RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test tests/sales-structure-contract.test.js
 ```
 
-Expected: FAIL on missing workspace/surface/region markers and old cart overlay.
+- [ ] **Step 3: Rebuild Sales skeleton with exact semantic IDs**
 
-- [ ] **Step 3: Refactor `salesMarkup()` only at the structural layer**
-
-Target semantic skeleton:
-
-```html
-<section class="sales-screen" data-screen-id="sales" data-root-id="sales" data-active-surface="products">
-  <div class="sales-workspace" data-ui-node="workspace" data-ui-id="sales-workspace" data-parent-id="sales-root">
-    <section class="sales-primary-surface" data-ui-node="surface" data-ui-id="sales-primary-surface" data-parent-id="sales-workspace" data-slot-mobile="1" data-slot-wide="1">
-      <header class="sales-context-region" data-ui-node="region" data-ui-id="sales-context-region" data-parent-id="sales-primary-surface">...</header>
-      <section class="sales-product-controls" data-ui-node="region" data-ui-id="sales-product-controls" data-parent-id="sales-primary-surface">...</section>
-      <section class="sales-product-list-region" data-ui-node="region" data-ui-id="sales-product-list" data-parent-id="sales-primary-surface">...</section>
-    </section>
-    <aside class="sales-cart-surface" data-ui-node="surface" data-ui-id="sales-cart-surface" data-parent-id="sales-workspace" data-slot-mobile="1" data-slot-wide="2">
-      <section class="sales-cart-list-region" data-ui-node="region" data-ui-id="sales-cart-list" data-parent-id="sales-cart-surface">...</section>
-      <section class="sales-cart-total-region" data-ui-node="region" data-ui-id="sales-cart-total" data-parent-id="sales-cart-surface">...</section>
-      <section class="sales-cart-actions-region" data-ui-node="region" data-ui-id="sales-cart-actions" data-parent-id="sales-cart-surface">...</section>
-    </aside>
-  </div>
-</section>
+```text
+sales-workspace
+├── sales-primary-surface
+│   ├── sales-context-region
+│   ├── sales-product-controls
+│   └── sales-product-list
+└── sales-cart-surface
+    ├── sales-cart-list
+    ├── sales-cart-total
+    └── sales-cart-actions
 ```
 
-Preserve existing customer/search/group/product/cart controls and business data. Root `data-active-surface` is `cart` when existing `state.cartOpen===true`, otherwise `products`.
+Keep existing customer/time/search/groups/product-row/price/qty/cart business controls. Root gets `data-active-surface="${salesActiveSurface(state)}"`. Remove mobile semantic overlay/backdrop; the close button remains a Back action inside Cart Surface.
 
-- [ ] **Step 4: Replace overlay geometry with responsive Surface placement**
-
-In `sales.css`:
+- [ ] **Step 4: Implement responsive placement**
 
 ```css
 [data-screen-id="sales"] .sales-workspace{display:grid;grid-template-columns:minmax(0,1fr);min-height:0;height:100%}
-[data-screen-id="sales"] .sales-primary-surface,[data-screen-id="sales"] .sales-cart-surface{min-width:0;min-height:0}
+[data-screen-id="sales"] [data-ui-node="surface"]{min-width:0;min-height:0}
 
 @container screen-host (max-width:1023px){
-  [data-screen-id="sales"] .sales-primary-surface{display:grid}
-  [data-screen-id="sales"] .sales-cart-surface{display:none}
-  [data-screen-id="sales"][data-active-surface="cart"] .sales-primary-surface{display:none}
-  [data-screen-id="sales"][data-active-surface="cart"] .sales-cart-surface{display:grid}
+  [data-screen-id="sales"] [data-ui-node="surface"]{display:none}
+  [data-screen-id="sales"][data-active-surface="products"] [data-ui-id="sales-primary-surface"],
+  [data-screen-id="sales"][data-active-surface="cart"] [data-ui-id="sales-cart-surface"]{display:grid}
 }
 
 @container screen-host (min-width:1024px){
   [data-screen-id="sales"] .sales-workspace{grid-template-columns:minmax(0,1fr) minmax(320px,34%)}
-  [data-screen-id="sales"] .sales-primary-surface{grid-column:1}
-  [data-screen-id="sales"] .sales-cart-surface{grid-column:2;display:grid}
+  [data-ui-id="sales-primary-surface"]{grid-column:1;display:grid}
+  [data-ui-id="sales-cart-surface"]{grid-column:2;display:grid}
 }
 ```
 
-Do not create a third empty column for Slot 3.
+Do not create Slot 3 DOM/column for Sales.
 
-- [ ] **Step 5: Move scroll owner selectors to semantic region IDs**
-
-`scroll-owner.css` must own:
+- [ ] **Step 5: Move scroll ownership to semantic list Regions**
 
 ```css
 [data-ui-id="sales-product-list"]{min-height:0;overflow:auto}
 [data-ui-id="sales-cart-list"]{min-height:0;overflow:auto}
 ```
 
-`src/core/scroll-owner.js` config must use:
+`src/core/scroll-owner.js` screen config:
 
 ```js
 sales:['[data-ui-id="sales-product-list"]','[data-ui-id="sales-cart-list"]']
 ```
 
-Update `tests/scroll-owner-contract.test.js` to expect these selectors and still verify independent `scrollTop` restore.
+Update scroll tests to use these selectors while retaining independent `scrollTop` restore assertions.
 
-- [ ] **Step 6: Run Sales + price + scroll regression**
+- [ ] **Step 6: Run protected regressions**
 
 ```bash
 node --test tests/sales-structure-contract.test.js tests/sales-price-contract.test.js tests/scroll-owner-contract.test.js
-```
-
-Expected: PASS; literal price tests remain unchanged.
-
-- [ ] **Step 7: Run parse + full tests**
-
-```bash
 node --check src/screens/sales.js
 node --check src/core/scroll-owner.js
 npm test
 ```
 
-Expected: PASS.
+Expected: PASS; literal price behavior remains unchanged.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/screens/sales.js src/styles/sales.css src/styles/scroll-owner.css src/core/scroll-owner.js tests/sales-structure-contract.test.js tests/scroll-owner-contract.test.js
@@ -907,45 +841,46 @@ git commit -m "refactor: normalize TAPHOA sales regions and slots"
 - Create: `tests/delivered-structure-contract.test.js`
 
 **Interfaces:**
-- Consumes: `SCREEN_STRUCTURE_CONTRACTS.delivered`.
-- Produces: list Surface Slot 1; detail Surface mobile Slot 1/wide Slot 2; print Surface mobile Slot 1/wide Slot 3.
-- Preserve: `quickRange`, `filterDeliveredOrders`, `summarizeDeliveredBySource`, business calls and edit navigation.
+- Preserve exports/business helpers.
+- Add: `deliveredActiveSurface(state) -> 'list'|'detail'|'print'`.
+- List m1/w1; Detail m1/w2; Print m1/w3.
 
-- [ ] **Step 1: Write failing Delivered structure test**
+- [ ] **Step 1: Write RED contract tests using a full-state sample so all conditional Surfaces are auditable**
 
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {deliveredMarkup} from '../src/screens/delivered.js';
+import {deliveredMarkup,deliveredActiveSurface} from '../src/screens/delivered.js';
 import {auditMarkupStructure} from '../src/core/ui-structure.js';
 import {SCREEN_STRUCTURE_CONTRACTS} from '../src/contracts/ui-structure.js';
 
 const order={id:'D1',trangThai:'done',tenKH:'KH',ngay:new Date().toISOString(),tongTien:125,items:[{tenSP:'SP',sl:1,gia:125}]};
-const html=deliveredMarkup({orders:[order],selected:order,printOrder:null});
+const html=deliveredMarkup({orders:[order],selected:order,printOrder:order});
 
-test('Delivered markup matches list/detail/print Surface contract',()=>{
+test('Delivered full-state markup contains every declared Surface',()=>{
   const result=auditMarkupStructure(html,SCREEN_STRUCTURE_CONTRACTS.delivered);
-  assert.equal(result.pass,true,result.errors.join('\n'));
+  assert.equal(result.pass,true,result.issues.map(x=>x.message).join('\n'));
 });
 
-test('Delivered detail is a Surface with explicit back action',()=>{
+test('active Surface priority is print > detail > list',()=>{
+  assert.equal(deliveredActiveSurface({selected:null,printOrder:null}),'list');
+  assert.equal(deliveredActiveSurface({selected:order,printOrder:null}),'detail');
+  assert.equal(deliveredActiveSurface({selected:order,printOrder:order}),'print');
+});
+
+test('detail is not a navigation backdrop modal',()=>{
   assert.match(html,/data-ui-id="delivered-detail-surface"/);
-  assert.match(html,/data-detail-close/);
   assert.doesNotMatch(html,/delivered-backdrop/);
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test tests/delivered-structure-contract.test.js
 ```
 
-Expected: FAIL.
-
-- [ ] **Step 3: Rebuild markup skeleton with three Surfaces**
-
-Use:
+- [ ] **Step 3: Rebuild exact hierarchy**
 
 ```text
 delivered-workspace
@@ -963,31 +898,38 @@ delivered-workspace
     └── delivered-print-actions
 ```
 
-Render detail/print Surface only when their state exists. Remove semantic-navigation backdrop wrappers. `data-active-surface` resolves in this order: `print` if `printOrder`, else `detail` if `selected`, else `list`.
+Only render Detail/Print when state exists in normal runtime. The test passes both states only to audit every conditional node. Detail Close remains the Back action. Keep current filter/edit/print/reverse business calls unchanged.
 
-- [ ] **Step 4: Implement mobile replace and wide parallel placement**
+- [ ] **Step 4: Add explicit root flags and compact wide tracks**
+
+Markup root carries:
+
+```html
+data-active-surface="list|detail|print"
+data-has-secondary="true|false"
+data-has-tertiary="true|false"
+```
+
+Where `has-secondary=Boolean(selected)` and `has-tertiary=Boolean(printOrder)`.
+
+Wide CSS:
 
 ```css
-[data-screen-id="delivered"] .delivered-workspace{display:grid;grid-template-columns:minmax(0,1fr);min-height:0;height:100%}
-@container screen-host (max-width:1023px){
-  [data-screen-id="delivered"] [data-ui-node="surface"]{display:none}
-  [data-screen-id="delivered"][data-active-surface="list"] [data-ui-id="delivered-list-surface"],
-  [data-screen-id="delivered"][data-active-surface="detail"] [data-ui-id="delivered-detail-surface"],
-  [data-screen-id="delivered"][data-active-surface="print"] [data-ui-id="delivered-print-surface"]{display:grid}
-}
 @container screen-host (min-width:1024px){
-  [data-screen-id="delivered"] .delivered-workspace{grid-template-columns:minmax(0,1fr) minmax(340px,.8fr) minmax(300px,.65fr)}
+  [data-screen-id="delivered"] .delivered-workspace{display:grid;grid-template-columns:minmax(0,1fr)}
+  [data-screen-id="delivered"][data-has-secondary="true"][data-has-tertiary="false"] .delivered-workspace{grid-template-columns:minmax(0,1fr) minmax(340px,.8fr)}
+  [data-screen-id="delivered"][data-has-secondary="false"][data-has-tertiary="true"] .delivered-workspace{grid-template-columns:minmax(0,1fr) minmax(300px,.65fr)}
+  [data-screen-id="delivered"][data-has-secondary="true"][data-has-tertiary="true"] .delivered-workspace{grid-template-columns:minmax(0,1fr) minmax(340px,.8fr) minmax(300px,.65fr)}
   [data-ui-id="delivered-list-surface"]{grid-column:1}
-  [data-ui-id="delivered-detail-surface"]{grid-column:2}
-  [data-ui-id="delivered-print-surface"]{grid-column:3}
+  [data-has-secondary="true"] [data-ui-id="delivered-detail-surface"]{grid-column:2}
+  [data-has-secondary="true"][data-has-tertiary="true"] [data-ui-id="delivered-print-surface"]{grid-column:3}
+  [data-has-secondary="false"][data-has-tertiary="true"] [data-ui-id="delivered-print-surface"]{grid-column:2}
 }
 ```
 
-When detail/print is absent, its column must collapse by changing the workspace template via `:has()` or root state class; do not leave an empty reserved column. Prefer root state selectors, e.g. two-column template only when detail exists and three-column only when print exists.
+Mobile displays only `data-active-surface` in the one track.
 
-- [ ] **Step 5: Update scroll owners**
-
-Use semantic selectors:
+- [ ] **Step 5: Update semantic scroll selectors**
 
 ```text
 [data-ui-id="delivered-order-list"]
@@ -995,31 +937,27 @@ Use semantic selectors:
 [data-ui-id="delivered-print-lines"]
 ```
 
-- [ ] **Step 6: Verify function flow preservation**
-
-Run unit/static tests and inspect `onClick` code to confirm:
+- [ ] **Step 6: Verify runtime flow and tests**
 
 ```text
-order open -> selected -> detail Surface
-detail close -> selected=null -> list Surface
-print -> printOrder -> print Surface
-print close -> printOrder=null -> list Surface
-edit -> context.editOrder + route sales
+order open -> selected -> detail
+detail back -> selected=null -> list
+print -> printOrder -> print
+print back -> printOrder=null -> list
+edit -> editOrder + route sales
 ```
 
-No business endpoint names change.
-
-- [ ] **Step 7: Run tests**
+Run:
 
 ```bash
 node --test tests/delivered-structure-contract.test.js tests/scroll-owner-contract.test.js
-npm test
 node --check src/screens/delivered.js
+npm test
 ```
 
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/screens/delivered.js src/styles/delivered.css src/styles/scroll-owner.css src/core/scroll-owner.js tests/delivered-structure-contract.test.js
@@ -1038,55 +976,79 @@ git commit -m "refactor: normalize delivered list and detail surfaces"
 - Create: `tests/pending-structure-contract.test.js`
 
 **Interfaces:**
-- Consumes: `SCREEN_STRUCTURE_CONTRACTS.pending`.
-- Produces: primary list Slot 1; source/order detail mobile Slot 1/wide Slot 2; print mobile Slot 1/wide Slot 3.
-- Preserve: pending/deliver/edit/delete/batch-delete/print business methods and confirm behavior for destructive actions.
+- Add: `pendingActiveSurface(state) -> 'list'|'source'|'detail'|'print'`.
+- List m1/w1; Source m1/w2; Detail m1/w2; Print m1/w3.
+- Keep destructive confirm/business methods unchanged.
 
-- [ ] **Step 1: Write failing Pending structure test**
+- [ ] **Step 1: Write RED tests with full conditional state**
 
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {pendingMarkup} from '../src/screens/pending.js';
+import {pendingMarkup,pendingActiveSurface} from '../src/screens/pending.js';
 import {auditMarkupStructure} from '../src/core/ui-structure.js';
 import {SCREEN_STRUCTURE_CONTRACTS} from '../src/contracts/ui-structure.js';
 
 const order={id:'P1',trangThai:'pending',tenKH:'KH',ngay:new Date().toISOString(),tongTien:125,items:[{tenSP:'SP',sl:1,gia:125,nhom:'N1'}]};
-const html=pendingMarkup({orders:[order],selectedOrder:order});
+const printData={title:'IN',date:'25/08/2026',rows:[{name:'SP',qty:1}]};
+const html=pendingMarkup({orders:[order],selectedSource:'N1',selectedOrder:order,printData});
 
-test('Pending markup matches approved Surface tree',()=>{
+test('Pending full-state markup contains declared Surfaces',()=>{
   const result=auditMarkupStructure(html,SCREEN_STRUCTURE_CONTRACTS.pending);
-  assert.equal(result.pass,true,result.errors.join('\n'));
+  assert.equal(result.pass,true,result.issues.map(x=>x.message).join('\n'));
 });
 
-test('Pending order detail has explicit back and no navigation backdrop',()=>{
-  assert.match(html,/data-ui-id="pending-detail-surface"/);
-  assert.match(html,/data-order-close/);
-  assert.doesNotMatch(html,/pending-backdrop/);
+test('active Surface priority is print > detail > source > list',()=>{
+  assert.equal(pendingActiveSurface({}),'list');
+  assert.equal(pendingActiveSurface({selectedSource:'N1'}),'source');
+  assert.equal(pendingActiveSurface({selectedSource:'N1',selectedOrder:order}),'detail');
+  assert.equal(pendingActiveSurface({selectedSource:'N1',selectedOrder:order,printData}),'print');
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test tests/pending-structure-contract.test.js
 ```
 
-Expected: FAIL.
+- [ ] **Step 3: Rebuild exact hierarchy**
 
-- [ ] **Step 3: Rebuild Pending semantic skeleton**
+```text
+pending-workspace
+├── pending-list-surface
+│   ├── pending-summary-region
+│   └── pending-order-list
+├── pending-source-surface
+│   ├── pending-source-meta
+│   ├── pending-source-lines
+│   └── pending-source-actions
+├── pending-detail-surface
+│   ├── pending-detail-meta
+│   ├── pending-detail-lines
+│   └── pending-detail-actions
+└── pending-print-surface
+    ├── pending-print-meta
+    ├── pending-print-lines
+    └── pending-print-actions
+```
 
-Use the exact contract IDs from Task 2. Root `data-active-surface` values are `list`, `source`, `detail`, `print` with precedence `print > detail > source > list`.
+Normal runtime keeps Source and Detail mutually exclusive. Full-state test only exists to audit all conditional nodes.
 
-Keep source summary and order list in the primary Surface. Source detail and Order detail are two alternative Slot 2 Surfaces; they must never both be active. Print uses Slot 3 on wide.
+- [ ] **Step 4: Implement placement flags**
 
-- [ ] **Step 4: Implement mobile replace / wide parallel CSS without empty columns**
+Root flags:
 
-Use the same contract as Delivered, scoped under `[data-screen-id="pending"]`. Slot 2 appears only for `source` or `detail`; Slot 3 appears only for `print`. Mobile shows exactly one active Surface in Slot 1.
+```js
+const hasSecondary=Boolean(state.selectedSource||state.selectedOrder);
+const hasTertiary=Boolean(state.printData);
+```
 
-- [ ] **Step 5: Update scroll owners**
+On wide, one active Slot-2 Surface occupies second visible track; print occupies third when Slot 2 also exists, otherwise second visible track while retaining `data-slot-wide="3"`. On mobile, only `pendingActiveSurface(state)` displays in the single track. No empty columns.
 
-Semantic scroll selectors:
+Use the same explicit four wide grid-template cases as Task 5, scoped to Pending.
+
+- [ ] **Step 5: Update scroll owner selectors**
 
 ```text
 [data-ui-id="pending-order-list"]
@@ -1095,29 +1057,25 @@ Semantic scroll selectors:
 [data-ui-id="pending-print-lines"]
 ```
 
-- [ ] **Step 6: Preserve destructive/action flow exactly**
-
-The following runtime behavior must remain:
+- [ ] **Step 6: Preserve exact function flow**
 
 ```text
 source open -> selectedSource
 source back -> selectedSource=null
 order open -> selectedOrder
 order back -> selectedOrder=null
-edit -> orderDetail -> editOrder -> sales route
+edit -> orderDetail -> editOrder -> sales
 deliver -> business.deliverOrder -> refresh orders,debt
-delete -> confirm -> business.deletePending -> refresh orders
+delete -> confirm -> business.deletePending
 delete all -> confirm -> business.batchOrders('delete_pending', ids)
 ```
 
-Do not move permission/business decisions into CSS/markup.
-
-- [ ] **Step 7: Run tests**
+- [ ] **Step 7: Verify tests**
 
 ```bash
 node --test tests/pending-structure-contract.test.js tests/scroll-owner-contract.test.js
-npm test
 node --check src/screens/pending.js
+npm test
 ```
 
 Expected: PASS.
@@ -1131,7 +1089,7 @@ git commit -m "refactor: normalize pending order surfaces"
 
 ---
 
-### Task 7: Restructure Debt into Customer, Ledger, and Order Surfaces with a 3-Level Back Path
+### Task 7: Restructure Debt into Customer, Ledger, and Order Surfaces
 
 **Files:**
 - Modify: `src/screens/debt.js`
@@ -1141,16 +1099,16 @@ git commit -m "refactor: normalize pending order surfaces"
 - Create: `tests/debt-structure-contract.test.js`
 
 **Interfaces:**
-- Consumes: `SCREEN_STRUCTURE_CONTRACTS.debt`.
-- Produces: Customer List Slot 1, Ledger Slot 2 on wide / Slot 1 mobile, linked Order Slot 3 on wide / Slot 1 mobile.
-- Preserve: `debtGroups`, `debtTotals`, `ledgerRows`, debt business mutations, share behavior.
+- Add: `debtActiveSurface(state) -> 'list'|'ledger'|'order'`.
+- Customer m1/w1; Ledger m1/w2; Order m1/w3.
+- Preserve all debt calculations/business mutations/share utility.
 
-- [ ] **Step 1: Write failing Debt structure/back-path test**
+- [ ] **Step 1: Write RED tests**
 
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {debtMarkup} from '../src/screens/debt.js';
+import {debtMarkup,debtActiveSurface} from '../src/screens/debt.js';
 import {auditMarkupStructure} from '../src/core/ui-structure.js';
 import {SCREEN_STRUCTURE_CONTRACTS} from '../src/contracts/ui-structure.js';
 
@@ -1158,29 +1116,25 @@ const detail={customer:{id:'c1',ten:'KH'},soDu:125,transactions:[]};
 const order={id:'D1',tenKH:'KH',tongTien:125,items:[{tenSP:'SP',sl:1,gia:125}]};
 const html=debtMarkup({summary:[{maKH:'c1',ten:'KH',soDu:125}],customers:[{id:'c1',ten:'KH'}],selectedCustomerId:'c1',detail,selectedOrder:order});
 
-test('Debt markup matches 3-Surface contract',()=>{
+test('Debt full-state markup contains all three Surfaces',()=>{
   const result=auditMarkupStructure(html,SCREEN_STRUCTURE_CONTRACTS.debt);
-  assert.equal(result.pass,true,result.errors.join('\n'));
+  assert.equal(result.pass,true,result.issues.map(x=>x.message).join('\n'));
 });
 
-test('Debt linked order is a tertiary Surface with explicit back',()=>{
-  assert.match(html,/data-ui-id="debt-order-surface"/);
-  assert.match(html,/data-order-close/);
-  assert.doesNotMatch(html,/debt-backdrop/);
+test('active Surface is order > ledger > list',()=>{
+  assert.equal(debtActiveSurface({}),'list');
+  assert.equal(debtActiveSurface({detail}),'ledger');
+  assert.equal(debtActiveSurface({detail,selectedOrder:order}),'order');
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test tests/debt-structure-contract.test.js
 ```
 
-Expected: FAIL.
-
-- [ ] **Step 3: Build the semantic hierarchy**
-
-Target flow:
+- [ ] **Step 3: Build the 3-level semantic flow**
 
 ```text
 Customer List Surface
@@ -1188,39 +1142,54 @@ Customer List Surface
 Ledger Surface
   -> open linked order
 Order Surface
-  -> back
+  -> back clears selectedOrder only
 Ledger Surface
-  -> back
+  -> back clears detail + selectedCustomerId
 Customer List Surface
 ```
 
-Root active surface derives:
+Do not clear `detail` when opening linked order; Order -> Ledger requires it.
 
-```js
-const activeSurface=state.selectedOrder?'order':state.detail?'ledger':'list';
-```
-
-Do not clear `detail` when opening linked order; it is needed for Order -> Ledger back. `data-order-close` clears only `selectedOrder`. `data-debt-close` clears `detail` and `selectedCustomerId` only when returning Ledger -> List.
-
-- [ ] **Step 4: Replace overlay wrappers with semantic Surfaces**
-
-Use:
+- [ ] **Step 4: Replace navigation overlay wrappers with Surfaces**
 
 ```text
-debt-list-surface      mobile=1 wide=1
-debt-ledger-surface    mobile=1 wide=2
-debt-order-surface     mobile=1 wide=3
+debt-workspace
+├── debt-list-surface
+│   ├── debt-summary-region
+│   ├── debt-quick-action-region
+│   └── debt-customer-list
+├── debt-ledger-surface
+│   ├── debt-ledger-meta
+│   ├── debt-ledger-list
+│   └── debt-ledger-actions
+└── debt-order-surface
+    ├── debt-order-meta
+    ├── debt-order-lines
+    └── debt-order-actions
 ```
 
-Keep the current visual receipt/header/transaction/order row content inside the new Surfaces. Do not change money calculations or ledger business semantics in this structural task.
+Keep current receipt/transaction/order row content. Do not change balance calculation/copy/business semantics as part of this structural task.
 
-- [ ] **Step 5: Implement responsive placement**
+- [ ] **Step 5: Implement exact wide state geometry**
 
-Mobile: exactly one active Surface displayed. Wide: customer list remains Slot 1; when `detail` exists show Ledger Slot 2; when `selectedOrder` exists show Order Slot 3. No empty Slot 2/3 geometry when corresponding state is absent.
+Root flags:
 
-- [ ] **Step 6: Update Debt scroll owners**
+```js
+const hasLedger=Boolean(state.detail);
+const hasOrder=Boolean(state.selectedOrder);
+```
 
-Use:
+Wide CSS states:
+
+```css
+[data-screen-id="debt"] .debt-workspace{grid-template-columns:minmax(0,1fr)}
+[data-screen-id="debt"][data-has-ledger="true"][data-has-order="false"] .debt-workspace{grid-template-columns:minmax(0,1fr) minmax(340px,.85fr)}
+[data-screen-id="debt"][data-has-ledger="true"][data-has-order="true"] .debt-workspace{grid-template-columns:minmax(0,1fr) minmax(340px,.85fr) minmax(320px,.75fr)}
+```
+
+Order without Ledger is invalid flow; structural test should never produce it in normal state. Mobile displays exactly the one active Surface.
+
+- [ ] **Step 6: Update scroll owners**
 
 ```text
 [data-ui-id="debt-customer-list"]
@@ -1228,14 +1197,12 @@ Use:
 [data-ui-id="debt-order-lines"]
 ```
 
-Keep overscroll containment and independent scrollTop restore.
-
-- [ ] **Step 7: Run Debt + scroll + full regression**
+- [ ] **Step 7: Verify Debt regression**
 
 ```bash
 node --test tests/debt-structure-contract.test.js tests/scroll-owner-contract.test.js
-npm test
 node --check src/screens/debt.js
+npm test
 ```
 
 Expected: PASS.
@@ -1249,26 +1216,24 @@ git commit -m "refactor: normalize debt customer ledger order surfaces"
 
 ---
 
-### Task 8: Add the Whole-Site Structural Audit CLI and CI Gate
+### Task 8: Add Whole-Site Audit CLI, Permanent CI, and Final Gate Report
 
 **Files:**
 - Create: `scripts/audit-ui-structure.mjs`
 - Modify: `package.json`
 - Create: `.github/workflows/ui-guardrail-check.yml`
-- Remove after replacement is confirmed: `.github/workflows/scroll-owner-check.yml`
+- Remove after new CI succeeds: `.github/workflows/scroll-owner-check.yml`
 
 **Interfaces:**
-- Consumes: `auditMarkupStructure`, root contracts, four Screen contracts, pure Screen markup exports.
-- Produces: CLI exit 0 only when static TREE/NAMING/OWNER/PLACEMENT/FLOW markers pass for Auth/App/4 Screens.
-- Does not claim browser/device PASS.
+- Static CLI proves declared Root/Screen tree, naming, owner, placement and flow metadata.
+- Existing unit tests prove protected data/business/scroll behavior.
+- Browser/device status remains separate.
 
-- [ ] **Step 1: Write the audit CLI**
-
-Create `scripts/audit-ui-structure.mjs`:
+- [ ] **Step 1: Create audit CLI using full-state samples for conditional Surfaces**
 
 ```js
 import {readFileSync} from 'node:fs';
-import {auditMarkupStructure,validateStructureContract} from '../src/core/ui-structure.js';
+import {auditMarkupStructure} from '../src/core/ui-structure.js';
 import {AUTH_STRUCTURE_CONTRACT,APP_STRUCTURE_CONTRACT,SCREEN_STRUCTURE_CONTRACTS} from '../src/contracts/ui-structure.js';
 import {salesMarkup} from '../src/screens/sales.js';
 import {deliveredMarkup} from '../src/screens/delivered.js';
@@ -1276,11 +1241,16 @@ import {pendingMarkup} from '../src/screens/pending.js';
 import {debtMarkup} from '../src/screens/debt.js';
 
 const indexHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const done={id:'D1',trangThai:'done',tenKH:'KH',ngay:'2026-08-25T12:00:00',tongTien:125,items:[{tenSP:'SP',sl:1,gia:125,nhom:'N1'}]};
+const pending={id:'P1',trangThai:'pending',tenKH:'KH',ngay:'2026-08-25T12:00:00',tongTien:125,items:[{tenSP:'SP',sl:1,gia:125,nhom:'N1'}]};
+const printData={title:'IN',date:'25/08/2026',rows:[{name:'SP',qty:1}]};
+const debtDetail={customer:{id:'c1',ten:'KH'},soDu:125,transactions:[]};
+
 const samples={
-  sales:salesMarkup({products:[{id:'p1',ten:'SP',gia:125,nhom:'N'}],customers:[]}),
-  delivered:deliveredMarkup({orders:[]}),
-  pending:pendingMarkup({orders:[]}),
-  debt:debtMarkup({summary:[],customers:[]})
+  sales:salesMarkup({products:[{id:'p1',ten:'SP',gia:125,nhom:'N1'}],customers:[],cartOpen:true}),
+  delivered:deliveredMarkup({orders:[done],selected:done,printOrder:done}),
+  pending:pendingMarkup({orders:[pending],selectedSource:'N1',selectedOrder:pending,printData}),
+  debt:debtMarkup({summary:[{maKH:'c1',ten:'KH',soDu:125}],customers:[{id:'c1',ten:'KH'}],selectedCustomerId:'c1',detail:debtDetail,selectedOrder:done})
 };
 
 const checks=[
@@ -1291,21 +1261,15 @@ const checks=[
 
 let failed=false;
 for(const [id,result] of checks){
-  const state=result.pass?'PASS':'FAIL';
-  console.log(`${id}: STRUCTURE STATIC ${state}`);
-  for(const error of result.errors){failed=true;console.error(`  - ${error}`);}
+  console.log(`${id}: ${result.pass?'STATIC STRUCTURE PASS':'STATIC STRUCTURE FAIL'}`);
+  for(const [gate,pass] of Object.entries(result.gates))console.log(`  ${gate.toUpperCase()}: ${pass?'PASS':'FAIL'}`);
+  for(const item of result.issues){failed=true;console.error(`  - [${item.gate}] ${item.message}`);}
 }
-for(const [id,contract] of Object.entries(SCREEN_STRUCTURE_CONTRACTS)){
-  const errors=validateStructureContract(contract);
-  if(errors.length){failed=true;console.error(`${id}: CONTRACT FAIL\n${errors.join('\n')}`);}
-}
-console.log('browser/device: NOT_RUN (static audit does not imply browser PASS)');
+console.log('BROWSER/DEVICE: NOT_RUN');
 process.exitCode=failed?1:0;
 ```
 
-- [ ] **Step 2: Add npm script**
-
-`package.json` becomes:
+- [ ] **Step 2: Add npm audit script**
 
 ```json
 {
@@ -1318,29 +1282,15 @@ process.exitCode=failed?1:0;
 }
 ```
 
-- [ ] **Step 3: Run audit locally**
+- [ ] **Step 3: Run static audit**
 
 ```bash
 npm run audit:ui
 ```
 
-Expected output includes:
+Expected: Auth, App, Sales, Delivered, Pending, Debt each print `STATIC STRUCTURE PASS`; TREE/NAMING/OWNER/PLACEMENT/FLOW gates PASS; final line remains `BROWSER/DEVICE: NOT_RUN`.
 
-```text
-auth: STRUCTURE STATIC PASS
-app: STRUCTURE STATIC PASS
-sales: STRUCTURE STATIC PASS
-delivered: STRUCTURE STATIC PASS
-pending: STRUCTURE STATIC PASS
-debt: STRUCTURE STATIC PASS
-browser/device: NOT_RUN (static audit does not imply browser PASS)
-```
-
-and exit code 0.
-
-- [ ] **Step 4: Create permanent CI workflow**
-
-`.github/workflows/ui-guardrail-check.yml`:
+- [ ] **Step 4: Add permanent CI workflow**
 
 ```yaml
 name: TAPHOA UI guardrail
@@ -1366,6 +1316,7 @@ jobs:
           node --check src/core/ui-structure.js
           node --check src/contracts/ui-structure.js
           node --check src/core/screen-registry.js
+          node --check src/core/router.js
           node --check src/core/scroll-owner.js
           node --check src/screens/sales.js
           node --check src/screens/delivered.js
@@ -1373,127 +1324,70 @@ jobs:
           node --check src/screens/debt.js
 ```
 
-- [ ] **Step 5: Push/observe one green run before removing the old workflow**
-
-Expected: `npm test`, `npm run audit:ui`, and all parse steps PASS on the exact HEAD commit.
-
-- [ ] **Step 6: Remove the superseded branch-specific scroll workflow**
-
-```bash
-git rm .github/workflows/scroll-owner-check.yml
-```
-
-Reason: `ui-guardrail-check.yml` runs `tests/scroll-owner-contract.test.js` through `npm test` and is not limited to the old feature branch.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add scripts/audit-ui-structure.mjs package.json .github/workflows/ui-guardrail-check.yml .github/workflows/scroll-owner-check.yml
-git commit -m "test: enforce TAPHOA UI structural guardrail"
-```
-
----
-
-### Task 9: Final Cross-Screen Regression and Honest Gate Report
-
-**Files:**
-- No runtime file changes unless a test exposes a defect.
-- Update tests only if a discovered defect needs a regression test before its fix.
-
-**Interfaces:**
-- Consumes: all tasks above.
-- Produces: exact evidence for static structure/runtime regression and a separate statement of browser/device status.
-
-- [ ] **Step 1: Run complete test suite from a clean checkout**
-
-```bash
-npm test
-```
-
-Expected: zero failures.
-
-- [ ] **Step 2: Run structural audit**
-
-```bash
-npm run audit:ui
-```
-
-Expected: Auth/App/4 Screen static structure PASS and explicit `browser/device: NOT_RUN` unless browser testing is actually performed.
-
-- [ ] **Step 3: Parse every modified JS module**
-
-```bash
-node --check src/app.js
-node --check src/core/ui-structure.js
-node --check src/contracts/ui-structure.js
-node --check src/core/screen-registry.js
-node --check src/core/router.js
-node --check src/core/scroll-owner.js
-node --check src/screens/sales.js
-node --check src/screens/delivered.js
-node --check src/screens/pending.js
-node --check src/screens/debt.js
-```
-
-Expected: all exit 0.
-
-- [ ] **Step 4: Re-run protected existing behavior contracts**
+- [ ] **Step 5: Verify protected behavior contracts**
 
 ```bash
 node --test tests/sales-price-contract.test.js tests/app-state.test.js tests/business.test.js tests/snapshot.test.js tests/scroll-owner-contract.test.js
 ```
 
-Expected: all PASS. This protects literal price, data-read state, business gateway, account snapshot isolation and scroll restoration.
+Expected: PASS; literal price, data-read state, business gateway, snapshot isolation and scroll restore remain protected.
 
-- [ ] **Step 5: Perform responsive browser matrix only if a real browser/device runner is available**
+- [ ] **Step 6: Push/observe one green `ui-guardrail-check.yml` run on exact HEAD**
 
-Check these exact widths in both forward and reverse resize order:
+Expected: workflow `completed/success` and head SHA equals the proposed merge SHA.
+
+- [ ] **Step 7: Remove old branch-only workflow and re-run CI**
+
+```bash
+git rm .github/workflows/scroll-owner-check.yml
+git add scripts/audit-ui-structure.mjs package.json .github/workflows/ui-guardrail-check.yml .github/workflows/scroll-owner-check.yml
+git commit -m "test: enforce TAPHOA UI structural guardrail"
+```
+
+Push and verify the new workflow remains green after removal.
+
+- [ ] **Step 8: Responsive/browser matrix — only if a real browser/device runner is available**
+
+Test both directions:
 
 ```text
 280 -> 320 -> 390 -> 480 -> 760 -> 761 -> 999 -> 1000 -> 1280 -> 1440
 1440 -> 1280 -> 1000 -> 999 -> 761 -> 760 -> 480 -> 390 -> 320 -> 280
 ```
 
-At each width verify:
+Verify:
 
 ```text
-Auth: no overflow; form remains operable.
-Sales: mobile one active Surface; wide product Slot 1 + cart Slot 2; only list regions scroll.
-Delivered: mobile replace list/detail/print; wide list/detail/print only when state exists; no empty reserved columns.
-Pending: mobile one active Surface; wide source/order Slot 2 and print Slot 3 only when present.
-Debt: mobile back order -> ledger -> list; wide list Slot 1, ledger Slot 2, order Slot 3; no nested whole-screen scroll.
-Navigation: remains App Root sibling of Screen Host, not inside Screen.
+Auth: no overflow, fields/actions usable.
+Sales: mobile one Surface; wide Primary Slot 1 + Cart Slot 2; only lists scroll.
+Delivered: mobile replace list/detail/print; wide active Slot 2/3 compacts with no empty tracks.
+Pending: mobile one Surface; wide Source/Detail Slot 2 and Print Slot 3 compact correctly.
+Debt: mobile Back order -> ledger -> list; wide List Slot 1 + Ledger Slot 2 + Order Slot 3 when state exists.
+Navigation stays sibling of Screen Host.
 ```
 
-If no browser runner is available, do not claim `RESPONSIVE PASS` or `SCREEN STRUCTURE PASS`; report `STATIC STRUCTURE PASS / BROWSER NOT VERIFIED`.
-
-- [ ] **Step 6: Verify exact HEAD CI**
-
-Confirm the permanent GitHub Actions run is `completed/success` for the exact commit SHA being proposed for merge.
-
-- [ ] **Step 7: Final commit only if Step 5 exposed a defect and a regression fix was necessary**
-
-For each defect: add failing test -> verify RED -> minimal fix -> verify GREEN -> full suite, then commit with a focused message. Do not create an empty “final” commit.
+If browser runner is unavailable, final report must be exactly in meaning: `STATIC STRUCTURE PASS / BROWSER NOT VERIFIED`; do not claim Responsive or full Screen Structure PASS.
 
 ---
 
 ## Self-Review Coverage Map
 
-| Spec requirement | Implementation task |
+| Spec requirement | Task |
 |---|---|
-| Single rule source / precedence | Task 1 |
-| Auth Root vs App Root | Tasks 1, 3 |
-| Slot 1/2/3 and no semantic-parent inference | Tasks 2, 4–7 |
-| 8-question Region contract + owners | Task 2 |
-| Parent–Child / no owner collision | Task 2 + per-screen markup |
-| Naming / source order | Task 1, Task 2 auditor, Tasks 3–7 |
-| Function Flow / Back path | Task 2 contracts, Tasks 4–7 |
-| Scroll owner by long list | Tasks 4–7 + existing scroll tests |
-| Login copy contradiction | Task 3 |
-| One Screen Registry | Task 2 |
-| Only Active Screen mount | existing `app.js` lifecycle preserved + Task 2 registry regression |
-| Mobile one track / PC parallel surfaces | Tasks 4–7 |
-| Static PASS != browser PASS | Tasks 1, 8, 9 |
-| No backend/data/auth contract change | Global constraints + regression in Task 9 |
+| Single rules source / precedence | 1 |
+| Auth Root vs App Root | 1, 3 |
+| Slot 1/2/3 / no empty reserved geometry | 2, 4–7 |
+| Semantic Tree separate from Placement Tree | 1, 2, 4–7 |
+| Region Name/Parent/Children/Purpose/owners | 2 |
+| Parent–Child source order | 2 + per-Screen tests |
+| Naming contract | 1, 2 |
+| Function flow + Back path | 2, 4–7 |
+| List Scroll Owner | 4–7 + existing scroll tests |
+| Login copy contradiction | 3 |
+| One Screen Registry | 2 |
+| Only Active Screen mount | existing lifecycle preserved + registry regression |
+| Mobile one track / PC parallel Surfaces | 4–7 |
+| Static PASS != browser PASS | 1, 8 |
+| No business/data/auth contract change | Global Constraints + Task 8 protected regressions |
 
-The plan intentionally does **not** add a new UI framework, DOM parser dependency, browser library, backend migration, new Screen, or production deployment step.
+The plan intentionally does **not** add a UI framework, browser dependency, backend migration, new Screen, new business flow or production deployment step.
