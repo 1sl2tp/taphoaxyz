@@ -26,6 +26,7 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
   const commandId=()=>String(idFactory());
   return {
     bootstrap:()=>gateway.rpc('app_bootstrap',{}),
+    meta:()=>gateway.rpc('app_meta',{}),
     domains:domains=>gateway.rpc('app_domains',{p_domains:[...new Set((domains||[]).map(String))]}),
     orderDetail:id=>gateway.rpc('order_detail',{p_order_id:String(id||'')}),
     debtLedger:(maKH,{beforeAt=null,beforeId=null,limit=50}={})=>gateway.rpc('debt_ledger_page',{
