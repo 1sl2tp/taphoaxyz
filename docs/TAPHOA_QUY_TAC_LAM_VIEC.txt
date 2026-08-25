@@ -1,5 +1,5 @@
 TAPHOA — QUY TẮC LÀM VIỆC DUY NHẤT
-Version: 2026-08-25 — STRUCTURAL REGION / FUNCTION FLOW GUARDRAIL
+Version: 2026-08-25 — STRUCTURAL REGION / FUNCTION FLOW / RECURSIVE GEOMETRY GUARDRAIL
 Mục tiêu: frontend rõ cây Cha–Con, rõ placement Mobile/PC, rõ owner, rõ luồng chức năng; giữ nguyên business/Auth/data contract đang đúng.
 
 ============================================================
@@ -194,3 +194,238 @@ TREE PASS
 15.7. Với input/action: test click/tap/focus/keyboard/double action và mutation owner.
 15.8. Chỉ hiển thị đúng UI đã duyệt; không render Region/Owner/Semantic/Debug/Preview/PASS ra giao diện người dùng.
 15.9. Không gọi “ổn hết” nếu còn phần chưa kiểm chứng.
+
+16. WORKSPACE / CHECKPOINT / GITHUB CONTRACT
+
+16.1. WORKSPACE là nơi làm việc chính trong một mốc: phân tích, sửa code, tự lưu, chạy test và tạo bản xem trước đều thực hiện ở WORKSPACE trước.
+16.2. Không dùng GitHub như ổ tạm cho từng thao tác nhỏ hoặc từng lần sửa một file/selector.
+16.3. Thứ tự chuẩn của một mốc:
+Yêu cầu đã duyệt → xác định Cha–Con/Owner/Flow → test/contract RED → sửa toàn bộ file liên quan trong WORKSPACE → GREEN → syntax/static/regression → bản xem trước cho người dùng → người dùng PASS → tạo một checkpoint GitHub → chạy CI đúng checkpoint.
+16.4. RED/GREEN nội bộ không bắt buộc tạo commit GitHub. Chỉ ghi checkpoint khi mốc đã hoàn chỉnh đủ để review/rollback độc lập.
+16.5. GitHub chỉ có ba vai trò: source chính đã duyệt, checkpoint/rollback, CI. GitHub không phải WORKSPACE và không lưu chuỗi suy nghĩ hay bản sửa dở.
+16.6. Nếu một mốc thay nhiều file, ưu tiên một batch/checkpoint commit sau PASS thay vì chuỗi commit lắt nhắt.
+16.7. Trước khi đẩy GitHub phải gửi bản xem trước cho người dùng nếu thay đổi ảnh hưởng UI/geometry/flow. Chưa được người dùng PASS thì giữ trong WORKSPACE.
+16.8. Sau khi người dùng PASS và đẩy checkpoint, CI phải chạy trên đúng SHA. CI FAIL → không merge main; quay lại WORKSPACE sửa và gửi preview lại nếu kết quả hiển thị/flow thay đổi.
+16.9. Sau mỗi checkpoint ghi: SHA, phạm vi file, test/CI, PASS/FAIL, rủi ro, rollback, bước tiếp theo.
+16.10. Chỉ đưa vào main khi toàn bộ gate của phạm vi đã PASS và người dùng duyệt gộp. Không tự deploy production.
+
+17. PHÂN CẤP ĐỆ QUY / GEOMETRY INSPECTION CONTRACT
+
+17.1. Cha–Mẹ–Con là quan hệ tương đối theo PHẠM VI đang kiểm, không phải nhãn cố định chỉ có một lần trên toàn trang.
+17.2. Khi một node đang là CON ở cấp ngoài được chọn để kiểm chi tiết, node đó trở thành CHA CỤC BỘ của phạm vi kiểm mới.
+17.3. Bên trong CHA cục bộ bắt buộc xác định tiếp MẸ → CON theo đúng DOM/semantic/function tree thực tế.
+17.4. Nếu CON mới vẫn là khối tổng hợp, lặp lại quy trình: CON hiện tại → CHA cục bộ kế tiếp → MẸ → CON.
+17.5. Chỉ dừng hạ cấp khi tới Leaf/Control thật hoặc primitive geometry không còn children có ý nghĩa độc lập.
+17.6. Mỗi cấp phải xác định riêng: Parent trực tiếp, sibling cùng cấp, geometry owner, gap/gutter owner, scroll/focus/interaction owner nếu có.
+17.7. Đo hình học chỉ so với CHA trực tiếp của cấp đang kiểm; không đo xuyên cấp từ Cháu/Leaf lên một CHA xa.
+17.8. Khi so sánh hai thành phần, trước tiên phải chứng minh chúng cùng cấp và cùng loại quan hệ trong cây; không so kích thước/gap của hai node khác cấp như thể là sibling.
+17.9. Với danh sách lặp, List là CHA của tập Row; mỗi Row là child lặp; bên trong Row tiếp tục chia các cụm và Leaf để kiểm baseline, tỷ lệ, gap và alignment.
+17.10. Preview/audit hình học phải cho phép zoom từng cấp mà không làm thay đổi semantic tree hoặc bố cục thật.
+
+18. WORKING ZONE / CHA–MẸ–CON ĐỆ QUY / SOURCE ORDER CONTRACT
+
+18.1. BẮT BUỘC ĐÁNH DẤU VÙNG LÀM VIỆC TRƯỚC KHI THIẾT KẾ HOẶC SỬA
+Trước khi thay đổi một thành phần giao diện, phải xác định đầy đủ đường dẫn cấu trúc từ ngoài vào trong:
+
+CHA cấp ngoài
+→ MẸ cấp ngoài
+→ CON cấp ngoài
+→ CON đang kiểm trở thành CHA CỤC BỘ
+→ MẸ cục bộ
+→ CON cục bộ
+→ tiếp tục đệ quy nếu CON cục bộ vẫn còn children
+→ dừng tại Leaf/Control thật.
+
+Không được sửa một Leaf chỉ bằng cách nhìn thấy nó trên màn hình mà chưa xác định nó thuộc MẸ nào và CHA cục bộ nào.
+
+18.2. QUY TẮC "CON CẤP NGOÀI → CHA CỤC BỘ"
+Một node có thể là CON ở cây cấp ngoài nhưng khi phạm vi sửa chuyển vào chính node đó thì node này trở thành CHA CỤC BỘ.
+
+Ví dụ:
+
+ĐƠN TẠM
+→ DANH SÁCH ĐƠN
+→ THẺ ĐƠN
+→ DÒNG SẢN PHẨM "Mì gói"
+
+Nếu yêu cầu sửa "Mì gói", không được bắt đầu từ text "Mì gói".
+
+Phải đi ngược cây:
+
+1) "Mì gói" nằm trong DÒNG SẢN PHẨM nào?
+2) Dòng đó nằm trong THẺ ĐƠN nào?
+3) THẺ ĐƠN là CHA CỤC BỘ của phạm vi hình học đang kiểm.
+4) Trước khi chỉnh "Mì gói", phải kiểm THẺ ĐƠN:
+   - width/height có đúng vùng cha cấp trên không;
+   - padding trái/phải/trên/dưới có cân không;
+   - lề mép có đúng không;
+   - gap giữa các MẸ bên trong thẻ có đúng không;
+   - alignment/baseline giữa các nhóm có đúng không;
+   - thẻ có đang bị một parent cao hơn ép sai geometry không.
+5) Chỉ khi THẺ ĐƠN đã đúng geometry mới đi vào MẸ chứa "Mì gói".
+6) Khi chỉnh trong MẸ đó, các CON bên trong phải cân đối với chính MẸ đó; không dùng margin/position của "Mì gói" để bù lỗi của MẸ hoặc THẺ ĐƠN.
+
+Mục tiêu: lỗi được giữ trong phạm vi nhỏ nhất, không kéo lệch toàn bố cục.
+
+18.3. MẸ LÀ OWNER CỦA QUAN HỆ GIỮA CÁC CON
+Trong một CHA cục bộ:
+- CHA cục bộ xác định các MẸ trực tiếp.
+- Mỗi MẸ sở hữu quan hệ hình học giữa các CON trực tiếp của mình.
+- CON chỉ sở hữu nội dung/padding nội bộ của chính nó nếu contract không quy định khác.
+- Nếu nhiều CON lệch cùng hướng, ưu tiên kiểm MẸ trước.
+- Nếu nhiều MẸ cùng lệch, ưu tiên kiểm CHA cục bộ trước.
+
+Không chữa lỗi cấp trên bằng margin/top/left/transform/width hack ở Leaf.
+
+18.4. ĐÁNH SỐ CẤP VÀ ID PHẢI ỔN ĐỊNH
+Các vùng quan trọng phải có ID semantic ổn định; khi cần audit hình học có thể gắn số cấp/đường dẫn để đọc nhanh.
+
+Ví dụ:
+1. ĐƠN TẠM
+  1.1 DANH SÁCH ĐƠN
+    1.1.1 THẺ ĐƠN
+      1.1.1.1 THÔNG TIN ĐƠN
+      1.1.1.2 DANH SÁCH DÒNG HÀNG
+      1.1.1.3 TỔNG + HÀNH ĐỘNG
+
+Số dùng để audit/ghi chú không thay semantic ID.
+Semantic ID mới là identity ổn định trong code.
+
+18.5. CODE COMMENT BẮT BUỘC Ở BIÊN VÙNG QUAN TRỌNG
+Khi dựng hoặc refactor cấu trúc, phải có comment ngắn ở biên vùng quan trọng để người sửa sau biết đang vào/ra vùng nào.
+
+Ví dụ HTML:
+
+<!-- UI 1.1.1 START | order-card | CHA CỤC BỘ -->
+  ...
+<!-- UI 1.1.1 END | order-card -->
+
+Bên trong:
+
+<!-- UI 1.1.1.2 START | order-lines | MẸ -->
+  ...
+<!-- UI 1.1.1.2 END | order-lines -->
+
+CSS/JS tương ứng dùng comment cùng semantic ID khi block đủ lớn để có nhiều owner/behavior:
+
+/* UI 1.1.1 | order-card | geometry owner */
+/* UI 1.1.1.2 | order-lines | scroll owner */
+
+Comment:
+- không render ra UI;
+- không thay thế semantic attribute/contract;
+- không ghi comment thừa cho từng span/Leaf nhỏ;
+- chỉ đánh dấu biên vùng có ý nghĩa structural/geometry/interaction.
+
+18.6. SOURCE ORDER / DOM ORDER PHẢI ĐÚNG THỨ TỰ 1 → 2 → 3
+Nếu cây semantic/giao diện được xác định là:
+
+1
+2
+3
+
+thì source/DOM phải viết theo đúng:
+
+1
+2
+3
+
+Không được viết:
+
+1
+3
+2
+
+rồi dùng:
+- CSS `order`;
+- grid-area;
+- absolute/fixed positioning;
+- transform;
+- JavaScript DOM move;
+- hoặc mẹo responsive
+
+để làm giao diện nhìn thành 1 → 2 → 3.
+
+Lý do: source order là một phần của cây semantic, luồng đọc, focus order, keyboard order, accessibility và khả năng audit hình học.
+
+18.7. RESPONSIVE KHÔNG ĐƯỢC DÙNG ĐỂ CHE SOURCE ORDER SAI
+Responsive được phép đổi:
+- tỷ lệ;
+- số cột;
+- placement Slot;
+- stand/scroll/replace/drill-down đã có contract.
+
+Responsive không được đổi một source order sai thành giao diện nhìn đúng.
+
+Nếu PC hiển thị 1–2–3 và Mobile cũng semantic 1–2–3:
+DOM vẫn phải 1–2–3.
+
+Nếu một breakpoint thật sự cần thứ tự tương tác khác, phải khai báo đó là một Function/Placement Contract riêng và chứng minh focus/back/accessibility không mâu thuẫn; không tự quyết bằng CSS.
+
+18.8. KIỂM HÌNH HỌC THEO TỪNG CẤP
+Khi sửa một thành phần:
+A. Xác định CHA trực tiếp/cục bộ.
+B. Kiểm khung CHA với parent của nó.
+C. Xác định các MẸ trực tiếp trong CHA.
+D. Kiểm tỷ lệ/gap/alignment giữa các MẸ.
+E. Chọn đúng MẸ chứa thành phần cần sửa.
+F. Kiểm MẸ với các sibling MẸ.
+G. Kiểm các CON trực tiếp trong MẸ.
+H. Chỉ sau đó mới chỉnh Leaf.
+I. Kiểm ngược từ Leaf → MẸ → CHA cục bộ → CHA cấp ngoài sau khi sửa.
+
+Không bỏ qua bước cấp trên chỉ vì lỗi nhìn thấy nằm ở Leaf.
+
+18.9. SO SÁNH THÀNH PHẦN CHỈ KHI CÙNG CẤP
+Muốn so hai thành phần về width/height/gap/padding/baseline phải xác định:
+- chúng có cùng CHA trực tiếp không;
+- chúng có cùng loại vai trò không;
+- chúng có cùng geometry owner không.
+
+Nếu khác cấp, không được dùng số đo của một node làm chuẩn trực tiếp cho node kia.
+
+Ví dụ:
+- Hai THẺ ĐƠN cùng list có thể so trực tiếp.
+- Hai DÒNG HÀNG trong cùng thẻ có thể so trực tiếp.
+- Text "Mì gói" không so trực tiếp với toàn THẺ ĐƠN.
+- Button trong footer không lấy padding của header làm chuẩn nếu hai vùng thuộc MẸ khác nhau.
+
+18.10. THUỘC TÍNH CHUNG / RIÊNG PHẢI GẮN ĐÚNG CẤP
+Sau khi cây đã rõ, thuộc tính được đặt tại cấp cao nhất mà nó thật sự dùng chung.
+
+Ví dụ:
+- tất cả THẺ ĐƠN cùng padding/gap → đặt ở component/contract THẺ ĐƠN;
+- chỉ một MẸ trong thẻ có grid riêng → đặt ở MẸ đó;
+- chỉ một Leaf có ngoại lệ → mới đặt ở Leaf.
+
+Không copy cùng một geometry rule vào nhiều CON nếu thực tế owner là MẸ/CHA.
+Nhờ vậy khi biết một MẸ thuộc tab/screen nào và ID nào, có thể quản lý shared/private style rõ ràng mà không ảnh hưởng vùng khác.
+
+18.11. WORKFLOW BẮT BUỘC KHI SỬA UI
+Mỗi yêu cầu sửa UI phải đi theo:
+
+YÊU CẦU
+→ XÁC ĐỊNH VÙNG CẦN SỬA
+→ TRUY NGƯỢC CHA–MẸ–CON
+→ CHỌN CHA CỤC BỘ
+→ KIỂM GEOMETRY CHA
+→ KIỂM MẸ/SIBLING
+→ KIỂM CON
+→ SỬA Ở OWNER ĐÚNG
+→ KIỂM THUẬN TỪ CHA XUỐNG
+→ KIỂM NGƯỢC TỪ LEAF LÊN
+→ PREVIEW KHOANH VÙNG
+→ PASS
+→ CHECKPOINT.
+
+Nếu chưa xác định được CHA cục bộ hoặc geometry owner → BLOCKED, không được tự vá.
+
+18.12. MỤC TIÊU
+Quy tắc này nhằm bảo đảm:
+- sửa "Mì gói" không làm lệch THẺ ĐƠN;
+- sửa THẺ ĐƠN không làm lệch LIST;
+- sửa một tab không lan sang tab khác;
+- code order trùng semantic order;
+- nhìn giao diện có thể lần ngược đúng cấu trúc code;
+- biết chính xác thuộc tính nào là chung, thuộc tính nào là riêng;
+- geometry có thể đo, so sánh và regression theo từng cấp.
