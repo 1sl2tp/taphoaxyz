@@ -33,7 +33,7 @@ test('four primary screens assign scroll to their data lists, not screen roots',
   const css=read('src/styles/scroll-owner.css');
   const cases=[
     ['sales','[data-ui-id="sales-product-list"]'],
-    ['delivered','.delivered-list'],
+    ['delivered','[data-ui-id="delivered-order-list"]'],
     ['pending','.pending-list'],
     ['debt','.debt-list']
   ];
@@ -51,12 +51,22 @@ test('Sales semantic lists independently own product and cart scrolling',()=>{
   mustContain(css,'[data-screen-id="sales"] [data-ui-id="sales-cart-list"]','min-height:0','overflow:auto');
 });
 
-test('detail panels keep chrome fixed and give long inner lists the scroll',()=>{
+test('Delivered semantic detail and print lists own scrolling while Surface chrome stays fixed',()=>{
   const css=read('src/styles/scroll-owner.css');
-  for(const panel of ['.delivered-detail-panel','.delivered-print-panel','.pending-source-panel','.pending-detail-panel','.pending-print-panel','.debt-detail-panel','.debt-order-panel']){
+  for(const surface of ['delivered-detail-surface','delivered-print-surface']){
+    mustContain(css,`[data-screen-id="delivered"] [data-ui-id="${surface}"]`,'min-height:0','overflow:hidden');
+  }
+  for(const list of ['delivered-detail-lines','delivered-print-lines']){
+    mustContain(css,`[data-screen-id="delivered"] [data-ui-id="${list}"]`,'min-height:0','overflow:auto');
+  }
+});
+
+test('remaining legacy detail panels keep chrome fixed until their semantic migrations',()=>{
+  const css=read('src/styles/scroll-owner.css');
+  for(const panel of ['.pending-source-panel','.pending-detail-panel','.pending-print-panel','.debt-detail-panel','.debt-order-panel']){
     mustContain(css,panel,'overflow:hidden','display:grid');
   }
-  for(const list of ['.delivered-detail-lines','.delivered-print-lines','.pending-source-detail-lines','.pending-detail-lines','.pending-print-lines','.debt-ledger','.debt-order-lines']){
+  for(const list of ['.pending-source-detail-lines','.pending-detail-lines','.pending-print-lines','.debt-ledger','.debt-order-lines']){
     mustContain(css,list,'min-height:0','overflow:auto');
   }
 });
