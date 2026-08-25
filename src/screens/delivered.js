@@ -103,6 +103,7 @@ export function deliveredMarkup(input={}){
 export async function mount(context){
   const root=context.root;const today=dateKey(new Date());let busy=false;let state={orders:(context.getData?.()||context.data||{}).orders||[],search:'',mode:'today',from:today,to:today,calendarOpen:false,calendarMonth:today,picking:'from',selected:null,printOrder:null};
   const render=()=>{state={...state,orders:(context.getData?.()||context.data||{}).orders||state.orders};root.innerHTML=deliveredMarkup(state);};
+  const unsubscribeData=context.subscribeData?.(({changed})=>{if(changed.some(x=>x==='bootstrap'||x==='orders'||x==='products'||x==='customers'))render();});
   const findOrder=id=>state.orders.find(o=>String(o.id)===String(id));
   const onClick=async event=>{
     if(event.target.closest('[data-delivered-clear]')){state={...state,search:''};render();return;}
@@ -129,5 +130,5 @@ export async function mount(context){
     }
   };
   const onInput=event=>{if(event.target.matches('[data-delivered-search]')){state={...state,search:event.target.value};render();const input=root.querySelector('[data-delivered-search]');input?.focus();input?.setSelectionRange(state.search.length,state.search.length);}};
-  root.addEventListener('click',onClick);root.addEventListener('input',onInput);render();return()=>{root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);};
+  root.addEventListener('click',onClick);root.addEventListener('input',onInput);render();return()=>{unsubscribeData?.();root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);};
 }
