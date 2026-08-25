@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#0e7ca6">
+  <title>taphoa.xyz</title>
+  <link rel="stylesheet" href="./src/styles/base.css">
+  <link rel="stylesheet" href="./src/styles/shell.css">
+  <link rel="stylesheet" href="./src/styles/sales.css">
+  <link rel="stylesheet" href="./src/styles/delivered.css">
+  <link rel="stylesheet" href="./src/styles/pending.css">
+  <link rel="stylesheet" href="./src/styles/debt.css">
+</head>
+<body>
+  <div id="app">
+    <main class="login-shell" data-auth-view="login">
+      <section class="login-brand" aria-label="taphoa.xyz">
+        <img src="./src/assets/logo.jpg" alt="taphoa.xyz">
+        <strong>taphoa.xyz</strong>
+        <span>Quản lý đơn hàng thông minh</span>
+      </section>
+      <form class="login-card" data-login-form>
+        <h1>Đăng nhập</h1>
+        <label class="login-field">
+          <span class="sr-only">Tên đăng nhập</span>
+          <input name="username" autocomplete="username" placeholder="Tên đăng nhập" required>
+        </label>
+        <label class="login-field login-password">
+          <span class="sr-only">Mật khẩu</span>
+          <input name="password" type="password" autocomplete="current-password" placeholder="Mật khẩu" required>
+          <button type="button" class="password-toggle" data-password-toggle aria-label="Hiện mật khẩu">◉</button>
+        </label>
+        <label class="remember-row"><input type="checkbox" name="remember"> <span>Lưu mật khẩu</span></label>
+        <button class="login-submit" type="submit">Đăng nhập ➜</button>
+        <p class="login-error" data-login-error role="alert" hidden></p>
+      </form>
+    </main>
+  </div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
