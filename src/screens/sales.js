@@ -31,6 +31,8 @@ export function buildOrderDraft({customerId,status='pending',note='',cart={},pri
   return {maKH:String(customerId||''),status:String(status||'pending'),ghiChu:String(note||''),editOrderId:String(editOrderId||''),items};
 }
 
+export function salesActiveSurface(state={}){return state.cartOpen?'cart':'products';}
+
 function customerOptions(customers=[]){
   return [`<option value="Khách lẻ"></option>`,...customers.map(c=>`<option value="${esc(c.ten)}"></option>`)].join('');
 }
@@ -59,9 +61,8 @@ function productRows(state){
   }).join('');
 }
 
-function cartBody(state){
+function cartLines(state){
   const selected=state.products.filter(p=>Number(state.cart[p.id]||0)>0);
-  const totals=cartTotals(state.products,state.cart,state.prices);
   if(!selected.length)return `<div class="sales-cart-empty">Chưa có sản phẩm nào</div>`;
   return `<div class="sales-cart-table-head"><span>TÊN</span><span>Đ.GIÁ</span><span>SL</span><span>T.TIỀN</span></div>
   <div class="sales-cart-lines">${selected.map(p=>{
@@ -72,21 +73,29 @@ function cartBody(state){
       <div class="sales-cart-qty"><button type="button" data-cart-dec="${esc(p.id)}">−</button><input data-qty-input="${esc(p.id)}" inputmode="numeric" value="${qty}"><button type="button" data-cart-add="${esc(p.id)}">+</button></div>
       <strong>${money(price*qty)}</strong>
     </div>`;
-  }).join('')}</div>
-  <div class="sales-cart-total"><span>Số lượng <b>${totals.totalQty} sp</b></span><span>Tổng tiền <b>${money(totals.total)}</b></span></div>`;
+  }).join('')}</div>`;
 }
 
-function cartActions(state){
-  if(state.editOrder)return `<div class="sales-cart-actions"><button type="button" data-sales-action="cancel-edit">Huỷ</button><button type="button" data-sales-action="update">Cập nhật đơn</button></div>`;
-  return `<div class="sales-cart-actions"><button type="button" data-sales-action="clear">Xoá</button><button type="button" data-sales-action="pending">Đặt</button><button type="button" data-sales-action="done">Bán</button></div>`;
-}
-
-function cartPanel(state,{mobile=false}={}){
+function cartTotalMarkup(state){
   const totals=cartTotals(state.products,state.cart,state.prices);
-  return `<section class="sales-cart-panel ${mobile?'sales-cart-mobile':''}">
-    <header class="sales-cart-head"><strong>🛒 Giỏ hàng</strong>${totals.totalQty?`<span>${totals.totalQty} sp</span>`:''}${mobile?'<button type="button" data-cart-close>✕</button>':''}</header>
-    <div class="sales-cart-body">${cartBody(state)}</div>
-    ${totals.totalQty?cartActions(state):''}
+  if(!totals.totalQty)return'';
+  return `<span>Số lượng <b>${totals.totalQty} sp</b></span><span>Tổng tiền <b>${money(totals.total)}</b></span>`;
+}
+
+function cartActionsMarkup(state){
+  const totals=cartTotals(state.products,state.cart,state.prices);
+  if(!totals.totalQty)return'';
+  if(state.editOrder)return `<button type="button" data-sales-action="cancel-edit">Huỷ</button><button type="button" data-sales-action="update">Cập nhật đơn</button>`;
+  return `<button type="button" data-sales-action="clear">Xoá</button><button type="button" data-sales-action="pending">Đặt</button><button type="button" data-sales-action="done">Bán</button>`;
+}
+
+function cartSurface(state){
+  const totals=cartTotals(state.products,state.cart,state.prices);
+  return `<section class="sales-cart-surface sales-cart-panel" data-ui-node="surface" data-ui-id="sales-cart-surface" data-parent-id="sales-workspace" data-slot-mobile="1" data-slot-wide="2">
+    <header class="sales-cart-head"><strong>🛒 Giỏ hàng</strong>${totals.totalQty?`<span>${totals.totalQty} sp</span>`:''}<button class="sales-cart-back" type="button" data-cart-close aria-label="Quay lại">✕</button></header>
+    <div class="sales-cart-body" data-ui-node="region" data-ui-id="sales-cart-list" data-parent-id="sales-cart-surface">${cartLines(state)}</div>
+    <div class="sales-cart-total" data-ui-node="region" data-ui-id="sales-cart-total" data-parent-id="sales-cart-surface">${cartTotalMarkup(state)}</div>
+    <div class="sales-cart-actions" data-ui-node="region" data-ui-id="sales-cart-actions" data-parent-id="sales-cart-surface">${cartActionsMarkup(state)}</div>
   </section>`;
 }
 
@@ -95,21 +104,24 @@ export function salesMarkup(input={}){
   const totals=cartTotals(state.products,state.cart,state.prices);
   const selectedCustomerName=state.selectedCustomer==='le'?'Khách lẻ':(state.customers.find(c=>c.id===state.selectedCustomer)?.ten||'');
   const now=new Date();const stamp=now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
-  return `<section class="sales-screen" data-screen-id="sales">
-    <header class="sales-pinned-head">
-      <div class="sales-customer-row">
-        <input class="sales-customer-input" list="salesCustomerList" value="${esc(selectedCustomerName)}" placeholder="Chọn khách..." aria-label="Chọn khách"><datalist id="salesCustomerList">${customerOptions(state.customers)}</datalist>
-        <span class="sales-time">${esc(stamp)}</span>
-        <button class="sales-cart-quick" type="button" data-cart-open>${totals.totalQty?`🛒 <span>${totals.totalQty}</span> ${money(totals.total)}`:'🛒 Trống'}</button>
-      </div>
-      <div class="sales-search-row"><input data-sales-search value="${esc(state.search)}" placeholder="Tìm sản phẩm..."><button type="button" data-search-clear ${state.search?'':'hidden'}>✕</button></div>
-      <div class="sales-groups">${groupButtons(state.products,state.group)}</div>
-    </header>
-    <div class="sales-workspace">
-      <section class="sales-products"><div class="sales-product-list">${productRows(state)}</div></section>
-      <aside class="sales-cart-desktop">${cartPanel(state)}</aside>
+  return `<section class="sales-screen" data-screen-id="sales" data-active-surface="${salesActiveSurface(state)}">
+    <div class="sales-workspace" data-ui-node="workspace" data-ui-id="sales-workspace" data-parent-id="sales-root">
+      <section class="sales-primary-surface" data-ui-node="surface" data-ui-id="sales-primary-surface" data-parent-id="sales-workspace" data-slot-mobile="1" data-slot-wide="1">
+        <header class="sales-context-region" data-ui-node="region" data-ui-id="sales-context-region" data-parent-id="sales-primary-surface">
+          <div class="sales-customer-row">
+            <input class="sales-customer-input" list="salesCustomerList" value="${esc(selectedCustomerName)}" placeholder="Chọn khách..." aria-label="Chọn khách"><datalist id="salesCustomerList">${customerOptions(state.customers)}</datalist>
+            <span class="sales-time">${esc(stamp)}</span>
+            <button class="sales-cart-quick" type="button" data-cart-open>${totals.totalQty?`🛒 <span>${totals.totalQty}</span> ${money(totals.total)}`:'🛒 Trống'}</button>
+          </div>
+        </header>
+        <section class="sales-product-controls" data-ui-node="region" data-ui-id="sales-product-controls" data-parent-id="sales-primary-surface">
+          <div class="sales-search-row"><input data-sales-search value="${esc(state.search)}" placeholder="Tìm sản phẩm..."><button type="button" data-search-clear ${state.search?'':'hidden'}>✕</button></div>
+          <div class="sales-groups">${groupButtons(state.products,state.group)}</div>
+        </section>
+        <section class="sales-products" data-ui-node="region" data-ui-id="sales-product-list" data-parent-id="sales-primary-surface"><div class="sales-product-list">${productRows(state)}</div></section>
+      </section>
+      ${cartSurface(state)}
     </div>
-    <div class="sales-cart-overlay" data-cart-overlay aria-hidden="${state.cartOpen?'false':'true'}"><button class="sales-cart-backdrop" type="button" data-cart-close aria-label="Đóng"></button>${cartPanel(state,{mobile:true})}</div>
   </section>`;
 }
 
