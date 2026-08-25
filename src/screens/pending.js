@@ -108,6 +108,7 @@ export function pendingMarkup({orders=[],selectedSource=null,selectedOrder=null,
 export async function mount(context){
   const root=context.root;let busy=false;let state={orders:(context.getData?.()||context.data||{}).orders||[],selectedSource:null,selectedOrder:null,printData:null};
   const render=()=>{state={...state,orders:(context.getData?.()||context.data||{}).orders||state.orders};root.innerHTML=pendingMarkup(state);};
+  const unsubscribeData=context.subscribeData?.(({changed})=>{if(changed.some(x=>x==='bootstrap'||x==='orders'||x==='products'||x==='customers'))render();});
   const findOrder=id=>state.orders.find(order=>String(order.id)===String(id));
   const refresh=async domains=>{await context.refresh?.(domains);state={...state,orders:(context.getData?.()||context.data||{}).orders||state.orders};};
   const onClick=async event=>{
@@ -140,5 +141,5 @@ export async function mount(context){
       catch(error){context.system?.toast(error?.message||'Không thực hiện được');}finally{busy=false;}
     }
   };
-  root.addEventListener('click',onClick);render();return()=>root.removeEventListener('click',onClick);
+  root.addEventListener('click',onClick);render();return()=>{unsubscribeData?.();root.removeEventListener('click',onClick);};
 }
