@@ -1,18 +1,196 @@
-TAPHOA — QUY TẮC LÀM VIỆC
+TAPHOA — QUY TẮC LÀM VIỆC DUY NHẤT
+Version: 2026-08-25 — STRUCTURAL REGION / FUNCTION FLOW GUARDRAIL
+Mục tiêu: frontend rõ cây Cha–Con, rõ placement Mobile/PC, rõ owner, rõ luồng chức năng; giữ nguyên business/Auth/data contract đang đúng.
 
-1. Viết mới 100% implementation; mẫu cũ chỉ là chuẩn UI/UX và business behavior tham khảo.
-2. Dựng từ Cha lớn nhất: Viewport → Login/Auth hoặc App Shell → Navigation/Screen Host/System Layer → Active Screen → Region → Cha → Con → Cháu → Control.
-3. Parent sở hữu quan hệ hình học giữa các Con: grid/flex/tỷ lệ/gap/gutter/alignment.
-4. Không chữa lỗi Cha bằng margin/top/z-index/fixed/width hack ở Con.
-5. Trước khi xét tỷ lệ của một nhóm phải biết Cha trực tiếp và sibling cùng cấp.
-6. CSS Screen phải scope theo data-screen-id; một quyết định geometry chỉ có một owner chính.
-7. Responsive quyết ở owner gần nhất; ưu tiên container query khi phụ thuộc container.
-8. Không để @media + container query + JS cùng tranh một geometry khi không có phân quyền rõ.
-9. Chỉ hiển thị đúng UI đã duyệt. Không render Region/Owner/Semantic/Debug/Preview/PASS ra giao diện.
-10. Chỉ có 4 Screen nghiệp vụ: Bán hàng, Đã giao, Đơn tạm, Công nợ.
-11. Login/Auth nằm ngoài App Shell và không tính là Screen nghiệp vụ.
-12. Giữ business contract backend hiện tại; không tự đổi nghiệp vụ tài chính/Auth/data.
-13. UI → Screen Controller → Business Service → Supabase RPC gateway.
-14. Chỗ nghiệp vụ không chắc chắn phải ghi Business Question, không tự suy đoán.
-15. Test geometry tối thiểu 280, 320, 390, 480, 760/761, 999/1000, 1280, 1440 khi phạm vi liên quan.
-16. PASS static/syntax không đồng nghĩa browser/device PASS; preview đúng không đồng nghĩa backend PASS.
+============================================================
+0. NGUỒN / THỨ TỰ HIỆU LỰC
+============================================================
+0.1. File này là nguồn quy tắc vận hành TAPHOA duy nhất.
+0.2. Ưu tiên khi có mâu thuẫn:
+1) Yêu cầu hiện tại, rõ ràng và mới nhất của người dùng.
+2) Business/Data/Auth/Security contract đã xác nhận và đang đúng.
+3) Quy tắc trong file này.
+4) Checkpoint/trạng thái triển khai hiện tại.
+5) Web/code cũ chỉ là bằng chứng tham khảo cho bố cục, thói quen thao tác, luồng và contract thực tế; không phải kiến trúc bắt buộc.
+0.3. Nếu hai điều cùng cấp mâu thuẫn: không tự chọn âm thầm; xác định phạm vi, owner và hậu quả. Chỉ hỏi người dùng nếu có thể đổi nghiệp vụ, tài chính, dữ liệu, bảo mật hoặc phá contract đã chốt.
+0.4. Viết mới 100% implementation khi kiến trúc cũ chồng owner, tên vô nghĩa, selector lan rộng, listener sống ngầm hoặc phụ thuộc DOM sai. Không giữ kiến trúc sai chỉ vì đang chạy.
+
+============================================================
+1. AUTH ROOT / APP ROOT
+============================================================
+1.1. Browser / Visual Viewport chỉ có hai application root state thay thế nhau:
+- Auth Root: khi chưa có session/identity hợp lệ hoặc cần đăng nhập lại.
+- App Root: khi session/identity hợp lệ và ứng dụng được mở.
+1.2. Auth Root và App Root là sibling state, không phải Cha–Con và không cùng active về interaction.
+1.3. Login/Auth nằm ngoài App Root và không phải Screen nghiệp vụ.
+1.4. Login/Auth không nằm trong Slot 1/2/3.
+1.5. Auth Workspace chia semantic tối thiểu: Brand Region, Credential Region, Preference Region, Auth Status Region, Auth Action Region.
+1.6. Checkbox hiện chỉ lưu username/local hint phải hiển thị "Nhớ tên đăng nhập". Không được đổi implementation sang lưu password để khớp nhãn cũ; không lưu mật khẩu ở localStorage.
+
+============================================================
+2. CÂY NỀN CHA–CON
+============================================================
+2.1. Cây ngoài → trong:
+Browser / Visual Viewport
+→ Auth Root HOẶC App Root
+→ App Root: Navigation + Screen Host + System Layer
+→ Screen Host: đúng 1 Active Screen
+→ Active Screen
+→ Screen Workspace
+→ Surface/Region
+→ Cha → Con → Cháu → Control/Leaf.
+2.2. Screen Host là runtime container, không phải Screen nghiệp vụ.
+2.3. System Layer là sibling của Screen Host dưới App Root; không nhét toast/modal hệ thống vào DOM nghiệp vụ chỉ vì nó nổi trên Screen.
+2.4. Trước khi sửa một vùng phải xác định parent trực tiếp và sibling cùng cấp.
+2.5. Node không xác định được parent trực tiếp → BLOCKED.
+
+============================================================
+3. SLOT 1 / SLOT 2 / SLOT 3
+============================================================
+3.1. Slot là placement identity vật lý, KHÔNG phải semantic parent.
+3.2. Slot 1 — Primary: vùng chính. Mobile chỉ dùng Slot 1.
+3.3. Slot 2 — Secondary: chỉ mở trên PC/Wide khi có secondary surface hợp lệ.
+3.4. Slot 3 — Tertiary: chỉ mở trên PC/Wide khi có context/detail surface hợp lệ.
+3.5. Slot 2/3 vắng mặt phải co geometry hoàn toàn; không tạo cột/wrapper rỗng chỉ để dự trữ.
+3.6. Việc bật Slot 2/3 là placement decision của Screen Workspace, không tạo business flow mới.
+3.7. Region không tự khai slot; Surface sở hữu placement và Region kế thừa placement từ Surface gần nhất.
+
+============================================================
+4. SEMANTIC TREE / PLACEMENT TREE
+============================================================
+4.1. Mỗi Screen phải có hai cây song song:
+- Semantic Tree / Function Tree: mô tả ý nghĩa, Cha–Con nghiệp vụ, state/flow.
+- Placement Tree: mô tả Surface nào nằm Slot 1/2/3 theo kích thước.
+4.2. Không bao giờ suy semantic parent từ vị trí nhìn thấy.
+4.3. Mobile và PC dùng chung Semantic Tree, cùng identity/state. Responsive chỉ đổi reflow/placement/replace/drill-down.
+4.4. Surface có thể replace trong Slot 1 trên Mobile nhưng semantic identity không đổi.
+4.5. PC không được tạo business flow thứ hai.
+
+============================================================
+5. REGION CONTRACT
+============================================================
+5.1. Một Region chỉ STRUCTURALLY VALID khi trả lời đủ 8 mục:
+1) Name/ID semantic rõ nghĩa.
+2) Parent trực tiếp.
+3) Children/sibling hợp lệ.
+4) Purpose: đúng một trách nhiệm chính.
+5) Geometry Owner.
+6) Interaction Owner.
+7) State/Data Owner.
+8) Scroll/Focus/Keyboard Owner.
+5.2. Thiếu một mục → STRUCTURE FAIL hoặc OWNER FAIL tương ứng.
+5.3. Control thật là leaf thật; button/input/select/textarea không giả bằng div nếu không có lý do contract rõ.
+
+============================================================
+6. OWNER CONTRACT
+============================================================
+6.1. Mỗi node quan trọng xác định tối thiểu: Geometry, Paint, Interaction, State/Data, Scroll, Focus/Keyboard owner.
+6.2. Một quyết định layout/hành vi chỉ có một owner chính.
+6.3. Hai owner cùng quyết geometry/action/scroll/focus mà không có contract → BLOCKED.
+6.4. Sửa lỗi ở owner cao nhất gây lỗi; không vá ở Con nếu lỗi thuộc Cha.
+6.5. UI không tự quyết quyền/nghiệp vụ; permission/business gate thuộc backend/business contract.
+
+============================================================
+7. PARENT–CHILD CONTRACT
+============================================================
+7.1. Parent sở hữu quan hệ hình học giữa các Con: grid/flex, tỷ lệ, gap, gutter, alignment, placement.
+7.2. Con sở hữu nội dung và padding nội bộ của chính nó, trừ shared component contract.
+7.3. Không chữa lỗi Cha bằng margin/top/z-index/fixed/width hack ở Con.
+7.4. DOM Screen này không được phụ thuộc DOM Screen khác.
+7.5. Khi thêm wrapper phải chứng minh wrapper có vai trò semantic/geometry/runtime thật; không thêm wrapper chỉ để chữa CSS tạm.
+
+============================================================
+8. NAMING / CODE ORDER CONTRACT
+============================================================
+8.1. Tên code phải nói được ý nghĩa nghiệp vụ hoặc kiến trúc. Tránh box1/box2/top2/content-x/wrapper-a/abc hoặc tên vị trí tạm khi node thực tế là semantic Region.
+8.2. Tên đạt ví dụ: sales-context-region, sales-product-controls, sales-product-list-region, delivered-order-list, debt-customer-list, auth-credential-region.
+8.3. wrapper/container/panel chỉ dùng khi đúng vai trò thật, không dùng để che việc chưa phân tích semantic.
+8.4. Thứ tự source/DOM mặc định phải theo thứ tự semantic và luồng đọc của người dùng.
+8.5. Nếu PC cần hiển thị khác source order, dùng placement/layout contract; không đảo semantic DOM vô cớ.
+8.6. Nếu bố cục cũ đúng nhưng code chưa chia vùng/tên vô nghĩa: giữ bố cục làm reference → dựng Semantic Tree → xác định owner → đổi tên → sắp source → nối behavior/data qua contract → regression test.
+
+============================================================
+9. FUNCTION FLOW CONTRACT
+============================================================
+9.1. Mỗi action quan trọng phải khai báo:
+SOURCE → ACTION → MUTATION/STATE OWNER → TARGET STATE → TARGET REGION/SURFACE → BACK/RETURN PATH.
+Nếu phụ thuộc quyền, thêm Permission Owner / Permission Gate.
+9.2. Một user action chỉ có một mutation owner.
+9.3. Không để row click + child click + dblclick cùng sửa một state.
+9.4. Không dùng modal để thay cho tầng điều hướng semantic nếu bản chất là drill-down.
+9.5. Back phải có target rõ và khôi phục context phù hợp: selection/filter/draft/scroll nếu contract yêu cầu.
+9.6. Sync/re-render không được làm mất Screen, filter, selection, draft hoặc scroll đang làm việc nếu state đó được contract giữ.
+
+============================================================
+10. SCROLL / FOCUS / KEYBOARD CONTRACT
+============================================================
+10.1. Mỗi vùng cuộn phải có scroll owner rõ.
+10.2. Vùng nào là danh sách tăng theo dữ liệu thì danh sách đó ưu tiên làm scroll owner.
+10.3. Viewport/App Root/Active Screen không cuộn thay danh sách dài nếu list là scroll owner.
+10.4. Không để body + Screen + Region cùng cuộn nếu không có contract rõ.
+10.5. Header, Context, Controls, Summary, Total, Actions đứng ngoài list scroll khi UX yêu cầu giữ cố định.
+10.6. Không tạo nested scroll nếu không có lý do chức năng cụ thể.
+10.7. Scroll state chỉ lưu/restore cho đúng owner; sync/re-render không tự nhảy lên đầu.
+10.8. Focus/keyboard chỉ thuộc Active Screen hoặc Active System Layer modal; Enter/Escape global không kích action Screen nếu không có owner global rõ.
+
+============================================================
+11. RESPONSIVE / GEOMETRY CONTRACT
+============================================================
+11.1. Hỗ trợ liên tục 280 → 1440 và resize ngược 1440 → 280.
+11.2. Mốc geometry tối thiểu khi phạm vi liên quan: 280, 320, 390, 480, 760/761, 999/1000, 1280, 1440.
+11.3. Responsive quyết ở owner gần nhất; ưu tiên container query khi geometry phụ thuộc container.
+11.4. Không để @media + container query + JS cùng tranh một geometry nếu không phân quyền rõ.
+11.5. Mobile chỉ Slot 1; PC/Wide có thể mở Slot 2/3 nhưng semantic identity/state không đổi.
+11.6. Vùng dài phải xác định trước: cái gì đứng yên, cái gì cuộn, cái gì replace, cái gì drill-down.
+
+============================================================
+12. RUNTIME / ACTIVE SCREEN CONTRACT
+============================================================
+12.1. Chỉ Active Screen được mount và sở hữu DOM/events/focus/scroll/keyboard interaction của Screen đó.
+12.2. Chuyển Screen chuẩn: serialize state cần giữ → abort/cleanup listener → unmount → clear DOM → mount Screen mới → restore state phù hợp.
+12.3. Screen listener bind vào root của Screen/lifecycle; không để listener Screen inactive sống ở document/window.
+12.4. App Root global listener chỉ cho navigation, system layer, visual viewport và trách nhiệm global thật.
+12.5. Shared Core/Store không giữ DOM ref của Screen đã unmount.
+12.6. Top-level Screen đăng ký qua một Screen Registry duy nhất. TAPHOA hiện có đúng 4 Screen: sales, delivered, pending, debt.
+
+============================================================
+13. BUSINESS / AUTH / DATA SAFETY
+============================================================
+13.1. Giữ business contract backend hiện tại; không tự đổi nghiệp vụ tài chính/Auth/data.
+13.2. Luồng chuẩn: UI → Screen Controller → Business Service → Supabase RPC gateway.
+13.3. Chỗ nghiệp vụ không chắc chắn phải ghi Business Question; không tự suy đoán.
+13.4. Không deploy production, đổi schema/RPC/RLS, xóa dữ liệu, thay Auth/Security hoặc hành động phá hủy nếu chưa có lệnh rõ.
+13.5. Không hiển thị secret/token/key trong log/checkpoint/chat.
+13.6. Nhãn UI phải đúng hành vi thật. UI nói A nhưng runtime làm B → FUNCTION CONTRACT FAIL.
+
+============================================================
+14. STRUCTURE GATE
+============================================================
+14.1. Một Screen chỉ gọi SCREEN STRUCTURE PASS khi lần lượt đạt:
+TREE PASS
+→ NAMING PASS
+→ OWNER PASS
+→ PLACEMENT PASS
+→ FLOW PASS
+→ SCROLL/FOCUS PASS
+→ RESPONSIVE PASS
+→ RUNTIME PASS
+→ BUSINESS CONTRACT PASS.
+14.2. Bố cục nhìn đúng nhưng HTML/Cha–Con sai → FAIL.
+14.3. HTML đúng nhưng Back/flow sai → FAIL.
+14.4. Mobile đúng nhưng PC đặt sai Slot hoặc để Slot rỗng chiếm geometry → FAIL.
+14.5. Nhãn chức năng không đúng runtime → FUNCTION CONTRACT FAIL.
+14.6. Không xác định được source of truth của dữ liệu/nghiệp vụ hoặc owner → BLOCKED.
+
+============================================================
+15. TEST / PASS LANGUAGE
+============================================================
+15.1. Tạo test/contract phù hợp trước khi sửa hành vi/kiến trúc quan trọng.
+15.2. Static/parse/syntax PASS ≠ browser/device PASS.
+15.3. Contract test PASS ≠ backend/business PASS.
+15.4. Preview nhìn đúng ≠ data/realtime PASS.
+15.5. Với kiến trúc/runtime: test mount/unmount, listener cleanup, route, owner boundary và regression liên quan.
+15.6. Với geometry: test thuận + resize ngược + overflow/containment/scroll.
+15.7. Với input/action: test click/tap/focus/keyboard/double action và mutation owner.
+15.8. Chỉ hiển thị đúng UI đã duyệt; không render Region/Owner/Semantic/Debug/Preview/PASS ra giao diện người dùng.
+15.9. Không gọi “ổn hết” nếu còn phần chưa kiểm chứng.
