@@ -1,0 +1,8 @@
+TAPHOA — HƯỚNG DẪN MỞ
+
+1. Cách chuẩn: chạy project qua HTTP server và mở index.html.
+2. Bản source tách module nằm trong src/ để bảo trì.
+3. Không dùng riêng index.html nếu đã tách nó khỏi thư mục src/.
+4. Auth và nghiệp vụ sử dụng Supabase backend hiện tại theo contract của dự án.
+
+Repo: 1sl2tp/taphoaxyz
