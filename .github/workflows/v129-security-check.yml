@@ -1,0 +1,23 @@
+name: V1.29 security check
+on:
+  push:
+    branches: [main, security/v1.29]
+  pull_request:
+jobs:
+  build-security-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run build
+      - name: Verify V1.29 runtime contract
+        run: |
+          test "$(wc -c < dist/index.html)" = "186984"
+          echo "55d1d4696a93a5fa1eb8ff926c8b658258769a08b8699b62bc0b96c251e43b0d  dist/index.html" | sha256sum -c -
+          ! grep -q 'localStorage.getItem("taphoa_session")' dist/index.html
+          ! grep -q 'localStorage.setItem("taphoa_session"' dist/index.html
+          grep -q 'Ghi nhớ tên đăng nhập' dist/index.html
+          grep -q 'remember:false' dist/index.html
+          grep -q 'taphoa_ui_cache_v29_' dist/index.html
