@@ -28,14 +28,26 @@ Migration `harden_sessions_password_changes`:
 - any session expiry longer than 12 hours is clamped to 12 hours at DB level;
 - changing `accounts.password_hash` revokes every active session for that account.
 
+Migration `pin_taphoa_function_search_path`:
+- every `public.taphoa_*` function is pinned to `search_path=public`.
+
 ## Runtime artifact
 - V1.29 bytes: `186984`
 - V1.29 SHA-256: `55d1d4696a93a5fa1eb8ff926c8b658258769a08b8699b62bc0b96c251e43b0d`
 
-## Business/data verification before release
+## Production verification
+- Vercel production status: SUCCESS.
+- old persistent sessions revoked: remaining sessions = 0 immediately after release.
+- anon/authenticated executable `taphoa_*` RPC count = 0.
+- targeted internal tables: RLS ON and direct anon/authenticated grants = 0.
+- Security Advisor no longer reports RLS-disabled or public/authenticated SECURITY DEFINER execution warnings; remaining RLS-with-no-policy notices are INFO and are intentional deny-by-default because application data access goes through the service-role Edge Function.
+
+## Business/data verification after hardening
 - customer_summary reconciliation mismatch: 0
 - customer_product_summary reconciliation mismatch: 0
 - daily_summary reconciliation mismatch: 0
+- invalid debt rows: 0
+- invalid order-item qty/money rows: 0
 - no business API action was added/removed by V1.29 frontend patch.
 
 ## Known residual risks / not changed in V1.29
