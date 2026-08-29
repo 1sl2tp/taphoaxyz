@@ -2,7 +2,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-v128.mjs && node scripts/harden-v129.mjs",
+    "build": "node scripts/build-v128.mjs && node scripts/harden-v129.mjs && node scripts/harden-v130.mjs && node scripts/test-v130.mjs",
     "test": "node --test"
   }
 }
