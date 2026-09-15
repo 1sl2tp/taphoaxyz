@@ -1,0 +1,60 @@
+/* Real-device cleanup after the shared UI-system pass. Visual only: no scroll, data or permission ownership. */
+
+/* Sales: explicit action semantics beat legacy positional coloring. */
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="cancel-edit"]{border-color:var(--ui-line)!important;background:var(--ui-panel)!important;color:var(--ui-text-secondary)!important}
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="update"]{border-color:var(--ui-primary)!important;background:var(--ui-primary)!important;color:#fff!important}
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="clear"]{border-color:var(--ui-danger)!important;background:var(--ui-panel)!important;color:var(--ui-danger)!important}
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="pending"]{border-color:var(--ui-warning)!important;background:var(--ui-panel)!important;color:var(--ui-warning)!important}
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="done"]{border-color:var(--ui-success)!important;background:var(--ui-success)!important;color:#fff!important}
+[data-screen-id="sales"] .sales-cart-head>span{font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-screen-id="sales"] .sales-cart-quick>span{font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-screen-id="sales"] .sales-cart-name [data-note-id]::placeholder{color:var(--ui-line-strong);font-style:normal}
+[data-screen-id="sales"] .sales-cart-name [data-note-id]:focus::placeholder{color:var(--ui-muted)}
+
+/* Pending list: customer is the headline; technical id moves to secondary context. */
+[data-screen-id="pending"] .pending-order-card{padding:11px 14px!important}
+[data-screen-id="pending"] .pending-order-top{align-items:center!important;margin-bottom:2px!important}
+[data-screen-id="pending"] .pending-order-primary{min-width:0;display:block}
+[data-screen-id="pending"] .pending-order-customer{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ui-text)!important;font-size:14px!important;font-weight:750!important}
+[data-screen-id="pending"] .pending-order-side{flex:0 0 auto;display:flex;align-items:center;gap:8px}
+[data-screen-id="pending"] .pending-order-side>strong{font-size:16px;color:var(--ui-primary)!important;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-screen-id="pending"] .pending-order-mid{align-items:center!important;min-height:18px}
+[data-screen-id="pending"] .pending-order-context{min-width:0;display:block}
+[data-screen-id="pending"] .pending-order-context-line{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ui-muted)!important}
+[data-screen-id="pending"] .pending-order-mid>strong{margin-left:auto;color:var(--ui-success)!important;font-size:12px!important;white-space:nowrap}
+[data-screen-id="pending"] .pending-order-preview{margin-top:6px!important}
+
+/* Debt: same neutral page/panel family as the other business screens. */
+[data-screen-id="debt"] .debt-hero{background:var(--ui-page)!important;color:var(--ui-text)!important;padding:12px!important;border-bottom:1px solid var(--ui-line)}
+[data-screen-id="debt"] .debt-total-row{gap:8px;margin-bottom:8px}
+[data-screen-id="debt"] .debt-total-row>div{background:var(--ui-panel)!important;color:var(--ui-text)!important;border:1px solid var(--ui-line)!important;border-radius:var(--ui-radius)!important;box-shadow:0 1px 3px rgba(15,23,42,.04);padding:10px 12px!important}
+[data-screen-id="debt"] .debt-total-row small,[data-screen-id="debt"] .debt-total-row span{color:var(--ui-muted)!important}
+[data-screen-id="debt"] .debt-total-row strong{color:var(--ui-text)!important;font-size:19px!important;letter-spacing:0!important}
+[data-screen-id="debt"] .debt-quick{background:var(--ui-panel)!important;color:var(--ui-text)!important;border:1px solid var(--ui-line)!important;border-radius:var(--ui-radius)!important;padding:10px 12px!important;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+[data-screen-id="debt"] .debt-quick>b{color:var(--ui-muted)!important}
+[data-screen-id="debt"] .debt-customer-picker>input,[data-screen-id="debt"] .debt-quick-actions input{border:1px solid var(--ui-line)!important;background:var(--ui-panel)!important;color:var(--ui-text)!important}
+[data-screen-id="debt"] .debt-quick-actions button:nth-of-type(1){background:var(--ui-success)!important}
+[data-screen-id="debt"] .debt-quick-actions button:nth-of-type(2){background:var(--ui-danger)!important}
+[data-screen-id="debt"] .debt-list{padding-top:10px!important}
+
+/* Debt detail: compact receipt chrome; only transaction actions carry semantic color. */
+[data-screen-id="debt"] .debt-detail-panel>header{min-height:48px;padding:8px 12px!important}
+[data-screen-id="debt"] .debt-detail-panel>header button:last-child{background:var(--ui-surface-soft)!important;color:var(--ui-primary)!important;border:1px solid var(--ui-line)!important}
+[data-screen-id="debt"] .debt-receipt{padding:12px!important}
+[data-screen-id="debt"] .debt-shop{display:grid;grid-template-columns:40px minmax(0,1fr);align-items:center;gap:10px;text-align:left!important;margin:0 0 10px!important;padding:0 0 10px;border-bottom:1px solid var(--ui-line)}
+[data-screen-id="debt"] .debt-shop-avatar{width:40px!important;height:40px!important;margin:0!important;border-radius:12px!important;background:var(--ui-primary)!important;color:#fff!important;font-size:13px!important;font-weight:800!important}
+[data-screen-id="debt"] .debt-shop strong{font-size:14px!important;color:var(--ui-text)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-screen-id="debt"] .debt-shop:after{display:none!important;content:none!important}
+[data-screen-id="debt"] .debt-receipt-summary{align-items:center!important;margin-bottom:10px!important}
+[data-screen-id="debt"] .debt-receipt-summary>span:first-child b{font-size:14px}
+[data-screen-id="debt"] .debt-receipt-summary>span:last-child strong{font-size:19px!important;color:var(--ui-text)!important;font-variant-numeric:tabular-nums}
+[data-screen-id="debt"] .debt-ledger-head{border-color:var(--ui-line-strong)!important}
+[data-screen-id="debt"] .debt-detail-panel>footer{padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important}
+[data-screen-id="debt"] .debt-detail-panel>footer button:first-child{background:var(--ui-success)!important}
+[data-screen-id="debt"] .debt-detail-panel>footer button:last-child{background:var(--ui-danger)!important}
+
+@container screen-host (max-width:480px){
+  [data-screen-id="pending"] .pending-order-side{gap:6px}
+  [data-screen-id="debt"] .debt-hero{padding:10px 12px!important}
+  [data-screen-id="debt"] .debt-detail-panel{border-radius:18px 18px 0 0!important}
+}
