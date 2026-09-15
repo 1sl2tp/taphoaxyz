@@ -177,7 +177,14 @@ export async function mount(context){
     else if(action==='cancel-edit'){state={...state,cart:{},prices:{},notes:{},lineNos:{},editOrder:null,cartOpen:false};render();}
   };
   const onInput=event=>{
-    if(event.target.matches('[data-sales-search]')){state={...state,search:event.target.value};refreshSalesSearchResults();return;}
+    if(event.target.matches('[data-sales-search]')){
+      const searchInput=event.target;
+      state={...state,search:searchInput.value};
+      refreshSalesSearchResults();
+      searchInput.focus({preventScroll:true});
+      searchInput.setSelectionRange(state.search.length,state.search.length);
+      return;
+    }
     if(!canManage())return;
     if(event.target.matches('.sales-customer-input')){state={...state,selectedCustomer:customerIdByName(event.target.value)};return;}
     const priceId=event.target.dataset.priceId;if(priceId){state={...state,prices:{...state.prices,[priceId]:Number(String(event.target.value).replace(/\D/g,''))||0}};return;}
