@@ -24,6 +24,8 @@ const ROLE_SELECTORS=Object.freeze({
   '[data-screen-id="pending"] .pending-summary h2':'panel-title',
   '[data-screen-id="pending"] .pending-source-head':'label',
   '[data-screen-id="pending"] .pending-source-total':'summary-total',
+  '[data-screen-id="pending"] .pending-order-customer':'name',
+  '[data-screen-id="pending"] .pending-order-context-line':'meta',
   '[data-screen-id="pending"] .pending-order-mid small':'meta',
   '[data-screen-id="pending"] .pending-order-top>strong':'money-key',
   '[data-screen-id="debt"] .debt-group-head':'label',
@@ -57,6 +59,54 @@ function classifyAction(button){
   else if(action==='edit')button?.style?.setProperty('color','var(--ui-primary)');
 }
 
+function decorateSalesCleanup(root){
+  for(const note of root.querySelectorAll?.('[data-screen-id="sales"] [data-note-id]')||[]){
+    if(note.getAttribute('placeholder')==='...')note.setAttribute('placeholder','Ghi chú');
+  }
+  const quick=root.querySelector?.('[data-screen-id="sales"] .sales-cart-quick');
+  if(quick&&!quick.dataset.uiCompact){
+    const qtyNode=quick.querySelector('span');
+    if(qtyNode){
+      const qty=String(qtyNode.textContent||'').trim();
+      const raw=String(quick.textContent||'').replace('🛒','').trim();
+      const total=raw.replace(qty,'').trim();
+      qtyNode.textContent=`${qty} SP · ${total}`;
+      quick.replaceChildren(document.createTextNode('🛒 '),qtyNode);
+      quick.dataset.uiCompact='1';
+    }
+  }
+  for(const panel of root.querySelectorAll?.('[data-screen-id="sales"] .sales-cart-panel')||[]){
+    if(panel.dataset.uiCompact)return;
+    const chip=panel.querySelector('.sales-cart-head>span');
+    const total=panel.querySelector('.sales-cart-total span:last-child b');
+    if(chip&&total){
+      const qty=String(chip.textContent||'').trim().replace(/\s*sp$/i,'');
+      chip.textContent=`${qty} SP · ${String(total.textContent||'').trim()}`;
+      panel.dataset.uiCompact='1';
+    }
+  }
+}
+
+function decoratePendingCards(root){
+  if(typeof document==='undefined')return;
+  for(const card of root.querySelectorAll?.('[data-screen-id="pending"] .pending-order-card')||[]){
+    if(card.dataset.uiCard==='pending')continue;
+    const top=card.querySelector('.pending-order-top'),mid=card.querySelector('.pending-order-mid');
+    const customer=mid?.querySelector(':scope > span > b'),meta=mid?.querySelector(':scope > span > small'),profit=mid?.querySelector(':scope > strong');
+    const status=top?.querySelector('em'),total=top?.querySelector(':scope > strong');
+    if(!top||!mid||!customer||!meta||!status||!total)continue;
+    const primary=document.createElement('span');primary.className='pending-order-primary';
+    addClasses(customer,'pending-order-customer');primary.append(customer);
+    const side=document.createElement('span');side.className='pending-order-side';side.append(status,total);
+    top.replaceChildren(primary,side);
+    const context=document.createElement('span');context.className='pending-order-context';
+    const line=document.createElement('small');line.className='pending-order-context-line';
+    line.textContent=[compactOrderId(card.dataset.orderOpen),String(meta.textContent||'').trim()].filter(Boolean).join(' · ');
+    context.append(line);mid.replaceChildren(context);if(profit)mid.append(profit);
+    card.dataset.uiCard='pending';
+  }
+}
+
 export function decorateDetailUi(root,screenId){
   const config=DETAIL_UI_CONFIG[screenId];if(!root||!config)return;
   const panel=root.querySelector?.(config.panel);if(!panel)return;
@@ -84,6 +134,8 @@ export function decorateDetailUi(root,screenId){
 
 export function decorateUi(root){
   if(!root)return;
+  decorateSalesCleanup(root);
+  decoratePendingCards(root);
   for(const [selector,role] of Object.entries(ROLE_SELECTORS))for(const node of root.querySelectorAll?.(selector)||[])setRole(node,role);
   const screen=root.querySelector?.('[data-screen-id]')||root.closest?.('[data-screen-id]');
   const screenId=screen?.dataset?.screenId;
