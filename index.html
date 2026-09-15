@@ -33,8 +33,27 @@
     </div>
   </section>
   <section class="app-shell" id="appShell" hidden>
-    <nav class="app-nav" id="appNav" aria-label="Điều hướng"></nav>
+    <header class="app-topbar" id="appTopbar">
+      <nav class="app-nav" id="appNav" aria-label="Điều hướng"></nav>
+      <button class="account-button" id="accountButton" type="button" aria-label="Tài khoản" aria-haspopup="dialog" aria-controls="accountSheet"><span id="accountButtonInitials" aria-hidden="true">TK</span></button>
+    </header>
     <main class="screen-host" id="screenHost"></main>
+    <div class="account-sheet" id="accountSheet" hidden>
+      <button class="account-sheet-backdrop" id="accountSheetBackdrop" type="button" aria-label="Đóng"></button>
+      <section class="account-sheet-card" role="dialog" aria-modal="true" aria-labelledby="accountSheetTitle">
+        <div class="account-sheet-handle" aria-hidden="true"></div>
+        <header class="account-sheet-header">
+          <div class="account-sheet-avatar" id="accountSheetAvatar" aria-hidden="true">TK</div>
+          <div class="account-sheet-copy">
+            <strong id="accountSheetTitle">Tài khoản</strong>
+            <span id="accountName">Tài khoản</span>
+            <small id="accountHandle"></small>
+          </div>
+          <button class="account-sheet-close" id="accountSheetClose" type="button" aria-label="Đóng">×</button>
+        </header>
+        <button class="account-logout" id="accountLogout" type="button">Đăng xuất</button>
+      </section>
+    </div>
     <div class="system-toast" id="systemToast" hidden></div>
   </section>
 </div>
