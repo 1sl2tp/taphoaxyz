@@ -1,6 +1,6 @@
 export const DETAIL_UI_CONFIG=Object.freeze({
   pending:Object.freeze({
-    title:'Đơn tạm',tone:'pending',panel:'.pending-detail-panel',header:'.pending-detail-panel>header',titleSelector:'.pending-detail-panel>header>strong',title: 'Đơn tạm',context:'.pending-detail-meta',head:'.pending-detail-head',lines:'.pending-detail-lines',line:'.pending-detail-lines>div',total:'.pending-detail-total',actions:'.pending-detail-panel>footer',status:'.pending-detail-panel>header>span',close:'[data-order-close]'
+    title:'Đơn tạm',tone:'pending',panel:'.pending-detail-panel',header:'.pending-detail-panel>header',titleSelector:'.pending-detail-panel>header>strong',context:'.pending-detail-meta',head:'.pending-detail-head',lines:'.pending-detail-lines',line:'.pending-detail-lines>div',total:'.pending-detail-total',actions:'.pending-detail-panel>footer',status:'.pending-detail-panel>header>span',close:'[data-order-close]'
   }),
   delivered:Object.freeze({
     title:'Đã giao',tone:'success',panel:'.delivered-detail-panel',header:'.delivered-detail-panel>header',titleSelector:'.delivered-detail-panel>header>strong',context:'.delivered-detail-meta',head:'.delivered-detail-head',lines:'.delivered-detail-lines',line:'.delivered-detail-line',total:'.delivered-detail-total',actions:'.delivered-detail-panel>footer',status:'.delivered-detail-panel>header>span',close:'[data-detail-close]'
@@ -50,6 +50,12 @@ function replaceText(root,from,to){
 }
 
 function toneClass(tone){return tone==='pending'?'ui-status-pending':tone==='danger'?'ui-status-danger':'ui-status-success';}
+function classifyAction(button){
+  const action=button?.dataset?.orderAction||button?.dataset?.detailAction||'';
+  if(action==='deliver')addClasses(button,'ui-button-primary');
+  else if(action==='delete')addClasses(button,'ui-button-danger');
+  else if(action==='edit')button?.style?.setProperty('color','var(--ui-primary)');
+}
 
 export function decorateDetailUi(root,screenId){
   const config=DETAIL_UI_CONFIG[screenId];if(!root||!config)return;
@@ -61,7 +67,7 @@ export function decorateDetailUi(root,screenId){
     const fullId=titleNode.dataset.fullOrderId||String(titleNode.textContent||'').trim();
     if(fullId&&!titleNode.dataset.fullOrderId)titleNode.dataset.fullOrderId=fullId;
     if(fullId)titleNode.title=fullId;
-    titleNode.textContent=config.title;
+    if(String(titleNode.textContent||'').trim()!==config.title)titleNode.textContent=config.title;
     addClasses(titleNode,'order-detail-title');setRole(titleNode,'panel-title');
     if(context&&fullId)replaceText(context,fullId,compactOrderId(fullId));
   }
@@ -70,11 +76,10 @@ export function decorateDetailUi(root,screenId){
   addClasses(lines,'order-detail-lines');
   for(const row of root.querySelectorAll?.(config.line)||[]){addClasses(row,'order-detail-line');setRole(row,'body');for(const money of row.querySelectorAll?.(':scope > strong')||[])setRole(money,'money-row');}
   addClasses(total,'order-detail-total');setRole(total,'summary-total');
-  if(config.actions){const actions=root.querySelector?.(config.actions);addClasses(actions,'order-detail-actions');for(const button of actions?.querySelectorAll?.('button')||[]){addClasses(button,'ui-button');setRole(button,'action');}}
+  if(config.actions){const actions=root.querySelector?.(config.actions);addClasses(actions,'order-detail-actions');for(const button of actions?.querySelectorAll?.('button')||[]){addClasses(button,'ui-button');setRole(button,'action');classifyAction(button);}}
   if(status){addClasses(status,'ui-status',toneClass(config.tone));setRole(status,'label');}
   for(const close of panel.querySelectorAll?.(config.close)||[]){addClasses(close,'ui-icon-button');}
-  if(screenId==='pending')panel.style.setProperty('--order-accent','var(--ui-warning)');
-  else panel.style.setProperty('--order-accent','var(--ui-primary)');
+  panel.style.setProperty('--order-accent','var(--ui-primary)');
 }
 
 export function decorateUi(root){
