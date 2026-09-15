@@ -16,12 +16,13 @@ test('shared UI system owns core visual tokens and typography roles',()=>{
   assert.match(ui,/font-variant-numeric:\s*tabular-nums/);
 });
 
-test('index loads shared UI stylesheet before screen styles and UI runtime',()=>{
+test('index loads shared UI stylesheet after screen visuals but before scroll ownership, and loads UI runtime',()=>{
   const html=read('index.html');
+  const debt=html.indexOf('./src/styles/debt.css');
   const shared=html.indexOf('./src/styles/ui-system.css');
-  const sales=html.indexOf('./src/styles/sales.css');
+  const owner=html.indexOf('./src/styles/scroll-owner.css');
   const runtime=html.indexOf('./src/core/ui-system.js');
-  assert.ok(shared>0 && shared<sales);
+  assert.ok(shared>debt && shared<owner);
   assert.ok(runtime>0);
 });
 
