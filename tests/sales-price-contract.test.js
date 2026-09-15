@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import {salesMarkup,cartTotals,buildOrderDraft} from '../src/screens/sales.js';
 
 const product={id:'tl1',ten:'Cứng',nhom:'Thuốc lá',gia:125,von:124,donVi:''};
+const adminPermissions={canManageOrders:true,canManageDebt:true,canViewCost:true};
 
-test('sales UI keeps backend gia literal without x1000 conversion',()=>{
-  const html=salesMarkup({products:[product],customers:[]});
+test('Admin sales UI keeps backend gia literal without x1000 conversion',()=>{
+  const html=salesMarkup({products:[product],customers:[],permissions:adminPermissions});
   assert.match(html,/data-price-id="tl1"/);
   assert.match(html,/value="125"/);
   assert.doesNotMatch(html,/value="125000"/);

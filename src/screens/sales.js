@@ -43,18 +43,20 @@ function groupButtons(products=[],active='Tất cả'){
 function productRows(state){
   const rows=filterProducts(state.products,state.search,state.group);
   if(!rows.length)return `<div class="sales-empty">Không tìm thấy sản phẩm</div>`;
+  const canManage=state.permissions?.canManageOrders===true;
+  const canViewCost=state.permissions?.canViewCost===true;
   return rows.map(p=>{
     const qty=Number(state.cart[p.id]||0),price=Number(state.prices[p.id]??p.gia)||0;
-    const meta=[p.von!==undefined&&p.von!==null?`<span class="sales-cost">${money(p.von)}</span><span>→</span>`:'',
-      `<input class="sales-price-input" data-price-id="${esc(p.id)}" inputmode="numeric" value="${esc(price)}" aria-label="Giá ${esc(p.ten)}">`,
+    const meta=[canViewCost&&p.von!==undefined&&p.von!==null?`<span class="sales-cost">${money(p.von)}</span><span>→</span>`:'',
+      canManage?`<input class="sales-price-input" data-price-id="${esc(p.id)}" inputmode="numeric" value="${esc(price)}" aria-label="Giá ${esc(p.ten)}">`:`<span class="sales-price-readonly">${money(price)}</span>`,
       p.donVi?`<span class="sales-unit">${esc(p.donVi)}</span>`:''].join('');
     return `<article class="sales-product-row" data-product-row="${esc(p.id)}">
       <div class="sales-product-info"><div class="sales-product-name">${esc(p.ten)}</div><div class="sales-product-meta">${meta}</div></div>
-      <div class="sales-qty" data-qty-id="${esc(p.id)}">
+      ${canManage?`<div class="sales-qty" data-qty-id="${esc(p.id)}">
         <button type="button" data-qty-action="dec" ${qty<=0?'disabled':''}>−</button>
         <input class="sales-qty-value" data-qty-input="${esc(p.id)}" inputmode="numeric" value="${qty>0?qty:''}" aria-label="Số lượng ${esc(p.ten)}">
         <button type="button" data-qty-action="add">+</button>
-      </div>
+      </div>`:''}
     </article>`;
   }).join('');
 }
@@ -91,32 +93,35 @@ function cartPanel(state,{mobile=false}={}){
 }
 
 export function salesMarkup(input={}){
-  const state={products:[],customers:[],cart:{},prices:{},notes:{},lineNos:{},selectedCustomer:'le',group:'Tất cả',search:'',editOrder:null,cartOpen:false,...input};
+  const state={products:[],customers:[],cart:{},prices:{},notes:{},lineNos:{},selectedCustomer:'le',group:'Tất cả',search:'',editOrder:null,cartOpen:false,permissions:{},...input};
+  const canManage=state.permissions?.canManageOrders===true;
   const totals=cartTotals(state.products,state.cart,state.prices);
   const selectedCustomerName=state.selectedCustomer==='le'?'Khách lẻ':(state.customers.find(c=>c.id===state.selectedCustomer)?.ten||'');
   const now=new Date();const stamp=now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
   return `<section class="sales-screen" data-screen-id="sales">
     <header class="sales-pinned-head">
-      <div class="sales-customer-row">
+      ${canManage?`<div class="sales-customer-row">
         <input class="sales-customer-input" list="salesCustomerList" value="${esc(selectedCustomerName)}" placeholder="Chọn khách..." aria-label="Chọn khách"><datalist id="salesCustomerList">${customerOptions(state.customers)}</datalist>
         <span class="sales-time">${esc(stamp)}</span>
         <button class="sales-cart-quick" type="button" data-cart-open>${totals.totalQty?`🛒 <span>${totals.totalQty}</span> ${money(totals.total)}`:'🛒 Trống'}</button>
-      </div>
+      </div>`:''}
       <div class="sales-search-row"><input data-sales-search value="${esc(state.search)}" placeholder="Tìm sản phẩm..."><button type="button" data-search-clear ${state.search?'':'hidden'}>✕</button></div>
       <div class="sales-groups">${groupButtons(state.products,state.group)}</div>
     </header>
     <div class="sales-workspace">
       <section class="sales-products"><div class="sales-product-list">${productRows(state)}</div></section>
-      <aside class="sales-cart-desktop">${cartPanel(state)}</aside>
+      ${canManage?`<aside class="sales-cart-desktop">${cartPanel(state)}</aside>`:''}
     </div>
-    <div class="sales-cart-overlay" data-cart-overlay aria-hidden="${state.cartOpen?'false':'true'}"><button class="sales-cart-backdrop" type="button" data-cart-close aria-label="Đóng"></button>${cartPanel(state,{mobile:true})}</div>
+    ${canManage?`<div class="sales-cart-overlay" data-cart-overlay aria-hidden="${state.cartOpen?'false':'true'}"><button class="sales-cart-backdrop" type="button" data-cart-close aria-label="Đóng"></button>${cartPanel(state,{mobile:true})}</div>`:''}
   </section>`;
 }
 
 function deriveInitial(context){
   const data=context.getData?.()||context.data||{};
-  const editOrder=context.consumeEditOrder?.()||context.editOrder||null;
-  const state={products:data.products||[],customers:data.customers||[],cart:{},prices:{},notes:{},lineNos:{},selectedCustomer:'le',group:'Tất cả',search:'',editOrder,cartOpen:Boolean(editOrder)};
+  const permissions=data.permissions||{};
+  const canManage=permissions.canManageOrders===true;
+  const editOrder=canManage?(context.consumeEditOrder?.()||context.editOrder||null):null;
+  const state={products:data.products||[],customers:data.customers||[],permissions,cart:{},prices:{},notes:{},lineNos:{},selectedCustomer:'le',group:'Tất cả',search:'',editOrder,cartOpen:Boolean(editOrder)};
   if(editOrder){
     state.selectedCustomer=editOrder.maKH||'le';
     for(const item of editOrder.items||[]){
@@ -129,16 +134,17 @@ function deriveInitial(context){
 
 export async function mount(context){
   const root=context.root;let state=deriveInitial(context);let busy=false;
+  const canManage=()=>state.permissions?.canManageOrders===true;
   const render=()=>{root.innerHTML=salesMarkup(state);};
   const unsubscribeData=context.subscribeData?.(({state:next,changed})=>{
     if(!changed.some(x=>x==='bootstrap'||x==='products'||x==='customers'))return;
-    state={...state,products:next.products||[],customers:next.customers||[]};
+    state={...state,products:next.products||[],customers:next.customers||[],permissions:next.permissions||state.permissions};
     render();
   });
   const customerIdByName=name=>name==='Khách lẻ'?'le':(state.customers.find(c=>c.ten===name)?.id||state.selectedCustomer);
-  const setQty=(id,value)=>{state={...state,cart:{...state.cart,[id]:Math.max(0,Math.min(999,Number(value)||0))}};render();};
+  const setQty=(id,value)=>{if(!canManage())return;state={...state,cart:{...state.cart,[id]:Math.max(0,Math.min(999,Number(value)||0))}};render();};
   const submit=async status=>{
-    if(busy)return;const totals=cartTotals(state.products,state.cart,state.prices);if(!totals.totalQty){context.system?.toast('Chưa có sản phẩm!');return;}
+    if(!canManage()||busy)return;const totals=cartTotals(state.products,state.cart,state.prices);if(!totals.totalQty){context.system?.toast('Chưa có sản phẩm!');return;}
     busy=true;
     try{
       const editStatus=state.editOrder?.trangThai||state.editOrder?.status||status;
@@ -150,6 +156,7 @@ export async function mount(context){
   const onClick=event=>{
     const group=event.target.closest('[data-group]');if(group){state={...state,group:group.dataset.group};render();return;}
     if(event.target.closest('[data-search-clear]')){state={...state,search:''};render();return;}
+    if(!canManage())return;
     if(event.target.closest('[data-cart-open]')){state={...state,cartOpen:true};render();return;}
     if(event.target.closest('[data-cart-close]')){state={...state,cartOpen:false};render();return;}
     const qtyBox=event.target.closest('[data-qty-id]');const qtyAction=event.target.closest('[data-qty-action]');
@@ -165,12 +172,14 @@ export async function mount(context){
   };
   const onInput=event=>{
     if(event.target.matches('[data-sales-search]')){state={...state,search:event.target.value};render();return;}
+    if(!canManage())return;
     if(event.target.matches('.sales-customer-input')){state={...state,selectedCustomer:customerIdByName(event.target.value)};return;}
     const priceId=event.target.dataset.priceId;if(priceId){state={...state,prices:{...state.prices,[priceId]:Number(String(event.target.value).replace(/\D/g,''))||0}};return;}
     const qtyId=event.target.dataset.qtyInput;if(qtyId){state={...state,cart:{...state.cart,[qtyId]:Math.max(0,Math.min(999,Number(String(event.target.value).replace(/\D/g,''))||0))}};return;}
     const noteId=event.target.dataset.noteId;if(noteId){state={...state,notes:{...state.notes,[noteId]:event.target.value}};}
   };
   const onChange=event=>{
+    if(!canManage())return;
     if(event.target.matches('.sales-customer-input')){state={...state,selectedCustomer:customerIdByName(event.target.value)};render();}
     if(event.target.dataset.qtyInput||event.target.dataset.priceId)render();
   };

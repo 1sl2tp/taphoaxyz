@@ -17,21 +17,29 @@ const state={
   products:[{id:'tl1',ten:'Cứng',gia:125,von:124}],sources:[],customers:[],orders:[],debtSummary:[],printSettings:{},selfCustomer:null
 };
 
-test('default snapshot round-trips on v2 key for the same uid',()=>{
+test('default snapshot round-trips on privacy-safe v3 key for the same uid',()=>{
   const storage=memoryStorage();
   const store=createSnapshotStore({storage});
   assert.equal(store.save('u1',state),true);
-  assert.deepEqual(storage.keys(),['taphoa.snapshot.v2:u1']);
+  assert.deepEqual(storage.keys(),['taphoa.snapshot.v3:u1']);
   const snap=store.load('u1');
-  assert.equal(snap.cacheVersion,2);
+  assert.equal(snap.cacheVersion,3);
   assert.equal(snap.uid,'u1');
   assert.equal(snap.data.products[0].gia,125);
 });
 
-test('retired v1 snapshot is never loaded after cutover',()=>{
+test('pre-privacy v2 snapshot is purged and never loaded after customer privacy cutover',()=>{
+  const storage=memoryStorage();
+  storage.setItem('taphoa.snapshot.v2:u1',JSON.stringify({cacheVersion:2,uid:'u1',savedAt:1,data:state}));
+  assert.equal(createSnapshotStore({storage}).load('u1'),null);
+  assert.equal(storage.getItem('taphoa.snapshot.v2:u1'),null);
+});
+
+test('retired v1 snapshot is purged and never loaded after cutover',()=>{
   const storage=memoryStorage();
   storage.setItem('taphoa.snapshot.v1:u1',JSON.stringify({cacheVersion:1,uid:'u1',savedAt:1,data:state}));
   assert.equal(createSnapshotStore({storage}).load('u1'),null);
+  assert.equal(storage.getItem('taphoa.snapshot.v1:u1'),null);
 });
 
 test('snapshot never loads for another uid',()=>{
