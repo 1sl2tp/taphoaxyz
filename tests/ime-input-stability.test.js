@@ -61,13 +61,14 @@ test('IME stability module loads before application input handlers',()=>{
   assert.ok(guard>=0&&app>guard);
 });
 
-test('sales search keeps the active input mounted while filtering products',()=>{
+test('sales search keeps the active input mounted and defers heavy filtering',()=>{
   const source=read('src/screens/sales.js');
   assert.match(source,/const refreshSalesSearchResults=\(\)=>\{/);
   assert.match(source,/querySelector\('\.sales-product-list'\)/);
   assert.match(source,/productList\.innerHTML=productRows\(state\)/);
-  assert.match(source,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{/);
-  assert.match(source,/state=\{\.\.\.state,search:searchInput\.value\}/);
-  assert.match(source,/refreshSalesSearchResults\(\)/);
-  assert.doesNotMatch(source,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{[^}]*render\(\)/s);
+  const branch=source.match(/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{([\s\S]*?)\n    \}/)?.[1]||'';
+  assert.match(branch,/state=\{\.\.\.state,search:event\.target\.value\}/);
+  assert.match(branch,/scheduleSalesSearchRefresh\(\)/);
+  assert.doesNotMatch(branch,/refreshSalesSearchResults\(\)/);
+  assert.doesNotMatch(branch,/render\(\)/);
 });

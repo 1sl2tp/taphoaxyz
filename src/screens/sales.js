@@ -1,6 +1,7 @@
 const money=n=>Number(n||0).toLocaleString('vi-VN');
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+const SEARCH_RENDER_DELAY_MS=250;
 
 export function filterProducts(products=[],search='',group='Tất cả'){
   const words=norm(search).trim().split(/\s+/).filter(Boolean);
@@ -133,14 +134,26 @@ function deriveInitial(context){
 }
 
 export async function mount(context){
-  const root=context.root;let state=deriveInitial(context);let busy=false;
+  const root=context.root;let state=deriveInitial(context);let busy=false;let searchRenderTimer=null;
   const canManage=()=>state.permissions?.canManageOrders===true;
-  const render=()=>{root.innerHTML=salesMarkup(state);};
+  const cancelSalesSearchRefresh=()=>{
+    if(searchRenderTimer===null)return;
+    clearTimeout(searchRenderTimer);
+    searchRenderTimer=null;
+  };
+  const render=()=>{cancelSalesSearchRefresh();root.innerHTML=salesMarkup(state);};
   const refreshSalesSearchResults=()=>{
     const productList=root.querySelector('.sales-product-list');
     if(productList)productList.innerHTML=productRows(state);
     const clearButton=root.querySelector('[data-search-clear]');
     if(clearButton)clearButton.hidden=!state.search;
+  };
+  const scheduleSalesSearchRefresh=()=>{
+    cancelSalesSearchRefresh();
+    searchRenderTimer=setTimeout(()=>{
+      searchRenderTimer=null;
+      refreshSalesSearchResults();
+    },SEARCH_RENDER_DELAY_MS);
   };
   const unsubscribeData=context.subscribeData?.(({state:next,changed})=>{
     if(!changed.some(x=>x==='bootstrap'||x==='products'||x==='customers'))return;
@@ -178,11 +191,10 @@ export async function mount(context){
   };
   const onInput=event=>{
     if(event.target.matches('[data-sales-search]')){
-      const searchInput=event.target;
-      state={...state,search:searchInput.value};
-      refreshSalesSearchResults();
-      searchInput.focus({preventScroll:true});
-      searchInput.setSelectionRange(state.search.length,state.search.length);
+      state={...state,search:event.target.value};
+      const clearButton=root.querySelector('[data-search-clear]');
+      if(clearButton)clearButton.hidden=!state.search;
+      scheduleSalesSearchRefresh();
       return;
     }
     if(!canManage())return;
@@ -197,5 +209,5 @@ export async function mount(context){
     if(event.target.dataset.qtyInput||event.target.dataset.priceId)render();
   };
   root.addEventListener('click',onClick);root.addEventListener('input',onInput);root.addEventListener('change',onChange);render();
-  return ()=>{unsubscribeData?.();root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);root.removeEventListener('change',onChange);};
+  return ()=>{cancelSalesSearchRefresh();unsubscribeData?.();root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);root.removeEventListener('change',onChange);};
 }
