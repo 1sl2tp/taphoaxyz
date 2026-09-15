@@ -44,6 +44,12 @@ test('four primary screens assign scroll to their data lists, not screen roots',
   }
 });
 
+test('sales workspace stretches the product scroller into the bounded viewport row',()=>{
+  const css=read('src/styles/scroll-owner.css');
+  mustContain(css,'[data-screen-id="sales"] .sales-workspace','height:100%','min-height:0','overflow:hidden','align-items:stretch');
+  mustContain(css,'[data-screen-id="sales"] .sales-products','min-height:0','overflow:auto');
+});
+
 test('detail panels keep chrome fixed and give long inner lists the scroll',()=>{
   const css=read('src/styles/scroll-owner.css');
   for(const panel of ['.delivered-detail-panel','.delivered-print-panel','.pending-source-panel','.pending-detail-panel','.pending-print-panel','.debt-detail-panel','.debt-order-panel']){
