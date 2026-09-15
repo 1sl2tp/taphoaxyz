@@ -63,3 +63,17 @@ test('shell and Sales use neutral final-theme chrome without changing geometry o
   assert.match(ui,/ui-search-leading-icon/);
   assert.match(ui,/icon\('search'/);
 });
+
+test('Delivered and Pending share one neutral detail and overlay family',()=>{
+  const css=read('src/styles/chatgpt-ui.css');
+  const ui=read('src/core/ui-system.js');
+  assert.match(css,/\.delivered-detail-panel[^}]*background:\s*var\(--tap-surface\)/s);
+  assert.match(css,/\.pending-detail-panel[^}]*background:\s*var\(--tap-surface\)/s);
+  assert.match(css,/\.delivered-backdrop[^}]*background:\s*rgba\(0,0,0,\.32\)/s);
+  assert.match(css,/\.pending-backdrop[^}]*background:\s*rgba\(0,0,0,\.32\)/s);
+  assert.match(css,/\.pending-source-panel[^}]*border:\s*1px solid var\(--tap-border\)/s);
+  assert.match(ui,/ui-modal-surface/);
+  assert.match(ui,/data-delete-all/);
+  assert.match(ui,/setButtonIcon\(button,'trash'/);
+  assert.match(ui,/cleanStatusText/);
+});
