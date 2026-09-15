@@ -38,6 +38,8 @@ export function summarizeDeliveredBySource(orders=[]){
   return {rows:[...map.values()].sort((a,b)=>b.revenue-a.revenue||a.source.localeCompare(b.source,'vi')),total};
 }
 
+export function deliveredActiveSurface(state={}){return state.printOrder?'print':state.selected?'detail':'list';}
+
 function summaryMarkup(orders){
   const s=summarizeDeliveredBySource(orders);
   if(!s.rows.length)return `<div class="delivered-empty-small">Không có đơn</div>`;
@@ -55,30 +57,33 @@ function orderCard(o,index){
   </button>`;
 }
 
-function detailMarkup(o){
+function detailSurface(o){
   const items=o.items||[];const qty=items.reduce((a,x)=>a+(Number(x.sl??x.qty)||0),0);const profit=Number(o.loiNhuan??(Number(o.tongTien||0)-Number(o.tongVon||0)))||0;
-  return `<div class="delivered-overlay" data-order-detail>
-    <button class="delivered-backdrop" type="button" data-detail-close aria-label="Đóng"></button>
-    <section class="delivered-detail-panel">
-      <header><strong>${esc(o.id)}</strong><span>✅ Đã giao</span><button type="button" data-detail-close>✕</button></header>
-      <div class="delivered-detail-meta"><b>KH: ${esc(o.tenKH)}</b> · ${esc(o.id)} · ${esc(fmtDate(o.ngay))}</div>
+  return `<section class="delivered-detail-panel delivered-detail-surface" data-order-detail data-ui-node="surface" data-ui-id="delivered-detail-surface" data-parent-id="delivered-workspace" data-slot-mobile="1" data-slot-wide="2">
+    <section class="delivered-detail-meta" data-ui-node="region" data-ui-id="delivered-detail-meta" data-parent-id="delivered-detail-surface">
+      <header><strong>${esc(o.id)}</strong><span>✅ Đã giao</span><button type="button" data-detail-close aria-label="Quay lại">✕</button></header>
+      <div><b>KH: ${esc(o.tenKH)}</b> · ${esc(o.id)} · ${esc(fmtDate(o.ngay))}</div>
       <div class="delivered-detail-head"><span>#</span><span>Tên</span><span>SL</span><span>Đ.Giá</span><span>T.Tiền</span></div>
-      <div class="delivered-detail-lines">${items.map((it,i)=>`<div class="delivered-detail-line"><span>${i+1}.</span><span>${esc(it.tenSP||it.ten||'')}${it.ghiChu?`<small>${esc(it.ghiChu)}</small>`:''}</span><span>${it.sl??it.qty??0}</span><span>${money(it.gia??it.unit_price)}</span><strong>${money((Number(it.gia??it.unit_price)||0)*(Number(it.sl??it.qty)||0))}</strong></div>`).join('')}</div>
-      <div class="delivered-detail-total"><b>Tổng ${qty} SP</b><span><strong>${money(o.tongTien)}</strong><small>Lợi nhuận: +${money(profit)}</small></span></div>
-      <footer><button type="button" data-detail-action="edit">Sửa</button><button type="button" data-detail-action="print">In</button><button type="button" data-detail-action="delete">Xoá</button></footer>
     </section>
-  </div>`;
+    <div class="delivered-detail-lines" data-ui-node="region" data-ui-id="delivered-detail-lines" data-parent-id="delivered-detail-surface">${items.map((it,i)=>`<div class="delivered-detail-line"><span>${i+1}.</span><span>${esc(it.tenSP||it.ten||'')}${it.ghiChu?`<small>${esc(it.ghiChu)}</small>`:''}</span><span>${it.sl??it.qty??0}</span><span>${money(it.gia??it.unit_price)}</span><strong>${money((Number(it.gia??it.unit_price)||0)*(Number(it.sl??it.qty)||0))}</strong></div>`).join('')}</div>
+    <footer class="delivered-detail-actions" data-ui-node="region" data-ui-id="delivered-detail-actions" data-parent-id="delivered-detail-surface">
+      <div class="delivered-detail-total"><b>Tổng ${qty} SP</b><span><strong>${money(o.tongTien)}</strong><small>Lợi nhuận: +${money(profit)}</small></span></div>
+      <div class="delivered-detail-buttons"><button type="button" data-detail-action="edit">Sửa</button><button type="button" data-detail-action="print">In</button><button type="button" data-detail-action="delete">Xoá</button></div>
+    </footer>
+  </section>`;
 }
 
 function deliveredPrintBody(o){const items=o.items||[];return `<main class="print-sheet"><div class="print-head">${esc(o.id)}</div><div class="print-meta"><b>KH: ${esc(o.tenKH)}</b> · ${esc(fmtDate(o.ngay))}</div>${items.map((it,i)=>`<div class="print-row"><span>${i+1}. ${esc(it.tenSP||it.ten||'')}</span><span>${it.sl??it.qty??0} × ${money(it.gia??it.unit_price)}</span></div>`).join('')}<div class="print-total"><span>Tổng</span><strong>${money(o.tongTien)}</strong></div></main>`;}
 
-function printMarkup(o){
-  const items=o.items||[];return `<div class="delivered-overlay delivered-print-overlay"><button class="delivered-backdrop" type="button" data-print-close aria-label="Đóng"></button><section class="delivered-print-panel">
-    <header><button type="button" data-print-close>✕</button><strong>${esc(o.id)}</strong><button type="button" data-print-now>In</button></header>
-    <div class="delivered-print-meta"><b>KH: ${esc(o.tenKH)}</b><span>${esc(fmtDate(o.ngay))}</span></div>
-    <div class="delivered-print-lines">${items.map((it,i)=>`<div><span>${i+1}. ${esc(it.tenSP||it.ten||'')}</span><span>${it.sl??it.qty??0} × ${money(it.gia??it.unit_price)}</span></div>`).join('')}</div>
-    <div class="delivered-print-total"><b>Tổng</b><strong>${money(o.tongTien)}</strong></div>
-  </section></div>`;
+function printSurface(o){
+  const items=o.items||[];return `<section class="delivered-print-panel delivered-print-surface" data-ui-node="surface" data-ui-id="delivered-print-surface" data-parent-id="delivered-workspace" data-slot-mobile="1" data-slot-wide="3">
+    <section class="delivered-print-meta" data-ui-node="region" data-ui-id="delivered-print-meta" data-parent-id="delivered-print-surface">
+      <header><button type="button" data-print-close aria-label="Quay lại">✕</button><strong>${esc(o.id)}</strong></header>
+      <div><b>KH: ${esc(o.tenKH)}</b><span>${esc(fmtDate(o.ngay))}</span></div>
+    </section>
+    <div class="delivered-print-lines" data-ui-node="region" data-ui-id="delivered-print-lines" data-parent-id="delivered-print-surface">${items.map((it,i)=>`<div><span>${i+1}. ${esc(it.tenSP||it.ten||'')}</span><span>${it.sl??it.qty??0} × ${money(it.gia??it.unit_price)}</span></div>`).join('')}</div>
+    <footer class="delivered-print-actions" data-ui-node="region" data-ui-id="delivered-print-actions" data-parent-id="delivered-print-surface"><div class="delivered-print-total"><b>Tổng</b><strong>${money(o.tongTien)}</strong></div><button type="button" data-print-now>In</button></footer>
+  </section>`;
 }
 
 function calendarMarkup(state){
@@ -92,11 +97,17 @@ export function deliveredMarkup(input={}){
   const today=dateKey(new Date());const state={orders:[],search:'',mode:'today',from:today,to:today,calendarOpen:false,calendarMonth:today,picking:'from',selected:null,printOrder:null,...input};
   const done=filterDeliveredOrders(state.orders,state);
   const label=state.mode==='range'?(state.from===state.to?state.from.slice(8,10)+'/'+state.from.slice(5,7):`${state.from.slice(8,10)}/${state.from.slice(5,7)} → ${state.to.slice(8,10)}/${state.to.slice(5,7)}`):'Chọn ngày';
-  return `<section class="delivered-screen" data-screen-id="delivered">
-    <section class="delivered-filter"><div class="delivered-search"><input data-delivered-search value="${esc(state.search)}" placeholder="Tìm tên khách hoặc sản phẩm..."><button type="button" data-delivered-clear ${state.search?'':'hidden'}>✕</button></div><div class="delivered-time"><button type="button" data-today aria-pressed="${state.mode==='today'}">Hôm nay</button><button type="button" data-calendar-toggle aria-pressed="${state.mode==='range'}">${esc(label)}</button></div>${calendarMarkup(state)}</section>
-    <section class="delivered-summary"><h2>Tổng hợp đã giao <small>(${done.length} đơn)</small></h2>${summaryMarkup(done)}</section>
-    <section class="delivered-list">${done.map(orderCard).join('')||'<div class="delivered-empty">Không có đơn trong khoảng này</div>'}</section>
-    ${state.selected?detailMarkup(state.selected):''}${state.printOrder?printMarkup(state.printOrder):''}
+  const hasSecondary=Boolean(state.selected),hasTertiary=Boolean(state.printOrder);
+  return `<section class="delivered-screen" data-screen-id="delivered" data-active-surface="${deliveredActiveSurface(state)}" data-has-secondary="${hasSecondary}" data-has-tertiary="${hasTertiary}">
+    <div class="delivered-workspace" data-ui-node="workspace" data-ui-id="delivered-workspace" data-parent-id="delivered-root">
+      <section class="delivered-list-surface" data-ui-node="surface" data-ui-id="delivered-list-surface" data-parent-id="delivered-workspace" data-slot-mobile="1" data-slot-wide="1">
+        <section class="delivered-filter" data-ui-node="region" data-ui-id="delivered-filter-region" data-parent-id="delivered-list-surface"><div class="delivered-search"><input data-delivered-search value="${esc(state.search)}" placeholder="Tìm tên khách hoặc sản phẩm..."><button type="button" data-delivered-clear ${state.search?'':'hidden'}>✕</button></div><div class="delivered-time"><button type="button" data-today aria-pressed="${state.mode==='today'}">Hôm nay</button><button type="button" data-calendar-toggle aria-pressed="${state.mode==='range'}">${esc(label)}</button></div>${calendarMarkup(state)}</section>
+        <section class="delivered-summary" data-ui-node="region" data-ui-id="delivered-summary-region" data-parent-id="delivered-list-surface"><h2>Tổng hợp đã giao <small>(${done.length} đơn)</small></h2>${summaryMarkup(done)}</section>
+        <section class="delivered-list" data-ui-node="region" data-ui-id="delivered-order-list" data-parent-id="delivered-list-surface">${done.map(orderCard).join('')||'<div class="delivered-empty">Không có đơn trong khoảng này</div>'}</section>
+      </section>
+      ${state.selected?detailSurface(state.selected):''}
+      ${state.printOrder?printSurface(state.printOrder):''}
+    </div>
   </section>`;
 }
 
@@ -113,19 +124,19 @@ export async function mount(context){
     const quick=event.target.closest('[data-quick]');if(quick){const r=quickRange(quick.dataset.quick);state={...state,mode:'range',from:r.from,to:r.to,calendarOpen:false,picking:'from'};render();return;}
     const month=event.target.closest('[data-month]');if(month){const d=new Date(state.calendarMonth+'T12:00:00');d.setMonth(d.getMonth()+Number(month.dataset.month));state={...state,calendarMonth:dateKey(d)};render();return;}
     const day=event.target.closest('[data-calendar-day]');if(day){const key=day.dataset.calendarDay;if(state.picking==='from'){state={...state,mode:'range',from:key,to:key,picking:'to'};}else{state={...state,mode:'range',from:key<state.from?key:state.from,to:key<state.from?state.from:key,picking:'from',calendarOpen:false};}render();return;}
-    const open=event.target.closest('[data-order-open]');if(open){state={...state,selected:findOrder(open.dataset.orderOpen)};render();return;}
-    if(event.target.closest('[data-detail-close]')){state={...state,selected:null};render();return;}
+    const open=event.target.closest('[data-order-open]');if(open){state={...state,selected:findOrder(open.dataset.orderOpen),printOrder:null};render();return;}
+    if(event.target.closest('[data-detail-close]')){state={...state,selected:null,printOrder:null};render();return;}
     if(event.target.closest('[data-print-close]')){state={...state,printOrder:null};render();return;}
     if(event.target.closest('[data-print-now]')){if(state.printOrder)openPrintDocument({title:state.printOrder.id,body:deliveredPrintBody(state.printOrder)});return;}
     const action=event.target.closest('[data-detail-action]')?.dataset.detailAction;if(!action||!state.selected)return;
-    if(action==='print'){state={...state,printOrder:state.selected,selected:null};render();return;}
+    if(action==='print'){state={...state,printOrder:state.selected};render();return;}
     if(action==='edit'){
       try{const detail=await context.business.orderDetail(state.selected.id);context.editOrder?.(detail?.order||state.selected);context.navigate?.('sales');}
       catch(e){context.system?.toast(e?.message||'Không thực hiện được');}return;
     }
     if(action==='delete'){
       if(busy||!window.confirm(`Xoá đơn ${state.selected.id}?`))return;busy=true;
-      try{await context.business.reverseOrder(state.selected.id,'Hoàn đơn');await context.refresh?.(['orders','debt']);state={...state,selected:null};render();}
+      try{await context.business.reverseOrder(state.selected.id,'Hoàn đơn');await context.refresh?.(['orders','debt']);state={...state,selected:null,printOrder:null};render();}
       catch(e){context.system?.toast(e?.message||'Không thực hiện được');}finally{busy=false;}
     }
   };

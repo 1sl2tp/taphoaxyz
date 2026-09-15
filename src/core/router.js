@@ -1,22 +1,16 @@
-export const NAV_ITEMS = Object.freeze([
-  Object.freeze({id:'sales',icon:'🛒',label:'Bán hàng'}),
-  Object.freeze({id:'delivered',icon:'📋',label:'Đã giao'}),
-  Object.freeze({id:'pending',icon:'📝',label:'Đơn tạm'}),
-  Object.freeze({id:'debt',icon:'💰',label:'Công nợ'})
-]);
+const DEFAULT_SCREEN_IDS=Object.freeze(['sales','delivered','pending','debt']);
 
-const APPROVED = new Set(NAV_ITEMS.map(x => x.id));
-
-export function normalizeRoute(value='') {
+export function normalizeRoute(value='',screenIds=DEFAULT_SCREEN_IDS,fallback='sales'){
+  const approved=new Set(screenIds);
   const raw=String(value||'').replace(/^#\/?/,'').split('/')[0].trim();
-  return APPROVED.has(raw) ? raw : 'sales';
+  return approved.has(raw)?raw:fallback;
 }
 
-export function createRouter({onRoute}={}) {
-  const emit=()=>onRoute?.(normalizeRoute(location.hash));
+export function createRouter({onRoute,screenIds=DEFAULT_SCREEN_IDS,fallback='sales'}={}){
+  const emit=()=>onRoute?.(normalizeRoute(location.hash,screenIds,fallback));
   const navigate=id=>{
-    const next=normalizeRoute(`#${id}`);
-    if (location.hash !== `#${next}`) location.hash=next;
+    const next=normalizeRoute(`#${id}`,screenIds,fallback);
+    if(location.hash!==`#${next}`)location.hash=next;
     else emit();
   };
   window.addEventListener('hashchange',emit);

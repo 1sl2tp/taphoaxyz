@@ -15,27 +15,35 @@
 </head>
 <body>
 <div class="taphoa-viewport" id="taphoaViewport">
-  <section class="login-screen" id="loginScreen">
-    <div class="login-wrap">
-      <div class="login-brand">
+  <section class="login-screen" id="loginScreen" data-ui-node="root" data-root-id="auth">
+    <form class="auth-workspace" id="loginForm" data-ui-node="workspace" data-ui-id="auth-workspace" data-parent-id="auth-root">
+      <header class="auth-brand-region" data-ui-node="region" data-ui-id="auth-brand-region" data-parent-id="auth-workspace">
         <img class="login-logo" src="./src/assets/logo.jpg" alt="logo">
         <div class="login-brand-name">taphoa.xyz</div>
         <div class="login-brand-sub">Quản lý đơn hàng thông minh</div>
-      </div>
-      <form class="login-card" id="loginForm">
+      </header>
+      <section class="auth-credential-region auth-card-part" data-ui-node="region" data-ui-id="auth-credential-region" data-parent-id="auth-workspace">
         <h1>Đăng nhập</h1>
         <div class="login-field"><input id="loginUsername" autocomplete="username" placeholder="Tên đăng nhập"></div>
         <div class="login-field"><input class="login-password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu"><button class="login-eye" type="button" id="loginEye" aria-label="Hiện mật khẩu">◉</button></div>
-        <label class="login-remember"><input id="loginRemember" type="checkbox">Lưu mật khẩu</label>
+      </section>
+      <section class="auth-preference-region auth-card-part" data-ui-node="region" data-ui-id="auth-preference-region" data-parent-id="auth-workspace">
+        <label class="login-remember"><input id="loginRemember" type="checkbox">Nhớ tên đăng nhập</label>
+      </section>
+      <section class="auth-status-region auth-card-part" data-ui-node="region" data-ui-id="auth-status-region" data-parent-id="auth-workspace">
         <div class="login-error" id="loginError" hidden></div>
+      </section>
+      <section class="auth-action-region auth-card-part" data-ui-node="region" data-ui-id="auth-action-region" data-parent-id="auth-workspace">
         <button class="login-submit" id="loginSubmit" type="submit">Đăng nhập →</button>
-      </form>
-    </div>
+      </section>
+    </form>
   </section>
-  <section class="app-shell" id="appShell" hidden>
-    <nav class="app-nav" id="appNav" aria-label="Điều hướng"></nav>
-    <main class="screen-host" id="screenHost"></main>
-    <div class="system-toast" id="systemToast" hidden></div>
+  <section class="app-shell" id="appShell" hidden data-ui-node="root" data-root-id="app">
+    <nav class="app-nav" id="appNav" aria-label="Điều hướng" data-ui-node="navigation" data-ui-id="app-navigation" data-parent-id="app-root"></nav>
+    <main class="screen-host" id="screenHost" data-ui-node="screen-host" data-ui-id="app-screen-host" data-parent-id="app-root"></main>
+    <section class="system-layer" data-ui-node="system-layer" data-ui-id="app-system-layer" data-parent-id="app-root">
+      <div class="system-toast" id="systemToast" hidden></div>
+    </section>
   </section>
 </div>
 <script type="module" src="./src/app.js"></script>

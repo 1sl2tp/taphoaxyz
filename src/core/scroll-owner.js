@@ -1,6 +1,6 @@
 export const SCROLL_OWNER_SELECTORS=Object.freeze({
-  sales:['.sales-products','.sales-cart-body'],
-  delivered:['.delivered-list','.delivered-detail-lines','.delivered-print-lines'],
+  sales:['[data-ui-id="sales-product-list"]','[data-ui-id="sales-cart-list"]'],
+  delivered:['[data-ui-id="delivered-order-list"]','[data-ui-id="delivered-detail-lines"]','[data-ui-id="delivered-print-lines"]'],
   pending:['.pending-list','.pending-source-detail-lines','.pending-detail-lines','.pending-print-lines'],
   debt:['.debt-list','.debt-customer-options','.debt-ledger','.debt-order-lines']
 });

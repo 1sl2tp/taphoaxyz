@@ -3,7 +3,8 @@ import {createAuthService} from './core/auth.js';
 import {createApi} from './core/api.js';
 import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
-import {NAV_ITEMS,createRouter,normalizeRoute} from './core/router.js';
+import {createRouter,normalizeRoute} from './core/router.js';
+import {SCREEN_IDS,NAV_ITEMS,loadRegisteredScreen} from './core/screen-registry.js';
 import {createSystemLayer} from './core/system.js';
 
 const $=id=>document.getElementById(id);
@@ -22,11 +23,6 @@ let lifecycleBound=false;
 
 function navMarkup(active){
   return NAV_ITEMS.map(item=>`<button type="button" data-nav="${item.id}" aria-current="${active===item.id?'page':'false'}"><span class="app-nav-icon">${item.icon}</span><span class="app-nav-label">${item.label}</span></button>`).join('');
-}
-
-async function loadScreen(id){
-  const modules={sales:()=>import('./screens/sales.js'),delivered:()=>import('./screens/delivered.js'),pending:()=>import('./screens/pending.js'),debt:()=>import('./screens/debt.js')};
-  return modules[id]?.();
 }
 
 function currentUid(){return String(identity?.uid||'');}
@@ -85,12 +81,12 @@ function screenContext(root){
 }
 
 async function mountRoute(route){
-  const id=normalizeRoute(`#${route}`);
+  const id=normalizeRoute(`#${route}`,SCREEN_IDS);
   $('appNav').innerHTML=navMarkup(id);
   activeCleanup?.();activeCleanup=null;
   $('screenHost').replaceChildren();
   try {
-    const mod=await loadScreen(id);
+    const mod=await loadRegisteredScreen(id);
     if(typeof mod?.mount==='function')activeCleanup=await mod.mount(screenContext($('screenHost')));
   } catch(error){
     console.error(error);system.toast('Không tải được màn hình');
@@ -99,7 +95,7 @@ async function mountRoute(route){
 
 function showAppShell(){
   $('loginScreen').hidden=true;$('appShell').hidden=false;
-  if(!router){router=createRouter({onRoute:mountRoute});router.start();}
+  if(!router){router=createRouter({onRoute:mountRoute,screenIds:SCREEN_IDS});router.start();}
 }
 
 async function openApp(sessionInfo){

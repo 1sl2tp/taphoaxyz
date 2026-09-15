@@ -26,6 +26,8 @@ export function summarizePendingBySource(orders=[]){
   return {rows:[...map.values()].sort((a,b)=>b.revenue-a.revenue||a.source.localeCompare(b.source,'vi')).map(row=>({...row,orderCount:row.orders.size,orders:undefined})),total};
 }
 
+export function pendingActiveSurface(state={}){return state.printData?'print':state.selectedOrder?'detail':state.selectedSource?'source':'list';}
+
 function sourceSummaryMarkup(orders){
   const summary=summarizePendingBySource(orders);
   if(!summary.rows.length)return '<div class="pending-empty-small">Không có đơn tạm</div>';
@@ -44,45 +46,42 @@ function orderCard(order,index){
   </button>`;
 }
 
-function sourceDetailMarkup(source,orders){
+function sourceSurface(source,orders){
   const sourceOrders=orders.filter(order=>(order.items||[]).some(item=>itemSource(item)===source));
   const rows=sourceOrders.flatMap(order=>(order.items||[]).filter(item=>itemSource(item)===source).map(item=>({customer:order.tenKH,name:itemName(item),qty:itemQty(item),note:item.ghiChu||item.note||''})));
   const total=rows.reduce((sum,row)=>sum+row.qty,0);
-  return `<div class="pending-overlay" data-source-detail>
-    <button class="pending-backdrop" type="button" data-source-close aria-label="Đóng"></button>
-    <section class="pending-source-panel">
-      <header><strong>📦 Nguồn ${esc(source)}</strong><div><button type="button" data-source-action="print">In</button><button type="button" data-source-action="total">Tổng SP</button><button type="button" data-source-close>✕</button></div></header>
-      <div class="pending-source-meta">${new Date().toLocaleDateString('vi-VN')} · ${sourceOrders.length} đơn · ${total} sản phẩm</div>
+  return `<section class="pending-source-panel pending-source-surface" data-ui-node="surface" data-ui-id="pending-source-surface" data-parent-id="pending-workspace" data-slot-mobile="1" data-slot-wide="2">
+    <section class="pending-source-meta" data-ui-node="region" data-ui-id="pending-source-meta" data-parent-id="pending-source-surface">
+      <header><strong>📦 Nguồn ${esc(source)}</strong><button type="button" data-source-close aria-label="Quay lại">✕</button></header>
+      <div>${new Date().toLocaleDateString('vi-VN')} · ${sourceOrders.length} đơn · ${total} sản phẩm</div>
       <div class="pending-source-detail-head"><span>#</span><span>TÊN HÀNG</span><span>KHÁCH</span><span>SL</span></div>
-      <div class="pending-source-detail-lines">${rows.map((row,index)=>`<div><span>${index+1}.</span><span><b>${esc(row.name)}</b>${row.note?`<small>${esc(row.note)}</small>`:''}</span><span>${esc(row.customer)}</span><strong>×${row.qty}</strong></div>`).join('')}</div>
-      <div class="pending-source-detail-total">TỔNG: ${total} sp</div>
     </section>
-  </div>`;
+    <div class="pending-source-detail-lines" data-ui-node="region" data-ui-id="pending-source-lines" data-parent-id="pending-source-surface">${rows.map((row,index)=>`<div><span>${index+1}.</span><span><b>${esc(row.name)}</b>${row.note?`<small>${esc(row.note)}</small>`:''}</span><span>${esc(row.customer)}</span><strong>×${row.qty}</strong></div>`).join('')}</div>
+    <footer class="pending-source-actions" data-ui-node="region" data-ui-id="pending-source-actions" data-parent-id="pending-source-surface"><strong>TỔNG: ${total} sp</strong><div><button type="button" data-source-action="print">In</button><button type="button" data-source-action="total">Tổng SP</button></div></footer>
+  </section>`;
 }
 
-function orderDetailMarkup(order){
+function orderDetailSurface(order){
   const items=order.items||[];const qty=items.reduce((sum,item)=>sum+itemQty(item),0);
-  return `<div class="pending-overlay" data-order-detail>
-    <button class="pending-backdrop" type="button" data-order-close aria-label="Đóng"></button>
-    <section class="pending-detail-panel">
-      <header><strong>${esc(order.id)}</strong><span>⏳ Chờ duyệt</span><button type="button" data-order-close>✕</button></header>
-      <div class="pending-detail-meta"><b>KH: ${esc(order.tenKH)}</b> · ${esc(order.id)} · ${esc(fmtDate(order.ngay||order.ordered_at))}</div>
+  return `<section class="pending-detail-panel pending-detail-surface" data-ui-node="surface" data-ui-id="pending-detail-surface" data-parent-id="pending-workspace" data-slot-mobile="1" data-slot-wide="2">
+    <section class="pending-detail-meta" data-ui-node="region" data-ui-id="pending-detail-meta" data-parent-id="pending-detail-surface">
+      <header><strong>${esc(order.id)}</strong><span>⏳ Chờ duyệt</span><button type="button" data-order-close aria-label="Quay lại">✕</button></header>
+      <div><b>KH: ${esc(order.tenKH)}</b> · ${esc(order.id)} · ${esc(fmtDate(order.ngay||order.ordered_at))}</div>
       <div class="pending-detail-head"><span>#</span><span>Tên</span><span>SL</span><span>Đ.Giá</span><span>T.Tiền</span></div>
-      <div class="pending-detail-lines">${items.map((item,index)=>`<div><span>${index+1}.</span><span>${esc(itemName(item))}${item.ghiChu||item.note?`<small>${esc(item.ghiChu||item.note)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div>
-      <div class="pending-detail-total"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div>
-      <footer><button type="button" data-order-action="edit">Sửa</button><button type="button" data-order-action="deliver">Duyệt</button><button type="button" data-order-action="print">In</button><button type="button" data-order-action="delete">Xoá</button></footer>
     </section>
-  </div>`;
+    <div class="pending-detail-lines" data-ui-node="region" data-ui-id="pending-detail-lines" data-parent-id="pending-detail-surface">${items.map((item,index)=>`<div><span>${index+1}.</span><span>${esc(itemName(item))}${item.ghiChu||item.note?`<small>${esc(item.ghiChu||item.note)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div>
+    <footer class="pending-detail-actions" data-ui-node="region" data-ui-id="pending-detail-actions" data-parent-id="pending-detail-surface"><div class="pending-detail-total"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div><div class="pending-detail-buttons"><button type="button" data-order-action="edit">Sửa</button><button type="button" data-order-action="deliver">Duyệt</button><button type="button" data-order-action="print">In</button><button type="button" data-order-action="delete">Xoá</button></div></footer>
+  </section>`;
 }
 
 function pendingPrintBody(data){return `<main class="print-sheet"><div class="print-head">${esc(data?.title||'')}</div><div class="print-meta">${esc(data?.date||'')}</div>${(data?.rows||[]).map((row,index)=>`<div class="print-row"><span>${index+1}. ${esc(row.name||row.tenHang||'')}${row.customer?` <small>(${esc(row.customer)})</small>`:''}</span><strong>${row.qty??row.sl??0}</strong></div>`).join('')}</main>`;}
 
-function printMarkup(data){
-  if(!data)return'';return `<div class="pending-overlay pending-print-overlay"><button class="pending-backdrop" type="button" data-print-close aria-label="Đóng"></button><section class="pending-print-panel">
-    <header><button type="button" data-print-close>✕</button><strong>${esc(data.title||'')}</strong><button type="button" data-print-now>In</button></header>
-    <div class="pending-print-date">${esc(data.date||'')}</div>
-    <div class="pending-print-lines">${(data.rows||[]).map((row,index)=>`<div><span>${index+1}. ${esc(row.name||row.tenHang||'')}${row.customer?` <small>(${esc(row.customer)})</small>`:''}</span><strong>${row.qty??row.sl??0}</strong></div>`).join('')}</div>
-  </section></div>`;
+function printSurface(data){
+  return `<section class="pending-print-panel pending-print-surface" data-ui-node="surface" data-ui-id="pending-print-surface" data-parent-id="pending-workspace" data-slot-mobile="1" data-slot-wide="3">
+    <section class="pending-print-meta" data-ui-node="region" data-ui-id="pending-print-meta" data-parent-id="pending-print-surface"><header><button type="button" data-print-close aria-label="Quay lại">✕</button><strong>${esc(data.title||'')}</strong></header><div>${esc(data.date||'')}</div></section>
+    <div class="pending-print-lines" data-ui-node="region" data-ui-id="pending-print-lines" data-parent-id="pending-print-surface">${(data.rows||[]).map((row,index)=>`<div><span>${index+1}. ${esc(row.name||row.tenHang||'')}${row.customer?` <small>(${esc(row.customer)})</small>`:''}</span><strong>${row.qty??row.sl??0}</strong></div>`).join('')}</div>
+    <footer class="pending-print-actions" data-ui-node="region" data-ui-id="pending-print-actions" data-parent-id="pending-print-surface"><button type="button" data-print-now>In</button></footer>
+  </section>`;
 }
 
 function printForOrder(order){return {title:`ĐƠN TẠM ${order.id}`,date:fmtDate(order.ngay||order.ordered_at),rows:(order.items||[]).map(item=>({name:itemName(item),qty:itemQty(item),customer:order.tenKH}))};}
@@ -93,15 +92,20 @@ function printForSource(source,orders,totalOnly=false){
   return {title:`TỔNG SP: ${source.toUpperCase()}`,date:new Date().toLocaleDateString('vi-VN'),rows:[...map].map(([name,qty])=>({name,qty}))};
 }
 
-export function pendingMarkup({orders=[],selectedSource=null,selectedOrder=null,printData=null}={}){
-  const list=pendingOrders(orders);
-  return `<section class="pending-screen" data-screen-id="pending">
-    <section class="pending-summary">
-      <header><h2>📝 Tổng hợp đơn tạm</h2>${list.length?'<button type="button" data-delete-all>🗑️ Xoá tất cả</button>':''}</header>
-      ${sourceSummaryMarkup(list)}
-    </section>
-    <section class="pending-list">${list.map(orderCard).join('')||'<div class="pending-empty">Không có đơn tạm</div>'}</section>
-    ${selectedSource?sourceDetailMarkup(selectedSource,list):''}${selectedOrder?orderDetailMarkup(selectedOrder):''}${printMarkup(printData)}
+export function pendingMarkup(input={}){
+  const state={orders:[],selectedSource:null,selectedOrder:null,printData:null,...input};
+  const list=pendingOrders(state.orders);
+  const hasSecondary=Boolean(state.selectedSource||state.selectedOrder),hasTertiary=Boolean(state.printData);
+  return `<section class="pending-screen" data-screen-id="pending" data-active-surface="${pendingActiveSurface(state)}" data-has-secondary="${hasSecondary}" data-has-tertiary="${hasTertiary}">
+    <div class="pending-workspace" data-ui-node="workspace" data-ui-id="pending-workspace" data-parent-id="pending-root">
+      <section class="pending-list-surface" data-ui-node="surface" data-ui-id="pending-list-surface" data-parent-id="pending-workspace" data-slot-mobile="1" data-slot-wide="1">
+        <section class="pending-summary" data-ui-node="region" data-ui-id="pending-summary-region" data-parent-id="pending-list-surface"><header><h2>📝 Tổng hợp đơn tạm</h2>${list.length?'<button type="button" data-delete-all>🗑️ Xoá tất cả</button>':''}</header>${sourceSummaryMarkup(list)}</section>
+        <section class="pending-list" data-ui-node="region" data-ui-id="pending-order-list" data-parent-id="pending-list-surface">${list.map(orderCard).join('')||'<div class="pending-empty">Không có đơn tạm</div>'}</section>
+      </section>
+      ${state.selectedSource?sourceSurface(state.selectedSource,list):''}
+      ${state.selectedOrder?orderDetailSurface(state.selectedOrder):''}
+      ${state.printData?printSurface(state.printData):''}
+    </div>
   </section>`;
 }
 
@@ -112,32 +116,32 @@ export async function mount(context){
   const findOrder=id=>state.orders.find(order=>String(order.id)===String(id));
   const refresh=async domains=>{await context.refresh?.(domains);state={...state,orders:(context.getData?.()||context.data||{}).orders||state.orders};};
   const onClick=async event=>{
-    const source=event.target.closest('[data-source-open]');if(source){state={...state,selectedSource:source.dataset.sourceOpen};render();return;}
-    const order=event.target.closest('[data-order-open]');if(order){state={...state,selectedOrder:findOrder(order.dataset.orderOpen)};render();return;}
-    if(event.target.closest('[data-source-close]')){state={...state,selectedSource:null};render();return;}
-    if(event.target.closest('[data-order-close]')){state={...state,selectedOrder:null};render();return;}
+    const source=event.target.closest('[data-source-open]');if(source){state={...state,selectedSource:source.dataset.sourceOpen,selectedOrder:null,printData:null};render();return;}
+    const order=event.target.closest('[data-order-open]');if(order){state={...state,selectedOrder:findOrder(order.dataset.orderOpen),selectedSource:null,printData:null};render();return;}
+    if(event.target.closest('[data-source-close]')){state={...state,selectedSource:null,printData:null};render();return;}
+    if(event.target.closest('[data-order-close]')){state={...state,selectedOrder:null,printData:null};render();return;}
     if(event.target.closest('[data-print-close]')){state={...state,printData:null};render();return;}
     if(event.target.closest('[data-print-now]')){if(state.printData)openPrintDocument({title:state.printData.title,body:pendingPrintBody(state.printData)});return;}
     if(event.target.closest('[data-delete-all]')){
       const ids=pendingOrders(state.orders).map(order=>order.id);if(busy||!ids.length||!window.confirm(`Xoá tất cả ${ids.length} đơn tạm?`))return;busy=true;
-      try{await context.business.batchOrders('delete_pending',ids);await refresh(['orders']);state={...state,selectedOrder:null,selectedSource:null};render();}
+      try{await context.business.batchOrders('delete_pending',ids);await refresh(['orders']);state={...state,selectedOrder:null,selectedSource:null,printData:null};render();}
       catch(error){context.system?.toast(error?.message||'Không thực hiện được');}finally{busy=false;}return;
     }
-    const sourceAction=event.target.closest('[data-source-action]')?.dataset.sourceAction;if(sourceAction&&state.selectedSource){state={...state,printData:printForSource(state.selectedSource,pendingOrders(state.orders),sourceAction==='total'),selectedSource:null};render();return;}
+    const sourceAction=event.target.closest('[data-source-action]')?.dataset.sourceAction;if(sourceAction&&state.selectedSource){state={...state,printData:printForSource(state.selectedSource,pendingOrders(state.orders),sourceAction==='total')};render();return;}
     const action=event.target.closest('[data-order-action]')?.dataset.orderAction;if(!action||!state.selectedOrder)return;
     const current=state.selectedOrder;
-    if(action==='print'){state={...state,printData:printForOrder(current),selectedOrder:null};render();return;}
+    if(action==='print'){state={...state,printData:printForOrder(current)};render();return;}
     if(action==='edit'){
       try{const detail=await context.business.orderDetail(current.id);context.editOrder?.(detail?.order||current);context.navigate?.('sales');}
       catch(error){context.system?.toast(error?.message||'Không thực hiện được');}return;
     }
     if(action==='deliver'){
-      if(busy)return;busy=true;try{await context.business.deliverOrder(current.id);await refresh(['orders','debt']);state={...state,selectedOrder:null};render();}
+      if(busy)return;busy=true;try{await context.business.deliverOrder(current.id);await refresh(['orders','debt']);state={...state,selectedOrder:null,printData:null};render();}
       catch(error){context.system?.toast(error?.message||'Không thực hiện được');}finally{busy=false;}return;
     }
     if(action==='delete'){
       if(busy||!window.confirm(`Xoá đơn ${current.id}?`))return;busy=true;
-      try{await context.business.deletePending(current.id);await refresh(['orders']);state={...state,selectedOrder:null};render();}
+      try{await context.business.deletePending(current.id);await refresh(['orders']);state={...state,selectedOrder:null,printData:null};render();}
       catch(error){context.system?.toast(error?.message||'Không thực hiện được');}finally{busy=false;}
     }
   };
