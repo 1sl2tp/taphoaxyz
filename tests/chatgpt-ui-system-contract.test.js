@@ -49,3 +49,17 @@ test('UI decorator uses shared SVG icons instead of interface emoji',()=>{
   assert.doesNotMatch(uiSystem,/document\.createTextNode\(['"]🛒/);
   assert.doesNotMatch(index,/>◉<|>×</);
 });
+
+test('shell and Sales use neutral final-theme chrome without changing geometry owners',()=>{
+  const css=read('src/styles/chatgpt-ui.css');
+  const ui=read('src/core/ui-system.js');
+  assert.match(css,/\.app-topbar[^}]*background:\s*var\(--tap-surface\)/s);
+  assert.match(css,/\.app-nav button\[aria-current="page"\][^}]*color:\s*var\(--tap-text\)/s);
+  assert.match(css,/\.sales-customer-row[^}]*background:\s*var\(--tap-surface\)/s);
+  assert.match(css,/\.sales-group\[aria-pressed="true"\][^}]*background:\s*var\(--tap-primary\)/s);
+  assert.match(css,/\.sales-qty button:last-child[^}]*background:\s*var\(--tap-primary\)/s);
+  assert.match(css,/\.account-sheet-card[^}]*border:\s*1px solid var\(--tap-border\)/s);
+  assert.match(css,/\.sales-search-row::before[^}]*content:\s*none/s);
+  assert.match(ui,/ui-search-leading-icon/);
+  assert.match(ui,/icon\('search'/);
+});
