@@ -36,6 +36,8 @@
 [data-screen-id="debt"] .debt-quick-actions button:nth-of-type(1){background:var(--ui-success)!important}
 [data-screen-id="debt"] .debt-quick-actions button:nth-of-type(2){background:var(--ui-danger)!important}
 [data-screen-id="debt"] .debt-list{padding-top:10px!important}
+[data-screen-id="debt"] .debt-customer-row{min-height:64px;padding-block:0!important;align-items:center!important}
+[data-screen-id="debt"] .debt-avatar,[data-screen-id="debt"] .debt-customer-copy,[data-screen-id="debt"] .debt-customer-row>strong{align-self:center}
 
 /* Debt detail: compact receipt chrome; only transaction actions carry semantic color. */
 [data-screen-id="debt"] .debt-detail-panel>header{min-height:48px;padding:8px 12px!important}
