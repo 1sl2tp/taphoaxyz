@@ -4,6 +4,8 @@ await rm('dist',{recursive:true,force:true});
 await mkdir('dist',{recursive:true});
 await cp('index.html','dist/index.html');
 await cp('manifest.webmanifest','dist/manifest.webmanifest');
+await cp('version.json','dist/version.json');
+await cp('sw.js','dist/sw.js');
 await cp('src','dist/src',{recursive:true});
 
 console.log('CURRENT PRODUCTION BUILD PASS');

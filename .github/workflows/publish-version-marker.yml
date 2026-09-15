@@ -1,0 +1,54 @@
+name: TAPHOA publish version marker
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'version.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: taphoa-version-marker-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Write version marker
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          cat > version.json <<EOF
+          {
+            "version": "TAPHOA",
+            "build_id": "${GITHUB_SHA}",
+            "update_policy": "auto-when-safe",
+            "published_from": "github-main"
+          }
+          EOF
+      - name: Commit version marker
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          if git diff --quiet -- version.json; then
+            echo "Version marker already current"
+            exit 0
+          fi
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "${GITHUB_SHA}" ]; then
+            echo "A newer main commit exists; newer workflow will publish its marker"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          git commit -m "chore: publish app build ${GITHUB_SHA:0:12}"
+          git push origin HEAD:main
