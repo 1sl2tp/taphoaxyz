@@ -1,4 +1,5 @@
 import {openPrintDocument} from '../core/print.js';
+import {shareReceiptImage} from '../core/share-receipt.js';
 const money=n=>Number(n||0).toLocaleString('vi-VN');
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmtDate=value=>{const d=new Date(value);return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});};
@@ -71,11 +72,13 @@ function orderDetailMarkup(order,{canManageOrders=false}={}){
     <button class="pending-backdrop" type="button" data-order-close aria-label="Đóng"></button>
     <section class="pending-detail-panel">
       <header><strong>${esc(order.id)}</strong><span>⏳ Chờ duyệt</span><button type="button" data-order-close>✕</button></header>
-      <div class="pending-detail-meta"><b>KH: ${esc(order.tenKH)}</b> · ${esc(order.id)} · ${esc(fmtDate(order.ngay||order.ordered_at))}</div>
-      <div class="pending-detail-head"><span>#</span><span>Tên</span><span>SL</span><span>Đ.Giá</span><span>T.Tiền</span></div>
-      <div class="pending-detail-lines">${items.map((item,index)=>`<div><span>${index+1}.</span><span>${esc(itemName(item))}${item.ghiChu||item.note?`<small>${esc(item.ghiChu||item.note)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div>
-      <div class="pending-detail-total"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div>
-      <footer>${canManageOrders?'<button type="button" data-order-action="edit">Sửa</button><button type="button" data-order-action="deliver">Duyệt</button>':''}<button type="button" data-order-action="print">In</button>${canManageOrders?'<button type="button" data-order-action="delete">Xoá</button>':''}</footer>
+      <div class="classic-receipt" data-receipt-capture>
+        <div class="pending-detail-meta"><b>KH: ${esc(order.tenKH)}</b> · ${esc(order.id)} · ${esc(fmtDate(order.ngay||order.ordered_at))}</div>
+        <div class="pending-detail-head classic-detail-table"><span>#</span><span>TÊN</span><span>SL</span><span>Đ.GIÁ</span><span>T.TIỀN</span></div>
+        <div class="pending-detail-lines classic-detail-table">${items.map((item,index)=>`<div><span>${index+1}.</span><span>${esc(itemName(item))}${item.ghiChu||item.note?`<small>${esc(item.ghiChu||item.note)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div>
+        <div class="pending-detail-total"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div>
+      </div>
+      <footer>${canManageOrders?'<button type="button" data-order-action="edit">Sửa</button><button type="button" data-order-action="deliver">Duyệt</button>':''}<button class="classic-share-button" type="button" data-receipt-share>🖼️ Chia sẻ ảnh</button><button type="button" data-order-action="print">In</button>${canManageOrders?'<button type="button" data-order-action="delete">Xoá</button>':''}</footer>
     </section>
   </div>`;
 }
@@ -124,6 +127,10 @@ export async function mount(context){
     if(event.target.closest('[data-order-close]')){state={...state,selectedOrder:null};render();return;}
     if(event.target.closest('[data-print-close]')){state={...state,printData:null};render();return;}
     if(event.target.closest('[data-print-now]')){if(state.printData)openPrintDocument({title:state.printData.title,body:pendingPrintBody(state.printData)});return;}
+    if(event.target.closest('[data-receipt-share]')&&state.selectedOrder){
+      try{const receipt=root.querySelector('[data-receipt-capture]');await shareReceiptImage(receipt,{fileName:`don-${state.selectedOrder.id}.jpg`,title:`Đơn hàng ${state.selectedOrder.id}`,text:`taphoa.xyz - ${state.selectedOrder.tenKH||''}`});}
+      catch(error){context.system?.toast(error?.message||'Không chia sẻ được ảnh');}return;
+    }
     if(event.target.closest('[data-delete-all]')){
       if(!canManage())return;const ids=pendingOrders(state.orders).map(order=>order.id);if(busy||!ids.length||!window.confirm(`Xoá tất cả ${ids.length} đơn tạm?`))return;busy=true;
       try{await context.business.batchOrders('delete_pending',ids);await refresh(['orders']);state={...state,selectedOrder:null,selectedSource:null};render();}

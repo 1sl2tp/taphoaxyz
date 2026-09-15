@@ -1,4 +1,5 @@
 import {openPrintDocument} from '../core/print.js';
+import {shareReceiptImage} from '../core/share-receipt.js';
 const money=n=>Number(n||0).toLocaleString('vi-VN');
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
@@ -66,11 +67,13 @@ function detailMarkup(o,{canViewCost=false,canManageOrders=false}={}){
     <button class="delivered-backdrop" type="button" data-detail-close aria-label="Đóng"></button>
     <section class="delivered-detail-panel">
       <header><strong>${esc(o.id)}</strong><span>✅ Đã giao</span><button type="button" data-detail-close>✕</button></header>
-      <div class="delivered-detail-meta"><b>KH: ${esc(o.tenKH)}</b> · ${esc(o.id)} · ${esc(fmtDate(o.ngay))}</div>
-      <div class="delivered-detail-head"><span>#</span><span>Tên</span><span>SL</span><span>Đ.Giá</span><span>T.Tiền</span></div>
-      <div class="delivered-detail-lines">${items.map((it,i)=>`<div class="delivered-detail-line"><span>${i+1}.</span><span>${esc(it.tenSP||it.ten||'')}${it.ghiChu?`<small>${esc(it.ghiChu)}</small>`:''}</span><span>${it.sl??it.qty??0}</span><span>${money(it.gia??it.unit_price)}</span><strong>${money((Number(it.gia??it.unit_price)||0)*(Number(it.sl??it.qty)||0))}</strong></div>`).join('')}</div>
-      <div class="delivered-detail-total"><b>Tổng ${qty} SP</b><span><strong>${money(o.tongTien)}</strong>${canViewCost?`<small>Lợi nhuận: +${money(profit)}</small>`:''}</span></div>
-      <footer>${canManageOrders?'<button type="button" data-detail-action="edit">Sửa</button>':''}<button type="button" data-detail-action="print">In</button>${canManageOrders?'<button type="button" data-detail-action="delete">Xoá</button>':''}</footer>
+      <div class="classic-receipt" data-receipt-capture>
+        <div class="delivered-detail-meta"><b>KH: ${esc(o.tenKH)}</b> · ${esc(o.id)} · ${esc(fmtDate(o.ngay))}</div>
+        <div class="delivered-detail-head classic-detail-table"><span>#</span><span>TÊN</span><span>SL</span><span>Đ.GIÁ</span><span>T.TIỀN</span></div>
+        <div class="delivered-detail-lines classic-detail-table">${items.map((it,i)=>`<div class="delivered-detail-line"><span>${i+1}.</span><span>${esc(it.tenSP||it.ten||'')}${it.ghiChu?`<small>${esc(it.ghiChu)}</small>`:''}</span><span>${it.sl??it.qty??0}</span><span>${money(it.gia??it.unit_price)}</span><strong>${money((Number(it.gia??it.unit_price)||0)*(Number(it.sl??it.qty)||0))}</strong></div>`).join('')}</div>
+        <div class="delivered-detail-total"><b>Tổng ${qty} SP</b><span><strong>${money(o.tongTien)}</strong>${canViewCost?`<small>Lợi nhuận: +${money(profit)}</small>`:''}</span></div>
+      </div>
+      <footer>${canManageOrders?'<button type="button" data-detail-action="edit">Sửa</button>':''}<button class="classic-share-button" type="button" data-receipt-share>🖼️ Chia sẻ ảnh</button><button type="button" data-detail-action="print">In</button>${canManageOrders?'<button type="button" data-detail-action="delete">Xoá</button>':''}</footer>
     </section>
   </div>`;
 }
@@ -93,17 +96,28 @@ function calendarMarkup(state){
   return `<div class="delivered-calendar"><div class="delivered-calendar-nav"><button type="button" data-month="-1">‹</button><b>${y} / ${String(m+1).padStart(2,'0')}</b><button type="button" data-month="1">›</button></div><div class="delivered-week"><span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span></div><div class="delivered-days">${cells}</div><div class="delivered-quick"><button type="button" data-quick="yesterday">Hôm qua</button><button type="button" data-quick="week">Tuần này</button><button type="button" data-quick="month">Tháng này</button><button type="button" data-quick="year">Năm nay</button></div><div class="delivered-calendar-close"><span>${state.picking==='to'?'Chọn ngày kết thúc':'Chọn ngày bắt đầu'}</span><button type="button" data-calendar-close>Đóng</button></div></div>`;
 }
 
+function deliveredResultsMarkup(state){
+  const done=filterDeliveredOrders(state.orders,state);const canViewCost=state.permissions?.canViewCost===true;
+  return {done,summary:`<h2>Tổng hợp đã giao <small>(${done.length} đơn)</small></h2>${summaryMarkup(done,canViewCost)}`,list:done.map((order,index)=>orderCard(order,index,canViewCost)).join('')||'<div class="delivered-empty">Không có đơn trong khoảng này</div>'};
+}
+
+function applyDeliveredSearch(root,state){
+  const result=deliveredResultsMarkup(state);
+  const summary=root.querySelector('.delivered-summary');if(summary)summary.innerHTML=result.summary;
+  const list=root.querySelector('.delivered-list');if(list)list.innerHTML=result.list;
+  const clear=root.querySelector('[data-delivered-clear]');if(clear)clear.hidden=!state.search;
+}
+
 export function deliveredMarkup(input={}){
   const today=dateKey(new Date());const state={orders:[],search:'',mode:'today',from:today,to:today,calendarOpen:false,calendarMonth:today,picking:'from',selected:null,printOrder:null,permissions:{},...input};
-  const done=filterDeliveredOrders(state.orders,state);
-  const canViewCost=state.permissions?.canViewCost===true;
+  const result=deliveredResultsMarkup(state);
   const canManageOrders=state.permissions?.canManageOrders===true;
   const label=state.mode==='range'?(state.from===state.to?state.from.slice(8,10)+'/'+state.from.slice(5,7):`${state.from.slice(8,10)}/${state.from.slice(5,7)} → ${state.to.slice(8,10)}/${state.to.slice(5,7)}`):'Chọn ngày';
   return `<section class="delivered-screen" data-screen-id="delivered">
     <section class="delivered-filter"><div class="delivered-search"><input data-delivered-search value="${esc(state.search)}" placeholder="Tìm tên khách hoặc sản phẩm..."><button type="button" data-delivered-clear ${state.search?'':'hidden'}>✕</button></div><div class="delivered-time"><button type="button" data-today aria-pressed="${state.mode==='today'}">Hôm nay</button><button type="button" data-calendar-toggle aria-pressed="${state.mode==='range'}">${esc(label)}</button></div>${calendarMarkup(state)}</section>
-    <section class="delivered-summary"><h2>Tổng hợp đã giao <small>(${done.length} đơn)</small></h2>${summaryMarkup(done,canViewCost)}</section>
-    <section class="delivered-list">${done.map((order,index)=>orderCard(order,index,canViewCost)).join('')||'<div class="delivered-empty">Không có đơn trong khoảng này</div>'}</section>
-    ${state.selected?detailMarkup(state.selected,{canViewCost,canManageOrders}):''}${state.printOrder?printMarkup(state.printOrder):''}
+    <section class="delivered-summary">${result.summary}</section>
+    <section class="delivered-list">${result.list}</section>
+    ${state.selected?detailMarkup(state.selected,{canViewCost:state.permissions?.canViewCost===true,canManageOrders}):''}${state.printOrder?printMarkup(state.printOrder):''}
   </section>`;
 }
 
@@ -114,7 +128,7 @@ export async function mount(context){
   const unsubscribeData=context.subscribeData?.(({changed})=>{if(changed.some(x=>x==='bootstrap'||x==='orders'||x==='products'||x==='customers'))render();});
   const findOrder=id=>state.orders.find(o=>String(o.id)===String(id));
   const onClick=async event=>{
-    if(event.target.closest('[data-delivered-clear]')){state={...state,search:''};render();return;}
+    if(event.target.closest('[data-delivered-clear]')){state={...state,search:''};const input=root.querySelector('[data-delivered-search]');if(input)input.value='';applyDeliveredSearch(root,state);return;}
     if(event.target.closest('[data-today]')){const r=quickRange('today');state={...state,mode:'today',from:r.from,to:r.to,calendarOpen:false};render();return;}
     if(event.target.closest('[data-calendar-toggle]')){state={...state,calendarOpen:!state.calendarOpen,picking:'from',calendarMonth:state.from};render();return;}
     if(event.target.closest('[data-calendar-close]')){state={...state,calendarOpen:false};render();return;}
@@ -125,6 +139,10 @@ export async function mount(context){
     if(event.target.closest('[data-detail-close]')){state={...state,selected:null};render();return;}
     if(event.target.closest('[data-print-close]')){state={...state,printOrder:null};render();return;}
     if(event.target.closest('[data-print-now]')){if(state.printOrder)openPrintDocument({title:state.printOrder.id,body:deliveredPrintBody(state.printOrder)});return;}
+    if(event.target.closest('[data-receipt-share]')&&state.selected){
+      try{const receipt=root.querySelector('[data-receipt-capture]');await shareReceiptImage(receipt,{fileName:`don-${state.selected.id}.jpg`,title:`Đơn hàng ${state.selected.id}`,text:`taphoa.xyz - ${state.selected.tenKH||''}`});}
+      catch(error){context.system?.toast(error?.message||'Không chia sẻ được ảnh');}return;
+    }
     const action=event.target.closest('[data-detail-action]')?.dataset.detailAction;if(!action||!state.selected)return;
     if(action==='print'){state={...state,printOrder:state.selected,selected:null};render();return;}
     if(!canManage())return;
@@ -138,6 +156,6 @@ export async function mount(context){
       catch(e){context.system?.toast(e?.message||'Không thực hiện được');}finally{busy=false;}
     }
   };
-  const onInput=event=>{if(event.target.matches('[data-delivered-search]')){state={...state,search:event.target.value};render();const input=root.querySelector('[data-delivered-search]');input?.focus();input?.setSelectionRange(state.search.length,state.search.length);}};
+  const onInput=event=>{if(event.target.matches('[data-delivered-search]')){state={...state,search:event.target.value};applyDeliveredSearch(root,state);}};
   root.addEventListener('click',onClick);root.addEventListener('input',onInput);render();return()=>{unsubscribeData?.();root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);};
 }
