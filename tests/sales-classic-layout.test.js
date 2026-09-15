@@ -7,11 +7,13 @@ const source=read('src/screens/sales.js');
 const css=read('src/styles/sales.css')+read('src/styles/classic.css');
 
 test('Sales restores the classic seller strip search pills and desktop split',()=>{
-  assert.match(source,/class="sales-customer-row classic-seller-strip"/);
-  assert.match(source,/class="sales-search-icon"[^>]*>🔍</);
+  assert.match(source,/class="sales-customer-row"/);
+  assert.match(source,/class="sales-search-row"/);
   assert.match(source,/class="sales-groups"/);
   assert.match(source,/class="sales-workspace"/);
   assert.match(source,/class="sales-cart-desktop"/);
+  assert.match(css,/\.sales-customer-row[^}]*linear-gradient\(135deg,var\(--classic-blue\),var\(--classic-teal\)\)/s);
+  assert.match(css,/\.sales-search-row::before[^}]*content:\s*"🔍"/s);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) minmax\(360px,1fr\)/);
 });
 
