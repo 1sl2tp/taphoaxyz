@@ -69,13 +69,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display'
 .sales-cart-mobile{border-radius:20px 20px 0 0!important}
 .sales-cart-actions button{border-radius:12px!important}
 
-.delivered-order-card,.pending-order-card,.debt-customer-row{background:#fff;border:1px solid var(--classic-border);box-shadow:var(--classic-shadow)}
+.delivered-order-card,.pending-order-card,.debt-customer-row{background:#fff!important;border:1px solid var(--classic-border)!important;border-radius:12px!important;box-shadow:var(--classic-shadow)!important}
+.delivered-detail-panel,.pending-detail-panel,.pending-source-panel,.delivered-print-panel,.pending-print-panel{background:#fff!important;border-radius:20px!important;box-shadow:0 10px 25px rgba(0,0,0,.12),0 4px 10px rgba(0,0,0,.07)!important}
+.delivered-detail-panel>header,.pending-detail-panel>header{border-bottom:1px solid var(--classic-divider)!important}
+.classic-receipt{background:#fff;color:var(--classic-text);padding:14px 12px;border:1px solid #E5E7EB;border-radius:8px;margin:0 12px 12px}
+.classic-detail-table{font-variant-numeric:tabular-nums}
+.delivered-detail-head.classic-detail-table,.pending-detail-head.classic-detail-table{font-size:10px!important;font-weight:700!important;color:var(--classic-text-muted)!important;border-bottom:1px dashed var(--classic-border)!important;padding-bottom:6px!important}
+.delivered-detail-lines.classic-detail-table,.pending-detail-lines.classic-detail-table{background:#fff!important}
+.delivered-detail-line,.pending-detail-lines>div{border-bottom:1px solid var(--classic-divider)!important;padding-block:8px!important}
+.delivered-detail-meta,.pending-detail-meta{font-size:12px!important;color:var(--classic-text-secondary)!important;margin-bottom:10px!important}
+.delivered-detail-total,.pending-detail-total{border-top:2px solid var(--classic-divider)!important;margin-top:4px!important;padding-top:12px!important}
+.delivered-detail-panel>footer,.pending-detail-panel>footer{gap:8px!important;padding:10px 12px 14px!important;display:flex!important;flex-wrap:wrap!important}
+.delivered-detail-panel>footer button,.pending-detail-panel>footer button{min-height:36px!important;border-radius:12px!important;padding:7px 14px!important;font-size:12px!important;font-weight:700!important}
+.classic-share-button{background:var(--classic-green)!important;border:1px solid var(--classic-green)!important;color:#fff!important}
+.delivered-backdrop,.pending-backdrop{background:rgba(0,0,0,.5)!important}
 
 .account-sheet-card{background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.12)}
 .account-sheet-avatar{background:var(--classic-blue-light);color:var(--classic-blue)}
 .account-logout{border-color:var(--classic-red);color:var(--classic-red);background:#fff}
 
 .system-toast{background:rgba(30,41,59,.93);border-radius:24px;padding:10px 20px;font-size:13px;font-weight:700}
+
+@media(max-width:520px){
+  .delivered-detail-panel,.pending-detail-panel,.pending-source-panel{width:min(100% - 18px,430px)!important;max-height:92dvh!important;border-radius:20px 20px 0 0!important}
+  .classic-receipt{margin-inline:8px;padding:12px 8px}
+}
 
 @media(min-width:768px){
   .taphoa-viewport,.app-shell{width:100%;max-width:none}
