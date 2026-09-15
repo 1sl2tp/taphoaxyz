@@ -17,36 +17,95 @@
 
 .ui-card{background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:var(--ui-radius);color:var(--ui-text)}
 .ui-button{min-height:42px;border:1px solid var(--ui-line);border-radius:11px;background:var(--ui-panel);color:var(--ui-text);font-weight:700;padding:0 14px}
-.ui-button-primary{border-color:var(--ui-primary);background:var(--ui-primary);color:#fff}
-.ui-button-success{border-color:var(--ui-success);background:var(--ui-success);color:#fff}
-.ui-button-danger{border-color:var(--ui-danger);background:var(--ui-panel);color:var(--ui-danger)}
-.ui-icon-button{width:32px;height:32px;min-height:32px;padding:0;border:1px solid var(--ui-line);border-radius:10px;background:var(--ui-surface-soft);color:var(--ui-text-secondary);display:grid;place-items:center}
-.ui-status{display:inline-flex;align-items:center;gap:4px;width:max-content;max-width:100%;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
-.ui-status-pending{background:#fff5e8;color:var(--ui-warning)}
-.ui-status-success{background:#edf7f2;color:var(--ui-success)}
-.ui-status-danger{background:#fff0ee;color:var(--ui-danger)}
+.ui-button-primary{border-color:var(--ui-primary)!important;background:var(--ui-primary)!important;color:#fff!important}
+.ui-button-success{border-color:var(--ui-success)!important;background:var(--ui-success)!important;color:#fff!important}
+.ui-button-danger{border-color:var(--ui-danger)!important;background:var(--ui-panel)!important;color:var(--ui-danger)!important}
+.ui-icon-button{width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;border:1px solid var(--ui-line)!important;border-radius:10px!important;background:var(--ui-surface-soft)!important;color:var(--ui-text-secondary)!important;display:grid!important;place-items:center!important}
+.ui-status{display:inline-flex!important;align-items:center;gap:4px;width:max-content;max-width:100%;padding:3px 8px!important;border-radius:999px!important;font-size:11px!important;font-weight:700!important;white-space:nowrap}
+.ui-status-pending{background:#fff5e8!important;color:var(--ui-warning)!important}
+.ui-status-success{background:#edf7f2!important;color:var(--ui-success)!important}
+.ui-status-danger{background:#fff0ee!important;color:var(--ui-danger)!important}
 
-.order-detail-panel{--order-accent:var(--ui-primary);position:relative;background:var(--ui-panel);border-radius:var(--ui-sheet-radius);color:var(--ui-text);overflow:hidden}
-.order-detail-inner{padding:18px}
-.order-detail-header{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;margin-bottom:10px}
-.order-detail-title{min-width:0;margin:0;color:var(--ui-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.order-detail-context{min-width:0;margin-bottom:10px;color:var(--ui-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Shared order-detail family: Pending / Delivered / Debt-order. */
+.order-detail-panel{--order-accent:var(--ui-primary);position:relative;background:var(--ui-panel)!important;border-radius:var(--ui-sheet-radius)!important;color:var(--ui-text);overflow:hidden;padding:18px!important;box-shadow:0 18px 48px rgba(15,23,42,.18)!important}
+.order-detail-header{display:grid!important;grid-template-columns:minmax(0,1fr) auto 32px;align-items:center!important;gap:8px!important;margin-bottom:10px!important}
+.order-detail-title{min-width:0;margin:0;color:var(--ui-text)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order-detail-context{min-width:0;margin-bottom:10px!important;color:var(--ui-text-secondary)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .order-detail-id{font-variant-numeric:tabular-nums;color:var(--ui-muted)}
-.order-detail-head,.order-detail-line{display:grid;grid-template-columns:22px minmax(0,1fr) 34px 56px 64px;gap:4px;align-items:start}
-.order-detail-head{border-top:1px dashed var(--ui-line-strong);border-bottom:1px dashed var(--ui-line-strong);padding:5px 0;color:var(--ui-muted)}
-.order-detail-line{padding:7px 0;border-bottom:1px solid var(--ui-line);color:var(--ui-text)}
+.order-detail-head,.order-detail-line{display:grid!important;grid-template-columns:22px minmax(0,1fr) 34px 56px 64px!important;gap:4px!important;align-items:start!important}
+.order-detail-head{border-top:1px dashed var(--ui-line-strong)!important;border-bottom:1px dashed var(--ui-line-strong)!important;padding:5px 0!important;color:var(--ui-muted)!important}
+.order-detail-line{padding:7px 0!important;border-bottom:1px solid var(--ui-line)!important;color:var(--ui-text)}
 .order-detail-head>*:nth-child(n+3),.order-detail-line>*:nth-child(n+3){text-align:right}
-.order-detail-line>strong{color:var(--order-accent)}
-.order-detail-total{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border-top:1px solid var(--ui-line-strong);padding:10px 0;color:var(--ui-text)}
-.order-detail-total>strong,.order-detail-total span>strong{color:var(--order-accent)}
-.order-detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.order-detail-actions:has(>button:only-child){grid-template-columns:1fr}
-.order-detail-actions .ui-button{width:100%}
+.order-detail-line>strong{color:var(--order-accent)!important}
+.order-detail-total{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:10px;border-top:1px solid var(--ui-line-strong)!important;padding:10px 0!important;margin-top:0!important;color:var(--ui-text)}
+.order-detail-total>strong,.order-detail-total span>strong{color:var(--order-accent)!important}
+.order-detail-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+.order-detail-actions:has(>button:only-child){grid-template-columns:1fr!important}
+.order-detail-actions .ui-button{width:100%;min-height:42px}
+.order-detail-lines{min-height:0;overflow:auto}
+
+/* Shared screen surfaces and type rhythm. */
+[data-screen-id="delivered"],[data-screen-id="pending"],[data-screen-id="debt"]{background:var(--ui-page)!important;color:var(--ui-text)!important}
+[data-screen-id="delivered"] .delivered-filter,[data-screen-id="delivered"] .delivered-summary,[data-screen-id="pending"] .pending-summary{background:var(--ui-panel)!important;border-color:var(--ui-line)!important}
+[data-screen-id="delivered"] .delivered-search input,[data-screen-id="delivered"] .delivered-time button,[data-screen-id="pending"] .pending-summary>header button,[data-screen-id="debt"] .debt-sort button,[data-screen-id="debt"] .debt-detail-panel>footer>input{border-color:var(--ui-line)!important;background:var(--ui-panel)!important;color:var(--ui-text)!important}
+[data-screen-id="delivered"] .delivered-search input:focus,[data-screen-id="debt"] input:focus{border-color:var(--ui-primary)!important;outline:none;box-shadow:0 0 0 1px var(--ui-primary)}
+
+/* Summaries: neutral structure, semantic values only. */
+[data-screen-id="delivered"] .delivered-summary h2,[data-screen-id="pending"] .pending-summary h2{color:var(--ui-text)!important}
+[data-screen-id="delivered"] .delivered-summary-grid,[data-screen-id="pending"] .pending-source-row{border-color:var(--ui-line)!important;color:var(--ui-text)}
+[data-screen-id="delivered"] .delivered-summary-head,[data-screen-id="pending"] .pending-source-head{color:var(--ui-muted)!important}
+[data-screen-id="delivered"] .delivered-summary-grid span:nth-child(3),[data-screen-id="pending"] .pending-source-row>span:nth-child(3){color:var(--ui-text-secondary)!important}
+[data-screen-id="delivered"] .delivered-summary-grid span:nth-child(4),[data-screen-id="pending"] .pending-source-row>span:nth-child(4){color:var(--ui-primary)!important}
+[data-screen-id="delivered"] .delivered-summary-grid span:nth-child(5),[data-screen-id="pending"] .pending-source-row>span:nth-child(5){color:var(--ui-success)!important}
+[data-screen-id="delivered"] .delivered-summary-total,[data-screen-id="pending"] .pending-source-total{border-color:var(--ui-line-strong)!important;color:var(--ui-text)!important}
+
+/* Repeated cards use one visual family; left accent carries state. */
+[data-screen-id="delivered"] .delivered-order-card,[data-screen-id="pending"] .pending-order-card,[data-screen-id="debt"] .debt-customer-row{background:var(--ui-panel)!important;border-color:var(--ui-line)!important;border-radius:var(--ui-radius)!important;box-shadow:0 1px 3px rgba(15,23,42,.04)!important;color:var(--ui-text)!important}
+[data-screen-id="delivered"] .delivered-order-card{border-left-color:var(--ui-success)!important}
+[data-screen-id="pending"] .pending-order-card{border-left-color:var(--ui-warning)!important}
+[data-screen-id="delivered"] .delivered-order-id b,[data-screen-id="pending"] .pending-order-top b{color:var(--ui-text-secondary)!important;font-weight:650!important}
+[data-screen-id="delivered"] .delivered-order-id em{background:#edf7f2!important;color:var(--ui-success)!important}
+[data-screen-id="pending"] .pending-order-top em,[data-screen-id="pending"] .pending-order-preview>span{background:#fff5e8!important;color:var(--ui-warning)!important}
+[data-screen-id="delivered"] .delivered-order-top>strong,[data-screen-id="pending"] .pending-order-top>strong{color:var(--ui-primary)!important;font-variant-numeric:tabular-nums}
+[data-screen-id="delivered"] .delivered-order-mid>strong,[data-screen-id="pending"] .pending-order-mid>strong{color:var(--ui-success)!important}
+[data-screen-id="delivered"] .delivered-order-preview,[data-screen-id="pending"] .pending-order-mid small,[data-screen-id="pending"] .pending-order-preview>small{color:var(--ui-muted)!important}
+
+/* Pending detail: warning only expresses status, money remains primary. */
+[data-screen-id="pending"] .order-detail-panel{--order-accent:var(--ui-primary)}
+[data-screen-id="pending"] .pending-detail-lines strong,[data-screen-id="pending"] .pending-detail-total strong{color:var(--ui-primary)!important}
+[data-screen-id="pending"] .pending-summary>header button{border-color:var(--ui-danger)!important;color:var(--ui-danger)!important}
+
+/* Delivered filters and calendar. */
+[data-screen-id="delivered"] .delivered-time button[aria-pressed="true"],[data-screen-id="delivered"] .delivered-days button[aria-pressed="true"]{background:var(--ui-primary)!important;color:#fff!important;border-color:var(--ui-primary)!important}
+[data-screen-id="delivered"] .delivered-calendar{border-color:var(--ui-line)!important;background:var(--ui-panel)!important;box-shadow:0 12px 30px rgba(15,23,42,.14)!important}
+[data-screen-id="delivered"] .delivered-calendar-nav button,[data-screen-id="delivered"] .delivered-calendar-close button{color:var(--ui-primary)!important}
+
+/* Debt keeps its semantic hero; everything below follows shared system. */
+[data-screen-id="debt"] .debt-hero{background:linear-gradient(135deg,var(--ui-primary),#00897b)!important}
+[data-screen-id="debt"] .debt-total-row>div,[data-screen-id="debt"] .debt-quick{border:1px solid rgba(255,255,255,.12)}
+[data-screen-id="debt"] .debt-customer-row>strong.is-owed{color:var(--ui-danger)!important}
+[data-screen-id="debt"] .debt-customer-row>strong.is-credit{color:var(--ui-success)!important}
+[data-screen-id="debt"] .debt-avatar{background:var(--ui-surface-soft)!important;color:var(--ui-text-secondary)!important}
+[data-screen-id="debt"] .debt-customer-copy small,[data-screen-id="debt"] .debt-group-head,[data-screen-id="debt"] .debt-sort{color:var(--ui-muted)!important}
+[data-screen-id="debt"] .debt-detail-panel,[data-screen-id="debt"] .debt-order-panel{background:var(--ui-panel)!important;border:1px solid var(--ui-line);box-shadow:0 18px 48px rgba(15,23,42,.18)!important}
+[data-screen-id="debt"] .debt-detail-panel>header,[data-screen-id="debt"] .debt-detail-panel>footer{background:var(--ui-panel)!important;border-color:var(--ui-line)!important}
+[data-screen-id="debt"] .debt-ledger-head,[data-screen-id="debt"] .debt-order-head{border-color:var(--ui-line-strong)!important;color:var(--ui-muted)!important}
+[data-screen-id="debt"] .debt-transaction-row,[data-screen-id="debt"] .debt-order-lines>div{border-color:var(--ui-line)!important;background:var(--ui-panel)!important}
+[data-screen-id="debt"] .debt-shop strong,[data-screen-id="debt"] .debt-order-panel>header>strong,[data-screen-id="debt"] .debt-order-lines strong,[data-screen-id="debt"] .debt-order-total strong{color:var(--ui-primary)!important}
+
+/* Action hierarchy after legacy screen rules. */
+[data-screen-id="pending"] .order-detail-actions button,[data-screen-id="delivered"] .order-detail-actions button{border:1px solid var(--ui-line)!important;background:var(--ui-panel)!important;color:var(--ui-text)!important;border-radius:11px!important}
+[data-screen-id="pending"] .order-detail-actions [data-order-action="deliver"]{border-color:var(--ui-primary)!important;background:var(--ui-primary)!important;color:#fff!important}
+[data-screen-id="pending"] .order-detail-actions [data-order-action="delete"],[data-screen-id="delivered"] .order-detail-actions [data-detail-action="delete"]{border-color:var(--ui-danger)!important;background:var(--ui-panel)!important;color:var(--ui-danger)!important}
+[data-screen-id="delivered"] .order-detail-actions [data-detail-action="edit"]{border-color:var(--ui-primary)!important;color:var(--ui-primary)!important}
+
+/* Auth-specific title remains intentionally larger than in-panel titles. */
+.login-card h1{font-size:26px!important;line-height:1.15!important;font-weight:800!important;letter-spacing:-.02em!important}
 
 @container screen-host (max-width:480px){
-  .order-detail-panel{width:100%;border-radius:18px}
-  .order-detail-inner{padding:14px 12px 16px}
-  .order-detail-header{grid-template-columns:minmax(0,1fr) auto 32px;gap:6px}
-  .order-detail-context{font-size:12px}
-  .order-detail-head,.order-detail-line{grid-template-columns:18px minmax(0,1fr) 30px 52px 58px;gap:3px}
+  .order-detail-panel{width:min(100%,400px);padding:14px 12px 16px!important;border-radius:18px!important}
+  .order-detail-header{grid-template-columns:minmax(0,1fr) auto 32px;gap:6px!important}
+  .order-detail-context{font-size:12px!important}
+  .order-detail-head,.order-detail-line{grid-template-columns:18px minmax(0,1fr) 30px 52px 58px!important;gap:3px!important}
+  [data-screen-id="delivered"] .delivered-order-card,[data-screen-id="pending"] .pending-order-card,[data-screen-id="debt"] .debt-customer-row{border-radius:14px!important}
 }
