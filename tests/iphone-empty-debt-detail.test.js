@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {deliveredMarkup} from '../src/screens/delivered.js';
 import {debtMarkup} from '../src/screens/debt.js';
+
+const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
 test('delivered empty state is rendered only once',()=>{
   const html=deliveredMarkup({orders:[],permissions:{}});
@@ -37,4 +40,15 @@ test('debt detail date uses the shared two-digit day month format',()=>{
     detail:{customer:{id:'c1',ten:'A Hậu Còi'},soDu:0,transactions:[]}
   });
   assert.match(html,/\d{2}\/\d{2}\/\d{4}/);
+});
+
+test('opening a zero-balance debt customer keeps the detail amount blank',()=>{
+  const source=read('src/screens/debt.js');
+  assert.match(source,/detailAmount:Number\(detail\?\.soDu\)>0\?String\(Math\.round\(Number\(detail\.soDu\)\)\):''/);
+  assert.doesNotMatch(source,/detailAmount:Number\(detail\?\.soDu\)>0\?String\(Math\.round\(Number\(detail\.soDu\)\)\):'0'/);
+});
+
+test('empty debt ledger is visually muted and centered',()=>{
+  const css=read('src/styles/iphone-visual-cleanup.css');
+  assert.match(css,/\.debt-ledger-empty\{[^}]*color:var\(--ui-muted\)[^}]*text-align:center/s);
 });
