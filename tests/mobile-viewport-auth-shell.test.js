@@ -28,3 +28,29 @@ test('login surface has a complete mobile auth skin rather than fallback form st
   assert.match(css,/\.login-field input\s*\{[^}]*min-height:56px[^}]*border-radius:22px[^}]*font-size:16px/is);
   assert.match(css,/\.login-submit\s*\{[^}]*min-height:56px[^}]*border-radius:999px/is);
 });
+
+test('account control stays outside the four business navigation tabs',()=>{
+  const html=read('index.html');
+  const css=read('src/styles/shell.css');
+  assert.match(html,/class="app-topbar"[^>]*>[\s\S]*id="appNav"[\s\S]*id="accountButton"/i);
+  assert.match(html,/id="accountButton"[^>]*aria-label="Tài khoản"/i);
+  assert.match(css,/\.app-topbar\s*\{[^}]*grid-template-columns:minmax\(0,1fr\) 44px/is);
+});
+
+test('account sheet exposes identity and logout without changing business navigation',()=>{
+  const html=read('index.html');
+  const css=read('src/styles/shell.css');
+  const app=read('src/app.js');
+
+  assert.match(html,/id="accountSheet"[^>]*class="account-sheet"[^>]*hidden/i);
+  assert.match(html,/id="accountSheetBackdrop"/i);
+  assert.match(html,/id="accountName"/i);
+  assert.match(html,/id="accountHandle"/i);
+  assert.match(html,/id="accountLogout"[^>]*>\s*Đăng xuất\s*</i);
+  assert.match(css,/\.account-sheet\s*\{[^}]*position:fixed[^}]*inset:0/is);
+  assert.match(css,/\.account-sheet-card\s*\{[^}]*border-radius:26px 26px 0 0[^}]*padding-bottom:calc\([^)]*safe-bottom/is);
+  assert.match(app,/function\s+renderAccountIdentity\s*\(/);
+  assert.match(app,/function\s+openAccountSheet\s*\(/);
+  assert.match(app,/function\s+closeAccountSheet\s*\(/);
+  assert.match(app,/await\s+auth\.logout\(\)[\s\S]*openLogin\(\)/);
+});
