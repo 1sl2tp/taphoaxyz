@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {icon,ICON_NAMES} from '../src/core/icons.js';
+import {cleanStatusText} from '../src/core/ui-system.js';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
@@ -29,6 +30,20 @@ test('shared icon registry owns required TAPHOA action glyphs',()=>{
   assert.match(svg,/height="20"/);
   assert.match(svg,/currentColor/);
   assert.match(svg,/aria-hidden="true"/);
+});
+
+test('status cleanup is idempotent so MutationObserver does not self-trigger forever',()=>{
+  let value='Đã giao',writes=0;
+  const node={get textContent(){return value;},set textContent(next){writes+=1;value=next;}};
+  cleanStatusText(node);
+  assert.equal(value,'Đã giao');
+  assert.equal(writes,0);
+  value='✅ Đã giao';
+  cleanStatusText(node);
+  assert.equal(value,'Đã giao');
+  assert.equal(writes,1);
+  cleanStatusText(node);
+  assert.equal(writes,1);
 });
 
 test('shared actions and overlays use neutral ChatGPT-aligned chrome',()=>{
