@@ -1,6 +1,7 @@
 const money=n=>Number(n||0).toLocaleString('vi-VN');
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmtDate=value=>{const d=new Date(value);return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});};
+const fmtDay=value=>{const d=new Date(value);if(Number.isNaN(d.getTime()))return'';const p=n=>String(n).padStart(2,'0');return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;};
 const balance=row=>Number(row.soDu??row.balance??row.total??0)||0;
 const lastAt=row=>row.lastTransaction||row.last||row.ngay||'';
 const customerName=row=>row.ten||row.tenKH||row.name||row.maKH||'';
@@ -39,10 +40,10 @@ function customerOptions(customers=[],selected=''){
 }
 
 function customerRow(row){
-  const amount=balance(row),owed=amount>0,credit=amount<0,days=daysSince(lastAt(row)),name=customerName(row);
+  const amount=balance(row),owed=amount>0,credit=amount<0,last=fmtDate(lastAt(row)),days=daysSince(lastAt(row)),name=customerName(row);
   return `<button type="button" class="debt-customer-row" data-customer-open="${esc(row.maKH||row.id)}">
     <span class="debt-avatar">${esc(avatarInitials(name))}</span>
-    <span class="debt-customer-copy"><b>${esc(name)}</b><small>GD cuối: ${esc(fmtDate(lastAt(row)))}${owed&&days>0?` · Nợ ${days} ngày`:''}</small></span>
+    <span class="debt-customer-copy"><b>${esc(name)}</b>${last?`<small>GD cuối: ${esc(last)}${owed&&days>0?` · Nợ ${days} ngày`:''}</small>`:''}</span>
     <strong class="${owed?'is-owed':credit?'is-credit':''}">${credit?'+':''}${money(Math.abs(amount))}</strong>
   </button>`;
 }
@@ -70,12 +71,13 @@ function transactionMarkup(tx){
 }
 
 function debtDetailMarkup(detail,state){
-  const customer=detail.customer||{},name=customer.ten||customer.name||customerName((state.summary||[]).find(x=>String(x.maKH)===String(state.selectedCustomerId))||{}),amount=Number(detail.soDu)||0;
+  const customer=detail.customer||{},name=customer.ten||customer.name||customerName((state.summary||[]).find(x=>String(x.maKH)===String(state.selectedCustomerId))||{}),amount=Number(detail.soDu)||0,transactions=detail.transactions||[];
+  const ledger=transactions.length?transactions.map(transactionMarkup).join(''):'<div class="debt-ledger-empty">Chưa có giao dịch</div>';
   return `<div class="debt-overlay debt-detail-overlay" data-debt-detail><button class="debt-backdrop" type="button" data-debt-close aria-label="Đóng"></button><section class="debt-detail-panel">
     <header><button type="button" data-debt-close>✕</button><button type="button" data-debt-share>🖼️ Chia sẻ ảnh</button></header>
-    <div class="debt-receipt" data-debt-share-target><div class="debt-shop"><div class="debt-shop-avatar">${esc(avatarInitials(state.shopName||'Cửa Hàng'))}</div><strong>${esc(state.shopName||'Cửa Hàng')}</strong></div><div class="debt-receipt-summary"><span><b>KH: ${esc(name)}</b><small>${new Date().toLocaleDateString('vi-VN')}</small></span><span><strong>${money(Math.abs(amount))}</strong><small>${amount>0?'⚠️ Còn nợ':amount<0?'💚 Dư tiền':'✅ Đã xong'}</small></span></div>
-    <div class="debt-ledger-head"><span>Giao dịch</span><span>Ngày</span><span>Số tiền</span></div><div class="debt-ledger">${(detail.transactions||[]).map(transactionMarkup).join('')}</div></div>
-    ${state.canManage?`<footer><input data-detail-amount inputmode="numeric" value="${esc(state.detailAmount??(amount>0?Math.round(amount):0))}" placeholder="Số tiền..."><div><button type="button" data-detail-action="collect">💵 Thu tiền</button><button type="button" data-detail-action="debt">📌 Ghi nợ</button></div></footer>`:''}
+    <div class="debt-receipt" data-debt-share-target><div class="debt-shop"><div class="debt-shop-avatar">${esc(avatarInitials(state.shopName||'Cửa Hàng'))}</div><strong>${esc(state.shopName||'Cửa Hàng')}</strong></div><div class="debt-receipt-summary"><span><b>KH: ${esc(name)}</b><small>${fmtDay(new Date())}</small></span><span><strong>${money(Math.abs(amount))}</strong><small>${amount>0?'⚠️ Còn nợ':amount<0?'💚 Dư tiền':'✅ Đã xong'}</small></span></div>
+    <div class="debt-ledger-head"><span>Giao dịch</span><span>Ngày</span><span>Số tiền</span></div><div class="debt-ledger">${ledger}</div></div>
+    ${state.canManage?`<footer><input data-detail-amount inputmode="numeric" value="${esc(state.detailAmount??(amount>0?Math.round(amount):''))}" placeholder="Số tiền..."><div><button type="button" data-detail-action="collect">💵 Thu tiền</button><button type="button" data-detail-action="debt">📌 Ghi nợ</button></div></footer>`:''}
   </section></div>`;
 }
 
@@ -104,7 +106,7 @@ export async function mount(context){
   const render=()=>{const d=data();state={...state,summary:d.debtSummary||state.summary,customers:d.customers||state.customers,canManage:(d.permissions||permissions).canManageDebt!==false,shopName:d.user?.ten||state.shopName};root.innerHTML=debtMarkup(state);};
   const unsubscribeData=context.subscribeData?.(({changed})=>{if(changed.some(x=>x==='bootstrap'||x==='debt'||x==='customers'||x==='orders'))render();});
   const refresh=async domains=>{await context.refresh?.(domains);render();};
-  const openCustomer=async id=>{try{const detail=await context.business.debtLedger(id);state={...state,selectedCustomerId:id,detail,detailAmount:Number(detail?.soDu)>0?String(Math.round(Number(detail.soDu))):'0',customerOpen:false};render();}catch(error){context.system?.toast(error?.message||'Không thực hiện được');}};
+  const openCustomer=async id=>{try{const detail=await context.business.debtLedger(id);state={...state,selectedCustomerId:id,detail,detailAmount:Number(detail?.soDu)>0?String(Math.round(Number(detail.soDu))):'',customerOpen:false};render();}catch(error){context.system?.toast(error?.message||'Không thực hiện được');}};
   const transact=async(where,type)=>{if(busy)return;const raw=where==='detail'?state.detailAmount:state.amount,amount=Number(String(raw||'').replace(/[^0-9.]/g,''))||0,id=where==='detail'?state.selectedCustomerId:state.selectedCustomerId;if(!id||amount<=0){context.system?.toast('Chọn KH và nhập số tiền!');return;}busy=true;try{await context.business.debtTransaction(id,type,amount,type==='thu_tien'?'Thu tiền':'Ghi nợ');await context.refresh?.(['debt']);if(where==='detail'){const detail=await context.business.debtLedger(id);state={...state,detail,detailAmount:'',amount:''};}else state={...state,amount:''};render();}catch(error){context.system?.toast(error?.message||'Không thực hiện được');}finally{busy=false;}};
   const onClick=async event=>{
     if(event.target.closest('[data-sort-menu]')){state={...state,sortOpen:!state.sortOpen};render();return;}
