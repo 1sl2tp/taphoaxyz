@@ -5,28 +5,36 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
 test('sales cart uses compact total summary and semantic edit actions',()=>{
-  const js=read('src/screens/sales.js');
-  const css=read('src/styles/sales.css');
-  assert.match(js,/\$\{totals\.totalQty\} sp · \$\{money\(totals\.total\)\}/);
-  assert.doesNotMatch(js,/placeholder="\.\.\."/);
+  const runtime=read('src/core/ui-system.js');
+  const css=read('src/styles/iphone-visual-cleanup.css');
+  assert.match(runtime,/SP ·/);
+  assert.match(runtime,/setAttribute\('placeholder','Ghi chú'\)/);
   assert.match(css,/\[data-sales-action="cancel-edit"\][^{]*\{[^}]*var\(--ui-line\)/s);
   assert.match(css,/\[data-sales-action="update"\][^{]*\{[^}]*var\(--ui-primary\)/s);
 });
 
 test('pending cards lead with customer and compact order id',()=>{
-  const js=read('src/screens/pending.js');
-  assert.match(js,/const compactOrderId=/);
-  assert.match(js,/pending-order-customer/);
-  assert.match(js,/compactOrderId\(order\.id\)/);
-  const card=js.slice(js.indexOf('function orderCard'),js.indexOf('function sourceDetailMarkup'));
-  assert.ok(card.indexOf('pending-order-customer')<card.indexOf('compactOrderId(order.id)'));
+  const runtime=read('src/core/ui-system.js');
+  const css=read('src/styles/iphone-visual-cleanup.css');
+  assert.match(runtime,/function decoratePendingCards/);
+  assert.match(runtime,/pending-order-customer/);
+  assert.match(runtime,/compactOrderId\(card\.dataset\.orderOpen\)/);
+  assert.match(css,/\.pending-order-customer\{[^}]*font-weight:750/s);
+  assert.match(css,/\.pending-order-context-line\{[^}]*var\(--ui-muted\)/s);
 });
 
 test('debt screen uses neutral shared surfaces instead of a separate gradient app',()=>{
-  const ui=read('src/styles/ui-system.css');
-  const debt=read('src/styles/debt.css');
-  assert.doesNotMatch(ui,/\[data-screen-id="debt"\] \.debt-hero\{[^}]*linear-gradient/s);
-  assert.match(ui,/\[data-screen-id="debt"\] \.debt-hero\{[^}]*var\(--ui-page\)/s);
-  assert.doesNotMatch(debt,/border-bottom:2px solid #222/);
-  assert.match(debt,/\.debt-shop-avatar\{[^}]*width:40px;[^}]*height:40px/s);
+  const css=read('src/styles/iphone-visual-cleanup.css');
+  assert.match(css,/\[data-screen-id="debt"\] \.debt-hero\{[^}]*background:var\(--ui-page\)!important/s);
+  assert.match(css,/\.debt-total-row>div\{[^}]*background:var\(--ui-panel\)!important/s);
+  assert.match(css,/\.debt-shop:after\{[^}]*display:none!important/s);
+  assert.match(css,/\.debt-shop-avatar\{[^}]*width:40px!important;[^}]*height:40px!important/s);
+});
+
+test('cleanup cascade loads after shared visuals but before scroll ownership',()=>{
+  const html=read('index.html');
+  const shared=html.indexOf('./src/styles/ui-system.css');
+  const cleanup=html.indexOf('./src/styles/iphone-visual-cleanup.css');
+  const scroll=html.indexOf('./src/styles/scroll-owner.css');
+  assert.ok(shared>=0&&cleanup>shared&&scroll>cleanup);
 });
