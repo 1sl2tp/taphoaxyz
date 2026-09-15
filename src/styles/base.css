@@ -1,18 +1,35 @@
 :root{
-  --blue:#1565c0;--teal:#00897b;--green:#2e7d62;--red:#b52a22;--orange:#d97706;
-  --text:#1e293b;--text-sec:#475569;--muted:#94a3b8;--line:#e2e8f0;--divider:#eef2f7;
-  --card:#fff;--bg:#f8fafc;--tap:44px;--radius:14px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg);
+  --ui-page:#f1f3f4;
+  --ui-panel:#ffffff;
+  --ui-surface-soft:#f5f6f7;
+  --ui-text:#171717;
+  --ui-text-secondary:#525b66;
+  --ui-muted:#707a86;
+  --ui-line:#e1e4e7;
+  --ui-line-strong:#cfd5dc;
+  --ui-primary:#1565c0;
+  --ui-success:#26735b;
+  --ui-warning:#c36b12;
+  --ui-danger:#a32920;
+  --ui-radius:14px;
+  --ui-sheet-radius:20px;
+  --ui-control-h:46px;
+
+  /* Compatibility aliases. New shared UI work consumes --ui-* directly. */
+  --blue:var(--ui-primary);--teal:#00897b;--green:var(--ui-success);--red:var(--ui-danger);--orange:var(--ui-warning);
+  --text:var(--ui-text);--text-sec:var(--ui-text-secondary);--muted:var(--ui-muted);--line:var(--ui-line);--divider:#eef0f2;
+  --card:var(--ui-panel);--bg:var(--ui-page);--tap:44px;--radius:var(--ui-radius);--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ui-text);background:var(--ui-page);
 }
 *{box-sizing:border-box}
-html,body{width:100%;height:100%;margin:0;min-width:280px;overflow:hidden;overscroll-behavior:none;background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{min-height:100vh;min-height:100dvh}
+html,body{width:100%;height:100%;margin:0;min-width:280px;overflow:hidden;overscroll-behavior:none;background:var(--ui-page);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{min-height:100vh;min-height:100dvh;color:var(--ui-text)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 input,button,select,textarea{min-height:var(--tap)}
 input,select,textarea{-webkit-user-select:text;user-select:text}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ui-primary);outline-offset:2px}
 @media (pointer:coarse){
   input,select,textarea{font-size:16px}
 }
