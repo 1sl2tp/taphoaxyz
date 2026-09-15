@@ -4,19 +4,26 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-test('classic visual stylesheet owns the TAPHOA reference palette and loads before scroll ownership',()=>{
+test('classic reference layer keeps TAPHOA geometry while neutral theme owns final visuals',()=>{
   const html=read('index.html');
   const classic=read('src/styles/classic.css');
-  assert.match(classic,/--classic-bg:\s*#F0F4F8/i);
-  assert.match(classic,/--classic-blue:\s*#1565C0/i);
-  assert.match(classic,/--classic-teal:\s*#00838F/i);
-  assert.match(classic,/linear-gradient\(135deg,var\(--classic-blue\),var\(--classic-teal\)\)/);
+  const theme=read('src/styles/chatgpt-ui.css');
+  assert.match(classic,/\.app-topbar[^{]*\{[^}]*min-height:\s*48px/s);
+  assert.match(classic,/\.app-nav button[^{]*\{[^}]*height:\s*48px/s);
   const classicIndex=html.indexOf('./src/styles/classic.css');
+  const themeIndex=html.indexOf('./src/styles/chatgpt-ui.css');
   const scrollIndex=html.indexOf('./src/styles/scroll-owner.css');
-  assert.ok(classicIndex>=0&&scrollIndex>classicIndex);
+  assert.ok(classicIndex>=0&&themeIndex>classicIndex&&scrollIndex>themeIndex);
+  assert.match(theme,/--tap-primary:\s*#0d0d0d/i);
+  assert.doesNotMatch(theme,/--classic-(?:blue|teal)/);
 });
 
-test('classic shell keeps compact seller navigation and profile sheet surfaces',()=>{
+test('classic geometry no longer owns the Sales search glyph',()=>{
+  const classic=read('src/styles/classic.css');
+  assert.doesNotMatch(classic,/\.sales-search-row::before\s*\{[^}]*content:\s*["']🔍["']/s);
+});
+
+test('classic shell still owns compact navigation and sheet geometry',()=>{
   const classic=read('src/styles/classic.css');
   assert.match(classic,/\.app-topbar[^{]*\{[^}]*min-height:\s*48px/s);
   assert.match(classic,/\.app-nav button[^{]*\{[^}]*height:\s*48px/s);
