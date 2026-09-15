@@ -40,7 +40,7 @@ export function summarizeDeliveredBySource(orders=[]){
 
 function summaryMarkup(orders,canViewCost){
   const s=summarizeDeliveredBySource(orders);
-  if(!s.rows.length)return `<div class="delivered-empty-small">Không có đơn</div>`;
+  if(!s.rows.length)return'';
   if(!canViewCost){
     return `<div class="delivered-summary-grid is-customer delivered-summary-head"><span>NGUỒN</span><span>SL</span><span>THU</span></div>
       ${s.rows.map(r=>`<div class="delivered-summary-grid is-customer"><span>${esc(r.source)}</span><span>${r.qty}</span><span>${money(r.revenue)}</span></div>`).join('')}
