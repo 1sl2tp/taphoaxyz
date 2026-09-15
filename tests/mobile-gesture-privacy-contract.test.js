@@ -18,7 +18,7 @@ test('mobile scroll owners explicitly preserve vertical and horizontal pan gestu
 
 test('app shell binds same-level swipe navigation without owning modal or input gestures',()=>{
   assert.match(appJs,/bindTabSwipe/);
-  assert.match(appJs,/closest\([^)]*(?:input|textarea|select|button|overlay|sheet)/i);
+  assert.match(appJs,/closest(?:\?\.)?\([^)]*(?:input|textarea|select|button|overlay|sheet)/i);
 });
 
 test('customer RPC payload strips cost and profit fields before data reaches the browser',()=>{
