@@ -40,3 +40,12 @@ test('shared actions and overlays use neutral ChatGPT-aligned chrome',()=>{
   assert.match(css,/\.ui-overlay-backdrop[^}]*rgba\(0,0,0,\.32\)/s);
   assert.doesNotMatch(css,/linear-gradient\(135deg,var\(--classic-blue\),var\(--classic-teal\)\)/);
 });
+
+test('UI decorator uses shared SVG icons instead of interface emoji',()=>{
+  const uiSystem=read('src/core/ui-system.js');
+  const index=read('index.html');
+  assert.match(uiSystem,/from ['"]\.\/icons\.js['"]/);
+  assert.match(uiSystem,/setButtonIcon/);
+  assert.doesNotMatch(uiSystem,/document\.createTextNode\(['"]🛒/);
+  assert.doesNotMatch(index,/>◉<|>×</);
+});
