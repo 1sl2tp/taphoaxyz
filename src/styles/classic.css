@@ -1,0 +1,57 @@
+:root{
+  --classic-bg:#F0F4F8;
+  --classic-blue:#1565C0;
+  --classic-blue-2:#1976D2;
+  --classic-blue-light:#E3F2FD;
+  --classic-teal:#00838F;
+  --classic-teal-light:#E0F7FA;
+  --classic-green:#2E7D32;
+  --classic-green-light:#E8F5E9;
+  --classic-red:#C62828;
+  --classic-red-light:#FFEBEE;
+  --classic-orange:#E65100;
+  --classic-orange-light:#FFF3E0;
+  --classic-text:#1E293B;
+  --classic-text-secondary:#64748B;
+  --classic-text-muted:#94A3B8;
+  --classic-border:#E2E8F0;
+  --classic-divider:#F1F5F9;
+  --classic-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --classic-shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
+  --ui-page:var(--classic-bg);
+  --ui-panel:#fff;
+  --ui-primary:var(--classic-blue);
+  --ui-text:var(--classic-text);
+  --ui-text-secondary:var(--classic-text-secondary);
+  --ui-text-muted:var(--classic-text-muted);
+  --ui-line:var(--classic-border);
+  --ui-line-strong:#CBD5E1;
+  --ui-surface-soft:var(--classic-divider);
+  --ui-danger:var(--classic-red);
+}
+
+html,body,.taphoa-viewport,.app-shell{background:var(--classic-bg);color:var(--classic-text)}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Segoe UI',sans-serif}
+
+.app-topbar{min-height:48px;background:#fff;border-bottom:1px solid var(--classic-blue-light);box-shadow:none}
+.app-nav{height:48px;background:#fff}
+.app-nav button{height:48px;color:var(--classic-text-secondary);font-weight:500;transition:color .15s ease,background .15s ease}
+.app-nav button[aria-current="page"]{color:var(--classic-blue);font-weight:800}
+.app-nav-icon{font-size:15px}.app-nav-label{font-size:8px}
+.account-button{background:var(--classic-divider);color:var(--classic-text-secondary);border-color:transparent}
+.account-button:active{background:var(--classic-blue-light);color:var(--classic-blue)}
+
+.sales-pinned-head{background:var(--classic-bg)}
+.sales-customer-row,.classic-seller-strip{background:linear-gradient(135deg,var(--classic-blue),var(--classic-teal));color:#fff}
+.sales-search-row,.sales-groups{background:#fff}
+.sales-product-row,.delivered-order-card,.pending-order-card,.debt-customer-row{background:#fff;border:1px solid var(--classic-border);box-shadow:var(--classic-shadow)}
+
+.account-sheet-card{background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.12)}
+.account-sheet-avatar{background:var(--classic-blue-light);color:var(--classic-blue)}
+.account-logout{border-color:var(--classic-red);color:var(--classic-red);background:#fff}
+
+.system-toast{background:rgba(30,41,59,.93);border-radius:24px;padding:10px 20px;font-size:13px;font-weight:700}
+
+@media(min-width:768px){
+  .taphoa-viewport,.app-shell{width:100%;max-width:none}
+}
