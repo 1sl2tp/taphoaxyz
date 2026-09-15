@@ -41,10 +41,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display'
 .account-button{background:var(--classic-divider);color:var(--classic-text-secondary);border-color:transparent}
 .account-button:active{background:var(--classic-blue-light);color:var(--classic-blue)}
 
-.sales-pinned-head{background:var(--classic-bg)}
-.sales-customer-row,.classic-seller-strip{background:linear-gradient(135deg,var(--classic-blue),var(--classic-teal));color:#fff}
-.sales-search-row,.sales-groups{background:#fff}
-.sales-product-row,.delivered-order-card,.pending-order-card,.debt-customer-row{background:#fff;border:1px solid var(--classic-border);box-shadow:var(--classic-shadow)}
+.sales-pinned-head{background:var(--classic-bg)!important}
+.sales-customer-row,.classic-seller-strip{background:linear-gradient(135deg,var(--classic-blue),var(--classic-teal))!important;color:#fff;padding:8px 10px!important;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.sales-customer-input{background:#fff!important;border:0!important;border-radius:10px!important;color:var(--classic-text)!important;font-size:13px!important;font-weight:700!important;padding:8px 10px!important}
+.sales-time{font-size:11px!important;line-height:1.3;color:#fff!important}
+.sales-cart-quick{background:#fff!important;color:var(--classic-blue)!important;border:0!important;border-radius:20px!important;padding:5px 12px!important;box-shadow:none!important}
+.sales-search-row{background:#fff!important;padding:8px 10px 3px!important;position:relative}
+.sales-search-row::before{content:"🔍";position:absolute;left:22px;top:50%;transform:translateY(-45%);font-size:15px;z-index:1;pointer-events:none;color:var(--classic-text-muted)}
+.sales-search-row>input{background:#fff!important;border:1.5px solid var(--classic-border)!important;border-radius:10px!important;font-size:14px!important;padding:10px 38px 10px 38px!important;box-shadow:none!important}
+.sales-search-row>input:focus{border-color:var(--classic-blue)!important;box-shadow:none!important}
+.sales-search-row>button{right:20px!important;top:50%!important;transform:translateY(-50%)!important;width:20px!important;height:20px!important;min-height:20px!important;border:0!important;background:#CBD5E1!important;color:var(--classic-text-secondary)!important;font-size:11px!important}
+.sales-groups{background:#fff!important;padding:0 8px 6px!important;gap:6px!important}
+.sales-group{min-height:28px!important;border:0!important;border-radius:20px!important;background:var(--classic-divider)!important;color:var(--classic-text-secondary)!important;font-size:12px!important;padding:5px 14px!important}
+.sales-group[aria-pressed="true"]{background:var(--classic-blue)!important;color:#fff!important;font-weight:700!important}
+.sales-products{padding:6px 12px!important}
+.sales-product-list{gap:5px!important}
+.sales-product-row{background:#fff!important;border:1px solid var(--classic-border)!important;border-radius:12px!important;padding:8px 12px!important;box-shadow:var(--classic-shadow)!important;gap:6px!important}
+.sales-product-name{font-size:14px!important;font-weight:600!important;line-height:1.2!important}
+.sales-product-meta{font-size:11px!important;line-height:1.1!important;margin-top:0!important}
+.sales-price-input,.sales-price-readonly{color:var(--classic-blue)!important;font-size:13px!important;font-weight:800!important}
+.sales-qty{grid-template-columns:28px 26px 28px!important;gap:6px!important}
+.sales-qty button{width:28px!important;height:28px!important;min-height:28px!important;border:0!important;background:#E2E8F0!important}
+.sales-qty button:last-child{background:var(--classic-green)!important;color:#fff!important}
+.sales-qty-value{width:26px!important;font-size:14px!important;color:var(--classic-blue)!important}
+.sales-cart-panel{background:#fff!important;border:1px solid var(--classic-border)!important;border-radius:16px!important;box-shadow:var(--classic-shadow)!important}
+.sales-cart-head{color:var(--classic-blue)!important}
+.sales-cart-mobile{border-radius:20px 20px 0 0!important}
+.sales-cart-actions button{border-radius:12px!important}
+
+.delivered-order-card,.pending-order-card,.debt-customer-row{background:#fff;border:1px solid var(--classic-border);box-shadow:var(--classic-shadow)}
 
 .account-sheet-card{background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.12)}
 .account-sheet-avatar{background:var(--classic-blue-light);color:var(--classic-blue)}
@@ -54,4 +79,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display'
 
 @media(min-width:768px){
   .taphoa-viewport,.app-shell{width:100%;max-width:none}
+}
+
+@container screen-host (min-width:1024px){
+  [data-screen-id="sales"] .sales-workspace{grid-template-columns:minmax(0,1fr) minmax(360px,1fr)!important;gap:16px!important;padding:8px 12px!important}
+  [data-screen-id="sales"] .sales-cart-desktop{display:block!important}
 }
