@@ -60,6 +60,7 @@ function classifyAction(button){
 }
 
 function decorateSalesCleanup(root){
+  if(typeof document==='undefined')return;
   for(const note of root.querySelectorAll?.('[data-screen-id="sales"] [data-note-id]')||[]){
     if(note.getAttribute('placeholder')==='...')note.setAttribute('placeholder','Ghi chú');
   }
@@ -76,7 +77,7 @@ function decorateSalesCleanup(root){
     }
   }
   for(const panel of root.querySelectorAll?.('[data-screen-id="sales"] .sales-cart-panel')||[]){
-    if(panel.dataset.uiCompact)return;
+    if(panel.dataset.uiCompact)continue;
     const chip=panel.querySelector('.sales-cart-head>span');
     const total=panel.querySelector('.sales-cart-total span:last-child b');
     if(chip&&total){
