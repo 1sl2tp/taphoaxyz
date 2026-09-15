@@ -16,30 +16,30 @@ test('shared UI system owns core visual tokens and typography roles',()=>{
   assert.match(ui,/font-variant-numeric:\s*tabular-nums/);
 });
 
-test('index loads shared UI system before screen styles',()=>{
+test('index loads shared UI stylesheet before screen styles and UI runtime',()=>{
   const html=read('index.html');
   const shared=html.indexOf('./src/styles/ui-system.css');
   const sales=html.indexOf('./src/styles/sales.css');
+  const runtime=html.indexOf('./src/core/ui-system.js');
   assert.ok(shared>0 && shared<sales);
+  assert.ok(runtime>0);
 });
 
-test('all business order details use the shared five-column family',()=>{
-  for(const file of ['src/screens/pending.js','src/screens/delivered.js','src/screens/debt.js']){
-    const js=read(file);
-    assert.match(js,/order-detail-panel/);
-    assert.match(js,/order-detail-title/);
-    assert.match(js,/order-detail-context/);
-    assert.match(js,/order-detail-head/);
-    assert.match(js,/order-detail-lines/);
-    assert.match(js,/order-detail-total/);
+test('shared UI runtime declares semantic order detail families',async()=>{
+  const mod=await import('../src/core/ui-system.js');
+  assert.deepEqual(Object.keys(mod.DETAIL_UI_CONFIG).sort(),['debt','delivered','pending']);
+  assert.equal(mod.DETAIL_UI_CONFIG.pending.title,'Đơn tạm');
+  assert.equal(mod.DETAIL_UI_CONFIG.delivered.title,'Đã giao');
+  assert.equal(mod.DETAIL_UI_CONFIG.debt.title,'Công nợ');
+  for(const config of Object.values(mod.DETAIL_UI_CONFIG)){
+    for(const key of ['panel','header','title','context','head','lines','total'])assert.ok(config[key],`missing ${key}`);
   }
 });
 
-test('detail headings are semantic titles rather than raw order ids',()=>{
-  const pending=read('src/screens/pending.js');
-  const delivered=read('src/screens/delivered.js');
-  assert.match(pending,/order-detail-title[^>]*>Đơn tạm</);
-  assert.match(delivered,/order-detail-title[^>]*>Đã giao</);
+test('compactOrderId preserves short ids and abbreviates long technical ids',async()=>{
+  const {compactOrderId}=await import('../src/core/ui-system.js');
+  assert.equal(compactOrderId('DH12'),'DH12');
+  assert.equal(compactOrderId('3848b81e-4815-4aa9-af59-6d408babf2b7'),'#f2b7');
 });
 
 test('shell and sales consume shared UI tokens',()=>{
