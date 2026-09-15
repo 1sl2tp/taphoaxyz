@@ -49,6 +49,7 @@
 [data-screen-id="debt"] .debt-receipt-summary>span:first-child b{font-size:14px}
 [data-screen-id="debt"] .debt-receipt-summary>span:last-child strong{font-size:19px!important;color:var(--ui-text)!important;font-variant-numeric:tabular-nums}
 [data-screen-id="debt"] .debt-ledger-head{border-color:var(--ui-line-strong)!important}
+[data-screen-id="debt"] .debt-ledger-empty{padding:18px 8px;color:var(--ui-muted);text-align:center;font-size:13px}
 [data-screen-id="debt"] .debt-detail-panel>footer{padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important}
 [data-screen-id="debt"] .debt-detail-panel>footer button:first-child{background:var(--ui-success)!important}
 [data-screen-id="debt"] .debt-detail-panel>footer button:last-child{background:var(--ui-danger)!important}
