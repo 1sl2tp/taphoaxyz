@@ -8,10 +8,6 @@ async function loadUpdateModule(){
   try{return await import('../src/core/app-update.js');}catch{return {};}
 }
 
-async function loadSalesModule(){
-  return import('../src/screens/sales.js');
-}
-
 test('update controller defers a discovered build until reload is safe',async()=>{
   const mod=await loadUpdateModule();
   assert.equal(typeof mod.createAppUpdateController,'function','createAppUpdateController must exist');
@@ -35,13 +31,24 @@ test('update controller defers a discovered build until reload is safe',async()=
   assert.deepEqual(reloads,['new-build']);
 });
 
-test('sales draft state blocks automatic reload only when unsaved order work exists',async()=>{
-  const mod=await loadSalesModule();
-  assert.equal(typeof mod.salesHasUnsavedWork,'function','salesHasUnsavedWork must exist');
-  assert.equal(mod.salesHasUnsavedWork({cart:{},notes:{},editOrder:null}),false);
-  assert.equal(mod.salesHasUnsavedWork({cart:{p1:2},notes:{},editOrder:null}),true);
-  assert.equal(mod.salesHasUnsavedWork({cart:{},notes:{p1:'ghi chú'},editOrder:null}),true);
-  assert.equal(mod.salesHasUnsavedWork({cart:{},notes:{},editOrder:{id:'o1'}}),true);
+test('sales cart DOM blocks automatic reload when quantity, note, or edit mode is present',async()=>{
+  const mod=await loadUpdateModule();
+  assert.equal(typeof mod.hasUnsavedSalesDom,'function','hasUnsavedSalesDom must exist');
+  const root=({qty=[],notes=[],editing=false}={})=>({
+    querySelectorAll(selector){
+      if(selector==='[data-qty-input]')return qty.map(value=>({value}));
+      if(selector==='[data-note-id]')return notes.map(value=>({value}));
+      return [];
+    },
+    querySelector(selector){
+      if(selector==='[data-sales-action="update"]')return editing?{}:null;
+      return null;
+    }
+  });
+  assert.equal(mod.hasUnsavedSalesDom(root()),false);
+  assert.equal(mod.hasUnsavedSalesDom(root({qty:['2']})),true);
+  assert.equal(mod.hasUnsavedSalesDom(root({notes:['ghi chú']})),true);
+  assert.equal(mod.hasUnsavedSalesDom(root({editing:true})),true);
 });
 
 test('main push publishes a same-origin version marker without recursive marker commits',async()=>{
@@ -58,14 +65,15 @@ test('main push publishes a same-origin version marker without recursive marker 
   assert.ok(String(version.build_id||'').length>=7);
 });
 
-test('runtime wires update checks, service worker and screen safety into the app shell',async()=>{
-  const app=await read('src/app.js');
+test('runtime wires update checks and service worker into the app shell',async()=>{
+  const bootstrap=await read('src/core/app-update-bootstrap.js');
   const index=await read('index.html');
   const worker=await read('sw.js');
-  assert.match(app,/createAppUpdateController/);
-  assert.match(app,/setUpdateUnsafe/);
-  assert.match(app,/version\.json/);
+  assert.match(bootstrap,/createAppUpdateController/);
+  assert.match(bootstrap,/version\.json/);
+  assert.match(bootstrap,/serviceWorker\.register/);
   assert.match(index,/app-build-id/);
+  assert.match(index,/app-update-bootstrap\.js/);
   assert.match(worker,/cache:\s*['"]no-store['"]/);
   assert.match(worker,/SKIP_WAITING/);
 });
