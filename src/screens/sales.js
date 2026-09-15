@@ -195,7 +195,7 @@ export async function mount(context){
     if(!canManage())return;
     if(event.target.matches('.sales-customer-input')){state={...state,selectedCustomer:customerIdByName(event.target.value)};return;}
     const priceId=event.target.dataset.priceId;if(priceId){state={...state,prices:{...state.prices,[priceId]:Number(String(event.target.value).replace(/\D/g,''))||0}};return;}
-    const qtyId=event.target.dataset.qtyInput;if(qtyId){state={...state,cart:{...state.cart,[qtyId]:Math.max(0,Math.min(999,Number(String(event.target.value).replace(/\D/g,''))||0)}};return;}
+    const qtyId=event.target.dataset.qtyInput;if(qtyId){state={...state,cart:{...state.cart,[qtyId]:Math.max(0,Math.min(999,Number(String(event.target.value).replace(/\D/g,''))||0))}};return;}
     const noteId=event.target.dataset.noteId;if(noteId){state={...state,notes:{...state.notes,[noteId]:event.target.value}};}
   };
   const onChange=event=>{
