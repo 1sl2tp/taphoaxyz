@@ -69,3 +69,9 @@ test('runtime wires update checks, service worker and screen safety into the app
   assert.match(worker,/cache:\s*['"]no-store['"]/);
   assert.match(worker,/SKIP_WAITING/);
 });
+
+test('production build includes the updater marker and service worker',async()=>{
+  const build=await read('scripts/build-current.mjs');
+  assert.match(build,/version\.json/);
+  assert.match(build,/sw\.js/);
+});
