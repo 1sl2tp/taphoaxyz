@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#ffffff">
 <title>taphoa.xyz</title>
 <link rel="stylesheet" href="./src/styles/base.css">
+<link rel="stylesheet" href="./src/styles/ui-system.css">
 <link rel="stylesheet" href="./src/styles/shell.css">
 <link rel="stylesheet" href="./src/styles/sales.css">
 <link rel="stylesheet" href="./src/styles/delivered.css">
@@ -19,16 +20,16 @@
     <div class="login-wrap">
       <div class="login-brand">
         <img class="login-logo" src="./src/assets/logo.jpg" alt="logo">
-        <div class="login-brand-name">taphoa.xyz</div>
-        <div class="login-brand-sub">Quản lý đơn hàng thông minh</div>
+        <div class="login-brand-name" data-ui-type="shell-title">taphoa.xyz</div>
+        <div class="login-brand-sub" data-ui-type="meta">Quản lý đơn hàng thông minh</div>
       </div>
       <form class="login-card" id="loginForm">
-        <h1>Đăng nhập</h1>
+        <h1 data-ui-type="panel-title">Đăng nhập</h1>
         <div class="login-field"><input id="loginUsername" autocomplete="username" placeholder="Tên đăng nhập"></div>
         <div class="login-field"><input class="login-password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu"><button class="login-eye" type="button" id="loginEye" aria-label="Hiện mật khẩu">◉</button></div>
-        <label class="login-remember"><input id="loginRemember" type="checkbox">Lưu mật khẩu</label>
-        <div class="login-error" id="loginError" hidden></div>
-        <button class="login-submit" id="loginSubmit" type="submit">Đăng nhập →</button>
+        <label class="login-remember" data-ui-type="body"><input id="loginRemember" type="checkbox">Lưu mật khẩu</label>
+        <div class="login-error" id="loginError" data-ui-type="meta" hidden></div>
+        <button class="login-submit" id="loginSubmit" type="submit" data-ui-type="action">Đăng nhập →</button>
       </form>
     </div>
   </section>
@@ -45,13 +46,13 @@
         <header class="account-sheet-header">
           <div class="account-sheet-avatar" id="accountSheetAvatar" aria-hidden="true">TK</div>
           <div class="account-sheet-copy">
-            <strong id="accountSheetTitle">Tài khoản</strong>
-            <span id="accountName">Tài khoản</span>
-            <small id="accountHandle"></small>
+            <strong id="accountSheetTitle" data-ui-type="label">Tài khoản</strong>
+            <span id="accountName" data-ui-type="panel-title">Tài khoản</span>
+            <small id="accountHandle" data-ui-type="meta"></small>
           </div>
-          <button class="account-sheet-close" id="accountSheetClose" type="button" aria-label="Đóng">×</button>
+          <button class="account-sheet-close ui-icon-button" id="accountSheetClose" type="button" aria-label="Đóng">×</button>
         </header>
-        <button class="account-logout" id="accountLogout" type="button">Đăng xuất</button>
+        <button class="account-logout ui-button ui-button-danger" id="accountLogout" type="button" data-ui-type="action">Đăng xuất</button>
       </section>
     </div>
     <div class="system-toast" id="systemToast" hidden></div>
