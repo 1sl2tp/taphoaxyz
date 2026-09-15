@@ -12,17 +12,17 @@ jobs:
   production:
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for taphoa.xyz cutover
+      - name: Wait for beta.taphoa.xyz cutover
         shell: bash
         run: |
           set -euo pipefail
           ok=0
           for i in $(seq 1 24); do
             cb="${GITHUB_SHA}-${i}-$(date +%s)"
-            if index="$(curl -fsSL --max-time 20 "https://taphoa.xyz/?cb=${cb}" 2>/dev/null)" \
-              && config="$(curl -fsSL --max-time 20 "https://taphoa.xyz/src/core/config.js?cb=${cb}" 2>/dev/null)" \
-              && auth="$(curl -fsSL --max-time 20 "https://taphoa.xyz/src/core/auth.js?cb=${cb}" 2>/dev/null)" \
-              && business="$(curl -fsSL --max-time 20 "https://taphoa.xyz/src/core/business.js?cb=${cb}" 2>/dev/null)"; then
+            if index="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/?cb=${cb}" 2>/dev/null)" \
+              && config="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/config.js?cb=${cb}" 2>/dev/null)" \
+              && auth="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/auth.js?cb=${cb}" 2>/dev/null)" \
+              && business="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/business.js?cb=${cb}" 2>/dev/null)"; then
               if grep -q 'src/app.js' <<<"$index" \
                 && grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' <<<"$config" \
                 && grep -q 'taphoa.xyz.auth.v2' <<<"$config" \
