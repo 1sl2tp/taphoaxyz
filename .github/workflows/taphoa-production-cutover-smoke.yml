@@ -1,0 +1,43 @@
+name: TAPHOA production cutover smoke
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for taphoa.xyz cutover
+        shell: bash
+        run: |
+          set -euo pipefail
+          ok=0
+          for i in $(seq 1 24); do
+            cb="${GITHUB_SHA}-${i}-$(date +%s)"
+            if index="$(curl -fsSL --max-time 20 "https://taphoa.xyz/?cb=${cb}" 2>/dev/null)" \
+              && config="$(curl -fsSL --max-time 20 "https://taphoa.xyz/src/core/config.js?cb=${cb}" 2>/dev/null)" \
+              && auth="$(curl -fsSL --max-time 20 "https://taphoa.xyz/src/core/auth.js?cb=${cb}" 2>/dev/null)" \
+              && business="$(curl -fsSL --max-time 20 "https://taphoa.xyz/src/core/business.js?cb=${cb}" 2>/dev/null)"; then
+              if grep -q 'src/app.js' <<<"$index" \
+                && grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' <<<"$config" \
+                && grep -q 'taphoa.xyz.auth.v2' <<<"$config" \
+                && grep -q 'signInWithPassword' <<<"$auth" \
+                && grep -q 'taphoa_access_context' <<<"$auth" \
+                && grep -q 'taphoa_app_bootstrap' <<<"$business" \
+                && grep -q 'taphoa_save_order' <<<"$business" \
+                && ! grep -q 'crdbhkdeqyehsbzgggbs' <<<"$config$auth$business" \
+                && ! grep -q 'shop-auth\|shop_identities' <<<"$config$auth$business"; then
+                echo "PRODUCTION CUTOVER PASS on attempt $i"
+                ok=1
+                break
+              fi
+            fi
+            echo "production not cut over yet (attempt $i)"
+            sleep 10
+          done
+          test "$ok" -eq 1
