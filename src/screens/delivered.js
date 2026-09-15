@@ -38,24 +38,29 @@ export function summarizeDeliveredBySource(orders=[]){
   return {rows:[...map.values()].sort((a,b)=>b.revenue-a.revenue||a.source.localeCompare(b.source,'vi')),total};
 }
 
-function summaryMarkup(orders){
+function summaryMarkup(orders,canViewCost){
   const s=summarizeDeliveredBySource(orders);
   if(!s.rows.length)return `<div class="delivered-empty-small">Không có đơn</div>`;
+  if(!canViewCost){
+    return `<div class="delivered-summary-grid is-customer delivered-summary-head"><span>NGUỒN</span><span>SL</span><span>THU</span></div>
+      ${s.rows.map(r=>`<div class="delivered-summary-grid is-customer"><span>${esc(r.source)}</span><span>${r.qty}</span><span>${money(r.revenue)}</span></div>`).join('')}
+      <div class="delivered-summary-grid is-customer delivered-summary-total"><span>TỔNG</span><span>${s.total.qty}</span><span>${money(s.total.revenue)}</span></div>`;
+  }
   return `<div class="delivered-summary-grid delivered-summary-head"><span>NGUỒN</span><span>SL</span><span>CHI</span><span>THU</span><span>LÃI</span></div>
     ${s.rows.map(r=>`<div class="delivered-summary-grid"><span>${esc(r.source)}</span><span>${r.qty}</span><span>${money(r.cost)}</span><span>${money(r.revenue)}</span><span>${money(r.profit)}</span></div>`).join('')}
     <div class="delivered-summary-grid delivered-summary-total"><span>TỔNG</span><span>${s.total.qty}</span><span>${money(s.total.cost)}</span><span>${money(s.total.revenue)}</span><span>${money(s.total.profit)}</span></div>`;
 }
 
-function orderCard(o,index){
+function orderCard(o,index,canViewCost){
   const items=o.items||[];const qty=items.reduce((a,x)=>a+(Number(x.sl??x.qty)||0),0);const profit=Number(o.loiNhuan??(Number(o.tongTien||0)-Number(o.tongVon||0)))||0;
   return `<button class="delivered-order-card" type="button" data-order-open="${esc(o.id)}">
     <div class="delivered-order-top"><span class="delivered-order-id"><small>#${index+1}</small><b>${esc(o.id)}</b><em>✅ Đã giao</em></span><strong>${money(o.tongTien)}</strong></div>
-    <div class="delivered-order-mid"><span><b>${esc(o.tenKH)}</b> · ${esc(fmtDate(o.ngay))} · ${items.length||Number(o.tongMa)||0} mã (${qty||Number(o.tongSL)||0} sp)</span><strong>+${money(profit)}</strong></div>
+    <div class="delivered-order-mid"><span><b>${esc(o.tenKH)}</b> · ${esc(fmtDate(o.ngay))} · ${items.length||Number(o.tongMa)||0} mã (${qty||Number(o.tongSL)||0} sp)</span>${canViewCost?`<strong>+${money(profit)}</strong>`:''}</div>
     <div class="delivered-order-preview">${esc(items.map(it=>`${it.tenSP||it.ten||''} ×${it.sl??it.qty??0}`).join(', ')||'—')}</div>
   </button>`;
 }
 
-function detailMarkup(o){
+function detailMarkup(o,{canViewCost=false,canManageOrders=false}={}){
   const items=o.items||[];const qty=items.reduce((a,x)=>a+(Number(x.sl??x.qty)||0),0);const profit=Number(o.loiNhuan??(Number(o.tongTien||0)-Number(o.tongVon||0)))||0;
   return `<div class="delivered-overlay" data-order-detail>
     <button class="delivered-backdrop" type="button" data-detail-close aria-label="Đóng"></button>
@@ -64,8 +69,8 @@ function detailMarkup(o){
       <div class="delivered-detail-meta"><b>KH: ${esc(o.tenKH)}</b> · ${esc(o.id)} · ${esc(fmtDate(o.ngay))}</div>
       <div class="delivered-detail-head"><span>#</span><span>Tên</span><span>SL</span><span>Đ.Giá</span><span>T.Tiền</span></div>
       <div class="delivered-detail-lines">${items.map((it,i)=>`<div class="delivered-detail-line"><span>${i+1}.</span><span>${esc(it.tenSP||it.ten||'')}${it.ghiChu?`<small>${esc(it.ghiChu)}</small>`:''}</span><span>${it.sl??it.qty??0}</span><span>${money(it.gia??it.unit_price)}</span><strong>${money((Number(it.gia??it.unit_price)||0)*(Number(it.sl??it.qty)||0))}</strong></div>`).join('')}</div>
-      <div class="delivered-detail-total"><b>Tổng ${qty} SP</b><span><strong>${money(o.tongTien)}</strong><small>Lợi nhuận: +${money(profit)}</small></span></div>
-      <footer><button type="button" data-detail-action="edit">Sửa</button><button type="button" data-detail-action="print">In</button><button type="button" data-detail-action="delete">Xoá</button></footer>
+      <div class="delivered-detail-total"><b>Tổng ${qty} SP</b><span><strong>${money(o.tongTien)}</strong>${canViewCost?`<small>Lợi nhuận: +${money(profit)}</small>`:''}</span></div>
+      <footer>${canManageOrders?'<button type="button" data-detail-action="edit">Sửa</button>':''}<button type="button" data-detail-action="print">In</button>${canManageOrders?'<button type="button" data-detail-action="delete">Xoá</button>':''}</footer>
     </section>
   </div>`;
 }
@@ -89,20 +94,23 @@ function calendarMarkup(state){
 }
 
 export function deliveredMarkup(input={}){
-  const today=dateKey(new Date());const state={orders:[],search:'',mode:'today',from:today,to:today,calendarOpen:false,calendarMonth:today,picking:'from',selected:null,printOrder:null,...input};
+  const today=dateKey(new Date());const state={orders:[],search:'',mode:'today',from:today,to:today,calendarOpen:false,calendarMonth:today,picking:'from',selected:null,printOrder:null,permissions:{},...input};
   const done=filterDeliveredOrders(state.orders,state);
+  const canViewCost=state.permissions?.canViewCost===true;
+  const canManageOrders=state.permissions?.canManageOrders===true;
   const label=state.mode==='range'?(state.from===state.to?state.from.slice(8,10)+'/'+state.from.slice(5,7):`${state.from.slice(8,10)}/${state.from.slice(5,7)} → ${state.to.slice(8,10)}/${state.to.slice(5,7)}`):'Chọn ngày';
   return `<section class="delivered-screen" data-screen-id="delivered">
     <section class="delivered-filter"><div class="delivered-search"><input data-delivered-search value="${esc(state.search)}" placeholder="Tìm tên khách hoặc sản phẩm..."><button type="button" data-delivered-clear ${state.search?'':'hidden'}>✕</button></div><div class="delivered-time"><button type="button" data-today aria-pressed="${state.mode==='today'}">Hôm nay</button><button type="button" data-calendar-toggle aria-pressed="${state.mode==='range'}">${esc(label)}</button></div>${calendarMarkup(state)}</section>
-    <section class="delivered-summary"><h2>Tổng hợp đã giao <small>(${done.length} đơn)</small></h2>${summaryMarkup(done)}</section>
-    <section class="delivered-list">${done.map(orderCard).join('')||'<div class="delivered-empty">Không có đơn trong khoảng này</div>'}</section>
-    ${state.selected?detailMarkup(state.selected):''}${state.printOrder?printMarkup(state.printOrder):''}
+    <section class="delivered-summary"><h2>Tổng hợp đã giao <small>(${done.length} đơn)</small></h2>${summaryMarkup(done,canViewCost)}</section>
+    <section class="delivered-list">${done.map((order,index)=>orderCard(order,index,canViewCost)).join('')||'<div class="delivered-empty">Không có đơn trong khoảng này</div>'}</section>
+    ${state.selected?detailMarkup(state.selected,{canViewCost,canManageOrders}):''}${state.printOrder?printMarkup(state.printOrder):''}
   </section>`;
 }
 
 export async function mount(context){
-  const root=context.root;const today=dateKey(new Date());let busy=false;let state={orders:(context.getData?.()||context.data||{}).orders||[],search:'',mode:'today',from:today,to:today,calendarOpen:false,calendarMonth:today,picking:'from',selected:null,printOrder:null};
-  const render=()=>{state={...state,orders:(context.getData?.()||context.data||{}).orders||state.orders};root.innerHTML=deliveredMarkup(state);};
+  const root=context.root;const today=dateKey(new Date());const data=()=>context.getData?.()||context.data||{};let busy=false;let state={orders:data().orders||[],permissions:data().permissions||{},search:'',mode:'today',from:today,to:today,calendarOpen:false,calendarMonth:today,picking:'from',selected:null,printOrder:null};
+  const canManage=()=>state.permissions?.canManageOrders===true;
+  const render=()=>{const current=data();state={...state,orders:current.orders||state.orders,permissions:current.permissions||state.permissions};root.innerHTML=deliveredMarkup(state);};
   const unsubscribeData=context.subscribeData?.(({changed})=>{if(changed.some(x=>x==='bootstrap'||x==='orders'||x==='products'||x==='customers'))render();});
   const findOrder=id=>state.orders.find(o=>String(o.id)===String(id));
   const onClick=async event=>{
@@ -119,6 +127,7 @@ export async function mount(context){
     if(event.target.closest('[data-print-now]')){if(state.printOrder)openPrintDocument({title:state.printOrder.id,body:deliveredPrintBody(state.printOrder)});return;}
     const action=event.target.closest('[data-detail-action]')?.dataset.detailAction;if(!action||!state.selected)return;
     if(action==='print'){state={...state,printOrder:state.selected,selected:null};render();return;}
+    if(!canManage())return;
     if(action==='edit'){
       try{const detail=await context.business.orderDetail(state.selected.id);context.editOrder?.(detail?.order||state.selected);context.navigate?.('sales');}
       catch(e){context.system?.toast(e?.message||'Không thực hiện được');}return;
