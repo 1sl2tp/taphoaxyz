@@ -136,6 +136,12 @@ export async function mount(context){
   const root=context.root;let state=deriveInitial(context);let busy=false;
   const canManage=()=>state.permissions?.canManageOrders===true;
   const render=()=>{root.innerHTML=salesMarkup(state);};
+  const refreshSalesSearchResults=()=>{
+    const productList=root.querySelector('.sales-product-list');
+    if(productList)productList.innerHTML=productRows(state);
+    const clearButton=root.querySelector('[data-search-clear]');
+    if(clearButton)clearButton.hidden=!state.search;
+  };
   const unsubscribeData=context.subscribeData?.(({state:next,changed})=>{
     if(!changed.some(x=>x==='bootstrap'||x==='products'||x==='customers'))return;
     state={...state,products:next.products||[],customers:next.customers||[],permissions:next.permissions||state.permissions};
@@ -171,7 +177,7 @@ export async function mount(context){
     else if(action==='cancel-edit'){state={...state,cart:{},prices:{},notes:{},lineNos:{},editOrder:null,cartOpen:false};render();}
   };
   const onInput=event=>{
-    if(event.target.matches('[data-sales-search]')){state={...state,search:event.target.value};render();return;}
+    if(event.target.matches('[data-sales-search]')){state={...state,search:event.target.value};refreshSalesSearchResults();return;}
     if(!canManage())return;
     if(event.target.matches('.sales-customer-input')){state={...state,selectedCustomer:customerIdByName(event.target.value)};return;}
     const priceId=event.target.dataset.priceId;if(priceId){state={...state,prices:{...state.prices,[priceId]:Number(String(event.target.value).replace(/\D/g,''))||0}};return;}
