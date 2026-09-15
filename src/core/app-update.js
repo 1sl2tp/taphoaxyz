@@ -10,6 +10,14 @@ export function hasUnsavedSalesDom(root=globalThis.document){
   return Boolean(root.querySelector?.('[data-sales-action="update"]'));
 }
 
+export function focusedInputBlocksReload(active){
+  if(!active)return false;
+  if(active.matches?.('[contenteditable="true"],textarea,select'))return true;
+  if(!active.matches?.('input'))return false;
+  const type=String(active.type||'text').toLowerCase();
+  return !['button','submit','reset','checkbox','radio','range','file','hidden','color'].includes(type);
+}
+
 export function createAppUpdateController({
   currentBuild='',
   fetchVersion=async()=>null,

@@ -1,4 +1,4 @@
-import {createAppUpdateController,hasUnsavedSalesDom} from './app-update.js';
+import {createAppUpdateController,focusedInputBlocksReload,hasUnsavedSalesDom} from './app-update.js';
 
 const VERSION_URL='./version.json';
 const BUILD_PARAM='__build';
@@ -16,14 +16,7 @@ if(buildFromUrl())writeStored(APPLIED_BUILD_KEY,currentBuild);
 function hasFocusedEdit(){
   const active=document.activeElement;
   if(!active||active===document.body)return false;
-  if(active.matches?.('[contenteditable="true"],textarea,select'))return true;
-  if(active.matches?.('input')){
-    const type=String(active.type||'text').toLowerCase();
-    if(type==='search'||active.matches?.('[data-sales-search]'))return false;
-    if(['button','submit','reset','checkbox','radio','range'].includes(type))return false;
-    return String(active.value||'').trim().length>0;
-  }
-  return false;
+  return focusedInputBlocksReload(active);
 }
 
 function safeToReload(){
