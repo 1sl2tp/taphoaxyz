@@ -19,6 +19,7 @@ let appOpenToken=0;
 let syncTimer=null;
 let syncInFlight=null;
 let lifecycleBound=false;
+let accountReturnFocus=null;
 
 function navMarkup(active){
   return NAV_ITEMS.map(item=>`<button type="button" data-nav="${item.id}" aria-current="${active===item.id?'page':'false'}"><span class="app-nav-icon">${item.icon}</span><span class="app-nav-label">${item.label}</span></button>`).join('');
@@ -30,6 +31,44 @@ async function loadScreen(id){
 }
 
 function currentUid(){return String(identity?.uid||'');}
+
+function accountInitials(value=''){
+  const words=String(value||'').trim().split(/\s+/).filter(Boolean);
+  const text=words.length>1?`${words[0][0]||''}${words.at(-1)[0]||''}`:(words[0]||'TK').slice(0,2);
+  return text.toUpperCase()||'TK';
+}
+
+function renderAccountIdentity(){
+  const name=String(identity?.displayName||identity?.username||'Tài khoản').trim()||'Tài khoản';
+  const username=String(identity?.username||'').trim().replace(/^@/,'');
+  const initials=accountInitials(name);
+  $('accountButtonInitials').textContent=initials;
+  $('accountSheetAvatar').textContent=initials;
+  $('accountName').textContent=name;
+  $('accountHandle').textContent=username?`@${username}`:'';
+}
+
+function openAccountSheet(){
+  if(!identity)return;
+  renderAccountIdentity();
+  accountReturnFocus=document.activeElement;
+  $('accountSheet').hidden=false;
+  $('appShell').dataset.accountSheetOpen='true';
+  $('screenHost').setAttribute('inert','');
+  $('appTopbar').setAttribute('inert','');
+  requestAnimationFrame(()=>$('accountSheetClose')?.focus?.({preventScroll:true}));
+}
+
+function closeAccountSheet({restoreFocus=true}={}){
+  const sheet=$('accountSheet');
+  if(sheet)sheet.hidden=true;
+  delete $('appShell').dataset.accountSheetOpen;
+  $('screenHost').removeAttribute('inert');
+  $('appTopbar').removeAttribute('inert');
+  const target=accountReturnFocus;
+  accountReturnFocus=null;
+  if(restoreFocus&&target?.isConnected)requestAnimationFrame(()=>target.focus?.({preventScroll:true}));
+}
 
 async function refresh(domains=[]){
   const unique=[...new Set(domains.map(String))];if(!unique.length)return appState.get();
@@ -98,7 +137,7 @@ async function mountRoute(route){
 }
 
 function showAppShell(){
-  $('loginScreen').hidden=true;$('appShell').hidden=false;
+  $('loginScreen').hidden=true;$('appShell').hidden=false;renderAccountIdentity();
   if(!router){router=createRouter({onRoute:mountRoute});router.start();}
 }
 
@@ -118,11 +157,22 @@ async function openApp(sessionInfo){
 }
 
 function openLogin(){
+  closeAccountSheet({restoreFocus:false});
   appOpenToken++;stopSync();activeCleanup?.();activeCleanup=null;router?.destroy();router=null;identity=null;appState.reset();
   $('appShell').hidden=true;$('loginScreen').hidden=false;
 }
 
 $('appNav').addEventListener('click',event=>{const button=event.target.closest('[data-nav]');if(button)router?.navigate(button.dataset.nav);});
+$('accountButton').addEventListener('click',openAccountSheet);
+$('accountSheetBackdrop').addEventListener('click',()=>closeAccountSheet());
+$('accountSheetClose').addEventListener('click',()=>closeAccountSheet());
+$('accountLogout').addEventListener('click',async()=>{
+  const button=$('accountLogout');button.disabled=true;button.textContent='Đang đăng xuất...';
+  try{await auth.logout();closeAccountSheet({restoreFocus:false});openLogin();}
+  catch(error){console.error(error);system.toast('Không đăng xuất được');}
+  finally{button.disabled=false;button.textContent='Đăng xuất';}
+});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('accountSheet').hidden)closeAccountSheet();});
 $('loginEye').addEventListener('click',()=>{const input=$('loginPassword');input.type=input.type==='password'?'text':'password';});
 $('loginForm').addEventListener('submit',async event=>{
   event.preventDefault();const username=$('loginUsername').value.trim(),password=$('loginPassword').value,error=$('loginError'),submit=$('loginSubmit');
