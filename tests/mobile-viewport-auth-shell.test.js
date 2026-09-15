@@ -20,13 +20,13 @@ test('coarse pointer form controls stay at 16px to prevent iOS focus zoom',()=>{
   assert.match(base,/@media\s*\(pointer:coarse\)\s*\{[\s\S]*input,select,textarea\s*\{[^}]*font-size:16px/is);
 });
 
-test('login surface has a complete mobile auth skin rather than fallback form styling',()=>{
+test('login surface uses the shared UI token family rather than fallback or parallel colors',()=>{
   const css=read('src/styles/shell.css');
-  assert.match(css,/\.login-screen\s*\{[^}]*background:#fff/is);
+  assert.match(css,/\.login-screen\s*\{[^}]*background:var\(--ui-panel\)[^}]*color:var\(--ui-text\)/is);
   assert.match(css,/\.login-wrap\s*\{[^}]*max-width:448px/is);
-  assert.match(css,/\.login-card\s*\{[^}]*border-radius:28px[^}]*border:1px solid/is);
-  assert.match(css,/\.login-field input\s*\{[^}]*min-height:56px[^}]*border-radius:22px[^}]*font-size:16px/is);
-  assert.match(css,/\.login-submit\s*\{[^}]*min-height:56px[^}]*border-radius:999px/is);
+  assert.match(css,/\.login-card\s*\{[^}]*background:var\(--ui-panel\)[^}]*border[^;]*var\(--ui-line\)/is);
+  assert.match(css,/\.login-field input\s*\{[^}]*min-height:56px[^}]*border[^;]*var\(--ui-line\)[^}]*font-size:16px/is);
+  assert.match(css,/\.login-submit\s*\{[^}]*min-height:56px[^}]*var\(--ui-primary\)/is);
 });
 
 test('account control stays outside the four business navigation tabs',()=>{
@@ -37,7 +37,7 @@ test('account control stays outside the four business navigation tabs',()=>{
   assert.match(css,/\.app-topbar\s*\{[^}]*grid-template-columns:minmax\(0,1fr\) 44px/is);
 });
 
-test('account sheet exposes identity and logout without changing business navigation',()=>{
+test('account sheet exposes identity and logout using shared sheet tokens',()=>{
   const html=read('index.html');
   const css=read('src/styles/shell.css');
   const app=read('src/app.js');
@@ -48,7 +48,7 @@ test('account sheet exposes identity and logout without changing business naviga
   assert.match(html,/id="accountHandle"/i);
   assert.match(html,/id="accountLogout"[^>]*>\s*Đăng xuất\s*</i);
   assert.match(css,/\.account-sheet\s*\{[^}]*position:fixed[^}]*inset:0/is);
-  assert.match(css,/\.account-sheet-card\s*\{[^}]*border-radius:26px 26px 0 0[^}]*padding-bottom:calc\([^)]*safe-bottom/is);
+  assert.match(css,/\.account-sheet-card\s*\{[^}]*background:var\(--ui-panel\)[^}]*border-radius:var\(--ui-sheet-radius\) var\(--ui-sheet-radius\) 0 0[^}]*padding-bottom:calc\([^)]*safe-bottom/is);
   assert.match(app,/function\s+renderAccountIdentity\s*\(/);
   assert.match(app,/function\s+openAccountSheet\s*\(/);
   assert.match(app,/function\s+closeAccountSheet\s*\(/);
