@@ -4,9 +4,10 @@ import {readFileSync} from 'node:fs';
 
 const source=readFileSync(new URL('../src/screens/sales.js',import.meta.url),'utf8');
 
-test('sales search restores focus and caret after refreshing the large product list',()=>{
-  assert.match(source,/const searchInput=event\.target;/);
-  assert.match(source,/refreshSalesSearchResults\(\);/);
-  assert.match(source,/searchInput\.focus\(\{preventScroll:true\}\)/);
-  assert.match(source,/searchInput\.setSelectionRange\(state\.search\.length,state\.search\.length\)/);
+test('sales search stays responsive without force-focusing after each key',()=>{
+  const branch=source.match(/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{([\s\S]*?)\n    \}/)?.[1]||'';
+  assert.match(branch,/scheduleSalesSearchRefresh\(\)/);
+  assert.doesNotMatch(branch,/\.focus\(/);
+  assert.doesNotMatch(branch,/setSelectionRange\(/);
+  assert.doesNotMatch(branch,/productList\.innerHTML/);
 });
