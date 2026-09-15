@@ -77,3 +77,16 @@ test('Delivered and Pending share one neutral detail and overlay family',()=>{
   assert.match(ui,/setButtonIcon\(button,'trash'/);
   assert.match(ui,/cleanStatusText/);
 });
+
+test('Debt uses neutral surfaces and reserves color for balance semantics',()=>{
+  const css=read('src/styles/chatgpt-ui.css');
+  const ui=read('src/core/ui-system.js');
+  assert.match(css,/\.debt-hero[^}]*background:\s*var\(--tap-bg\)/s);
+  assert.match(css,/\.debt-total-row>div[^}]*background:\s*var\(--tap-surface\)/s);
+  assert.match(css,/\.debt-customer-row>strong\.is-owed[^}]*color:\s*var\(--tap-danger\)/s);
+  assert.match(css,/\.debt-customer-row>strong\.is-credit[^}]*color:\s*var\(--tap-success\)/s);
+  assert.match(css,/\.debt-detail-panel[^}]*background:\s*var\(--tap-surface\)/s);
+  assert.match(css,/\.debt-backdrop[^}]*background:\s*rgba\(0,0,0,\.32\)/s);
+  assert.match(ui,/data-debt-share/);
+  assert.match(ui,/data-detail-action/);
+});
