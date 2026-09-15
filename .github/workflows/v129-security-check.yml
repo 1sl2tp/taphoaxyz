@@ -11,13 +11,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm run build
-      - name: Verify V1.29 runtime contract
+      - run: npm run build:production
+      - run: node --test tests/shared-auth-contract.test.js tests/production-build-contract.test.js
+      - name: Verify current modular runtime security contract
         run: |
-          test "$(wc -c < dist/index.html)" = "186984"
-          echo "55d1d4696a93a5fa1eb8ff926c8b658258769a08b8699b62bc0b96c251e43b0d  dist/index.html" | sha256sum -c -
-          ! grep -q 'localStorage.getItem("taphoa_session")' dist/index.html
-          ! grep -q 'localStorage.setItem("taphoa_session"' dist/index.html
-          grep -q 'Ghi nhớ tên đăng nhập' dist/index.html
-          grep -q 'remember:false' dist/index.html
-          grep -q 'taphoa_ui_cache_v29_' dist/index.html
+          test -f dist/index.html
+          test -f dist/src/core/config.js
+          test -f dist/src/core/auth.js
+          test -f dist/src/core/business.js
+          grep -q 'src/app.js' dist/index.html
+          grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' dist/src/core/config.js
+          grep -q 'taphoa.xyz.auth.v2' dist/src/core/config.js
+          grep -q 'signInWithPassword' dist/src/core/auth.js
+          grep -q 'taphoa_access_context' dist/src/core/auth.js
+          grep -q 'taphoa_app_bootstrap' dist/src/core/business.js
+          grep -q 'taphoa_save_order' dist/src/core/business.js
+          ! grep -R -q 'crdbhkdeqyehsbzgggbs' dist/index.html dist/src
+          ! grep -R -E -q 'shop-auth|shop_identities' dist/index.html dist/src
+          ! grep -R -q 'localStorage.getItem("taphoa_session")' dist/index.html dist/src
+          ! grep -R -q 'localStorage.setItem("taphoa_session"' dist/index.html dist/src
