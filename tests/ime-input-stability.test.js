@@ -25,7 +25,7 @@ function textTarget(){
   };
 }
 
-test('IME guard suppresses intermediate input events and commits once composition ends',()=>{
+test('IME guard suppresses only intermediate composing input events',()=>{
   const {root,emit}=harness();
   const queued=[];
   installImeInputStability(root,fn=>{queued.push(fn);return 1;});
@@ -35,12 +35,11 @@ test('IME guard suppresses intermediate input events and commits once compositio
   emit('input',{target,isComposing:true,stopImmediatePropagation(){stopped=true;}});
   assert.equal(stopped,true);
   emit('compositionend',{target});
-  assert.equal(queued.length,1);
-  queued[0]();
-  assert.deepEqual(target.dispatched,['input']);
+  assert.equal(queued.length,0);
+  assert.deepEqual(target.dispatched,[]);
 });
 
-test('IME guard does not synthesize a duplicate commit when browser emits final input',()=>{
+test('IME guard lets the browser native final input commit exactly once',()=>{
   const {root,emit}=harness();
   const queued=[];
   installImeInputStability(root,fn=>{queued.push(fn);return 1;});
@@ -50,7 +49,7 @@ test('IME guard does not synthesize a duplicate commit when browser emits final 
   let stopped=false;
   emit('input',{target,isComposing:false,stopImmediatePropagation(){stopped=true;}});
   assert.equal(stopped,false);
-  queued[0]();
+  assert.equal(queued.length,0);
   assert.deepEqual(target.dispatched,[]);
 });
 
