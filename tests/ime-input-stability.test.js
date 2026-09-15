@@ -66,6 +66,8 @@ test('sales search keeps the active input mounted while filtering products',()=>
   assert.match(source,/const refreshSalesSearchResults=\(\)=>\{/);
   assert.match(source,/querySelector\('\.sales-product-list'\)/);
   assert.match(source,/productList\.innerHTML=productRows\(state\)/);
-  assert.match(source,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{state=\{\.\.\.state,search:event\.target\.value\};refreshSalesSearchResults\(\);return;\}/);
-  assert.doesNotMatch(source,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{[^\n]*render\(\)/);
+  assert.match(source,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{/);
+  assert.match(source,/state=\{\.\.\.state,search:searchInput\.value\}/);
+  assert.match(source,/refreshSalesSearchResults\(\)/);
+  assert.doesNotMatch(source,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{[^}]*render\(\)/s);
 });
