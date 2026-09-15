@@ -16,9 +16,14 @@ test('mobile scroll owners explicitly preserve vertical and horizontal pan gestu
   assert.match(salesCss,/\.sales-groups[^}]*touch-action\s*:\s*pan-x/is);
 });
 
-test('app shell binds same-level swipe navigation without owning modal or input gestures',()=>{
+test('app shell swipes same-level tabs from list surfaces without stealing forms or overlays',()=>{
   assert.match(appJs,/bindTabSwipe/);
-  assert.match(appJs,/closest(?:\?\.)?\([^)]*(?:input|textarea|select|button|overlay|sheet)/i);
+  assert.match(appJs,/input,textarea,select/);
+  assert.match(appJs,/overlay|account-sheet/);
+  assert.match(appJs,/delivered-order-card/);
+  assert.match(appJs,/pending-order-card/);
+  assert.match(appJs,/debt-customer-row/);
+  assert.match(appJs,/suppressClick/i);
 });
 
 test('customer RPC payload strips cost and profit fields before data reaches the browser',()=>{
