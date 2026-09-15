@@ -75,7 +75,13 @@ function bindTabSwipe(){
   const host=$('screenHost');
   if(!host)return()=>{};
   let gesture=null;
-  const ignoredTarget=target=>Boolean(target?.closest?.('input,textarea,select,button,[contenteditable="true"],.sales-groups,.sales-cart-overlay,.delivered-overlay,.pending-overlay,.debt-overlay,.account-sheet'));
+  let suppressClickUntil=0;
+  const rowSurface=target=>target?.closest?.('.sales-product-row,.delivered-order-card,.pending-order-card,.debt-customer-row');
+  const ignoredTarget=target=>{
+    if(target?.closest?.('input,textarea,select,[contenteditable="true"],.sales-groups,.sales-cart-overlay,.delivered-overlay,.pending-overlay,.debt-overlay,.account-sheet'))return true;
+    const button=target?.closest?.('button');
+    return Boolean(button&&!rowSurface(target));
+  };
   const onPointerDown=event=>{
     if(event.pointerType==='mouse'||ignoredTarget(event.target))return;
     gesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY};
@@ -86,16 +92,23 @@ function bindTabSwipe(){
     if(Math.abs(dx)<56||Math.abs(dx)<=Math.abs(dy)*1.25)return;
     const current=normalizeRoute(location.hash);const index=NAV_ITEMS.findIndex(item=>item.id===current);if(index<0)return;
     const nextIndex=dx<0?index+1:index-1;if(nextIndex<0||nextIndex>=NAV_ITEMS.length)return;
+    suppressClickUntil=Date.now()+450;
     router?.navigate(NAV_ITEMS[nextIndex].id);
   };
   const cancel=()=>{gesture=null;};
+  const suppressClick=event=>{
+    if(Date.now()>suppressClickUntil||!rowSurface(event.target))return;
+    suppressClickUntil=0;event.preventDefault();event.stopPropagation();
+  };
   host.addEventListener('pointerdown',onPointerDown,{passive:true});
   host.addEventListener('pointerup',finish,{passive:true});
   host.addEventListener('pointercancel',cancel,{passive:true});
+  host.addEventListener('click',suppressClick,true);
   return()=>{
     host.removeEventListener('pointerdown',onPointerDown);
     host.removeEventListener('pointerup',finish);
     host.removeEventListener('pointercancel',cancel);
+    host.removeEventListener('click',suppressClick,true);
   };
 }
 
