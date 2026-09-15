@@ -20,6 +20,7 @@ let syncTimer=null;
 let syncInFlight=null;
 let lifecycleBound=false;
 let accountReturnFocus=null;
+let tabSwipeCleanup=null;
 
 function navMarkup(active){
   return NAV_ITEMS.map(item=>`<button type="button" data-nav="${item.id}" aria-current="${active===item.id?'page':'false'}"><span class="app-nav-icon">${item.icon}</span><span class="app-nav-label">${item.label}</span></button>`).join('');
@@ -68,6 +69,34 @@ function closeAccountSheet({restoreFocus=true}={}){
   const target=accountReturnFocus;
   accountReturnFocus=null;
   if(restoreFocus&&target?.isConnected)requestAnimationFrame(()=>target.focus?.({preventScroll:true}));
+}
+
+function bindTabSwipe(){
+  const host=$('screenHost');
+  if(!host)return()=>{};
+  let gesture=null;
+  const ignoredTarget=target=>Boolean(target?.closest?.('input,textarea,select,button,[contenteditable="true"],.sales-groups,.sales-cart-overlay,.delivered-overlay,.pending-overlay,.debt-overlay,.account-sheet'));
+  const onPointerDown=event=>{
+    if(event.pointerType==='mouse'||ignoredTarget(event.target))return;
+    gesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY};
+  };
+  const finish=event=>{
+    if(!gesture||event.pointerId!==gesture.pointerId){gesture=null;return;}
+    const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;gesture=null;
+    if(Math.abs(dx)<56||Math.abs(dx)<=Math.abs(dy)*1.25)return;
+    const current=normalizeRoute(location.hash);const index=NAV_ITEMS.findIndex(item=>item.id===current);if(index<0)return;
+    const nextIndex=dx<0?index+1:index-1;if(nextIndex<0||nextIndex>=NAV_ITEMS.length)return;
+    router?.navigate(NAV_ITEMS[nextIndex].id);
+  };
+  const cancel=()=>{gesture=null;};
+  host.addEventListener('pointerdown',onPointerDown,{passive:true});
+  host.addEventListener('pointerup',finish,{passive:true});
+  host.addEventListener('pointercancel',cancel,{passive:true});
+  return()=>{
+    host.removeEventListener('pointerdown',onPointerDown);
+    host.removeEventListener('pointerup',finish);
+    host.removeEventListener('pointercancel',cancel);
+  };
 }
 
 async function refresh(domains=[]){
@@ -139,6 +168,7 @@ async function mountRoute(route){
 function showAppShell(){
   $('loginScreen').hidden=true;$('appShell').hidden=false;renderAccountIdentity();
   if(!router){router=createRouter({onRoute:mountRoute});router.start();}
+  if(!tabSwipeCleanup)tabSwipeCleanup=bindTabSwipe();
 }
 
 async function openApp(sessionInfo){
@@ -158,7 +188,7 @@ async function openApp(sessionInfo){
 
 function openLogin(){
   closeAccountSheet({restoreFocus:false});
-  appOpenToken++;stopSync();activeCleanup?.();activeCleanup=null;router?.destroy();router=null;identity=null;appState.reset();
+  appOpenToken++;stopSync();activeCleanup?.();activeCleanup=null;tabSwipeCleanup?.();tabSwipeCleanup=null;router?.destroy();router=null;identity=null;appState.reset();
   $('appShell').hidden=true;$('loginScreen').hidden=false;
 }
 
