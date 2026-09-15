@@ -49,3 +49,13 @@ test('shell and sales consume shared UI tokens',()=>{
   assert.match(shell,/var\(--ui-(?:panel|text|line|primary)/);
   assert.match(sales,/var\(--ui-(?:panel|text|line|primary)/);
 });
+
+test('shared UI system covers every ancillary popup and print family',()=>{
+  const ui=read('src/styles/ui-system.css');
+  for(const selector of ['.pending-source-panel','.pending-print-panel','.delivered-print-panel','.debt-detail-panel']){
+    assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
+  }
+  for(const selector of ['.pending-backdrop','.delivered-backdrop','.debt-backdrop']){
+    assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
+  }
+});
