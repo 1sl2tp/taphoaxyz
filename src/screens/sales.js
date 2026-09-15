@@ -1,7 +1,6 @@
 const money=n=>Number(n||0).toLocaleString('vi-VN');
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
-const SEARCH_RENDER_DELAY_MS=250;
 
 export function filterProducts(products=[],search='',group='Tất cả'){
   const words=norm(search).trim().split(/\s+/).filter(Boolean);
@@ -42,16 +41,17 @@ function groupButtons(products=[],active='Tất cả'){
 }
 
 function productRows(state){
-  const rows=filterProducts(state.products,state.search,state.group);
-  if(!rows.length)return `<div class="sales-empty">Không tìm thấy sản phẩm</div>`;
+  const rows=filterProducts(state.products,'',state.group);
+  const visibleIds=new Set(filterProducts(state.products,state.search,state.group).map(p=>String(p.id)));
+  if(!rows.length)return `<div class="sales-empty" data-sales-empty>Không tìm thấy sản phẩm</div>`;
   const canManage=state.permissions?.canManageOrders===true;
   const canViewCost=state.permissions?.canViewCost===true;
-  return rows.map(p=>{
+  const rowMarkup=rows.map(p=>{
     const qty=Number(state.cart[p.id]||0),price=Number(state.prices[p.id]??p.gia)||0;
     const meta=[canViewCost&&p.von!==undefined&&p.von!==null?`<span class="sales-cost">${money(p.von)}</span><span>→</span>`:'',
       canManage?`<input class="sales-price-input" data-price-id="${esc(p.id)}" inputmode="numeric" value="${esc(price)}" aria-label="Giá ${esc(p.ten)}">`:`<span class="sales-price-readonly">${money(price)}</span>`,
       p.donVi?`<span class="sales-unit">${esc(p.donVi)}</span>`:''].join('');
-    return `<article class="sales-product-row" data-product-row="${esc(p.id)}">
+    return `<article class="sales-product-row" data-product-row="${esc(p.id)}" ${visibleIds.has(String(p.id))?'':'hidden'}>
       <div class="sales-product-info"><div class="sales-product-name">${esc(p.ten)}</div><div class="sales-product-meta">${meta}</div></div>
       ${canManage?`<div class="sales-qty" data-qty-id="${esc(p.id)}">
         <button type="button" data-qty-action="dec" ${qty<=0?'disabled':''}>−</button>
@@ -60,6 +60,21 @@ function productRows(state){
       </div>`:''}
     </article>`;
   }).join('');
+  return `${rowMarkup}<div class="sales-empty" data-sales-empty ${visibleIds.size?'hidden':''}>Không tìm thấy sản phẩm</div>`;
+}
+
+function applySalesSearchVisibility(root,state){
+  const visibleIds=new Set(filterProducts(state.products,state.search,state.group).map(p=>String(p.id)));
+  let visibleCount=0;
+  for(const row of root.querySelectorAll('[data-product-row]')){
+    const visible=visibleIds.has(String(row.dataset.productRow));
+    row.hidden=!visible;
+    if(visible)visibleCount+=1;
+  }
+  const empty=root.querySelector('[data-sales-empty]');
+  if(empty)empty.hidden=visibleCount>0;
+  const clearButton=root.querySelector('[data-search-clear]');
+  if(clearButton)clearButton.hidden=!state.search;
 }
 
 function cartBody(state){
@@ -134,27 +149,9 @@ function deriveInitial(context){
 }
 
 export async function mount(context){
-  const root=context.root;let state=deriveInitial(context);let busy=false;let searchRenderTimer=null;
+  const root=context.root;let state=deriveInitial(context);let busy=false;
   const canManage=()=>state.permissions?.canManageOrders===true;
-  const cancelSalesSearchRefresh=()=>{
-    if(searchRenderTimer===null)return;
-    clearTimeout(searchRenderTimer);
-    searchRenderTimer=null;
-  };
-  const render=()=>{cancelSalesSearchRefresh();root.innerHTML=salesMarkup(state);};
-  const refreshSalesSearchResults=()=>{
-    const productList=root.querySelector('.sales-product-list');
-    if(productList)productList.innerHTML=productRows(state);
-    const clearButton=root.querySelector('[data-search-clear]');
-    if(clearButton)clearButton.hidden=!state.search;
-  };
-  const scheduleSalesSearchRefresh=()=>{
-    cancelSalesSearchRefresh();
-    searchRenderTimer=setTimeout(()=>{
-      searchRenderTimer=null;
-      refreshSalesSearchResults();
-    },SEARCH_RENDER_DELAY_MS);
-  };
+  const render=()=>{root.innerHTML=salesMarkup(state);};
   const unsubscribeData=context.subscribeData?.(({state:next,changed})=>{
     if(!changed.some(x=>x==='bootstrap'||x==='products'||x==='customers'))return;
     state={...state,products:next.products||[],customers:next.customers||[],permissions:next.permissions||state.permissions};
@@ -192,9 +189,7 @@ export async function mount(context){
   const onInput=event=>{
     if(event.target.matches('[data-sales-search]')){
       state={...state,search:event.target.value};
-      const clearButton=root.querySelector('[data-search-clear]');
-      if(clearButton)clearButton.hidden=!state.search;
-      scheduleSalesSearchRefresh();
+      applySalesSearchVisibility(root,state);
       return;
     }
     if(!canManage())return;
@@ -209,5 +204,5 @@ export async function mount(context){
     if(event.target.dataset.qtyInput||event.target.dataset.priceId)render();
   };
   root.addEventListener('click',onClick);root.addEventListener('input',onInput);root.addEventListener('change',onChange);render();
-  return ()=>{cancelSalesSearchRefresh();unsubscribeData?.();root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);root.removeEventListener('change',onChange);};
+  return ()=>{unsubscribeData?.();root.removeEventListener('click',onClick);root.removeEventListener('input',onInput);root.removeEventListener('change',onChange);};
 }

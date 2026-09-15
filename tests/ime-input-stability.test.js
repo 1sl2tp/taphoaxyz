@@ -60,14 +60,14 @@ test('IME stability module loads before application input handlers',()=>{
   assert.ok(guard>=0&&app>guard);
 });
 
-test('sales search keeps the active input mounted and defers heavy filtering',()=>{
+test('sales search keeps the active input mounted and only toggles existing product rows',()=>{
   const source=read('src/screens/sales.js');
-  assert.match(source,/const refreshSalesSearchResults=\(\)=>\{/);
-  assert.match(source,/querySelector\('\.sales-product-list'\)/);
-  assert.match(source,/productList\.innerHTML=productRows\(state\)/);
+  assert.match(source,/function applySalesSearchVisibility\(root,state\)/);
+  assert.match(source,/querySelectorAll\('\[data-product-row\]'\)/);
+  assert.match(source,/row\.hidden=!visible/);
   const branch=source.match(/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{([\s\S]*?)\n    \}/)?.[1]||'';
   assert.match(branch,/state=\{\.\.\.state,search:event\.target\.value\}/);
-  assert.match(branch,/scheduleSalesSearchRefresh\(\)/);
-  assert.doesNotMatch(branch,/refreshSalesSearchResults\(\)/);
+  assert.match(branch,/applySalesSearchVisibility\(root,state\)/);
+  assert.doesNotMatch(branch,/innerHTML/);
   assert.doesNotMatch(branch,/render\(\)/);
 });
