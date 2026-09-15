@@ -1,5 +1,5 @@
-const DEFAULT_CACHE_VERSION=2;
-const KEY_PREFIX='taphoa.snapshot.v2:';
+const DEFAULT_CACHE_VERSION=3;
+const KEY_PREFIX='taphoa.snapshot.v3:';
 const SNAPSHOT_FIELDS=['version','syncSeconds','revisions','products','sources','customers','orders','debtSummary','printSettings','selfCustomer','permissions','user'];
 
 export function createSnapshotStore({storage=globalThis.localStorage,cacheVersion=DEFAULT_CACHE_VERSION}={}){
