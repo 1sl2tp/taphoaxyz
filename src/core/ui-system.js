@@ -21,7 +21,7 @@ export function compactOrderId(value){const id=String(value??'').trim();return i
 function addClasses(node,...names){if(node)node.classList?.add(...names.filter(Boolean));}
 function setRole(node,role){if(node&&!node.hasAttribute?.('data-ui-type'))node.setAttribute?.('data-ui-type',role);}
 function cleanActionText(value=''){return String(value).replace(/[🛒🖼️✅⏳📝🗑️📦⚠️💚⚡💵📌✕×◉‹›]/gu,'').trim();}
-export function cleanStatusText(node){if(!node)return;const text=cleanActionText(node.textContent);if(text)node.textContent=text;}
+export function cleanStatusText(node){if(!node)return;const current=String(node.textContent||''),text=cleanActionText(current);if(text&&text!==current)node.textContent=text;}
 
 export function setButtonIcon(button,name,{text=null,size=20}={}){
   if(!button)return;const visible=text===null?null:String(text),signature=`${name}:${size}:${visible??''}`;
