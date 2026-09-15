@@ -33,13 +33,15 @@ test('sync is strictly one-way into TAPHOA tables',()=>{
   assert.doesNotMatch(worker,/values:batchUpdate|:append\?|writePairToNcc|writePairToManager/i);
 });
 
-test('worker skips unchanged Drive versions and deactivates missing product codes',()=>{
+test('worker skips unchanged Drive versions and atomic import deactivates missing product codes',()=>{
   assert.match(worker,/modifiedTime/);
   assert.match(worker,/last_drive_modified_time/);
   assert.match(worker,/changed\s*:\s*false/);
-  assert.match(worker,/is_active\s*:\s*false/);
+  assert.match(worker,/taphoa_apply_product_sync/);
+  assert.match(cron,/update\s+public\.taphoa_products[\s\S]*set\s+is_active\s*=\s*false/i);
+  assert.match(cron,/not\s+exists\s*\([\s\S]*jsonb_to_recordset\(p_products\)/i);
   assert.match(worker,/last_sync_status/);
-  assert.match(worker,/revision/);
+  assert.match(cron,/where\s+domain\s*=\s*'products'/i);
 });
 
 test('cron is TAPHOA-owned and runs once per minute',()=>{
