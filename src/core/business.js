@@ -25,19 +25,19 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
   if(!gateway?.rpc)throw new Error('gateway.rpc is required');
   const commandId=()=>String(idFactory());
   return {
-    bootstrap:()=>gateway.rpc('app_bootstrap',{}),
-    meta:()=>gateway.rpc('app_meta',{}),
-    domains:domains=>gateway.rpc('app_domains',{p_domains:[...new Set((domains||[]).map(String))]}),
-    orderDetail:id=>gateway.rpc('order_detail',{p_order_id:String(id||'')}),
-    debtLedger:(maKH,{beforeAt=null,beforeId=null,limit=50}={})=>gateway.rpc('debt_ledger_page',{
+    bootstrap:()=>gateway.rpc('taphoa_app_bootstrap',{}),
+    meta:()=>gateway.rpc('taphoa_app_meta',{}),
+    domains:domains=>gateway.rpc('taphoa_app_domains',{p_domains:[...new Set((domains||[]).map(String))]}),
+    orderDetail:id=>gateway.rpc('taphoa_order_detail',{p_order_id:String(id||'')}),
+    debtLedger:(maKH,{beforeAt=null,beforeId=null,limit=50}={})=>gateway.rpc('taphoa_debt_ledger_page',{
       p_customer_id:String(maKH||''),p_before_at:beforeAt||null,p_before_id:beforeId??null,p_limit:Math.max(1,Math.min(100,num(limit)||50))
     }),
-    saveOrder:payload=>gateway.rpc('save_order',{p_order:orderRpcPayload(payload),p_command_id:commandId()}),
-    deliverOrder:id=>gateway.rpc('deliver_order',{p_order_id:String(id||''),p_command_id:commandId()}),
-    reverseOrder:(id,reason='Hoàn đơn')=>gateway.rpc('reverse_order',{p_order_id:String(id||''),p_reason:String(reason||'Hoàn đơn'),p_command_id:commandId()}),
-    deletePending:id=>gateway.rpc('delete_pending_order',{p_order_id:String(id||''),p_command_id:commandId()}),
-    batchOrders:(action,ids)=>gateway.rpc('batch_orders',{p_action:String(action||''),p_ids:(ids||[]).map(String),p_command_id:commandId()}),
-    debtTransaction:(maKH,type,amount,note='')=>gateway.rpc('debt_transaction',{
+    saveOrder:payload=>gateway.rpc('taphoa_save_order',{p_order:orderRpcPayload(payload),p_command_id:commandId()}),
+    deliverOrder:id=>gateway.rpc('taphoa_deliver_order',{p_order_id:String(id||''),p_command_id:commandId()}),
+    reverseOrder:(id,reason='Hoàn đơn')=>gateway.rpc('taphoa_reverse_order',{p_order_id:String(id||''),p_reason:String(reason||'Hoàn đơn'),p_command_id:commandId()}),
+    deletePending:id=>gateway.rpc('taphoa_delete_pending_order',{p_order_id:String(id||''),p_command_id:commandId()}),
+    batchOrders:(action,ids)=>gateway.rpc('taphoa_batch_orders',{p_action:String(action||''),p_ids:(ids||[]).map(String),p_command_id:commandId()}),
+    debtTransaction:(maKH,type,amount,note='')=>gateway.rpc('taphoa_debt_transaction',{
       p_customer_id:String(maKH||''),p_type:String(type)==='thu_tien'?'collection':'payment',p_amount:num(amount),p_note:String(note||''),p_command_id:commandId()
     })
   };
