@@ -25,8 +25,8 @@ test('mutations require Admin from shared TAPHOA access context',()=>{
 test('order lifecycle reconciles order and debt revisions',()=>{
   assert.match(sql,/taphoa_bump_revision\s*\(\s*'orders'/i);
   assert.match(sql,/taphoa_bump_revision\s*\(\s*'debt'/i);
-  assert.match(sql,/entry_type[^\n]*'sale'/i);
-  assert.match(sql,/entry_type[^\n]*'reversal'/i);
+  assert.match(sql,/taphoa_debt_ledger[\s\S]{0,500}?'sale'/i);
+  assert.match(sql,/taphoa_debt_ledger[\s\S]{0,500}?'reversal'/i);
   assert.match(sql,/status\s*=\s*'reversed'/i);
 });
 
