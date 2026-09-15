@@ -84,14 +84,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display'
 .classic-share-button{background:var(--classic-green)!important;border:1px solid var(--classic-green)!important;color:#fff!important}
 .delivered-backdrop,.pending-backdrop{background:rgba(0,0,0,.5)!important}
 
+.debt-hero{background:var(--classic-bg)!important;padding:8px 10px!important}
+.debt-total-row{gap:8px!important}
+.debt-total-row>div{background:#fff!important;border:1px solid var(--classic-border)!important;border-radius:14px!important;box-shadow:var(--classic-shadow)!important;padding:12px!important}
+.debt-total-row small{font-size:10px!important;color:var(--classic-text-muted)!important;font-weight:700!important}
+.debt-total-row strong{color:var(--classic-blue)!important}
+.debt-quick{background:#fff!important;border:1px solid var(--classic-border)!important;border-radius:14px!important;box-shadow:var(--classic-shadow)!important;padding:12px!important}
+.debt-quick>b{font-size:11px!important;color:var(--classic-blue)!important}
+.debt-customer-picker input,.debt-quick-actions input,.debt-detail-panel footer input{background:#fff!important;border:1.5px solid var(--classic-border)!important;border-radius:10px!important;font-size:14px!important;box-shadow:none!important}
+.debt-customer-option{background:#fff!important;border-bottom:1px solid var(--classic-divider)!important}
+.debt-group-head{background:transparent!important;color:var(--classic-text-secondary)!important;font-size:11px!important;padding-inline:12px!important}
+.debt-list{gap:5px!important;padding:6px 12px!important}
+.debt-customer-row{padding:8px 12px!important}
+.debt-avatar{background:var(--classic-blue-light)!important;color:var(--classic-blue)!important}
+.debt-detail-panel,.debt-order-panel{background:#fff!important;border-radius:20px!important;box-shadow:0 10px 25px rgba(0,0,0,.12),0 4px 10px rgba(0,0,0,.07)!important}
+.debt-backdrop{background:rgba(0,0,0,.5)!important}
+.debt-receipt{background:#fff!important;border:1px solid #E5E7EB!important;border-radius:8px!important;margin:0 10px 12px!important;padding:14px 12px!important}
+.debt-shop{border-bottom:1px solid var(--classic-divider)!important;padding-bottom:10px!important;margin-bottom:10px!important}
+.debt-shop-avatar{background:var(--classic-blue-light)!important;color:var(--classic-blue)!important}
+.debt-receipt-summary{padding:8px 0 12px!important}
+.debt-ledger-head{font-size:10px!important;font-weight:700!important;color:var(--classic-text-muted)!important;border-bottom:1px dashed var(--classic-border)!important;padding:6px 0!important}
+.debt-transaction-row{background:#fff!important;border-bottom:1px solid var(--classic-divider)!important;padding:8px 0!important}
+.debt-order-head{font-size:10px!important;font-weight:700!important;color:var(--classic-text-muted)!important;border-bottom:1px dashed var(--classic-border)!important}
+.debt-order-lines>div{border-bottom:1px solid var(--classic-divider)!important;padding-block:8px!important}
+.debt-order-total{border-top:2px solid var(--classic-divider)!important;padding-top:12px!important}
+.debt-detail-panel header button[data-debt-share],.debt-order-panel header button[data-order-share]{background:var(--classic-green)!important;color:#fff!important;border-color:var(--classic-green)!important}
+
 .account-sheet-card{background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.12)}
 .account-sheet-avatar{background:var(--classic-blue-light);color:var(--classic-blue)}
+.account-sheet-copy strong{color:var(--classic-blue)}
 .account-logout{border-color:var(--classic-red);color:var(--classic-red);background:#fff}
 
 .system-toast{background:rgba(30,41,59,.93);border-radius:24px;padding:10px 20px;font-size:13px;font-weight:700}
 
 @media(max-width:520px){
-  .delivered-detail-panel,.pending-detail-panel,.pending-source-panel{width:min(100% - 18px,430px)!important;max-height:92dvh!important;border-radius:20px 20px 0 0!important}
+  .delivered-detail-panel,.pending-detail-panel,.pending-source-panel,.debt-detail-panel,.debt-order-panel{width:min(100% - 18px,430px)!important;max-height:92dvh!important;border-radius:20px 20px 0 0!important}
   .classic-receipt{margin-inline:8px;padding:12px 8px}
 }
 
