@@ -44,3 +44,68 @@ html,body,.taphoa-viewport,.app-shell{
 body{
   font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI","Helvetica","Apple Color Emoji","Arial",sans-serif,"Segoe UI Emoji","Segoe UI Symbol";
 }
+
+.ui-icon{display:block;flex:0 0 auto}
+.ui-button{
+  min-height:38px;
+  padding:0 13px;
+  border:1px solid var(--tap-border);
+  border-radius:var(--tap-radius-md);
+  background:var(--tap-surface);
+  color:var(--tap-text);
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  box-shadow:none;
+}
+.ui-button:hover{background:var(--tap-surface-hover)}
+.ui-button:active{background:var(--tap-surface-pressed)}
+.ui-button-primary{border-color:var(--tap-primary)!important;background:var(--tap-primary)!important;color:var(--tap-primary-text)!important}
+.ui-button-primary:hover{filter:brightness(1.08)}
+.ui-button-ghost{border-color:transparent!important;background:transparent!important;color:var(--tap-text-secondary)!important}
+.ui-button-ghost:hover{background:var(--tap-surface-hover)!important;color:var(--tap-text)!important}
+.ui-button-danger{border-color:transparent!important;background:transparent!important;color:var(--tap-danger)!important}
+.ui-button-danger:hover{background:rgba(200,50,50,.07)!important}
+.ui-icon-button{
+  min-width:32px!important;
+  width:32px!important;
+  height:32px!important;
+  min-height:32px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:var(--tap-radius-sm)!important;
+  background:transparent!important;
+  color:var(--tap-text-secondary)!important;
+  display:grid!important;
+  place-items:center!important;
+  box-shadow:none!important;
+}
+.ui-icon-button:hover{background:var(--tap-surface-hover)!important;color:var(--tap-text)!important}
+.ui-icon-button:active{background:var(--tap-surface-pressed)!important}
+
+input,textarea,select{
+  color:var(--tap-text);
+}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{
+  outline:2px solid rgba(44,103,197,.28);
+  outline-offset:2px;
+}
+
+.ui-modal-surface,.ui-sheet-surface{
+  background:var(--tap-surface)!important;
+  border:1px solid var(--tap-border)!important;
+  border-radius:var(--tap-radius-lg)!important;
+  box-shadow:var(--tap-shadow-popover)!important;
+  color:var(--tap-text)!important;
+}
+.ui-overlay-backdrop{background:rgba(0,0,0,.32)!important}
+
+.ui-status{
+  border:0!important;
+  font-weight:600!important;
+}
+.ui-status-success{background:rgba(24,134,75,.08)!important;color:var(--tap-success)!important}
+.ui-status-pending{background:rgba(168,100,8,.08)!important;color:var(--tap-warning)!important}
+.ui-status-danger{background:rgba(200,50,50,.08)!important;color:var(--tap-danger)!important}
