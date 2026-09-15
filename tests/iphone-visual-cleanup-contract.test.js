@@ -9,6 +9,8 @@ test('sales cart uses compact total summary and semantic edit actions',()=>{
   const css=read('src/styles/iphone-visual-cleanup.css');
   assert.match(runtime,/SP ·/);
   assert.match(runtime,/setAttribute\('placeholder','Ghi chú'\)/);
+  assert.doesNotMatch(runtime,/if\(panel\.dataset\.uiCompact\)return/);
+  assert.match(runtime,/if\(panel\.dataset\.uiCompact\)continue/);
   assert.match(css,/\[data-sales-action="cancel-edit"\][^{]*\{[^}]*var\(--ui-line\)/s);
   assert.match(css,/\[data-sales-action="update"\][^{]*\{[^}]*var\(--ui-primary\)/s);
 });
