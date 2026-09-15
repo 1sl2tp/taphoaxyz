@@ -8,7 +8,7 @@ export function normalizeIdentity(context={}) {
     role:String(context.taphoa_role||context.role||'').toLowerCase(),
     maKH:accountId,
     displayName:String(context.display_name||context.displayName||context.username||''),
-    active:context.allowed===true
+    active:context.allowed===true||context.active===true
   };
 }
 
