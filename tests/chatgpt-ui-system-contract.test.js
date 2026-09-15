@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {icon,ICON_NAMES} from '../src/core/icons.js';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
@@ -16,4 +17,16 @@ test('ChatGPT-aligned TAPHOA token layer is loaded after classic geometry',()=>{
   const scrollIndex=html.indexOf('./src/styles/scroll-owner.css');
   assert.ok(classicIndex>=0&&neutralIndex>classicIndex&&scrollIndex>neutralIndex);
   assert.match(html,/<meta name="theme-color" content="#fcfcfc">/i);
+});
+
+test('shared icon registry owns required TAPHOA action glyphs',()=>{
+  for(const name of ['search','close','plus','minus','cart','calendar','chevron-left','chevron-right','edit','trash','share','print','check','clock','user','logout','eye','eye-off','more']){
+    assert.ok(ICON_NAMES.includes(name),`missing icon ${name}`);
+  }
+  const svg=icon('share',{size:20});
+  assert.match(svg,/^<svg[^>]+viewBox=/);
+  assert.match(svg,/width="20"/);
+  assert.match(svg,/height="20"/);
+  assert.match(svg,/currentColor/);
+  assert.match(svg,/aria-hidden="true"/);
 });
