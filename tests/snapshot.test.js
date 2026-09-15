@@ -28,16 +28,18 @@ test('default snapshot round-trips on privacy-safe v3 key for the same uid',()=>
   assert.equal(snap.data.products[0].gia,125);
 });
 
-test('pre-privacy v2 snapshot is never loaded after customer privacy cutover',()=>{
+test('pre-privacy v2 snapshot is purged and never loaded after customer privacy cutover',()=>{
   const storage=memoryStorage();
   storage.setItem('taphoa.snapshot.v2:u1',JSON.stringify({cacheVersion:2,uid:'u1',savedAt:1,data:state}));
   assert.equal(createSnapshotStore({storage}).load('u1'),null);
+  assert.equal(storage.getItem('taphoa.snapshot.v2:u1'),null);
 });
 
-test('retired v1 snapshot is never loaded after cutover',()=>{
+test('retired v1 snapshot is purged and never loaded after cutover',()=>{
   const storage=memoryStorage();
   storage.setItem('taphoa.snapshot.v1:u1',JSON.stringify({cacheVersion:1,uid:'u1',savedAt:1,data:state}));
   assert.equal(createSnapshotStore({storage}).load('u1'),null);
+  assert.equal(storage.getItem('taphoa.snapshot.v1:u1'),null);
 });
 
 test('snapshot never loads for another uid',()=>{
