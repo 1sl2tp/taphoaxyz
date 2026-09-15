@@ -83,6 +83,14 @@ function decorateSalesCleanup(root){
   for(const note of root.querySelectorAll?.('[data-screen-id="sales"] [data-note-id]')||[]){
     if(note.getAttribute('placeholder')==='...')note.setAttribute('placeholder','Ghi chú');
   }
+  const searchRow=root.querySelector?.('[data-screen-id="sales"] .sales-search-row');
+  if(searchRow&&!searchRow.querySelector('.ui-search-leading-icon')){
+    const leading=document.createElement('span');
+    leading.className='ui-search-leading-icon';
+    leading.setAttribute('aria-hidden','true');
+    leading.innerHTML=icon('search',{size:18});
+    searchRow.prepend(leading);
+  }
   const quick=root.querySelector?.('[data-screen-id="sales"] .sales-cart-quick');
   if(quick&&!quick.dataset.uiCompact){
     const label=cleanActionText(quick.textContent)||'Trống';
