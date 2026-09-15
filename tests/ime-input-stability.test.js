@@ -1,34 +1,62 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {installImeInputStability} from '../src/core/ime-stability.js';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-function handlerBody(source,name='onInput'){
-  const match=source.match(new RegExp(`const ${name}=event=>\\{([\\s\\S]*?)\\n  \\};`));
-  assert.ok(match,`${name} handler not found`);
-  return match[1];
+function harness(){
+  const listeners=new Map();
+  const root={
+    addEventListener(type,fn){const list=listeners.get(type)||[];list.push(fn);listeners.set(type,list);},
+    removeEventListener(type,fn){listeners.set(type,(listeners.get(type)||[]).filter(x=>x!==fn));}
+  };
+  const emit=(type,event)=>{for(const fn of listeners.get(type)||[])fn(event);};
+  return {root,emit};
 }
 
-test('sales search does not replace the active input while typing',()=>{
-  const source=read('src/screens/sales.js');
-  const input=handlerBody(source);
-  assert.doesNotMatch(input,/data-sales-search[\s\S]{0,220}render\(\)/);
-  assert.match(source,/refreshSalesSearchResults/);
+function textTarget(){
+  const dispatched=[];
+  return {
+    isConnected:true,
+    matches:selector=>selector.includes('input'),
+    dispatchEvent:event=>{dispatched.push(event.type);return true;},
+    dispatched
+  };
+}
+
+test('IME guard suppresses intermediate input events and commits once composition ends',()=>{
+  const {root,emit}=harness();
+  const queued=[];
+  installImeInputStability(root,fn=>{queued.push(fn);return 1;});
+  const target=textTarget();
+  emit('compositionstart',{target});
+  let stopped=false;
+  emit('input',{target,isComposing:true,stopImmediatePropagation(){stopped=true;}});
+  assert.equal(stopped,true);
+  emit('compositionend',{target});
+  assert.equal(queued.length,1);
+  queued[0]();
+  assert.deepEqual(target.dispatched,['input']);
 });
 
-test('delivered search does not replace the active input while typing',()=>{
-  const source=read('src/screens/delivered.js');
-  const input=handlerBody(source);
-  assert.doesNotMatch(input,/data-delivered-search[\s\S]{0,260}render\(\)/);
-  assert.match(source,/refreshDeliveredSearchResults/);
-  assert.doesNotMatch(input,/setSelectionRange/);
+test('IME guard does not synthesize a duplicate commit when browser emits final input',()=>{
+  const {root,emit}=harness();
+  const queued=[];
+  installImeInputStability(root,fn=>{queued.push(fn);return 1;});
+  const target=textTarget();
+  emit('compositionstart',{target});
+  emit('compositionend',{target});
+  let stopped=false;
+  emit('input',{target,isComposing:false,stopImmediatePropagation(){stopped=true;}});
+  assert.equal(stopped,false);
+  queued[0]();
+  assert.deepEqual(target.dispatched,[]);
 });
 
-test('debt customer query does not replace the active input while typing',()=>{
-  const source=read('src/screens/debt.js');
-  const input=handlerBody(source);
-  assert.doesNotMatch(input,/data-customer-query[\s\S]{0,260}render\(\)/);
-  assert.match(source,/refreshDebtCustomerOptions/);
-  assert.doesNotMatch(input,/setSelectionRange/);
+test('IME stability module loads before application input handlers',()=>{
+  const html=read('index.html');
+  const guard=html.indexOf('./src/core/ime-stability.js');
+  const app=html.indexOf('./src/app.js');
+  assert.ok(guard>=0&&app>guard);
 });
