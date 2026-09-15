@@ -60,3 +60,14 @@ test('IME stability module loads before application input handlers',()=>{
   const app=html.indexOf('./src/app.js');
   assert.ok(guard>=0&&app>guard);
 });
+
+test('sales search keeps the active input mounted while filtering products',()=>{
+  const source=read('src/screens/sales.js');
+  assert.match(source,/const refreshSalesSearchResults=\(\)=>\{/);
+  assert.match(source,/querySelector\('\.sales-product-list'\)/);
+  assert.match(source,/productList\.innerHTML=productRows\(state\)/);
+  const branch=source.match(/if\(event\.target\.matches\('\[data-sales-search\]'\)\)\{([^}]*)\}/)?.[1]||'';
+  assert.ok(branch,'sales search input branch not found');
+  assert.match(branch,/refreshSalesSearchResults\(\)/);
+  assert.doesNotMatch(branch,/render\(\)/);
+});
