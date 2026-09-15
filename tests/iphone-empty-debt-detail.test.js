@@ -28,3 +28,13 @@ test('zero-balance debt detail shows one empty ledger message and a blank amount
   assert.match(html,/data-detail-amount[^>]*value=""/);
   assert.doesNotMatch(html,/data-detail-amount[^>]*value="0"/);
 });
+
+test('debt detail date uses the shared two-digit day month format',()=>{
+  const html=debtMarkup({
+    summary:[{maKH:'c1',ten:'A Hậu Còi',soDu:0}],
+    canManage:false,
+    selectedCustomerId:'c1',
+    detail:{customer:{id:'c1',ten:'A Hậu Còi'},soDu:0,transactions:[]}
+  });
+  assert.match(html,/\d{2}\/\d{2}\/\d{4}/);
+});
