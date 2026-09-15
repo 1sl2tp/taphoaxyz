@@ -51,6 +51,23 @@ test('sales cart DOM blocks automatic reload when quantity, note, or edit mode i
   assert.equal(mod.hasUnsavedSalesDom(root({editing:true})),true);
 });
 
+test('focused sales search blocks automatic reload while the user is typing',async()=>{
+  const mod=await loadUpdateModule();
+  assert.equal(typeof mod.focusedInputBlocksReload,'function','focusedInputBlocksReload must exist');
+  const search={
+    type:'search',value:'a',
+    matches(selector){
+      if(selector==='input')return true;
+      if(selector==='[contenteditable="true"],textarea,select')return false;
+      if(selector==='[data-sales-search]')return true;
+      return false;
+    }
+  };
+  const button={type:'button',value:'',matches:selector=>selector==='input'};
+  assert.equal(mod.focusedInputBlocksReload(search),true,'active sales search must defer a pending app reload');
+  assert.equal(mod.focusedInputBlocksReload(button),false,'non-editing input controls must not block reload');
+});
+
 test('main push publishes a same-origin version marker without recursive marker commits',async()=>{
   const workflow=await read('.github/workflows/publish-version-marker.yml');
   assert.match(workflow,/branches:\s*\[main\]/);
