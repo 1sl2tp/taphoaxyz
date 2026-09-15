@@ -30,3 +30,13 @@ test('shared icon registry owns required TAPHOA action glyphs',()=>{
   assert.match(svg,/currentColor/);
   assert.match(svg,/aria-hidden="true"/);
 });
+
+test('shared actions and overlays use neutral ChatGPT-aligned chrome',()=>{
+  const css=read('src/styles/chatgpt-ui.css');
+  assert.match(css,/\.ui-button-primary[^}]*background:\s*var\(--tap-primary\)/s);
+  assert.match(css,/\.ui-button-ghost[^}]*background:\s*transparent/s);
+  assert.match(css,/\.ui-icon-button[^}]*min-(?:width|inline-size):\s*32px/s);
+  assert.match(css,/\.ui-modal-surface[^}]*border-radius:\s*var\(--tap-radius-lg\)/s);
+  assert.match(css,/\.ui-overlay-backdrop[^}]*rgba\(0,0,0,\.32\)/s);
+  assert.doesNotMatch(css,/linear-gradient\(135deg,var\(--classic-blue\),var\(--classic-teal\)\)/);
+});
