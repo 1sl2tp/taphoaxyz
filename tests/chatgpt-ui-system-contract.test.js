@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {icon,ICON_NAMES} from '../src/core/icons.js';
 import {cleanStatusText} from '../src/core/ui-system.js';
+import {readTailwindSourceSync} from './helpers/tailwind-source.js';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
 test('Tailwind semantic layer is the only business visual owner before scroll ownership',()=>{
   const html=read('index.html');
-  const css=read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   assert.match(css,/--tap-page:#f4f4f5/i);
   assert.match(css,/--tap-text:#18181b/i);
   assert.match(css,/--tap-touch:\s*44px/i);
@@ -45,7 +46,7 @@ test('status cleanup is idempotent so MutationObserver does not self-trigger for
 });
 
 test('shared actions and overlays use touch-first semantic chrome',()=>{
-  const css=read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   assert.match(css,/\.ui-action\s*\{/);
   assert.match(css,/\.ui-action-primary\s*\{/);
   assert.match(css,/\.ui-icon-button\s*\{[^}]*width:var\(--tap-touch\)/s);
@@ -64,7 +65,7 @@ test('UI decorator uses shared SVG icons instead of interface emoji',()=>{
 });
 
 test('shell and Sales use the Tailwind final visual owner while keeping Sales behavior',()=>{
-  const css=read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   const ui=read('src/core/ui-system.js');
   assert.match(css,/\.app-nav-label\s*\{[^}]*font-size:12px/s);
   assert.match(css,/\.account-button\s*\{[^}]*width:44px[^}]*height:44px/s);
@@ -76,7 +77,7 @@ test('shell and Sales use the Tailwind final visual owner while keeping Sales be
 });
 
 test('Delivered and Pending preserve popup flow with semantic popup levels',()=>{
-  const css=read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   const semantic=read('src/core/semantic-ui.js');
   assert.match(css,/\.delivered-detail-panel\.ui-popup-l1/);
   assert.match(css,/\.pending-detail-panel\.ui-popup-l1/);
@@ -88,7 +89,7 @@ test('Delivered and Pending preserve popup flow with semantic popup levels',()=>
 });
 
 test('Debt uses neutral rows and semantic colors only for money actions and balances',()=>{
-  const css=read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   const semantic=read('src/core/semantic-ui.js');
   assert.match(css,/\.debt-customer-row\s*\{[^}]*border-radius:0!important/s);
   assert.match(css,/\.debt-quick-actions button:nth-of-type\(1\)/);

@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readTailwindSourceSync} from './helpers/tailwind-source.js';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
 test('sales cart keeps compact copy while Tailwind owns semantic edit actions',()=>{
   const sales=read('src/screens/sales.js');
   const runtime=read('src/core/ui-system.js');
-  const css=read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   assert.match(sales,/\$\{totals\.totalQty\} SP · \$\{money\(totals\.total\)\}/);
   assert.match(sales,/placeholder="Ghi chú"/);
   assert.doesNotMatch(runtime,/replaceChildren\(\)|uiCompact/);
@@ -26,7 +27,7 @@ test('pending cards lead with readable customer and compact order context in sou
 });
 
 test('debt main uses separate information and action zones instead of a gradient/card stack',()=>{
-  const css=read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   assert.match(css,/\.debt-hero\s*\{[^}]*bg-tap-page/s);
   assert.match(css,/\.debt-total-row>div\s*\{[^}]*bg-white/s);
   assert.match(css,/\.debt-customer-row\s*\{[^}]*border-radius:0!important/s);

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {readTailwindSourceSync} from './helpers/tailwind-source.js';
 
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
@@ -11,7 +12,7 @@ test('Tailwind is the only screen layout owner',async()=>{
 });
 
 test('layout system separates shell main context data and popup surfaces',async()=>{
-  const css=await read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   for(const token of ['--tap-shell','--tap-main','--tap-context','--tap-data','--tap-popup','--tap-gutter','--tap-section-gap']){
     assert.ok(css.includes(token),`missing layout token ${token}`);
   }
@@ -27,7 +28,7 @@ test('business flows remain main to popup and Sales never becomes desktop split 
   const delivered=await read('src/screens/delivered.js');
   const pending=await read('src/screens/pending.js');
   const debt=await read('src/screens/debt.js');
-  const css=await read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   assert.match(sales,/sales-cart-overlay/);
   assert.match(delivered,/delivered-overlay/);
   assert.match(pending,/pending-overlay/);
@@ -37,7 +38,7 @@ test('business flows remain main to popup and Sales never becomes desktop split 
 });
 
 test('data collections read as tables and rows instead of card soup',async()=>{
-  const css=await read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   assert.match(css,/\.ui-table\s*\{[^}]*border-radius:var\(--tap-radius-section\)/s);
   assert.match(css,/\.ui-row\s*\{[^}]*border-radius:0[^}]*box-shadow:none/s);
   assert.match(css,/\.sales-product-row[^}]*border-radius:0/s);
@@ -47,7 +48,7 @@ test('data collections read as tables and rows instead of card soup',async()=>{
 });
 
 test('popup level one and two have visibly different depth without changing navigation flow',async()=>{
-  const css=await read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   assert.match(css,/--tap-backdrop-l1:\s*rgba\(/);
   assert.match(css,/--tap-backdrop-l2:\s*rgba\(/);
   assert.match(css,/\.ui-popup-l1\s*\{[^}]*box-shadow:var\(--tap-shadow-popup\)/s);

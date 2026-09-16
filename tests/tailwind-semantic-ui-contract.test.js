@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {readTailwindSourceSync} from './helpers/tailwind-source.js';
 
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
@@ -29,7 +30,7 @@ test('semantic UI roles live in business markup and preserve main to popup flow'
 });
 
 test('Tailwind source defines touch-first type and surface hierarchy',async()=>{
-  const css=await read('src/styles/taphoa-tailwind.input.css');
+  const css=readTailwindSourceSync();
   const th3=await read('src/styles/taphoa-th3.css');
   assert.match(css,/@import\s+["']tailwindcss["']/);
   assert.match(css,/--tap-touch:\s*44px/);

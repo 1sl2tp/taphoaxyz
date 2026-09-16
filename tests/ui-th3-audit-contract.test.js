@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readTailwindSourceSync} from './helpers/tailwind-source.js';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const index=read('index.html');
 const ui=read('src/core/ui-system.js');
 const entry=read('src/styles/taphoa-tailwind.entry.css');
-const baseCss=read('src/styles/taphoa-tailwind.input.css');
+const baseCss=readTailwindSourceSync();
 const th3Css=read('src/styles/taphoa-th3.css');
 const sales=read('src/screens/sales.js');
 const delivered=read('src/screens/delivered.js');
