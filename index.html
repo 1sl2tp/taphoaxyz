@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#1565C0">
+<meta name="theme-color" content="#fcfcfc">
 <meta name="app-build-id" content="2d06397c9354fe96a7061cd75791fd9e21b049f6">
 <title>taphoa.xyz</title>
 <link rel="stylesheet" href="./src/styles/base.css">
@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="./src/styles/ui-system.css">
 <link rel="stylesheet" href="./src/styles/iphone-visual-cleanup.css">
 <link rel="stylesheet" href="./src/styles/classic.css">
+<link rel="stylesheet" href="./src/styles/chatgpt-ui.css">
 <link rel="stylesheet" href="./src/styles/scroll-owner.css">
 </head>
 <body>
@@ -29,7 +30,7 @@
       <form class="login-card" id="loginForm">
         <h1 data-ui-type="panel-title">Đăng nhập</h1>
         <div class="login-field"><input id="loginUsername" autocomplete="username" placeholder="Tên đăng nhập"></div>
-        <div class="login-field"><input class="login-password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu"><button class="login-eye" type="button" id="loginEye" aria-label="Hiện mật khẩu">◉</button></div>
+        <div class="login-field"><input class="login-password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu"><button class="login-eye" type="button" id="loginEye" aria-label="Hiện mật khẩu"></button></div>
         <label class="login-remember" data-ui-type="body"><input id="loginRemember" type="checkbox">Lưu mật khẩu</label>
         <div class="login-error" id="loginError" data-ui-type="meta" hidden></div>
         <button class="login-submit" id="loginSubmit" type="submit" data-ui-type="action">Đăng nhập →</button>
@@ -53,7 +54,7 @@
             <span id="accountName" data-ui-type="panel-title">Tài khoản</span>
             <small id="accountHandle" data-ui-type="meta"></small>
           </div>
-          <button class="account-sheet-close ui-icon-button" id="accountSheetClose" type="button" aria-label="Đóng">×</button>
+          <button class="account-sheet-close ui-icon-button" id="accountSheetClose" type="button" aria-label="Đóng"></button>
         </header>
         <button class="account-logout ui-button ui-button-danger" id="accountLogout" type="button" data-ui-type="action">Đăng xuất</button>
       </section>
