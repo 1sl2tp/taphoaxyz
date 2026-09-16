@@ -9,7 +9,7 @@ const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 test('delivered empty state is rendered only once',()=>{
   const html=deliveredMarkup({orders:[],permissions:{}});
   assert.equal((html.match(/Không có đơn/g)||[]).length,1);
-  assert.match(html,/Tổng hợp đã giao <small>\(0 đơn\)<\/small>/);
+  assert.match(html,/Theo nguồn <small>\(0 đơn\)<\/small>/);
 });
 
 test('debt customer without a transaction date has no empty GD cuối label',()=>{
