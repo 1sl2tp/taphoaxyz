@@ -5,13 +5,72 @@
 
   /* MAIN context is no longer one framed card. Each job has one clear region. */
   [data-screen-id="sales"] .sales-main-context{display:grid;gap:8px;padding:0;background:transparent;border:0;border-radius:0;overflow:visible}
-  [data-screen-id="sales"] .sales-customer-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;min-height:52px;padding:2px 8px;background:#fff;border:1px solid var(--tap-line);border-radius:16px;box-shadow:0 1px 2px rgba(24,24,27,.03)}
-  [data-screen-id="sales"] .sales-customer-field{display:flex;align-items:center;min-width:0;padding-inline:4px}
+
+  /* CUSTOMER / CART ROOT · V75 geometry
+     One top band, two sibling controls. No outer card, no visual patching. */
+  [data-screen-id="sales"] .sales-customer-bar{
+    --sales-context-control-h:48px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:8px;
+    min-height:var(--sales-context-control-h);
+    padding:0;
+    background:transparent;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+  }
+  [data-screen-id="sales"] .sales-customer-field{
+    display:flex;
+    align-items:center;
+    min-width:0;
+    height:var(--sales-context-control-h);
+    padding:0 12px;
+    background:#fff;
+    border:1px solid var(--tap-line);
+    border-radius:12px;
+  }
   [data-screen-id="sales"] .sales-customer-field>small{display:none}
-  [data-screen-id="sales"] .sales-customer-input{width:100%;min-height:40px;padding:0;border:0;background:transparent;font-size:16px;font-weight:760}
-  [data-screen-id="sales"] .sales-cart-quick{display:grid;grid-template-columns:auto;gap:1px;justify-items:end;min-width:96px;min-height:48px;padding:5px 11px;border-color:var(--tap-line-strong);background:#fff}
-  [data-screen-id="sales"] .sales-cart-quick>span{color:var(--tap-muted);font-size:12px;font-weight:650}
-  [data-screen-id="sales"] .sales-cart-quick>strong{font-size:14px;font-weight:780;white-space:nowrap;font-variant-numeric:tabular-nums}
+  [data-screen-id="sales"] .sales-customer-input{
+    width:100%;
+    height:100%;
+    min-height:0;
+    padding:0;
+    border:0;
+    outline:0;
+    box-shadow:none;
+    background:transparent;
+    color:var(--tap-text);
+    font-size:16px;
+    font-weight:760;
+    line-height:1.2;
+    text-overflow:ellipsis;
+  }
+  [data-screen-id="sales"] .sales-customer-input:focus,
+  [data-screen-id="sales"] .sales-customer-input:focus-visible{
+    border:0;
+    outline:0;
+    box-shadow:none;
+  }
+  [data-screen-id="sales"] .sales-cart-quick{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    min-width:92px;
+    height:var(--sales-context-control-h);
+    min-height:var(--sales-context-control-h);
+    padding:0 12px;
+    border:1px solid var(--tap-line-strong);
+    border-radius:12px;
+    background:#fff;
+    color:var(--tap-text);
+    white-space:nowrap;
+  }
+  [data-screen-id="sales"] .sales-cart-quick>span{color:var(--tap-muted);font-size:13px;font-weight:650;line-height:1}
+  [data-screen-id="sales"] .sales-cart-quick>span::after{content:" ·"}
+  [data-screen-id="sales"] .sales-cart-quick>strong{font-size:13px;font-weight:780;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
   [data-screen-id="sales"] .sales-cart-quick.is-active{border-color:#18181b;background:#18181b;color:#fff!important;-webkit-text-fill-color:#fff!important}
   [data-screen-id="sales"] .sales-cart-quick.is-active>span{color:#d4d4d8;-webkit-text-fill-color:#d4d4d8}
   [data-screen-id="sales"] .sales-cart-quick.is-active>strong,[data-screen-id="sales"] .sales-cart-quick.is-active .ui-icon{color:#fff!important;-webkit-text-fill-color:#fff!important}
@@ -68,9 +127,10 @@
 
   @media (max-width:479px){
     [data-screen-id="sales"]{padding-inline:8px;gap:9px}
-    [data-screen-id="sales"] .sales-customer-bar{min-height:52px;padding:2px 6px;border-radius:14px}
-    [data-screen-id="sales"] .sales-cart-quick{min-width:86px;padding-inline:9px}
-    [data-screen-id="sales"] .sales-cart-quick>strong{font-size:13px}
+    [data-screen-id="sales"] .sales-customer-bar{--sales-context-control-h:46px;gap:6px}
+    [data-screen-id="sales"] .sales-customer-field{padding-inline:10px;border-radius:11px}
+    [data-screen-id="sales"] .sales-cart-quick{min-width:80px;padding-inline:9px;border-radius:11px}
+    [data-screen-id="sales"] .sales-cart-quick>span,[data-screen-id="sales"] .sales-cart-quick>strong{font-size:12px}
     [data-screen-id="sales"] .sales-product-row{min-height:76px;padding-inline:8px;gap:7px}
     [data-screen-id="sales"] .sales-product-name{font-size:15px}
     [data-screen-id="sales"] .sales-price-stack{gap:8px}
