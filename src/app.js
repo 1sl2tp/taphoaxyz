@@ -5,6 +5,7 @@ import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
 import {NAV_ITEMS,createRouter,normalizeRoute} from './core/router.js';
 import {createSystemLayer} from './core/system.js';
+import {icon} from './core/icons.js';
 
 const $=id=>document.getElementById(id);
 const auth=createAuthService();
@@ -23,7 +24,7 @@ let accountReturnFocus=null;
 let tabSwipeCleanup=null;
 
 function navMarkup(active){
-  return NAV_ITEMS.map(item=>`<button type="button" data-nav="${item.id}" aria-current="${active===item.id?'page':'false'}"><span class="app-nav-icon">${item.icon}</span><span class="app-nav-label">${item.label}</span></button>`).join('');
+  return NAV_ITEMS.map(item=>`<button type="button" data-nav="${item.id}" aria-current="${active===item.id?'page':'false'}"><span class="app-nav-icon">${icon(item.icon,{size:18})}</span><span class="app-nav-label">${item.label}</span></button>`).join('');
 }
 
 async function loadScreen(id){
