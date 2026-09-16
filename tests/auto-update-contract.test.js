@@ -68,6 +68,20 @@ test('focused sales search blocks automatic reload while the user is typing',asy
   assert.equal(mod.focusedInputBlocksReload(button),false,'non-editing input controls must not block reload');
 });
 
+test('stylesheet hot refresh applies a new build marker without reloading the page',async()=>{
+  const mod=await loadUpdateModule();
+  assert.equal(typeof mod.refreshStylesheetLinks,'function','refreshStylesheetLinks must exist');
+  const links=[
+    {href:'./src/styles/base.css',getAttribute(){return this.href;},setAttribute(_name,value){this.href=value;}},
+    {href:'./src/styles/taphoa-tailwind.css?x=1',getAttribute(){return this.href;},setAttribute(_name,value){this.href=value;}},
+  ];
+  const root={querySelectorAll:selector=>selector==='link[rel="stylesheet"][href]'?links:[]};
+  const changed=mod.refreshStylesheetLinks(root,'new-build',{baseHref:'https://beta.taphoa.xyz/'});
+  assert.equal(changed,2);
+  assert.match(links[0].href,/base\.css\?__build=new-build$/);
+  assert.match(links[1].href,/taphoa-tailwind\.css\?x=1&__build=new-build$/);
+});
+
 test('deployment build owns version identity without recursive marker commits',async()=>{
   const workflow=await read('.github/workflows/publish-version-marker.yml');
   assert.match(workflow,/workflow_dispatch/);
@@ -89,6 +103,7 @@ test('runtime wires update checks and service worker into the app shell',async()
   assert.match(bootstrap,/createAppUpdateController/);
   assert.match(bootstrap,/version\.json/);
   assert.match(bootstrap,/serviceWorker\.register/);
+  assert.match(bootstrap,/refreshStylesheetLinks/);
   assert.match(index,/app-build-id/);
   assert.match(index,/app-update-bootstrap\.js/);
   assert.match(worker,/cache:\s*['"]no-store['"]/);
