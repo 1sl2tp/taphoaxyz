@@ -32,19 +32,12 @@ test('production build stays platform-neutral and emits the current static app',
   }
 });
 
-test('production smoke proves the live build identity and current visual asset',async()=>{
-  const workflow=await read('.github/workflows/taphoa-production-cutover-smoke.yml');
-  for(const required of ['version.json?cb=','src/styles/taphoa-tailwind.css?cb=','app-build-id','build_id','TAPHOA_SALES_LAYOUT_V2']){
-    assert.ok(workflow.includes(required),`smoke missing ${required}`);
-  }
-  assert.match(workflow,/github\.actor\s*!=\s*'github-actions\[bot\]'/);
-});
-
-test('production build stamps app-build-id and version.json from deployment SHA',async()=>{
+test('production build stamps app-build-id and version.json from current content',async()=>{
   const build=await read('scripts/build-current.mjs');
-  assert.match(build,/VERCEL_GIT_COMMIT_SHA/);
+  assert.match(build,/createHash\(['"]sha256['"]\)/);
+  assert.match(build,/content-/);
   assert.match(build,/app-build-id/);
   assert.match(build,/dist\/version\.json/);
-  const workflow=await read('.github/workflows/publish-version-marker.yml');
-  assert.doesNotMatch(workflow,/git push/);
+  assert.match(build,/main-content/);
+  assert.doesNotMatch(build,/VERCEL_GIT_COMMIT_SHA|GITHUB_SHA/);
 });

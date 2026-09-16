@@ -82,18 +82,15 @@ test('stylesheet hot refresh applies a new build marker without reloading the pa
   assert.match(links[1].href,/taphoa-tailwind\.css\?x=1&__build=new-build$/);
 });
 
-test('deployment build owns version identity without recursive marker commits',async()=>{
-  const workflow=await read('.github/workflows/publish-version-marker.yml');
-  assert.match(workflow,/workflow_dispatch/);
-  assert.match(workflow,/contents:\s*read/);
-  assert.doesNotMatch(workflow,/contents:\s*write/);
-  assert.doesNotMatch(workflow,/git push/);
+test('production build derives update identity from current emitted content',async()=>{
   const build=await read('scripts/build-current.mjs');
-  assert.match(build,/VERCEL_GIT_COMMIT_SHA/);
+  assert.match(build,/createHash\(['"]sha256['"]\)/);
+  assert.match(build,/content-/);
   assert.match(build,/app-build-id/);
+  assert.doesNotMatch(build,/VERCEL_GIT_COMMIT_SHA|GITHUB_SHA/);
   const version=JSON.parse(await read('version.json'));
   assert.equal(version.update_policy,'auto-when-safe');
-  assert.ok(String(version.build_id||'').length>=7);
+  assert.equal(version.build_id,'source-main');
 });
 
 test('runtime wires update checks and service worker into the app shell',async()=>{
