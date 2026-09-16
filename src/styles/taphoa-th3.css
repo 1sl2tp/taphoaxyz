@@ -1,0 +1,62 @@
+@layer components {
+  /* Thẻ 3: one visible frame per data region; structural wrappers stay transparent. */
+  .ui-zone-data{background:transparent;border:0;border-radius:0;overflow:visible}
+  .ui-table{scrollbar-gutter:stable}
+
+  /* Debt is a business action, not a destructive action. */
+  .ui-action-debt{color:var(--tap-danger);border-color:color-mix(in srgb,var(--tap-danger) 24%,transparent);background:color-mix(in srgb,var(--tap-danger) 5%,white)}
+  .ui-action-debt:hover,.ui-action-debt:active{background:color-mix(in srgb,var(--tap-danger) 9%,white)}
+
+  /* Popup grammar: title/status stay left; controls belong to one right action group. */
+  .ui-popup-header>.ui-action-group{margin-left:auto;flex:0 0 auto;flex-wrap:nowrap}
+  .ui-popup-header>.ui-status{flex:0 0 auto}
+  .ui-popup-header>.ui-action-group .ui-action{min-height:44px;padding-inline:11px}
+
+  /* Sales: customer + cart only; quantity axis never collapses at zero. */
+  [data-screen-id="sales"] .sales-customer-row{grid-template-columns:minmax(0,1fr) auto}
+  [data-screen-id="sales"] .sales-qty button:disabled{visibility:visible;opacity:.28;pointer-events:none;color:var(--tap-muted);background:#fff;border-color:var(--tap-line)}
+  [data-screen-id="sales"] .sales-product-list{scrollbar-gutter:stable}
+  [data-screen-id="sales"] .sales-cart-body{scrollbar-gutter:stable}
+
+  /* Customer-first order rows: name + money are primary, context + profit secondary. */
+  [data-screen-id="delivered"] .delivered-order-top,
+  [data-screen-id="pending"] .pending-order-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  [data-screen-id="delivered"] .delivered-order-top>span,
+  [data-screen-id="pending"] .pending-order-top>span{display:flex;align-items:center;min-width:0;gap:7px}
+  [data-screen-id="delivered"] .delivered-order-top b,
+  [data-screen-id="pending"] .pending-order-top b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:750}
+  [data-screen-id="delivered"] .delivered-order-top em,
+  [data-screen-id="pending"] .pending-order-top em{flex:0 0 auto;font-size:12px;font-style:normal;font-weight:650;color:var(--tap-muted)}
+  [data-screen-id="delivered"] .delivered-order-top>strong,
+  [data-screen-id="pending"] .pending-order-top>strong{flex:0 0 auto;font-size:18px;font-variant-numeric:tabular-nums}
+  [data-screen-id="delivered"] .delivered-order-mid,
+  [data-screen-id="pending"] .pending-order-mid{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px;color:var(--tap-muted);font-size:12px}
+  [data-screen-id="delivered"] .delivered-order-mid>span,
+  [data-screen-id="pending"] .pending-order-mid>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  [data-screen-id="delivered"] .delivered-order-mid>strong,
+  [data-screen-id="pending"] .pending-order-mid>strong{flex:0 0 auto;color:var(--tap-success);font-variant-numeric:tabular-nums}
+
+  /* Delivered search now has the same leading icon rhythm as Sales. */
+  [data-screen-id="delivered"] .delivered-search input{padding-left:42px}
+  [data-screen-id="delivered"] .delivered-search .ui-search-leading-icon{position:absolute;left:14px;top:15px;color:var(--tap-muted);pointer-events:none}
+
+  /* Natural case for grocery operations, not report headings. */
+  [data-screen-id="debt"] .debt-total-row small,
+  [data-screen-id="debt"] .debt-quick>b,
+  [data-screen-id="debt"] .debt-group-head>span{text-transform:none;letter-spacing:0}
+
+  /* Data scrollers reserve scrollbar space so right-aligned numbers do not jump. */
+  [data-screen-id="sales"] .sales-product-list,
+  [data-screen-id="delivered"] .delivered-list,
+  [data-screen-id="pending"] .pending-list,
+  [data-screen-id="debt"] .debt-list,
+  [data-screen-id="debt"] .debt-ledger{scrollbar-gutter:stable}
+
+  @media (max-width:479px){
+    .ui-popup-header{padding-inline:10px}
+    .ui-popup-header>.ui-action-group{gap:4px}
+    .ui-popup-header>.ui-action-group .ui-action{padding-inline:9px;font-size:14px}
+    [data-screen-id="sales"] .sales-qty{grid-template-columns:44px 32px 44px}
+    [data-screen-id="sales"] .sales-qty-value{width:32px}
+  }
+}
