@@ -16,6 +16,12 @@ const TOOLBARS=[
   '[data-screen-id="debt"] .debt-quick'
 ];
 
+const CONTEXT_ZONES=[
+  '[data-screen-id="sales"] .sales-pinned-head',
+  '[data-screen-id="delivered"] .delivered-filter',
+  '[data-screen-id="debt"] .debt-quick'
+];
+
 const TABLES=[
   '[data-screen-id="sales"] .sales-product-list',
   '[data-screen-id="sales"] .sales-cart-body',
@@ -109,7 +115,7 @@ function decorateScreens(root){
 
 function decoratePopup(node,level){
   if(!node)return;
-  add(node,level===1?'ui-popup-l1':'ui-popup-l2');
+  add(node,level===1?'ui-popup-l1':'ui-popup-l2','ui-zone-popup');
   mark(node,level===1?'popup-level-1':'popup-level-2',level+1);
   node.setAttribute?.('role','dialog');
   node.setAttribute?.('aria-modal','true');
@@ -131,8 +137,12 @@ function layerOf(node){
 }
 
 function decorateCollections(root){
-  for(const selector of TOOLBARS)for(const node of q(root,selector)){add(node,'ui-toolbar');mark(node,'toolbar',1)}
-  for(const selector of TABLES)for(const node of q(root,selector)){add(node,'ui-table');mark(node,'table',layerOf(node))}
+  for(const selector of TOOLBARS)for(const node of q(root,selector)){add(node,'ui-toolbar');mark(node,'toolbar',layerOf(node))}
+  for(const selector of CONTEXT_ZONES)for(const node of q(root,selector))add(node,'ui-zone-context');
+  for(const selector of TABLES)for(const node of q(root,selector)){
+    add(node,'ui-table','ui-zone-data');
+    mark(node,'table',layerOf(node));
+  }
   for(const selector of ROWS)for(const node of q(root,selector)){add(node,'ui-row');mark(node,'row',layerOf(node))}
   for(const selector of ACTIONS)for(const node of q(root,selector)){
     add(node,'ui-action');
