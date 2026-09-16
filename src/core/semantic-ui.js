@@ -12,19 +12,25 @@ const SCREEN_SELECTORS={
 const TOOLBARS=[
   '[data-screen-id="sales"] .sales-pinned-head',
   '[data-screen-id="delivered"] .delivered-filter',
-  '[data-screen-id="pending"] .pending-summary>header',
-  '[data-screen-id="debt"] .debt-quick'
+  '[data-screen-id="pending"] .pending-summary>header'
 ];
 
 const CONTEXT_ZONES=[
   '[data-screen-id="sales"] .sales-pinned-head',
-  '[data-screen-id="delivered"] .delivered-filter',
-  '[data-screen-id="debt"] .debt-quick'
+  '[data-screen-id="delivered"] .delivered-filter'
+];
+
+const SUMMARIES=[
+  '[data-screen-id="sales"] .sales-cart-total',
+  '[data-screen-id="delivered"] .delivered-summary',
+  '[data-screen-id="pending"] .pending-summary',
+  '[data-screen-id="debt"] .debt-total-row',
+  '[data-screen-id="debt"] .debt-receipt-summary'
 ];
 
 const TABLES=[
   '[data-screen-id="sales"] .sales-product-list',
-  '[data-screen-id="sales"] .sales-cart-body',
+  '[data-screen-id="sales"] .sales-cart-lines',
   '[data-screen-id="delivered"] .delivered-summary',
   '[data-screen-id="delivered"] .delivered-list',
   '[data-screen-id="pending"] .pending-summary',
@@ -33,6 +39,22 @@ const TABLES=[
   '[data-screen-id="debt"] .debt-list',
   '[data-screen-id="debt"] .debt-ledger',
   '[data-screen-id="debt"] .debt-order-lines'
+];
+
+const TABLE_HEADS=[
+  '[data-screen-id="sales"] .sales-cart-table-head',
+  '[data-screen-id="delivered"] .delivered-summary-head',
+  '[data-screen-id="delivered"] .delivered-detail-head',
+  '[data-screen-id="pending"] .pending-source-head',
+  '[data-screen-id="pending"] .pending-source-detail-head',
+  '[data-screen-id="pending"] .pending-detail-head',
+  '[data-screen-id="debt"] .debt-ledger-head',
+  '[data-screen-id="debt"] .debt-order-head'
+];
+
+const FORMS=[
+  '[data-screen-id="debt"] .debt-quick',
+  '[data-screen-id="debt"] .debt-detail-panel>footer'
 ];
 
 const ROWS=[
@@ -46,6 +68,16 @@ const ROWS=[
   '[data-screen-id="debt"] .debt-customer-row',
   '[data-screen-id="debt"] .debt-transaction-row',
   '[data-screen-id="debt"] .debt-order-lines>div'
+];
+
+const ACTION_GROUPS=[
+  '[data-screen-id="sales"] .sales-cart-actions',
+  '[data-screen-id="delivered"] .delivered-detail-panel>footer',
+  '[data-screen-id="pending"] .pending-detail-panel>footer',
+  '[data-screen-id="pending"] .pending-source-panel>header>div',
+  '[data-screen-id="debt"] .debt-quick-actions',
+  '[data-screen-id="debt"] .debt-detail-panel>footer>div',
+  '[data-screen-id="debt"] .debt-detail-panel>header>div'
 ];
 
 /* Only true controls are actions. Clickable data rows remain rows visually. */
@@ -138,12 +170,16 @@ function layerOf(node){
 
 function decorateCollections(root){
   for(const selector of TOOLBARS)for(const node of q(root,selector)){add(node,'ui-toolbar');mark(node,'toolbar',layerOf(node))}
-  for(const selector of CONTEXT_ZONES)for(const node of q(root,selector))add(node,'ui-zone-context');
+  for(const selector of CONTEXT_ZONES)for(const node of q(root,selector)){add(node,'ui-context','ui-zone-context');mark(node,'context',layerOf(node))}
+  for(const selector of SUMMARIES)for(const node of q(root,selector)){add(node,'ui-summary');mark(node,'summary',layerOf(node))}
   for(const selector of TABLES)for(const node of q(root,selector)){
     add(node,'ui-table','ui-zone-data');
     mark(node,'table',layerOf(node));
   }
+  for(const selector of TABLE_HEADS)for(const node of q(root,selector)){add(node,'ui-table-head');mark(node,'table-head',layerOf(node))}
+  for(const selector of FORMS)for(const node of q(root,selector)){add(node,'ui-form');mark(node,'form',layerOf(node))}
   for(const selector of ROWS)for(const node of q(root,selector)){add(node,'ui-row');mark(node,'row',layerOf(node))}
+  for(const selector of ACTION_GROUPS)for(const node of q(root,selector)){add(node,'ui-action-group');mark(node,'action-group',layerOf(node))}
   for(const selector of ACTIONS)for(const node of q(root,selector)){
     add(node,'ui-action');
     mark(node,'action',layerOf(node));
@@ -151,8 +187,8 @@ function decorateCollections(root){
 }
 
 function decorateActionSemantics(root){
-  for(const button of q(root,'[data-sales-action="done"],[data-sales-action="update"],[data-order-action="deliver"]'))add(button,'ui-action-primary');
-  for(const button of q(root,'[data-quick-action="collect"],[data-detail-action="collect"]'))add(button,'ui-action-success');
+  for(const button of q(root,'[data-sales-action="done"],[data-sales-action="update"],[data-order-action="deliver"],[data-quick-action="collect"],[data-detail-action="collect"]'))add(button,'ui-action-primary');
+  for(const button of q(root,'[data-sales-action="pending"],[data-detail-action="edit"],[data-detail-action="print"],[data-receipt-share],[data-print-now],[data-source-action],[data-debt-share],[data-order-share]'))add(button,'ui-action-secondary');
   for(const button of q(root,'[data-quick-action="debt"],[data-detail-action="debt"],[data-delete-all],[data-sales-action="clear"],[data-order-action="delete"],[data-detail-action="delete"]'))add(button,'ui-action-danger');
 }
 
