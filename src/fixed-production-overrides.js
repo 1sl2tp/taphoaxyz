@@ -7,11 +7,18 @@
 
   const backend=()=>window.TAPHOA_PRODUCTION;
   const sheetNames=['sanpham','khachhang','dontam','dongiao','thuchi'];
-  const uniqueOrderIds=rows=>Array.from(new Set((rows||[]).slice(1).map(r=>String(r?.[0]||'').trim()).filter(Boolean)));
+
+  function backendOrderIdFor(sheetName,displayId){
+    const row=(appData?.[sheetName]||[]).slice(1).find(r=>String(r?.[0]||'').trim()===String(displayId||'').trim());
+    return String(row?.[7]||displayId||'').trim();
+  }
+
+  const uniqueOrderIds=rows=>Array.from(new Set((rows||[]).slice(1).map(r=>String(r?.[7]||r?.[0]||'').trim()).filter(Boolean)));
 
   function productionRole(info){
     const role=String(info?.identity?.role||backend()?.getIdentity?.()?.role||'admin').toLowerCase();
-    return ['owner','admin','user'].includes(role)?role:'admin';
+    const normalizedRole=role === 'customer' ? 'user' : role;
+    return ['owner','admin','user'].includes(normalizedRole)?normalizedRole:'admin';
   }
 
   function syncSelfCustomer(info){
@@ -102,13 +109,14 @@
 
     const targetSheet=editingOrderId?(editingOrderSheet||(String(editingOrderId).startsWith('DG')?'dongiao':'dontam')):tab;
     const status=targetSheet==='dongiao'?'done':'pending';
+    const backendEditOrderId=editingOrderId?backendOrderIdFor(targetSheet,editingOrderId):'';
     const items=Object.entries(cart).map(([maSP,item],index)=>({
       maSP:String(maSP),sl:Number(item.qty)||0,gia:Number(item.price)||0,lineNo:index+1,ghiChu:String(item.note||'')
     })).filter(item=>item.sl>0);
 
     showLoading('Đang xử lý đẩy đơn...');
     try{
-      await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:String(editingOrderId||''),items});
+      await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items});
       showToast(editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
       resetSaleSession();
       closeCartMobile();
@@ -157,13 +165,14 @@
 
   requestDeleteOrder=function(sheetName,orderId){
     if(currentAuthRole==='user'&&sheetName==='dongiao')return denyPermission('User không được xóa đơn đã giao.');
+    const backendId=backendOrderIdFor(sheetName,orderId);
     const title=sheetName==='dongiao'?'Hoàn đơn đã giao':'Xóa đơn hàng';
     const desc=sheetName==='dongiao'?`Bạn có chắc chắn muốn hoàn đơn ${orderId} không?`:`Bạn có chắc chắn muốn xóa đơn ${orderId} không?`;
     showConfirmModal(title,desc,sheetName==='dongiao'?'Hoàn đơn':'Xóa đơn','bg-danger',async()=>{
       closeOrderMobile();showLoading(sheetName==='dongiao'?'Đang hoàn đơn...':'Đang xóa đơn...');
       try{
-        if(sheetName==='dongiao')await backend().reverseOrder(orderId,'Hoàn đơn');
-        else await backend().deletePending(orderId);
+        if(sheetName==='dongiao')await backend().reverseOrder(backendId,'Hoàn đơn');
+        else await backend().deletePending(backendId);
         await refreshFixedSheets(['dontam','dongiao','thuchi']);
         if(orderId===editingOrderId||sheetName==='dontam')resetSaleSession();
         showToast(sheetName==='dongiao'?'Đã hoàn đơn '+orderId:'Đã xóa đơn '+orderId,'success');
@@ -177,7 +186,7 @@
     if(!hasPermission('canViewDebt'))return denyPermission('Tài khoản này không được xem Công nợ.');
     try{
       const detail=await backend().debtLedger(maKh);
-      const header=(appData.thuchi&&appData.thuchi[0])||['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian'];
+      const header=(appData.thuchi&&appData.thuchi[0])||['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian','Dư nợ sau GD','Loại nội bộ','Mã đơn','Mã đơn DB'];
       const other=(appData.thuchi||[]).slice(1).filter(r=>String(r?.[1]||'')!==String(maKh));
       appData.thuchi=[header,...other,...backend().ledgerToRows(detail)];
       renderCongNo();
