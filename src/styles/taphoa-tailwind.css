@@ -79,7 +79,17 @@ button,input,select,textarea{font-family:inherit}
 [data-screen-id="sales"] .sales-cart-actions [data-sales-action="done"],
 [data-screen-id="sales"] .sales-cart-actions [data-sales-action="update"],
 [data-screen-id="debt"] .debt-quick-actions button:nth-of-type(1),
-[data-screen-id="debt"] [data-detail-action="collect"]{
+[data-screen-id="debt"] [data-detail-action="collect"],
+[data-screen-id="delivered"] .delivered-time button[aria-pressed="true"],
+[data-screen-id="delivered"] .delivered-days button[aria-pressed="true"]{
   color:#fff !important;
   -webkit-text-fill-color:#fff !important;
+}
+
+[data-screen-id="delivered"] .delivered-time button[aria-pressed="true"] *,
+[data-screen-id="delivered"] .delivered-days button[aria-pressed="true"] *{
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  fill:currentColor !important;
+  stroke:currentColor !important;
 }
