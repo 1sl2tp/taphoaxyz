@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   parseLedgerTime,
   sortLedgerRowsOldestFirst,
@@ -54,4 +55,17 @@ test('FIXED sales header keeps exactly customer, clock and cart controls',()=>{
   };
   normalizeFixedSalesHeaderChildren(header,[customer,clock,cart]);
   assert.deepEqual(header.children,[customer,clock,cart]);
+});
+
+test('production owns regressions inside the stable override instead of adding bootstrap scripts',()=>{
+  const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
+  const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.meta.url),'utf8');
+
+  assert.equal(index.includes('fixed-regression-overrides.js'),false);
+  assert.equal(index.includes('src/core/fixed-ui-regressions.js'),false);
+  assert.match(overrides,/function normalizeSalesHeaderFixedOnly\(/);
+  assert.match(overrides,/function renderProductionDebt\(/);
+  assert.match(overrides,/clickOrderFromDebt=function\(/);
+  assert.match(bridge,/function ledgerNoteWithOrderId\(/);
 });
