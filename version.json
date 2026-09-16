@@ -1,6 +1,6 @@
 {
   "version": "TAPHOA",
-  "build_id": "3189c76dd53ed4038fdcb9e62b9a209731955f8c",
+  "build_id": "source-main",
   "update_policy": "auto-when-safe",
-  "published_from": "github-main"
+  "published_from": "main-source"
 }

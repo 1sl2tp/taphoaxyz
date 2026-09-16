@@ -22,3 +22,12 @@ test('production artifact keeps the shared-account cutover source tree intact',(
   assert.match(build,/recursive\s*:\s*true/);
   assert.match(build,/rm\([^)]*dist/);
 });
+
+test('production build identity is derived from emitted content without provider-specific commit markers',()=>{
+  assert.match(build,/createHash\(['"]sha256['"]\)/);
+  assert.match(build,/content-/);
+  assert.match(build,/main-content/);
+  assert.doesNotMatch(build,/VERCEL_GIT_COMMIT_SHA|GITHUB_SHA/);
+  assert.match(build,/Stamped app-build-id mismatch/);
+  assert.match(build,/Stamped version build_id mismatch/);
+});
