@@ -6,16 +6,16 @@ import {cleanStatusText} from '../src/core/ui-system.js';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-test('Tailwind semantic layer is the final visual owner before scroll ownership',()=>{
+test('Tailwind semantic layer is the only business visual owner before scroll ownership',()=>{
   const html=read('index.html');
   const css=read('src/styles/taphoa-tailwind.input.css');
   assert.match(css,/--tap-page:#f4f4f5/i);
   assert.match(css,/--tap-text:#18181b/i);
   assert.match(css,/--tap-touch:\s*44px/i);
-  const debtIndex=html.indexOf('./src/styles/debt.css');
   const tailwindIndex=html.indexOf('./src/styles/taphoa-tailwind.css');
   const scrollIndex=html.indexOf('./src/styles/scroll-owner.css');
-  assert.ok(debtIndex>=0&&tailwindIndex>debtIndex&&scrollIndex>tailwindIndex);
+  assert.ok(tailwindIndex>=0&&scrollIndex>tailwindIndex);
+  assert.doesNotMatch(html,/src\/styles\/(?:sales|delivered|pending|debt)\.css/);
   assert.doesNotMatch(html,/classic\.css|chatgpt-ui\.css|iphone-visual-cleanup\.css/);
   assert.match(html,/<meta name="theme-color" content="#f4f4f5">/i);
 });
