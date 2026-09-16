@@ -1,8 +1,9 @@
 const num=value=>Number.isFinite(Number(value))?Number(value):0;
+const customerId=value=>{const id=String(value??'').trim();return !id||id==='le'?null:id;};
 
 export function orderRpcPayload(payload={}) {
   return {
-    customer_id:String(payload.maKH||payload.customer_id||''),
+    customer_id:customerId(payload.maKH??payload.customer_id),
     status:String(payload.status||'pending'),
     note:String(payload.ghiChu||payload.note||''),
     edit_order_id:String(payload.editOrderId||payload.edit_order_id||''),
