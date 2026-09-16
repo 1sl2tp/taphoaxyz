@@ -5,15 +5,50 @@ import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 const UI_EMOJI=/[🛒✅⏳📝🗑️📦⚠️💚⚡💵📌🖼️✕]/u;
 
-test('Tailwind retail foundation exposes density motion and semantic component roles',async()=>{
-  const css=await read('src/styles/taphoa-tailwind.input.css');
+const TAILWIND_MODULES=[
+  './tailwind/tokens.css',
+  './tailwind/foundation.css',
+  './tailwind/shell.css',
+  './tailwind/sales.css',
+  './tailwind/orders.css',
+  './tailwind/debt.css',
+  './tailwind/popups.css',
+  './tailwind/responsive.css',
+];
+
+test('Tailwind retail source is modular and preserves semantic ownership',async()=>{
+  const input=await read('src/styles/taphoa-tailwind.input.css');
+  for(const modulePath of TAILWIND_MODULES){
+    assert.ok(input.includes(`@import "${modulePath}";`),`missing Tailwind module import ${modulePath}`);
+  }
+  assert.doesNotMatch(input,/@theme\s*\{/,'input must not own theme tokens');
+  assert.doesNotMatch(input,/@layer\s+(?:base|components)\s*\{/,'input must only compose modules');
+  assert.doesNotMatch(input,/\[data-screen-id=/,'input must not own screen styles');
+
+  const tokens=await read('src/styles/tailwind/tokens.css');
+  const foundation=await read('src/styles/tailwind/foundation.css');
+  const shell=await read('src/styles/tailwind/shell.css');
+  const sales=await read('src/styles/tailwind/sales.css');
+  const orders=await read('src/styles/tailwind/orders.css');
+  const debt=await read('src/styles/tailwind/debt.css');
+  const popups=await read('src/styles/tailwind/popups.css');
+  const responsive=await read('src/styles/tailwind/responsive.css');
+
   for(const token of ['--tap-density:8','--tap-motion-fast:','--tap-motion-normal:','--tap-touch:44px','--tap-touch-lg:48px']){
-    assert.ok(css.includes(token),`missing retail UX token ${token}`);
+    assert.ok(tokens.includes(token),`missing retail UX token ${token}`);
   }
   for(const selector of ['.ui-context','.ui-summary','.ui-table-head','.ui-form','.ui-action-group','.ui-action-secondary']){
-    assert.match(css,new RegExp(`\\${selector.replace('.','.') }\\s*\\{`),`missing semantic component ${selector}`);
+    assert.match(foundation,new RegExp(`\\${selector.replace('.','.') }\\s*\\{`),`missing semantic component ${selector}`);
   }
-  assert.match(css,/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(shell,/\.app-nav\{/);
+  assert.match(sales,/\[data-screen-id="sales"\]/);
+  assert.doesNotMatch(sales,/\[data-screen-id="delivered"\]/);
+  assert.match(orders,/\[data-screen-id="delivered"\]/);
+  assert.match(orders,/\[data-screen-id="pending"\]/);
+  assert.match(debt,/\[data-screen-id="debt"\]/);
+  assert.match(popups,/\.delivered-detail-panel/);
+  assert.match(popups,/\.debt-order-panel/);
+  assert.match(responsive,/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 });
 
 test('business screen markup owns semantic roles directly instead of depending on a post-render skin',async()=>{
