@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
 
 test('external UI libraries do not block parsing of the FIXED app shell',()=>{
   for(const url of [
@@ -16,7 +15,10 @@ test('external UI libraries do not block parsing of the FIXED app shell',()=>{
   }
 });
 
-test('production bootstrap starts at DOM readiness instead of waiting for window load',()=>{
-  assert.doesNotMatch(overrides,/window\.onload\s*=/,'startup must not wait for every external asset');
-  assert.match(overrides,/DOMContentLoaded/,'startup must begin when the DOM is ready');
+test('stable production bootstrap is promoted from window load to DOM readiness',()=>{
+  assert.match(index,/fixed-production-overrides\.js/,'stable production override remains the owner of login/bootstrap');
+  assert.match(index,/fixed-startup-nonblocking\.js/,'nonblocking startup promoter must be wired');
+  const startup=fs.readFileSync(new URL('../src/fixed-startup-nonblocking.js',import.meta.url),'utf8');
+  assert.match(startup,/DOMContentLoaded/);
+  assert.match(startup,/window\.onload\s*=\s*null/,'the later load event must not run bootstrap a second time');
 });
