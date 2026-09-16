@@ -42,10 +42,38 @@ const ROWS=[
   '[data-screen-id="debt"] .debt-order-lines>div'
 ];
 
+/* Only true controls are actions. Clickable data rows remain rows visually. */
 const ACTIONS=[
-  '[data-screen-id] button',
-  '#appNav button',
-  '#accountSheet button'
+  '[data-cart-open]',
+  '[data-cart-close]',
+  '[data-sales-action]',
+  '[data-search-clear]',
+  '[data-delivered-clear]',
+  '[data-today]',
+  '[data-calendar-toggle]',
+  '[data-month]',
+  '[data-calendar-day]',
+  '[data-quick]',
+  '[data-calendar-close]',
+  '[data-detail-action]',
+  '[data-detail-close]',
+  '[data-receipt-share]',
+  '[data-print-close]',
+  '[data-print-now]',
+  '[data-delete-all]',
+  '[data-source-action]',
+  '[data-source-close]',
+  '[data-order-action]',
+  '[data-order-close]',
+  '[data-sort-menu]',
+  '[data-sort-dir]',
+  '[data-sort]',
+  '[data-quick-action]',
+  '[data-debt-close]',
+  '[data-debt-share]',
+  '[data-order-share]',
+  '#accountLogout',
+  '#accountSheetClose'
 ];
 
 const POPUP_L1=[
@@ -79,16 +107,6 @@ function decorateScreens(root){
   }
 }
 
-function decorateCollections(root){
-  for(const selector of TOOLBARS)for(const node of q(root,selector)){add(node,'ui-toolbar');mark(node,'toolbar',1)}
-  for(const selector of TABLES)for(const node of q(root,selector)){add(node,'ui-table');mark(node,'table',1)}
-  for(const selector of ROWS)for(const node of q(root,selector)){add(node,'ui-row');mark(node,'row',1)}
-  for(const selector of ACTIONS)for(const node of q(root,selector)){
-    add(node,'ui-action');
-    mark(node,'action',node.closest?.('.ui-popup-l2')?3:node.closest?.('.ui-popup-l1')?2:1);
-  }
-}
-
 function decoratePopup(node,level){
   if(!node)return;
   add(node,level===1?'ui-popup-l1':'ui-popup-l2');
@@ -97,13 +115,29 @@ function decoratePopup(node,level){
   node.setAttribute?.('aria-modal','true');
   const header=node.querySelector?.(':scope > header');
   const footer=node.querySelector?.(':scope > footer');
-  if(header)add(header,'ui-popup-header');
-  if(footer)add(footer,'ui-popup-actions');
+  if(header){add(header,'ui-popup-header');mark(header,'popup-header',level+1)}
+  if(footer){add(footer,'ui-popup-actions');mark(footer,'popup-actions',level+1)}
 }
 
 function decoratePopups(root){
   for(const selector of POPUP_L1)for(const node of q(root,selector))decoratePopup(node,1);
   for(const selector of POPUP_L2)for(const node of q(root,selector))decoratePopup(node,2);
+}
+
+function layerOf(node){
+  if(node.closest?.('.ui-popup-l2'))return 3;
+  if(node.closest?.('.ui-popup-l1'))return 2;
+  return 1;
+}
+
+function decorateCollections(root){
+  for(const selector of TOOLBARS)for(const node of q(root,selector)){add(node,'ui-toolbar');mark(node,'toolbar',1)}
+  for(const selector of TABLES)for(const node of q(root,selector)){add(node,'ui-table');mark(node,'table',layerOf(node))}
+  for(const selector of ROWS)for(const node of q(root,selector)){add(node,'ui-row');mark(node,'row',layerOf(node))}
+  for(const selector of ACTIONS)for(const node of q(root,selector)){
+    add(node,'ui-action');
+    mark(node,'action',layerOf(node));
+  }
 }
 
 function decorateActionSemantics(root){
