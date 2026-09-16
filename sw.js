@@ -19,17 +19,45 @@ self.addEventListener('message',event=>{
   if(event.data?.type==='SKIP_WAITING')void self.skipWaiting();
 });
 
+function canonicalRequest(request){
+  const url=new URL(request.url);
+  url.search='';
+  return new Request(url.toString(),{
+    method:'GET',
+    headers:request.headers,
+    credentials:request.credentials,
+    mode:request.mode,
+    redirect:request.redirect
+  });
+}
+
+async function cachedFallback(request){
+  const exact=await caches.match(request);
+  if(exact)return exact;
+  const canonical=canonicalRequest(request);
+  if(canonical.url!==request.url){
+    const stable=await caches.match(canonical);
+    if(stable)return stable;
+  }
+  return null;
+}
+
 async function networkFirst(request){
   const networkRequest=new Request(request,{cache:'no-store'});
   try{
     const response=await fetch(networkRequest);
     if(response?.ok){
       const cache=await caches.open(CACHE_NAME);
-      void cache.put(request,response.clone()).catch(()=>{});
+      const canonical=canonicalRequest(request);
+      const writes=[cache.put(request,response.clone())];
+      if(canonical.url!==request.url)writes.push(cache.put(canonical,response.clone()));
+      void Promise.all(writes).catch(()=>{});
+      return response;
     }
-    return response;
+    const cached=await cachedFallback(request);
+    return cached||response;
   }catch(error){
-    const cached=await caches.match(request);
+    const cached=await cachedFallback(request);
     if(cached)return cached;
     throw error;
   }
