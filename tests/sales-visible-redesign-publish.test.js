@@ -22,6 +22,14 @@ test('Sales source hierarchy is customer search groups data and cart, not one fr
   assert.match(sales,/sales-cart-summary/);
 });
 
+test('GitHub Pages production workflow builds and deploys dist from main',async()=>{
+  const workflow=await read('.github/workflows/deploy-github-pages.yml');
+  for(const required of ['actions/configure-pages@','actions/upload-pages-artifact@','actions/deploy-pages@','npm run build:production','path: ./dist','pages: write','id-token: write']){
+    assert.ok(workflow.includes(required),`Pages deploy missing ${required}`);
+  }
+  assert.match(workflow,/branches:\s*\[main\]/);
+});
+
 test('production smoke proves the live build identity and current visual asset',async()=>{
   const workflow=await read('.github/workflows/taphoa-production-cutover-smoke.yml');
   for(const required of ['version.json?cb=','src/styles/taphoa-tailwind.css?cb=','app-build-id','build_id','TAPHOA_SALES_LAYOUT_V2']){
