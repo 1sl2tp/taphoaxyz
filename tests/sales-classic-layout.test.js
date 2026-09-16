@@ -25,3 +25,11 @@ test('Sales typing keeps the same input node and only toggles mounted product ro
   assert.doesNotMatch(branch,/\.focus\(/);
   assert.doesNotMatch(branch,/setSelectionRange/);
 });
+
+test('Sales customer selector is one compact row without a duplicated Khách label',()=>{
+  assert.doesNotMatch(source,/sales-customer-field"><small>Khách<\/small>/);
+  assert.match(source,/sales-customer-input/);
+  assert.match(salesCss,/\.sales-customer-field\{[^}]*display:flex[^}]*align-items:center/s);
+  assert.doesNotMatch(salesCss,/\.sales-customer-field>small/);
+  assert.match(salesCss,/\.sales-customer-bar\{[^}]*min-height:52px/s);
+});
