@@ -1,0 +1,309 @@
+/* FIXED STYLE: balanced-column-rulers */
+
+/* RULE CHUNG:
+   Cột nội dung chính giữ khoảng 50%.
+   Các cột phụ chỉ giữ bề rộng theo max thực tế.
+   Phần dư được chia vào KHOẢNG HỞ bằng justify-content:space-between.
+   => các gap giữa mép phải cột trước và mép trái cột sau luôn bằng nhau.
+*/
+
+/* TH1 · GIỎ: [STT + Tên] | Đ.Giá | Vùng SL | T.Tiền */
+.cart-compact-grid{
+  display:grid !important;
+  grid-template-columns:clamp(150px,50%,260px) 48px 72px 56px !important;
+  column-gap:0 !important;
+  justify-content:space-between !important;
+  align-items:center;
+}
+.cart-left{
+  min-width:0;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  column-gap:8px;
+  align-items:center;
+}
+.cart-left .cart-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.cart-price,
+.cart-total{
+  width:100%;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.cart-qty{
+  width:72px;
+  justify-content:center !important;
+}
+.cart-qty-control{
+  width:72px !important;
+  margin:0 !important;
+}
+
+/* Chi tiết đơn: [STT + Tên] | SL | T.Tiền */
+.order-detail-compact-grid{
+  grid-template-columns:30px clamp(150px,50%,260px) 38px 56px !important;
+  column-gap:0 !important;
+  justify-content:space-between !important;
+}
+
+/* TH2 · CẬP NHẬT SP: Tên | Giá vốn | Giá bán | Nguồn */
+.product-editor-grid,
+.product-editor-row{
+  grid-template-columns:50% 72px 72px 104px !important;
+  column-gap:0 !important;
+  justify-content:space-between !important;
+}
+.product-editor-grid > :nth-child(2),
+.product-editor-grid > :nth-child(3),
+.product-editor-grid > :nth-child(4),
+.product-editor-row > :nth-child(2),
+.product-editor-row > :nth-child(3),
+.product-editor-row > :nth-child(4){
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+.product-editor-money{
+  width:72px !important;
+  text-align:right !important;
+  padding:0 !important;
+}
+.product-editor-source,
+.product-editor-source-btn{
+  width:104px !important;
+  text-align:left !important;
+  padding:0 !important;
+}
+
+/* TH3 · TỔNG HỢP: Nguồn | SL | Chi | Thu | Lãi */
+.summary-compact-table{
+  width:100% !important;
+  display:block !important;
+  table-layout:auto !important;
+}
+.summary-compact-table thead,
+.summary-compact-table tbody{
+  display:block !important;
+  width:100% !important;
+}
+.summary-compact-table tr{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 42px 72px 72px 72px !important;
+  column-gap:0 !important;
+  justify-content:space-between !important;
+  align-items:center !important;
+  width:100% !important;
+}
+.summary-compact-table th,
+.summary-compact-table td{
+  min-width:0 !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+  white-space:nowrap;
+}
+.summary-compact-table th:first-child,
+.summary-compact-table td:first-child{
+  text-align:left !important;
+}
+.summary-compact-table th:nth-child(2),
+.summary-compact-table td:nth-child(2){
+  width:42px !important;
+  justify-self:end !important;
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+.summary-compact-table th:nth-child(3),
+.summary-compact-table td:nth-child(3),
+.summary-compact-table th:nth-child(4),
+.summary-compact-table td:nth-child(4),
+.summary-compact-table th:nth-child(5),
+.summary-compact-table td:nth-child(5){
+  width:72px !important;
+  justify-self:end !important;
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+.summary-compact-table tr.summary-total-row{
+  border-top:1px solid rgba(0,0,0,0.05);
+}
+.summary-compact-table td[colspan="5"]{
+  grid-column:1 / -1;
+  text-align:center !important;
+  width:100% !important;
+}
+
+/* FIXED STYLE: desktop-order-detail-fix */
+
+/* Chi tiết đơn: # | Tên SP | Đ.Giá | SL | T.Tiền
+   Cột số căn phải, SL căn phải; khoảng cách các cột đều nhau. */
+.order-detail-compact-grid{
+  display:grid !important;
+  grid-template-columns:30px minmax(0,1fr) 52px 38px 60px !important;
+  column-gap:8px !important;
+  justify-content:stretch !important;
+  align-items:center !important;
+}
+.order-detail-compact-grid > *{min-width:0;}
+.order-detail-compact-grid .order-stt{text-align:right !important;}
+.order-detail-compact-grid .order-name{
+  text-align:left !important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.order-detail-compact-grid .order-price,
+.order-detail-compact-grid .order-qty,
+.order-detail-compact-grid .order-total{
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+
+/* PC: không dùng bottom-sheet mobile.
+   Chi tiết chỉ chiếm vùng làm việc bên trái, giỏ 480px bên phải vẫn giữ nguyên. */
+.pc-mode #orderDetailModalWrapper,
+body[data-force-pc="1"] #orderDetailModalWrapper{
+  left:0 !important;
+  right:480px !important;
+  top:0 !important;
+  bottom:0 !important;
+  width:auto !important;
+  height:auto !important;
+  justify-content:stretch !important;
+  background:#fff !important;
+}
+.pc-mode #orderDetailModalWrapper > .absolute.inset-0,
+body[data-force-pc="1"] #orderDetailModalWrapper > .absolute.inset-0{
+  display:none !important;
+}
+.pc-mode #orderDetailBottomSheet,
+body[data-force-pc="1"] #orderDetailBottomSheet{
+  position:relative !important;
+  width:100% !important;
+  height:100% !important;
+  max-height:none !important;
+  border-radius:0 !important;
+  transform:none !important;
+  box-shadow:none !important;
+  background:#fff !important;
+}
+.pc-mode #orderDetailBottomSheet > .w-full.flex.justify-center,
+body[data-force-pc="1"] #orderDetailBottomSheet > .w-full.flex.justify-center{
+  display:none !important;
+}
+.pc-mode #orderDetailContentToShare,
+body[data-force-pc="1"] #orderDetailContentToShare{
+  min-height:0 !important;
+}
+
+
+/* FIXED STYLE: settings-preferences-style */
+
+:root{
+  --app-primary:#16a34a;
+  --app-primary-light:#f0fdf4;
+  --app-header:#1e293b;
+  --app-canvas:#f3f4f6;
+  --app-surface:#ffffff;
+  --app-text:#111827;
+  --app-font:"Be Vietnam Pro",sans-serif;
+}
+#appContainer,
+#appContainer button,
+#appContainer input,
+#appContainer select,
+#appContainer textarea{font-family:var(--app-font) !important;}
+#appContainer .bg-primary{background-color:var(--app-primary) !important;}
+#appContainer .text-primary{color:var(--app-primary) !important;}
+#appContainer .border-primary{border-color:var(--app-primary) !important;}
+#appContainer .bg-primaryLight{background-color:var(--app-primary-light) !important;}
+#appContainer .hover\:border-primary\/50:hover,
+#appContainer .hover\:border-primary\/30:hover{border-color:var(--app-primary) !important;}
+.settings-icon{
+  width:32px;height:32px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--app-primary-light);color:var(--app-primary);font-size:16px;flex:none;
+}
+.theme-swatch{
+  width:28px;height:28px;border-radius:999px;background:var(--swatch);border:3px solid #fff;
+  box-shadow:0 0 0 1px #e5e7eb;transition:.15s transform,.15s box-shadow;
+}
+.theme-swatch.is-active{box-shadow:0 0 0 2px var(--swatch);transform:scale(1.06);}
+.settings-choice{
+  min-height:36px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;color:#64748b;
+  font-size:11px;font-weight:700;padding:0 8px;
+}
+.settings-choice.is-active{border-color:var(--app-primary);color:var(--app-primary);background:var(--app-primary-light);}
+.settings-toggle{width:44px;height:24px;padding:2px;border-radius:999px;background:#e5e7eb;transition:.18s;background-color:.18s;}
+.settings-toggle.is-on{background:var(--app-primary);}
+.settings-toggle-knob{display:block;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);transition:transform .18s;}
+.product-thumb{width:48px;height:48px;border-radius:10px;object-fit:cover;background:#f8fafc;border:1px solid #e5e7eb;}
+
+
+#appContainer{background:var(--app-canvas) !important;color:var(--app-text);}
+#appContainer [class*="bg-[#1e293b]"]{background-color:var(--app-header) !important;}
+#appContainer .bg-white{background-color:var(--app-surface);}
+#appContainer.font-sharp,
+#appContainer.font-sharp *{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:geometricPrecision;
+  font-synthesis:none;
+}
+.theme-preset-choice{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:7px;
+  height:auto;
+  min-height:62px;
+  padding:8px 9px;
+}
+.theme-preview{
+  display:block;
+  width:100%;
+  height:16px;
+  border-radius:5px;
+  border:1px solid rgba(0,0,0,.08);
+}
+.theme-preview-chatgpt{
+  background:linear-gradient(90deg,#171717 0 26%,#f7f7f8 26% 72%,#2563eb 72%);
+}
+.theme-preview-vercel{
+  background:linear-gradient(90deg,#000 0 34%,#fff 34% 68%,#000 68%);
+}
+.theme-preview-current{
+  background:linear-gradient(90deg,#1e293b 0 30%,#f3f4f6 30% 70%,#16a34a 70%);
+}
+.font-choice-openai{font-family:"OpenAI Sans","Helvetica Neue",Arial,sans-serif !important;}
+.font-choice-geist{font-family:"Geist Sans",Geist,"Helvetica Neue",Arial,sans-serif !important;}
+.font-choice-current{font-family:"Be Vietnam Pro",sans-serif !important;}
+
+
+/* FIXED STYLE: qty-edit-input-style */
+
+.qty-edit-input{
+  border:0 !important;
+  outline:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  background:transparent !important;
+  appearance:textfield;
+  -moz-appearance:textfield;
+  font-variant-numeric:tabular-nums;
+  caret-color:var(--app-primary,#16a34a);
+}
+.qty-edit-input:focus{
+  border:0 !important;
+  outline:none !important;
+  box-shadow:none !important;
+  background:transparent !important;
+}
+.qty-edit-input::-webkit-outer-spin-button,
+.qty-edit-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+
