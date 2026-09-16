@@ -34,7 +34,7 @@ test('production build stays platform-neutral and emits the current static app',
 
 test('production smoke proves the live build identity and current visual asset',async()=>{
   const workflow=await read('.github/workflows/taphoa-production-cutover-smoke.yml');
-  for(const required of ['version.json?cb=','src/styles/taphoa-tailwind.css?cb=','app-build-id','build_id','TAPHOA_TH2_LAYOUT_V1']){
+  for(const required of ['version.json?cb=','src/styles/taphoa-tailwind.css?cb=','app-build-id','build_id','TAPHOA_SALES_LAYOUT_V2']){
     assert.ok(workflow.includes(required),`smoke missing ${required}`);
   }
   assert.match(workflow,/github\.actor\s*!=\s*'github-actions\[bot\]'/);
