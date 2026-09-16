@@ -5,21 +5,24 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
 test('sales cart keeps compact copy while Tailwind owns semantic edit actions',()=>{
+  const sales=read('src/screens/sales.js');
   const runtime=read('src/core/ui-system.js');
   const css=read('src/styles/taphoa-tailwind.input.css');
-  assert.match(runtime,/SP ·/);
-  assert.match(runtime,/setAttribute\('placeholder','Ghi chú'\)/);
+  assert.match(sales,/\$\{totals\.totalQty\}\?`\$\{totals\.totalQty\} SP ·/);
+  assert.match(sales,/placeholder="Ghi chú"/);
+  assert.doesNotMatch(runtime,/replaceChildren\(\)|uiCompact/);
   assert.match(css,/\[data-sales-action="update"\][^}]*bg-zinc-900/s);
   assert.match(css,/\[data-sales-action="clear"\][^}]*var\(--tap-danger\)/s);
 });
 
-test('pending cards lead with readable customer and compact order context',()=>{
+test('pending cards lead with readable customer and compact order context in source markup',()=>{
+  const pending=read('src/screens/pending.js');
   const runtime=read('src/core/ui-system.js');
-  const css=read('src/styles/taphoa-tailwind.input.css');
-  assert.match(runtime,/function decoratePendingCards/);
-  assert.match(runtime,/pending-order-customer/);
-  assert.match(runtime,/compactOrderId\(card\.dataset\.orderOpen\)/);
-  assert.match(css,/\.pending-order-customer\s*\{[^}]*font-size:15px/s);
+  const css=read('src/styles/taphoa-th3.css');
+  assert.doesNotMatch(runtime,/function decoratePendingCards/);
+  assert.match(pending,/pending-order-top[^`]*tenKH/s);
+  assert.match(pending,/compactOrderId\(order\.id\)/);
+  assert.match(css,/pending-order-top b\{[^}]*font-size:15px/s);
 });
 
 test('debt main uses separate information and action zones instead of a gradient/card stack',()=>{
