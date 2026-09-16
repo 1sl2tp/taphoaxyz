@@ -1,0 +1,243 @@
+@layer components {
+  /* THẺ 2 — LOGIN / ACCOUNT: same touch-first grammar as operating screens. */
+  .login-screen{
+    min-height:100dvh;
+    display:grid;
+    place-items:center;
+    padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+    background:#f7f7f6;
+    color:#18181b;
+  }
+  .login-wrap{
+    width:min(100%,420px);
+    display:grid;
+    gap:22px;
+  }
+  .login-brand{
+    display:grid;
+    justify-items:center;
+    gap:8px;
+    text-align:center;
+  }
+  .login-logo{
+    width:72px;
+    height:72px;
+    border-radius:18px;
+    box-shadow:0 8px 24px rgba(24,24,27,.08);
+  }
+  .login-brand-name{
+    font-size:24px;
+    line-height:1.15;
+    font-weight:850;
+    letter-spacing:-.35px;
+  }
+  .login-brand-sub{
+    max-width:26ch;
+    color:#71717a;
+    font-size:14px;
+    line-height:1.4;
+  }
+  .login-card{
+    display:grid;
+    gap:12px;
+    padding:0;
+    background:transparent;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+  }
+  .login-card-title{
+    margin:0 0 2px;
+    font-size:16px;
+    font-weight:800;
+    color:#27272a;
+  }
+  .login-field{
+    min-height:52px;
+    width:100%;
+    padding:0 14px;
+    border:1px solid #d8d8de;
+    border-radius:12px;
+    background:#fff;
+    color:#18181b;
+    font-size:16px;
+    line-height:1.2;
+    box-shadow:none;
+  }
+  .login-field:focus{
+    border-color:#7a7a82;
+    outline:3px solid rgba(24,24,27,.10);
+    outline-offset:1px;
+  }
+  .login-password{
+    position:relative;
+  }
+  .login-password .login-field{
+    padding-right:52px;
+  }
+  .login-eye{
+    position:absolute;
+    right:4px;
+    top:50%;
+    translate:0 -50%;
+    width:44px;
+    height:44px;
+    display:grid;
+    place-items:center;
+    border:0;
+    border-radius:10px;
+    background:transparent;
+    color:#71717a;
+  }
+  .login-remember{
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    color:#52525b;
+    font-size:14px;
+  }
+  .login-remember input{
+    width:20px;
+    height:20px;
+    margin:0;
+    accent-color:#18181b;
+  }
+  .login-submit{
+    min-height:52px;
+    width:100%;
+    border:1px solid #18181b;
+    border-radius:12px;
+    background:#18181b;
+    color:#fff;
+    font-size:16px;
+    font-weight:800;
+    box-shadow:none;
+  }
+  .login-submit:active{background:#303034}
+  .login-error{
+    margin:0;
+    padding:10px 12px;
+    border:1px solid #f0c4c0;
+    border-radius:10px;
+    background:#fff7f6;
+    color:#a9362b;
+    font-size:13px;
+    line-height:1.4;
+  }
+
+  .account-sheet{
+    position:fixed;
+    inset:0;
+    z-index:120;
+    display:grid;
+    align-items:end;
+  }
+  .account-sheet[hidden]{display:none}
+  .account-sheet-backdrop{
+    position:absolute;
+    inset:0;
+    background:rgba(24,24,27,.42);
+    backdrop-filter:blur(2px);
+  }
+  .account-sheet-card{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-height:min(72dvh,620px);
+    overflow:auto;
+    padding:0 14px calc(14px + env(safe-area-inset-bottom));
+    border:1px solid #dedee2;
+    border-bottom:0;
+    border-radius:20px 20px 0 0;
+    background:#fff;
+    box-shadow:0 -20px 64px rgba(24,24,27,.20);
+  }
+  .account-sheet-handle{
+    width:34px;
+    height:4px;
+    margin:8px auto 6px;
+    border-radius:999px;
+    background:#d4d4d8;
+  }
+  .account-sheet-header{
+    min-height:62px;
+    display:grid;
+    grid-template-columns:44px minmax(0,1fr) 44px;
+    align-items:center;
+    gap:10px;
+    padding:4px 0 8px;
+    border-bottom:1px solid #e7e7ea;
+  }
+  .account-sheet-avatar{
+    width:44px;
+    height:44px;
+    display:grid;
+    place-items:center;
+    border-radius:999px;
+    background:#f4f4f5;
+    color:#3f3f46;
+    font-size:12px;
+    font-weight:850;
+  }
+  .account-sheet-copy{
+    min-width:0;
+    display:grid;
+    gap:2px;
+  }
+  .account-sheet-copy strong{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:16px;
+    font-weight:800;
+  }
+  .account-sheet-copy small{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:#71717a;
+    font-size:12px;
+  }
+  .account-sheet-close{
+    min-width:44px;
+    width:44px;
+    min-height:44px;
+    height:44px;
+    display:grid;
+    place-items:center;
+    border:0;
+    border-radius:10px;
+    background:transparent;
+    color:#52525b;
+  }
+  .account-logout{
+    min-height:48px;
+    width:100%;
+    margin-top:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    border:1px solid #dedee2;
+    border-radius:12px;
+    background:#fff;
+    color:#b42318;
+    font-size:15px;
+    font-weight:750;
+    box-shadow:none;
+  }
+
+  @media (min-width:760px){
+    .login-screen{padding:40px 24px}
+    .account-sheet{align-items:center;justify-items:center;padding:24px}
+    .account-sheet-card{
+      width:min(440px,100%);
+      border-bottom:1px solid #dedee2;
+      border-radius:18px;
+      padding-bottom:14px;
+      box-shadow:0 24px 80px rgba(24,24,27,.24);
+    }
+    .account-sheet-handle{display:none}
+  }
+}
