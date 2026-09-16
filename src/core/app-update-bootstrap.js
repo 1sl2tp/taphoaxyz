@@ -1,10 +1,11 @@
-import {createAppUpdateController,focusedInputBlocksReload,hasUnsavedSalesDom} from './app-update.js';
+import {createAppUpdateController,focusedInputBlocksReload,hasUnsavedSalesDom,refreshStylesheetLinks} from './app-update.js';
 
 const VERSION_URL='./version.json';
 const BUILD_PARAM='__build';
 const APPLIED_BUILD_KEY='taphoa.xyz.app.applied-build';
 const CHECK_INTERVAL_MS=45000;
 let registration=null;
+let hotStyleBuild='';
 
 const readStored=key=>{try{return String(localStorage.getItem(key)||'').trim();}catch{return '';}};
 const writeStored=(key,value)=>{try{localStorage.setItem(key,String(value||''));}catch{}};
@@ -46,6 +47,16 @@ const controller=createAppUpdateController({
   storage:sessionStorage,
 });
 
+async function checkForUpdate({reason='interval'}={}){
+  const changed=await controller.check({reason});
+  const pendingBuild=String(controller.snapshot().pendingBuild||'').trim();
+  if(pendingBuild&&pendingBuild!==hotStyleBuild){
+    refreshStylesheetLinks(document,pendingBuild,{baseHref:location.href});
+    hotStyleBuild=pendingBuild;
+  }
+  return changed;
+}
+
 async function activateWaitingWorker(){
   try{
     if(registration?.waiting){
@@ -75,19 +86,19 @@ async function registerServiceWorker(){
 
 function bind(){
   document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='visible')void controller.check({reason:'visible'});
+    if(document.visibilityState==='visible')void checkForUpdate({reason:'visible'});
   });
-  window.addEventListener('focus',()=>void controller.check({reason:'focus'}));
-  window.addEventListener('online',()=>void controller.check({reason:'online'}));
+  window.addEventListener('focus',()=>void checkForUpdate({reason:'focus'}));
+  window.addEventListener('online',()=>void checkForUpdate({reason:'online'}));
   document.addEventListener('input',()=>controller.maybeReload(),true);
   document.addEventListener('focusout',()=>controller.maybeReload(),true);
-  setInterval(()=>void controller.check({reason:'interval'}),CHECK_INTERVAL_MS);
+  setInterval(()=>void checkForUpdate({reason:'interval'}),CHECK_INTERVAL_MS);
 }
 
 async function boot(){
   bind();
   await registerServiceWorker();
-  const changed=await controller.check({reason:'boot'});
+  const changed=await checkForUpdate({reason:'boot'});
   if(!changed&&currentBuild&&currentBuild!=='bootstrap')writeStored(APPLIED_BUILD_KEY,currentBuild);
 }
 
@@ -95,7 +106,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 else void boot();
 
 window.TAPHOAAppUpdate=Object.freeze({
-  check:controller.check,
+  check:checkForUpdate,
   maybeReload:controller.maybeReload,
   safeToReload,
   snapshot:controller.snapshot,
