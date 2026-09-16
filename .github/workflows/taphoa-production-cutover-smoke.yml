@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           ok=0
-          for i in $(seq 1 36); do
+          for i in $(seq 1 90); do
             cb="${GITHUB_SHA}-${i}-$(date +%s)"
             if index="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/?cb=${cb}" 2>/dev/null)" \
               && version="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/version.json?cb=${cb}" 2>/dev/null)" \
@@ -59,6 +59,6 @@ jobs:
               fi
             fi
             echo "exact production build not live yet (attempt $i)"
-            sleep 10
+            sleep 2
           done
           test "$ok" -eq 1
