@@ -1,1 +1,0 @@
-RED expectation for gemini-ui-contract-v2.test.js before implementation:\n- src/styles/gemini-ui.css does not yet contain .taphoa-gemini-screen/.taphoa-gemini-toolbar/.taphoa-gemini-card\n- src/screens/{sales,delivered,pending,debt}.js do not yet contain taphoa-gemini-screen\nThe contract is therefore intentionally failing until the implementation commit lands.\n
