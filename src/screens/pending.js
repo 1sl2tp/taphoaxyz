@@ -31,20 +31,20 @@ function sourceSummaryMarkup(orders,canViewCost){
   const summary=summarizePendingBySource(orders);
   if(!summary.rows.length)return '<div class="pending-empty-small">Không có đơn tạm</div>';
   if(!canViewCost){
-    return `<div class="pending-source-grid is-customer pending-source-head"><span>NGUỒN</span><span>SL</span><span>THU</span></div>
-      ${summary.rows.map(row=>`<button class="pending-source-grid is-customer pending-source-row" type="button" data-source-open="${esc(row.source)}"><span>${esc(row.source)}</span><span>${row.qty}</span><span>${money(row.revenue)}</span></button>`).join('')}
+    return `<div class="pending-source-grid is-customer pending-source-head ui-table-head"><span>NGUỒN</span><span>SL</span><span>THU</span></div>
+      ${summary.rows.map(row=>`<button class="pending-source-grid is-customer pending-source-row ui-row" type="button" data-source-open="${esc(row.source)}"><span>${esc(row.source)}</span><span>${row.qty}</span><span>${money(row.revenue)}</span></button>`).join('')}
       <div class="pending-source-grid is-customer pending-source-total"><span>TỔNG (${orders.length} đơn)</span><span>${summary.total.qty}</span><span>${money(summary.total.revenue)}</span></div>`;
   }
-  return `<div class="pending-source-grid pending-source-head"><span>NGUỒN</span><span>SL</span><span>CHI</span><span>THU</span><span>LÃI</span></div>
-    ${summary.rows.map(row=>`<button class="pending-source-grid pending-source-row" type="button" data-source-open="${esc(row.source)}"><span>${esc(row.source)}</span><span>${row.qty}</span><span>${money(row.cost)}</span><span>${money(row.revenue)}</span><span>${money(row.profit)}</span></button>`).join('')}
+  return `<div class="pending-source-grid pending-source-head ui-table-head"><span>NGUỒN</span><span>SL</span><span>CHI</span><span>THU</span><span>LÃI</span></div>
+    ${summary.rows.map(row=>`<button class="pending-source-grid pending-source-row ui-row" type="button" data-source-open="${esc(row.source)}"><span>${esc(row.source)}</span><span>${row.qty}</span><span>${money(row.cost)}</span><span>${money(row.revenue)}</span><span>${money(row.profit)}</span></button>`).join('')}
     <div class="pending-source-grid pending-source-total"><span>TỔNG (${orders.length} đơn)</span><span>${summary.total.qty}</span><span>${money(summary.total.cost)}</span><span>${money(summary.total.revenue)}</span><span>${money(summary.total.profit)}</span></div>`;
 }
 
 function orderCard(order,index,canViewCost){
   const items=order.items||[];const qty=items.reduce((sum,item)=>sum+itemQty(item),0);const profit=Number(order.loiNhuan??(Number(order.tongTien||0)-Number(order.tongVon||0)))||0;
   const preview=items.slice(0,3).map(item=>`<span>${esc(itemName(item).length>12?`${itemName(item).slice(0,12)}…`:itemName(item))} ×${itemQty(item)}</span>`).join('');
-  return `<button class="pending-order-card" type="button" data-order-open="${esc(order.id)}">
-    <div class="pending-order-top"><span><small>#${index+1}</small><b>${esc(order.id)}</b><em>⏳ Chờ</em></span><strong>${money(order.tongTien)}</strong></div>
+  return `<button class="pending-order-card ui-row" type="button" data-order-open="${esc(order.id)}">
+    <div class="pending-order-top"><span><small>#${index+1}</small><b>${esc(order.id)}</b><em>Chờ</em></span><strong>${money(order.tongTien)}</strong></div>
     <div class="pending-order-mid"><span><b>${esc(order.tenKH)}</b><small>${esc(fmtDate(order.ngay||order.ordered_at))} · ${items.length||Number(order.tongMa)||0} mã (${qty||Number(order.tongSL)||0} sp)</small></span>${canViewCost?`<strong>+${money(profit)}</strong>`:''}</div>
     <div class="pending-order-preview">${preview}${items.length>3?`<small>+${items.length-3} sp</small>`:''}</div>
   </button>`;
@@ -56,12 +56,12 @@ function sourceDetailMarkup(source,orders){
   const total=rows.reduce((sum,row)=>sum+row.qty,0);
   return `<div class="pending-overlay" data-source-detail>
     <button class="pending-backdrop" type="button" data-source-close aria-label="Đóng"></button>
-    <section class="pending-source-panel">
-      <header><strong>📦 Nguồn ${esc(source)}</strong><div><button type="button" data-source-action="print">In</button><button type="button" data-source-action="total">Tổng SP</button><button type="button" data-source-close>✕</button></div></header>
+    <section class="pending-source-panel ui-popup-l1">
+      <header class="ui-popup-header"><strong>Nguồn ${esc(source)}</strong><div class="ui-action-group"><button class="ui-action ui-action-secondary" type="button" data-source-action="print">In</button><button class="ui-action ui-action-secondary" type="button" data-source-action="total">Tổng SP</button><button class="ui-icon-button" type="button" data-source-close aria-label="Đóng chi tiết nguồn"></button></div></header>
       <div class="pending-source-meta">${new Date().toLocaleDateString('vi-VN')} · ${sourceOrders.length} đơn · ${total} sản phẩm</div>
-      <div class="pending-source-detail-head"><span>#</span><span>TÊN HÀNG</span><span>KHÁCH</span><span>SL</span></div>
-      <div class="pending-source-detail-lines">${rows.map((row,index)=>`<div><span>${index+1}.</span><span><b>${esc(row.name)}</b>${row.note?`<small>${esc(row.note)}</small>`:''}</span><span>${esc(row.customer)}</span><strong>×${row.qty}</strong></div>`).join('')}</div>
-      <div class="pending-source-detail-total">TỔNG: ${total} sp</div>
+      <div class="pending-source-detail-head ui-table-head"><span>#</span><span>TÊN HÀNG</span><span>KHÁCH</span><span>SL</span></div>
+      <div class="pending-source-detail-lines ui-table">${rows.map((row,index)=>`<div class="ui-row"><span>${index+1}.</span><span><b>${esc(row.name)}</b>${row.note?`<small>${esc(row.note)}</small>`:''}</span><span>${esc(row.customer)}</span><strong>×${row.qty}</strong></div>`).join('')}</div>
+      <div class="pending-source-detail-total ui-summary">TỔNG: ${total} sp</div>
     </section>
   </div>`;
 }
@@ -70,15 +70,15 @@ function orderDetailMarkup(order,{canManageOrders=false}={}){
   const items=order.items||[];const qty=items.reduce((sum,item)=>sum+itemQty(item),0);
   return `<div class="pending-overlay" data-order-detail>
     <button class="pending-backdrop" type="button" data-order-close aria-label="Đóng"></button>
-    <section class="pending-detail-panel">
-      <header><strong>${esc(order.id)}</strong><span>⏳ Chờ duyệt</span><button type="button" data-order-close>✕</button></header>
+    <section class="pending-detail-panel ui-popup-l1">
+      <header class="ui-popup-header"><strong>${esc(order.id)}</strong><span>Chờ duyệt</span><button class="ui-icon-button" type="button" data-order-close aria-label="Đóng chi tiết đơn"></button></header>
       <div class="classic-receipt" data-receipt-capture>
         <div class="pending-detail-meta"><b>KH: ${esc(order.tenKH)}</b> · ${esc(order.id)} · ${esc(fmtDate(order.ngay||order.ordered_at))}</div>
-        <div class="pending-detail-head classic-detail-table"><span>#</span><span>TÊN</span><span>SL</span><span>Đ.GIÁ</span><span>T.TIỀN</span></div>
-        <div class="pending-detail-lines classic-detail-table">${items.map((item,index)=>`<div><span>${index+1}.</span><span>${esc(itemName(item))}${item.ghiChu||item.note?`<small>${esc(item.ghiChu||item.note)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div>
-        <div class="pending-detail-total"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div>
+        <div class="pending-detail-head classic-detail-table ui-table-head"><span>#</span><span>TÊN</span><span>SL</span><span>Đ.GIÁ</span><span>T.TIỀN</span></div>
+        <div class="pending-detail-lines classic-detail-table ui-table">${items.map((item,index)=>`<div class="ui-row"><span>${index+1}.</span><span>${esc(itemName(item))}${item.ghiChu||item.note?`<small>${esc(item.ghiChu||item.note)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div>
+        <div class="pending-detail-total ui-summary"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div>
       </div>
-      <footer>${canManageOrders?'<button type="button" data-order-action="edit">Sửa</button><button type="button" data-order-action="deliver">Duyệt</button>':''}<button class="classic-share-button" type="button" data-receipt-share>🖼️ Chia sẻ ảnh</button><button type="button" data-order-action="print">In</button>${canManageOrders?'<button type="button" data-order-action="delete">Xoá</button>':''}</footer>
+      <footer class="ui-action-group">${canManageOrders?'<button class="ui-action ui-action-secondary" type="button" data-order-action="edit">Sửa</button><button class="ui-action ui-action-primary" type="button" data-order-action="deliver">Duyệt</button>':''}<button class="classic-share-button ui-action ui-action-secondary" type="button" data-receipt-share>Chia sẻ ảnh</button><button class="ui-action ui-action-secondary" type="button" data-order-action="print">In</button>${canManageOrders?'<button class="ui-action ui-action-danger" type="button" data-order-action="delete">Xoá</button>':''}</footer>
     </section>
   </div>`;
 }
@@ -86,10 +86,10 @@ function orderDetailMarkup(order,{canManageOrders=false}={}){
 function pendingPrintBody(data){return `<main class="print-sheet"><div class="print-head">${esc(data?.title||'')}</div><div class="print-meta">${esc(data?.date||'')}</div>${(data?.rows||[]).map((row,index)=>`<div class="print-row"><span>${index+1}. ${esc(row.name||row.tenHang||'')}${row.customer?` <small>(${esc(row.customer)})</small>`:''}</span><strong>${row.qty??row.sl??0}</strong></div>`).join('')}</main>`;}
 
 function printMarkup(data){
-  if(!data)return'';return `<div class="pending-overlay pending-print-overlay"><button class="pending-backdrop" type="button" data-print-close aria-label="Đóng"></button><section class="pending-print-panel">
-    <header><button type="button" data-print-close>✕</button><strong>${esc(data.title||'')}</strong><button type="button" data-print-now>In</button></header>
+  if(!data)return'';return `<div class="pending-overlay pending-print-overlay"><button class="pending-backdrop" type="button" data-print-close aria-label="Đóng"></button><section class="pending-print-panel ui-popup-l2">
+    <header class="ui-popup-header"><button class="ui-icon-button" type="button" data-print-close aria-label="Đóng bản in"></button><strong>${esc(data.title||'')}</strong><button class="ui-action ui-action-primary" type="button" data-print-now>In</button></header>
     <div class="pending-print-date">${esc(data.date||'')}</div>
-    <div class="pending-print-lines">${(data.rows||[]).map((row,index)=>`<div><span>${index+1}. ${esc(row.name||row.tenHang||'')}${row.customer?` <small>(${esc(row.customer)})</small>`:''}</span><strong>${row.qty??row.sl??0}</strong></div>`).join('')}</div>
+    <div class="pending-print-lines ui-table">${(data.rows||[]).map((row,index)=>`<div class="ui-row"><span>${index+1}. ${esc(row.name||row.tenHang||'')}${row.customer?` <small>(${esc(row.customer)})</small>`:''}</span><strong>${row.qty??row.sl??0}</strong></div>`).join('')}</div>
   </section></div>`;
 }
 
@@ -103,12 +103,12 @@ function printForSource(source,orders,totalOnly=false){
 
 export function pendingMarkup({orders=[],selectedSource=null,selectedOrder=null,printData=null,permissions={}}={}){
   const list=pendingOrders(orders);const canManageOrders=permissions.canManageOrders===true;const canViewCost=permissions.canViewCost===true;
-  return `<section class="pending-screen" data-screen-id="pending">
-    <section class="pending-summary">
-      <header><h2>📝 Tổng hợp đơn tạm</h2>${canManageOrders&&list.length?'<button type="button" data-delete-all>🗑️ Xoá tất cả</button>':''}</header>
+  return `<section class="pending-screen ui-main" data-screen-id="pending">
+    <section class="pending-summary ui-summary ui-table">
+      <header><h2>Tổng hợp đơn tạm <small>(${list.length} đơn)</small></h2>${canManageOrders&&list.length?'<button class="ui-action ui-action-danger" type="button" data-delete-all>Xoá tất cả</button>':''}</header>
       ${sourceSummaryMarkup(list,canViewCost)}
     </section>
-    <section class="pending-list">${list.map((order,index)=>orderCard(order,index,canViewCost)).join('')||'<div class="pending-empty">Không có đơn tạm</div>'}</section>
+    <section class="pending-list ui-table">${list.map((order,index)=>orderCard(order,index,canViewCost)).join('')||'<div class="pending-empty">Không có đơn tạm</div>'}</section>
     ${selectedSource?sourceDetailMarkup(selectedSource,list):''}${selectedOrder?orderDetailMarkup(selectedOrder,{canManageOrders}):''}${printMarkup(printData)}
   </section>`;
 }
