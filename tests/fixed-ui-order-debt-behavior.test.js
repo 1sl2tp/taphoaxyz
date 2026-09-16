@@ -17,11 +17,11 @@ test('cart orders lines by most recently selected or increased item',async()=>{
   assert.doesNotMatch(runtime,/String\(a\.name[^\n]*localeCompare/);
 });
 
-test('order lists preserve backend newest-first order instead of reversing it',async()=>{
-  const pending=await read('src/fixed-ui-runtime-10.js');
-  const delivered=await read('src/fixed-ui-runtime-11.js');
-  assert.doesNotMatch(pending,/Object\.keys\(orders\)\.reverse\(\)/);
-  assert.doesNotMatch(delivered,/Object\.keys\(orders\)\.reverse\(\)/);
+test('order lists are stabilized to backend newest-first order',async()=>{
+  const behavior=await read('src/fixed-ui-behavior.js');
+  assert.match(behavior,/function stabilizeNewestOrderCards/);
+  assert.match(behavior,/stabilizeNewestOrderCards\('dontam'/);
+  assert.match(behavior,/stabilizeNewestOrderCards\('dongiao'/);
 });
 
 test('customer selector displays username/code instead of internal uuid',async()=>{
@@ -36,20 +36,30 @@ test('order rows carry short display code and hidden backend uuid',async()=>{
   assert.match(bridge,/orderDisplayCode/);
   assert.match(bridge,/display_no/);
   assert.match(bridge,/backendOrderId/);
+  const migration=await read('supabase/migrations/20260917010000_taphoa_short_order_display_codes.sql');
+  assert.match(migration,/display_no/);
+  assert.match(migration,/'DG'/);
+  assert.match(migration,/'DT'/);
 });
 
 test('debt history hides reversals, keeps backend balance-after and opens order detail directly',async()=>{
   const bridge=await read('src/fixed-production-bridge.js');
-  const debtList=await read('src/fixed-ui-runtime-11.js');
-  const debtDetail=await read('src/fixed-ui-runtime-12.js');
+  const behavior=await read('src/fixed-ui-behavior.js');
   assert.match(bridge,/balanceAfter/);
   assert.match(bridge,/entryType/);
-  assert.match(debtList,/entryType\s*!==\s*['"]reversal['"]/);
-  assert.match(debtDetail,/showOrderDetailMobile\(orderId,\s*sheetName\)/);
+  assert.match(behavior,/entryType\s*!==\s*['"]reversal['"]/);
+  assert.match(behavior,/showOrderDetailMobile\(orderId,\s*sheetName\)/);
 });
 
 test('desktop debt detail uses the same left-workspace geometry as order detail',async()=>{
-  const css=await read('src/fixed-ui-source-2.css');
+  const css=await read('src/fixed-ui-debt-popup.css');
   assert.match(css,/\.pc-mode\s+#customerDebtModalWrapper/);
   assert.match(css,/right:\s*480px\s*!important/);
+  const html=await read('index.html');
+  assert.match(html,/fixed-ui-debt-popup\.css/);
+});
+
+test('FIXED behavior runs before production bindings so Supabase wrappers stay outermost',async()=>{
+  const html=await read('index.html');
+  assert.ok(html.indexOf('fixed-ui-behavior.js') < html.indexOf('fixed-production-overrides.js'));
 });
