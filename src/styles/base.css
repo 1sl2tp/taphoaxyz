@@ -1,36 +1,33 @@
 :root{
-  --ui-page:#f1f3f4;
+  --ui-page:#f3f4f6;
   --ui-panel:#ffffff;
-  --ui-surface-soft:#f5f6f7;
-  --ui-text:#171717;
-  --ui-text-secondary:#525b66;
-  --ui-muted:#707a86;
-  --ui-line:#e1e4e7;
-  --ui-line-strong:#cfd5dc;
-  --ui-primary:#1565c0;
-  --ui-success:#26735b;
-  --ui-warning:#c36b12;
-  --ui-danger:#a32920;
-  --ui-radius:14px;
-  --ui-sheet-radius:20px;
-  --ui-control-h:46px;
-
-  /* Compatibility aliases. New shared UI work consumes --ui-* directly. */
-  --blue:var(--ui-primary);--teal:#00897b;--green:var(--ui-success);--red:var(--ui-danger);--orange:var(--ui-warning);
-  --text:var(--ui-text);--text-sec:var(--ui-text-secondary);--muted:var(--ui-muted);--line:var(--ui-line);--divider:#eef0f2;
-  --card:var(--ui-panel);--bg:var(--ui-page);--tap:44px;--radius:var(--ui-radius);--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ui-text);background:var(--ui-page);
+  --ui-surface-soft:#f9fafb;
+  --ui-text:#1f2937;
+  --ui-text-secondary:#6b7280;
+  --ui-muted:#9ca3af;
+  --ui-line:#e5e7eb;
+  --ui-line-strong:#d1d5db;
+  --ui-primary:#16a34a;
+  --ui-success:#16a34a;
+  --ui-warning:#f97316;
+  --ui-danger:#ef4444;
+  --ui-radius:16px;
+  --ui-sheet-radius:24px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  font-family:"Be Vietnam Pro",ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--ui-text);
+  background:#d1d5db;
 }
 *{box-sizing:border-box}
-html,body{width:100%;height:100%;margin:0;min-width:280px;overflow:hidden;overscroll-behavior:none;background:var(--ui-page);-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{min-height:100vh;min-height:100dvh;color:var(--ui-text)}
-button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-[hidden]{display:none!important}
-input,button,select,textarea{min-height:var(--tap)}
+html,body{width:100%;height:100%;margin:0;min-width:280px;overflow:hidden;overscroll-behavior:none;background:#d1d5db;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{min-height:100vh;min-height:100dvh;color:var(--ui-text);font-family:inherit;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,a,input,select,textarea{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent;outline:none}
+button{cursor:pointer;touch-action:manipulation}
 input,select,textarea{-webkit-user-select:text;user-select:text}
-button:focus-visible{outline:2px solid var(--ui-primary);outline-offset:2px}
-input:focus,input:focus-visible,select:focus,select:focus-visible,textarea:focus,textarea:focus-visible{outline:none!important;outline-offset:0!important;box-shadow:none!important}
-@media (pointer:coarse){
-  input,select,textarea{font-size:16px}
-}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+[hidden]{display:none!important}
+.no-scrollbar::-webkit-scrollbar{display:none}
+.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+button:focus-visible{outline:2px solid rgba(22,163,74,.45);outline-offset:2px}
