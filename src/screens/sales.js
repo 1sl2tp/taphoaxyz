@@ -51,12 +51,12 @@ function productRows(state){
     const meta=[canViewCost&&p.von!==undefined&&p.von!==null?`<span class="sales-cost">${money(p.von)}</span><span>→</span>`:'',
       canManage?`<input class="sales-price-input" data-price-id="${esc(p.id)}" inputmode="numeric" value="${esc(price)}" aria-label="Giá ${esc(p.ten)}">`:`<span class="sales-price-readonly">${money(price)}</span>`,
       p.donVi?`<span class="sales-unit">${esc(p.donVi)}</span>`:''].join('');
-    return `<article class="sales-product-row" data-product-row="${esc(p.id)}" ${visibleIds.has(String(p.id))?'':'hidden'}>
+    return `<article class="sales-product-row ui-row" data-product-row="${esc(p.id)}" ${visibleIds.has(String(p.id))?'':'hidden'}>
       <div class="sales-product-info"><div class="sales-product-name">${esc(p.ten)}</div><div class="sales-product-meta">${meta}</div></div>
       ${canManage?`<div class="sales-qty" data-qty-id="${esc(p.id)}">
-        <button type="button" data-qty-action="dec" ${qty<=0?'disabled':''}>−</button>
+        <button type="button" data-qty-action="dec" aria-label="Giảm số lượng ${esc(p.ten)}" ${qty<=0?'disabled':''}>−</button>
         <input class="sales-qty-value" data-qty-input="${esc(p.id)}" inputmode="numeric" value="${qty>0?qty:''}" aria-label="Số lượng ${esc(p.ten)}">
-        <button type="button" data-qty-action="add">+</button>
+        <button type="button" data-qty-action="add" aria-label="Tăng số lượng ${esc(p.ten)}">+</button>
       </div>`:''}
     </article>`;
   }).join('');
@@ -81,28 +81,28 @@ function cartBody(state){
   const selected=state.products.filter(p=>Number(state.cart[p.id]||0)>0);
   const totals=cartTotals(state.products,state.cart,state.prices);
   if(!selected.length)return `<div class="sales-cart-empty">Chưa có sản phẩm nào</div>`;
-  return `<div class="sales-cart-table-head"><span>TÊN</span><span>Đ.GIÁ</span><span>SL</span><span>T.TIỀN</span></div>
-  <div class="sales-cart-lines">${selected.map(p=>{
+  return `<div class="sales-cart-table-head ui-table-head"><span>TÊN</span><span>Đ.GIÁ</span><span>SL</span><span>T.TIỀN</span></div>
+  <div class="sales-cart-lines ui-table">${selected.map(p=>{
     const qty=Number(state.cart[p.id]||0),price=Number(state.prices[p.id]??p.gia)||0;
-    return `<div class="sales-cart-line" data-cart-line="${esc(p.id)}">
-      <div class="sales-cart-name"><b>${esc(p.ten)}</b><input data-note-id="${esc(p.id)}" value="${esc(state.notes[p.id]||'')}" placeholder="..."></div>
+    return `<div class="sales-cart-line ui-row" data-cart-line="${esc(p.id)}">
+      <div class="sales-cart-name"><b>${esc(p.ten)}</b><input data-note-id="${esc(p.id)}" value="${esc(state.notes[p.id]||'')}" placeholder="Ghi chú..."></div>
       <input class="sales-cart-price" data-price-id="${esc(p.id)}" inputmode="numeric" value="${esc(price)}" aria-label="Đơn giá ${esc(p.ten)}">
-      <div class="sales-cart-qty"><button type="button" data-cart-dec="${esc(p.id)}">−</button><input data-qty-input="${esc(p.id)}" inputmode="numeric" value="${qty}"><button type="button" data-cart-add="${esc(p.id)}">+</button></div>
+      <div class="sales-cart-qty"><button type="button" data-cart-dec="${esc(p.id)}" aria-label="Giảm ${esc(p.ten)}">−</button><input data-qty-input="${esc(p.id)}" inputmode="numeric" value="${qty}" aria-label="Số lượng ${esc(p.ten)}"><button type="button" data-cart-add="${esc(p.id)}" aria-label="Tăng ${esc(p.ten)}">+</button></div>
       <strong>${money(price*qty)}</strong>
     </div>`;
   }).join('')}</div>
-  <div class="sales-cart-total"><span>Số lượng <b>${totals.totalQty} sp</b></span><span>Tổng tiền <b>${money(totals.total)}</b></span></div>`;
+  <div class="sales-cart-total ui-summary"><span>Số lượng <b>${totals.totalQty} sp</b></span><span>Tổng tiền <b>${money(totals.total)}</b></span></div>`;
 }
 
 function cartActions(state){
-  if(state.editOrder)return `<div class="sales-cart-actions"><button type="button" data-sales-action="cancel-edit">Huỷ</button><button type="button" data-sales-action="update">Cập nhật đơn</button></div>`;
-  return `<div class="sales-cart-actions"><button type="button" data-sales-action="clear">Xoá</button><button type="button" data-sales-action="pending">Đặt</button><button type="button" data-sales-action="done">Bán</button></div>`;
+  if(state.editOrder)return `<div class="sales-cart-actions ui-action-group"><button class="ui-action ui-action-secondary" type="button" data-sales-action="cancel-edit">Huỷ</button><button class="ui-action ui-action-primary" type="button" data-sales-action="update">Cập nhật đơn</button></div>`;
+  return `<div class="sales-cart-actions ui-action-group"><button class="ui-action ui-action-danger" type="button" data-sales-action="clear">Xoá</button><button class="ui-action ui-action-secondary" type="button" data-sales-action="pending">Đặt</button><button class="ui-action ui-action-primary" type="button" data-sales-action="done">Bán</button></div>`;
 }
 
 function cartPanel(state,{mobile=false}={}){
   const totals=cartTotals(state.products,state.cart,state.prices);
-  return `<section class="sales-cart-panel ${mobile?'sales-cart-mobile':''}">
-    <header class="sales-cart-head"><strong>🛒 Giỏ hàng</strong>${totals.totalQty?`<span>${totals.totalQty} sp</span>`:''}${mobile?'<button type="button" data-cart-close>✕</button>':''}</header>
+  return `<section class="sales-cart-panel ui-popup-l1 ${mobile?'sales-cart-mobile':''}">
+    <header class="sales-cart-head ui-popup-header"><strong>Giỏ hàng</strong>${totals.totalQty?`<span>${totals.totalQty} sp</span>`:''}${mobile?'<button class="ui-icon-button" type="button" data-cart-close aria-label="Đóng giỏ hàng"></button>':''}</header>
     <div class="sales-cart-body">${cartBody(state)}</div>
     ${totals.totalQty?cartActions(state):''}
   </section>`;
@@ -114,19 +114,19 @@ export function salesMarkup(input={}){
   const totals=cartTotals(state.products,state.cart,state.prices);
   const selectedCustomerName=state.selectedCustomer==='le'?'Khách lẻ':(state.customers.find(c=>c.id===state.selectedCustomer)?.ten||'');
   const now=new Date();const stamp=now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
-  return `<section class="sales-screen" data-screen-id="sales">
-    <header class="sales-pinned-head">
+  return `<section class="sales-screen ui-main" data-screen-id="sales">
+    <header class="sales-pinned-head ui-context ui-toolbar">
       ${canManage?`<div class="sales-customer-row">
         <input class="sales-customer-input" list="salesCustomerList" value="${esc(selectedCustomerName)}" placeholder="Chọn khách..." aria-label="Chọn khách"><datalist id="salesCustomerList">${customerOptions(state.customers)}</datalist>
         <span class="sales-time">${esc(stamp)}</span>
-        <button class="sales-cart-quick" type="button" data-cart-open>${totals.totalQty?`🛒 <span>${totals.totalQty}</span> ${money(totals.total)}`:'🛒 Trống'}</button>
+        <button class="sales-cart-quick ui-action ui-action-secondary" type="button" data-cart-open>${totals.totalQty?`<span>${totals.totalQty}</span> ${money(totals.total)}`:'Trống'}</button>
       </div>`:''}
-      <div class="sales-search-row"><input data-sales-search value="${esc(state.search)}" placeholder="Tìm sản phẩm..."><button type="button" data-search-clear ${state.search?'':'hidden'}>✕</button></div>
+      <div class="sales-search-row"><input data-sales-search value="${esc(state.search)}" placeholder="Tìm sản phẩm..."><button class="ui-icon-button" type="button" data-search-clear aria-label="Xóa tìm kiếm" ${state.search?'':'hidden'}></button></div>
       <div class="sales-groups">${groupButtons(state.products,state.group)}</div>
     </header>
     <div class="sales-workspace">
-      <section class="sales-products"><div class="sales-product-list">${productRows(state)}</div></section>
-      ${canManage?`<aside class="sales-cart-desktop">${cartPanel(state)}</aside>`:''}
+      <section class="sales-products ui-zone-data"><div class="sales-product-list ui-table">${productRows(state)}</div></section>
+      ${canManage?`<aside class="sales-cart-desktop" aria-hidden="true">${cartPanel(state)}</aside>`:''}
     </div>
     ${canManage?`<div class="sales-cart-overlay" data-cart-overlay aria-hidden="${state.cartOpen?'false':'true'}"><button class="sales-cart-backdrop" type="button" data-cart-close aria-label="Đóng"></button>${cartPanel(state,{mobile:true})}</div>`:''}
   </section>`;
