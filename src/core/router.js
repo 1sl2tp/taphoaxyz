@@ -1,8 +1,8 @@
 export const NAV_ITEMS = Object.freeze([
-  Object.freeze({id:'sales',icon:'🛒',label:'Bán hàng'}),
-  Object.freeze({id:'delivered',icon:'📋',label:'Đã giao'}),
-  Object.freeze({id:'pending',icon:'📝',label:'Đơn tạm'}),
-  Object.freeze({id:'debt',icon:'💰',label:'Công nợ'})
+  Object.freeze({id:'sales',icon:'cart',label:'Bán hàng'}),
+  Object.freeze({id:'delivered',icon:'calendar',label:'Đã giao'}),
+  Object.freeze({id:'pending',icon:'edit',label:'Đơn tạm'}),
+  Object.freeze({id:'debt',icon:'user',label:'Công nợ'})
 ]);
 
 const APPROVED = new Set(NAV_ITEMS.map(x => x.id));
