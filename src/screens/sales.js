@@ -119,7 +119,7 @@ export function salesMarkup(input={}){
   return `<section class="sales-screen ui-main" data-screen-id="sales">
     <header class="sales-pinned-head sales-main-context ui-context ui-toolbar">
       ${canManage?`<div class="sales-customer-row sales-customer-bar">
-        <div class="sales-customer-field"><small>Khách</small><input class="sales-customer-input" list="salesCustomerList" value="${esc(selectedCustomerName)}" placeholder="Chọn khách..." aria-label="Chọn khách"><datalist id="salesCustomerList">${customerOptions(state.customers)}</datalist></div>
+        <div class="sales-customer-field"><input class="sales-customer-input" list="salesCustomerList" value="${esc(selectedCustomerName)}" placeholder="Chọn khách..." aria-label="Chọn khách"><datalist id="salesCustomerList">${customerOptions(state.customers)}</datalist></div>
         <button class="sales-cart-quick ui-action ui-action-secondary ${totals.totalQty?'is-active':''}" type="button" data-cart-open><span>Giỏ</span><strong>${totals.totalQty?`${totals.totalQty} SP · ${money(totals.total)}`:'Trống'}</strong></button>
       </div>`:''}
       <div class="sales-search-row sales-search-tools"><input data-sales-search value="${esc(state.search)}" placeholder="Tìm sản phẩm..."><button class="ui-icon-button" type="button" data-search-clear aria-label="Xóa tìm kiếm" ${state.search?'':'hidden'}></button></div>
