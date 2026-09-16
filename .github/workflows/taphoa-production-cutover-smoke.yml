@@ -10,20 +10,31 @@ on:
 
 jobs:
   production:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for beta.taphoa.xyz cutover
+      - name: Wait for exact beta.taphoa.xyz build and visual asset
         shell: bash
         run: |
           set -euo pipefail
           ok=0
-          for i in $(seq 1 24); do
+          for i in $(seq 1 36); do
             cb="${GITHUB_SHA}-${i}-$(date +%s)"
             if index="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/?cb=${cb}" 2>/dev/null)" \
+              && version="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/version.json?cb=${cb}" 2>/dev/null)" \
+              && css="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/styles/taphoa-tailwind.css?cb=${cb}" 2>/dev/null)" \
               && config="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/config.js?cb=${cb}" 2>/dev/null)" \
               && auth="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/auth.js?cb=${cb}" 2>/dev/null)" \
               && business="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/business.js?cb=${cb}" 2>/dev/null)"; then
-              if grep -q 'src/app.js' <<<"$index" \
+              live_build="$(python -c 'import json,sys; print(json.load(sys.stdin).get("build_id", ""))' <<<"$version" 2>/dev/null || true)"
+              live_meta="$(python -c 'import re,sys; m=re.search(r"name=[\"'\"']app-build-id[\"'\"']\\s+content=[\"'\"']([^\"'\"']+)",sys.stdin.read()); print(m.group(1) if m else "")' <<<"$index" 2>/dev/null || true)"
+              echo "attempt $i: build_id=${live_build:0:12} app-build-id=${live_meta:0:12} expected=${GITHUB_SHA:0:12}"
+              if [ "$live_build" = "$GITHUB_SHA" ] \
+                && [ "$live_meta" = "$GITHUB_SHA" ] \
+                && grep -q 'app-build-id' <<<"$index" \
+                && grep -q 'build_id' <<<"$version" \
+                && grep -q 'src/app.js' <<<"$index" \
+                && grep -q 'TAPHOA_SALES_LAYOUT_V2' <<<"$css" \
                 && grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' <<<"$config" \
                 && grep -q 'taphoa.xyz.auth.v2' <<<"$config" \
                 && grep -q 'signInWithPassword' <<<"$auth" \
@@ -32,12 +43,12 @@ jobs:
                 && grep -q 'taphoa_save_order' <<<"$business" \
                 && ! grep -q 'crdbhkdeqyehsbzgggbs' <<<"$config$auth$business" \
                 && ! grep -q 'shop-auth\|shop_identities' <<<"$config$auth$business"; then
-                echo "PRODUCTION CUTOVER PASS on attempt $i"
+                echo "PRODUCTION CUTOVER PASS: exact code build and Sales V2 visual asset are live"
                 ok=1
                 break
               fi
             fi
-            echo "production not cut over yet (attempt $i)"
+            echo "exact production build not live yet (attempt $i)"
             sleep 10
           done
           test "$ok" -eq 1
