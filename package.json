@@ -2,14 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ui:build": "npx @tailwindcss/cli -i ./src/styles/taphoa-tailwind.entry.css -o ./src/styles/taphoa-tailwind.css --minify",
-    "fast:ui": "npm run ui:build && node --test tests/dark-controls-contrast.test.js tests/ui-build-output.test.js tests/auto-update-contract.test.js",
-    "build": "npm run ui:build && node scripts/build-v128.mjs && node scripts/harden-v129.mjs && node scripts/harden-v130.mjs && node scripts/test-v130.mjs && node scripts/harden-v131.mjs && node scripts/test-v131.mjs && node scripts/harden-v132.mjs && node scripts/test-v132.mjs && node scripts/harden-v133.mjs && node scripts/test-v133.mjs",
-    "build:production": "npm run ui:build && node scripts/build-current.mjs",
+    "build": "node scripts/build-current.mjs",
+    "build:production": "node scripts/build-current.mjs",
     "test": "node --test tests/*.test.js"
-  },
-  "devDependencies": {
-    "@tailwindcss/cli": "^4.1.0",
-    "tailwindcss": "^4.1.0"
   }
 }
