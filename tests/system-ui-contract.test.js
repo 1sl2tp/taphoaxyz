@@ -7,23 +7,21 @@ const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 test('shared UI system owns core visual tokens and typography roles',()=>{
   const base=read('src/styles/base.css');
   const ui=read('src/styles/ui-system.css');
-  for(const token of ['--ui-page','--ui-panel','--ui-text','--ui-muted','--ui-line','--ui-primary','--ui-success','--ui-warning','--ui-danger']){
-    assert.match(base,new RegExp(token.replaceAll('-','\\-')));
-  }
-  for(const role of ['panel-title','name','body','meta','label','action','money-row','money-key','money-hero','summary-value','summary-total']){
-    assert.ok(ui.includes(`[data-ui-type="${role}"]`),`missing typography role ${role}`);
-  }
+  for(const token of ['--ui-page','--ui-panel','--ui-text','--ui-muted','--ui-line','--ui-primary','--ui-success','--ui-warning','--ui-danger'])assert.match(base,new RegExp(token.replaceAll('-','\\-')));
+  for(const role of ['panel-title','name','body','meta','label','action','money-row','money-key','money-hero','summary-value','summary-total'])assert.ok(ui.includes(`[data-ui-type="${role}"]`),`missing typography role ${role}`);
   assert.match(ui,/font-variant-numeric:\s*tabular-nums/);
 });
 
-test('index loads shared UI stylesheet after screen visuals but before scroll ownership, and loads UI runtime',()=>{
+test('index loads Tailwind after screen geometry and semantic runtime before scroll ownership',()=>{
   const html=read('index.html');
   const debt=html.indexOf('./src/styles/debt.css');
-  const shared=html.indexOf('./src/styles/ui-system.css');
+  const tailwind=html.indexOf('./src/styles/taphoa-tailwind.css');
   const owner=html.indexOf('./src/styles/scroll-owner.css');
-  const runtime=html.indexOf('./src/core/ui-system.js');
-  assert.ok(shared>debt && shared<owner);
-  assert.ok(runtime>0);
+  const uiRuntime=html.indexOf('./src/core/ui-system.js');
+  const semanticRuntime=html.indexOf('./src/core/semantic-ui.js');
+  const scrollRuntime=html.indexOf('./src/core/scroll-owner.js');
+  assert.ok(tailwind>debt&&tailwind<owner);
+  assert.ok(uiRuntime>0&&semanticRuntime>uiRuntime&&scrollRuntime>semanticRuntime);
 });
 
 test('shared UI runtime declares semantic order detail families',async()=>{
@@ -32,9 +30,7 @@ test('shared UI runtime declares semantic order detail families',async()=>{
   assert.equal(mod.DETAIL_UI_CONFIG.pending.title,'Đơn tạm');
   assert.equal(mod.DETAIL_UI_CONFIG.delivered.title,'Đã giao');
   assert.equal(mod.DETAIL_UI_CONFIG.debt.title,'Công nợ');
-  for(const config of Object.values(mod.DETAIL_UI_CONFIG)){
-    for(const key of ['panel','header','title','context','head','lines','total'])assert.ok(config[key],`missing ${key}`);
-  }
+  for(const config of Object.values(mod.DETAIL_UI_CONFIG))for(const key of ['panel','header','title','context','head','lines','total'])assert.ok(config[key],`missing ${key}`);
 });
 
 test('compactOrderId preserves short ids and abbreviates long technical ids',async()=>{
@@ -50,12 +46,8 @@ test('shell and sales consume shared UI tokens',()=>{
   assert.match(sales,/var\(--ui-(?:panel|text|line|primary)/);
 });
 
-test('shared UI system covers every ancillary popup and print family',()=>{
+test('legacy shared UI source still covers ancillary popup families used by the decorator',()=>{
   const ui=read('src/styles/ui-system.css');
-  for(const selector of ['.pending-source-panel','.pending-print-panel','.delivered-print-panel','.debt-detail-panel']){
-    assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
-  }
-  for(const selector of ['.pending-backdrop','.delivered-backdrop','.debt-backdrop']){
-    assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
-  }
+  for(const selector of ['.pending-source-panel','.pending-print-panel','.delivered-print-panel','.debt-detail-panel'])assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
+  for(const selector of ['.pending-backdrop','.delivered-backdrop','.debt-backdrop'])assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
 });
