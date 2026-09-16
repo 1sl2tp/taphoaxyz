@@ -6,6 +6,16 @@ permissions:
 on:
   push:
     branches: [main]
+    paths:
+      - 'index.html'
+      - 'manifest.webmanifest'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'sw.js'
+      - 'version.json'
+      - 'src/**'
+      - 'scripts/**'
+      - 'vercel.json'
   workflow_dispatch:
 
 jobs:

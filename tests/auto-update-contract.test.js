@@ -68,17 +68,17 @@ test('focused sales search blocks automatic reload while the user is typing',asy
   assert.equal(mod.focusedInputBlocksReload(button),false,'non-editing input controls must not block reload');
 });
 
-test('main push publishes a same-origin version marker without recursive marker commits',async()=>{
+test('deployment build owns version identity without recursive marker commits',async()=>{
   const workflow=await read('.github/workflows/publish-version-marker.yml');
-  assert.match(workflow,/branches:\s*\[main\]/);
-  assert.match(workflow,/paths-ignore:/);
-  assert.match(workflow,/version\.json/);
-  assert.match(workflow,/contents:\s*write/);
-  assert.match(workflow,/GITHUB_SHA/);
-  assert.match(workflow,/auto-when-safe/);
+  assert.match(workflow,/workflow_dispatch/);
+  assert.match(workflow,/contents:\s*read/);
+  assert.doesNotMatch(workflow,/contents:\s*write/);
+  assert.doesNotMatch(workflow,/git push/);
+  const build=await read('scripts/build-current.mjs');
+  assert.match(build,/VERCEL_GIT_COMMIT_SHA/);
+  assert.match(build,/app-build-id/);
   const version=JSON.parse(await read('version.json'));
   assert.equal(version.update_policy,'auto-when-safe');
-  assert.equal(version.published_from,'github-main');
   assert.ok(String(version.build_id||'').length>=7);
 });
 

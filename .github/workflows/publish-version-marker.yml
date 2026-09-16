@@ -1,66 +1,18 @@
-name: TAPHOA publish version marker
+name: TAPHOA build identity audit
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'version.json'
+  workflow_dispatch:
 
 permissions:
-  contents: write
-
-concurrency:
-  group: taphoa-version-marker-main
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  publish:
-    if: github.actor != 'github-actions[bot]'
+  audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          ref: main
-          fetch-depth: 0
-      - name: Write synchronized build identity
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-        run: |
-          cat > version.json <<EOF
-          {
-            "version": "TAPHOA",
-            "build_id": "${GITHUB_SHA}",
-            "update_policy": "auto-when-safe",
-            "published_from": "github-main"
-          }
-          EOF
-          python - <<'PY'
-          import os,re
-          from pathlib import Path
-          path=Path('index.html')
-          text=path.read_text()
-          build=os.environ['GITHUB_SHA']
-          pattern=r'(<meta\s+name="app-build-id"\s+content=")[^"]*("\s*/?>)'
-          updated,count=re.subn(pattern,lambda m:f'{m.group(1)}{build}{m.group(2)}',text,count=1)
-          if count != 1:
-              raise SystemExit(f'Expected exactly one app-build-id meta, found {count}')
-          path.write_text(updated)
-          PY
-      - name: Commit synchronized build identity
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-        run: |
-          if git diff --quiet -- version.json index.html; then
-            echo "Build identity already current"
-            exit 0
-          fi
-          git fetch origin main
-          if [ "$(git rev-parse origin/main)" != "${GITHUB_SHA}" ]; then
-            echo "A newer main commit exists; newer workflow will publish its marker"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add version.json index.html
-          git commit -m "chore: publish app build ${GITHUB_SHA:0:12}"
-          git push origin HEAD:main
+          node-version: 22
+      - name: Verify deployment identity contract
+        run: node --test tests/deploy-quota-contract.test.js tests/auto-update-contract.test.js tests/production-build-contract.test.js

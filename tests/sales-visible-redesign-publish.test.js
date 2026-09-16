@@ -40,9 +40,11 @@ test('production smoke proves the live build identity and current visual asset',
   assert.match(workflow,/github\.actor\s*!=\s*'github-actions\[bot\]'/);
 });
 
-test('publish marker keeps index app-build-id synchronized with version.json',async()=>{
+test('production build stamps app-build-id and version.json from deployment SHA',async()=>{
+  const build=await read('scripts/build-current.mjs');
+  assert.match(build,/VERCEL_GIT_COMMIT_SHA/);
+  assert.match(build,/app-build-id/);
+  assert.match(build,/dist\/version\.json/);
   const workflow=await read('.github/workflows/publish-version-marker.yml');
-  assert.match(workflow,/app-build-id/);
-  assert.match(workflow,/index\.html/);
-  assert.match(workflow,/GITHUB_SHA/);
+  assert.doesNotMatch(workflow,/git push/);
 });
