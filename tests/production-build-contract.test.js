@@ -6,11 +6,14 @@ const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),
 const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const build=fs.readFileSync(new URL('../scripts/build-current.mjs',import.meta.url),'utf8');
 
-test('production build compiles Tailwind then emits the current modular TAPHOA app',()=>{
-  assert.match(pkg.scripts['build:production'],/^npm run ui:build && node scripts\/build-current\.mjs$/);
-  assert.match(pkg.scripts['ui:build'],/@tailwindcss\/cli/);
-  assert.match(index,/src\/app\.js/);
-  assert.match(index,/src\/styles\/taphoa-tailwind\.css/);
+test('production build emits the FIXED frontend without the retired UI build pipeline',()=>{
+  assert.equal(pkg.scripts['build:production'],'node scripts/build-current.mjs');
+  assert.equal(pkg.scripts.build,'node scripts/build-current.mjs');
+  assert.equal(pkg.scripts['ui:build'],undefined);
+  assert.match(index,/TAPHOA_GEMINI_100_SAMPLE_FIXED/);
+  assert.match(index,/src\/fixed-production-bridge\.js/);
+  assert.match(index,/src\/fixed-ui-runtime-13\.js/);
+  assert.doesNotMatch(index,/src\/app\.js|src\/styles\//);
   assert.match(build,/cp\([^)]*index\.html/);
   assert.match(build,/cp\([^)]*manifest\.webmanifest/);
   assert.match(build,/cp\([^)]*src/);
