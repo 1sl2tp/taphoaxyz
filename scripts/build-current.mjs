@@ -52,6 +52,13 @@ let index=await readFile(indexPath,'utf8');
 const marker=/(<meta\s+name=["']app-build-id["']\s+content=["'])[^"']*(["']\s*\/?>)/i;
 if(!marker.test(index))throw new Error('Missing app-build-id marker in dist/index.html');
 index=index.replace(marker,(_match,open,close)=>`${open}${buildId}${close}`);
+
+for(const asset of ['./src/fixed-production-bridge.js','./src/fixed-production-overrides.js']){
+  const needle=`src="${asset}"`;
+  if(!index.includes(needle))throw new Error(`Missing production asset in index: ${asset}`);
+  index=index.replaceAll(needle,`src="${asset}?v=${buildId}"`);
+}
+
 await writeFile(indexPath,index);
 
 const versionPath='dist/version.json';
