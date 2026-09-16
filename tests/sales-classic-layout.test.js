@@ -26,10 +26,11 @@ test('Sales typing keeps the same input node and only toggles mounted product ro
   assert.doesNotMatch(branch,/setSelectionRange/);
 });
 
-test('Sales customer selector is one compact row with no duplicate Khách label in markup',()=>{
+test('Sales customer selector follows V75 one-band root geometry',()=>{
   assert.match(source,/sales-customer-input/);
   assert.doesNotMatch(source,/sales-customer-field"><small>Khách<\/small>/);
-  assert.match(salesCss,/\.sales-customer-field\{[^}]*display:flex[^}]*align-items:center/s);
-  assert.match(salesCss,/\.sales-customer-bar\{[^}]*min-height:52px/s);
-  assert.match(salesCss,/@media\s*\(max-width:479px\)[\s\S]*\.sales-customer-bar\{[^}]*min-height:52px/s);
+  assert.match(salesCss,/\.sales-customer-bar\{[^}]*--sales-context-control-h:48px[^}]*grid-template-columns:minmax\(0,1fr\) auto[^}]*background:transparent[^}]*border:0/s);
+  assert.match(salesCss,/\.sales-customer-field\{[^}]*height:var\(--sales-context-control-h\)[^}]*border:1px solid var\(--tap-line\)/s);
+  assert.match(salesCss,/\.sales-cart-quick\{[^}]*display:flex[^}]*height:var\(--sales-context-control-h\)/s);
+  assert.match(salesCss,/@media\s*\(max-width:479px\)[\s\S]*\.sales-customer-bar\{--sales-context-control-h:46px;gap:6px\}/s);
 });
