@@ -13,6 +13,9 @@ let bootstrapped=false;
 let syncTimer=null;
 let syncInFlight=null;
 
+const orderIdByDisplayCode=new Map();
+const orderDisplayCodeById=new Map();
+
 const num=value=>Number.isFinite(Number(value))?Number(value):0;
 const text=value=>String(value??'');
 const first=(obj,keys,fallback='')=>{
@@ -49,11 +52,11 @@ function mapProductRows(state=appState.get()){
 
 function mapCustomerRows(state=appState.get()){
   return [
-    ['Mã KH','Tên khách','','','Vai trò'],
+    ['Mã KH','Tên khách','Mã hiển thị','','Vai trò'],
     ...(state.customers||[]).filter(c=>c&&c.active!==false).map(c=>[
       text(first(c,['id','maKH','customer_id'])),
       text(first(c,['ten','name','customer_name'])),
-      '',
+      text(first(c,['username','customer_code','code'],'')),
       '',
       text(first(c,['role'],'user'))
     ])
@@ -62,21 +65,57 @@ function mapCustomerRows(state=appState.get()){
 
 function orderStatus(order){return text(first(order,['trangThai','status'])).toLowerCase();}
 function orderCustomer(order){return text(first(order,['maKH','customer_id','customerId'],'le'))||'le';}
-function orderTime(order){return viTime(first(order,['ngay','ordered_at','created_at','updated_at'],new Date()));}
+function orderTime(order){return viTime(first(order,['ngay','delivered_at','ordered_at','created_at','updated_at'],new Date()));}
+function orderInternalId(order){return text(first(order,['id','order_id','maDon']));}
+
+function orderDisplayCode(order,kind=''){
+  const internalId=orderInternalId(order);
+  const orderNo=text(first(order,['orderNo','order_no'],'')).trim();
+  const status=orderStatus(order);
+  const prefix=(kind==='dontam'||status==='pending')?'DT':'DG';
+  const code=text(first(order,['displayCode','orderDisplayCode','maHienThi'],orderNo?`${prefix}${orderNo}`:'')).trim()||internalId;
+  if(code&&internalId){
+    orderIdByDisplayCode.set(code,internalId);
+    orderDisplayCodeById.set(internalId,code);
+  }
+  return code;
+}
+
+function rebuildOrderDisplayMaps(state=appState.get()){
+  orderIdByDisplayCode.clear();
+  orderDisplayCodeById.clear();
+  for(const order of state.orders||[])orderDisplayCode(order);
+}
+
+function resolveOrderId(value){
+  const key=text(value).trim();
+  return orderIdByDisplayCode.get(key)||key;
+}
+
+function resolveOrderDisplayCode(value,kind=''){
+  const key=text(value).trim();
+  if(!key)return '';
+  if(orderIdByDisplayCode.has(key))return key;
+  const known=orderDisplayCodeById.get(key);
+  if(known)return known;
+  const order=(appState.get().orders||[]).find(item=>orderInternalId(item)===key);
+  return order?orderDisplayCode(order,kind):key;
+}
 
 function mapOrderRows(kind,state=appState.get()){
   const expected=kind==='dongiao'?'done':'pending';
+  rebuildOrderDisplayMaps(state);
   const rows=[['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian']];
   for(const order of state.orders||[]){
     if(orderStatus(order)!==expected)continue;
-    const orderId=text(first(order,['id','maDon','order_id']));
+    const displayCode=orderDisplayCode(order,kind);
     const customerId=orderCustomer(order);
     const time=orderTime(order);
     for(const item of order.items||[]){
       const productId=text(first(item,['maSP','product_id','id']));
       const qty=num(first(item,['sl','qty'],0));
       const price=num(first(item,['gia','unit_price','price'],0));
-      rows.push([orderId,customerId,productId,String(qty),String(price),String(qty*price),time]);
+      rows.push([displayCode,customerId,productId,String(qty),String(price),String(qty*price),time]);
     }
   }
   return rows;
@@ -87,7 +126,7 @@ function debtCustomerId(row){return text(first(row,['maKH','id','customer_id']))
 function debtLastAt(row){return first(row,['lastTransaction','last','ngay','last_at'],new Date());}
 
 function mapDebtSummaryRows(state=appState.get()){
-  const rows=[['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian']];
+  const rows=[['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian','Dư nợ sau GD','Loại','Mã đơn hiển thị','Mã đơn nội bộ']];
   let index=0;
   for(const row of state.debtSummary||[]){
     const customerId=debtCustomerId(row);if(!customerId)continue;
@@ -97,7 +136,11 @@ function mapDebtSummaryRows(state=appState.get()){
       customerId,
       balance>=0?'Ghi nợ phát sinh':'Thu tiền mặt',
       String(balance),
-      viTime(debtLastAt(row))
+      viTime(debtLastAt(row)),
+      String(balance),
+      '',
+      '',
+      ''
     ]);
   }
   return rows;
@@ -107,14 +150,27 @@ function ledgerToRows(detail={}){
   const customerId=text(first(detail.customer||{},['id','maKH','customer_id'],first(detail,['maKH','customer_id'],'')));
   return (detail.transactions||[]).map((tx,index)=>{
     const movement=num(first(tx,['bienDong','movement','soTien','amount'],0));
-    const orderId=text(first(tx,['maDon','order_id'],''));
-    const note=text(first(tx,['ghiChu','note'],orderId?`Ghi nợ đơn ${orderId}`:(movement<0?'Thu tiền mặt':'Ghi nợ phát sinh')));
+    const entryType=text(first(tx,['entryType','entry_type'],'')).toLowerCase();
+    const internalOrderId=text(first(tx,['maDon','order_id'],''));
+    const orderCode=text(first(tx,['orderDisplayCode','displayCode'],internalOrderId?resolveOrderDisplayCode(internalOrderId,'dongiao'):''));
+    const balanceRaw=first(tx,['balanceAfter','balance_after'],null);
+    const balanceAfter=balanceRaw===null||balanceRaw===''?'':String(num(balanceRaw));
+    let label=text(first(tx,['ghiChu','note'],''));
+    if(entryType==='sale')label=orderCode?`Giao đơn ${orderCode}`:'Giao đơn';
+    else if(entryType==='reversal')label=orderCode?`Hoàn đơn ${orderCode}`:'Hoàn đơn';
+    else if(entryType==='collection')label=label||'Thu tiền';
+    else if(entryType==='payment')label=label||'Ghi nợ';
+    else if(!label)label=movement<0?'Thu tiền':'Ghi nợ phát sinh';
     return [
       text(first(tx,['id','maGD','transaction_id'],`TX${index+1}`)),
       customerId,
-      note,
+      label,
       String(movement),
-      viTime(first(tx,['ngay','occurred_at','created_at'],new Date()))
+      viTime(first(tx,['ngay','occurred_at','created_at'],new Date())),
+      balanceAfter,
+      entryType,
+      orderCode,
+      internalOrderId
     ];
   });
 }
@@ -131,13 +187,13 @@ async function bootstrap({force=false}={}){
   if(bootstrapped&&!force)return appState.get();
   const uid=currentUid();
   const cached=uid?snapshot.load(uid):null;
-  if(cached?.data&&!bootstrapped){appState.setBootstrap(cached.data);bootstrapped=true;}
+  if(cached?.data&&!bootstrapped){appState.setBootstrap(cached.data);bootstrapped=true;rebuildOrderDisplayMaps();}
   if(navigator.onLine===false){
     if(bootstrapped)return appState.get();
     throw new Error('Chưa có dữ liệu đã lưu cho tài khoản này');
   }
   const data=await business.bootstrap();
-  appState.setBootstrap(data||{});bootstrapped=true;saveSnapshot();
+  appState.setBootstrap(data||{});bootstrapped=true;rebuildOrderDisplayMaps();saveSnapshot();
   return appState.get();
 }
 
@@ -145,7 +201,7 @@ async function refresh(domains=[]){
   const list=[...new Set((domains||[]).map(String))];
   if(!list.length)return appState.get();
   const data=await business.domains(list);
-  appState.mergeDomains(data||{});bootstrapped=true;saveSnapshot();
+  appState.mergeDomains(data||{});bootstrapped=true;rebuildOrderDisplayMaps();saveSnapshot();
   return appState.get();
 }
 
@@ -183,7 +239,7 @@ async function attachSession(info){
 
 async function login(username,password){return attachSession(await auth.login(username,password));}
 async function restore(){const info=await auth.restore();if(!info)return null;return attachSession(info);}
-async function logout(){stopSync();await auth.logout();identity=null;bootstrapped=false;appState.reset();}
+async function logout(){stopSync();await auth.logout();identity=null;bootstrapped=false;appState.reset();rebuildOrderDisplayMaps();}
 
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){return business.debtLedger(customerId);}
@@ -194,7 +250,7 @@ async function reverseOrder(id,reason='Hoàn đơn'){const result=await business
 async function deletePending(id){const result=await business.deletePending(id);await refresh(['orders']);return result;}
 async function batchOrders(action,ids){const result=await business.batchOrders(action,ids);await refresh(['orders','debt']);return result;}
 async function debtTransaction(customerId,type,amount,note=''){const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;}
-async function orderDetail(id){return business.orderDetail(id);}
+async function orderDetail(id){return business.orderDetail(resolveOrderId(id));}
 
 window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('taphoa sync',error)));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
@@ -202,6 +258,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
+  resolveOrderId,resolveOrderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
 });
 
