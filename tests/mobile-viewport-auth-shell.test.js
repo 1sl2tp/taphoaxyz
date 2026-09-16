@@ -4,12 +4,13 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-test('iPhone shell locks document zoom and outer scroll while keeping inner owners',()=>{
+test('iPhone shell keeps viewport-fit and scroll ownership without disabling user zoom',()=>{
   const html=read('index.html');
   const base=read('src/styles/base.css');
   const owner=read('src/styles/scroll-owner.css');
 
-  assert.match(html,/name="viewport"[^>]*maximum-scale=1[^>]*user-scalable=no/i);
+  assert.match(html,/name="viewport"[^>]*width=device-width[^>]*initial-scale=1[^>]*viewport-fit=cover/i);
+  assert.doesNotMatch(html,/maximum-scale=1|user-scalable=no/i);
   assert.match(base,/html,body\s*\{[^}]*width:100%[^}]*height:100%[^}]*overflow:hidden[^}]*overscroll-behavior:none/is);
   assert.match(owner,/\.taphoa-viewport\s*\{[^}]*position:fixed[^}]*inset:0[^}]*width:100%[^}]*height:100dvh[^}]*overflow:hidden/is);
   assert.match(owner,/\.login-screen\s*\{[^}]*height:100%[^}]*overflow:auto[^}]*overscroll-behavior:contain/is);
