@@ -2,14 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
+const startup=fs.readFileSync(new URL('../src/fixed-startup-nonblocking.js',import.meta.url),'utf8');
 
-test('production data has one direct startup path',()=>{
-  assert.doesNotMatch(index,/fixed-production-start-owner\.js/);
-  assert.doesNotMatch(index,/fixed-startup-nonblocking\.js/);
-  assert.doesNotMatch(index,/type="module" src="\.\/src\/fixed-production-bridge\.js"/);
-  assert.match(overrides,/import\(['"]\.\/fixed-production-bridge\.js['"]\)/);
-  assert.match(overrides,/DOMContentLoaded/);
-  assert.match(overrides,/await\s+refreshFixedSheets\(\)/);
+test('production startup imports the bridge itself and retries instead of depending on one event',()=>{
+  assert.match(startup,/import\(['"]\.\/fixed-production-bridge\.js['"]\)/,'startup must load the production bridge directly');
+  assert.match(startup,/DOMContentLoaded/,'startup must wait for the DOM');
+  assert.match(startup,/TAPHOA_FIXED_PRODUCTION_BOOT/,'startup must invoke the captured production bootstrap');
+  assert.match(startup,/setTimeout\(tryStart/,'startup must retry when the bridge is not ready');
 });
