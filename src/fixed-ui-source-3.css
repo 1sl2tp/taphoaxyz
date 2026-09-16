@@ -1,0 +1,285 @@
+/* FIXED STYLE: numeric-character-capacity-rulers */
+
+/*
+  NUMBER CAPACITY RULE — this is geometry only, never validation:
+  STT / SL "100"      => xxx      => 3 digit slots
+  Đ.Giá "1.000"       => x.xxx    => 5 character slots
+  Tiền "10.000"       => xx.xxx   => 6 character slots
+  Tổng "100.000"      => xxx.xxx  => 7 character slots
+*/
+:root{
+  --num-stt-cap:3.4ch;
+  --num-qty-cap:3.4ch;
+  --num-price-cap:5.4ch;
+  --num-money-cap:6.4ch;
+  --num-total-cap:7.4ch;
+  --summary-col-gap:10px;
+}
+
+/* Giỏ: STT capacity belongs inside left region. */
+.cart-left{
+  grid-template-columns:var(--num-stt-cap) minmax(0,1fr) !important;
+}
+.cart-left .cart-stt{
+  width:var(--num-stt-cap);
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Đ.Giá / T.Tiền are sized by formatted character capacity. */
+.cart-compact-grid{
+  grid-template-columns:clamp(150px,50%,260px) var(--num-price-cap) 72px var(--num-money-cap) !important;
+}
+.cart-price{
+  width:var(--num-price-cap) !important;
+  text-align:right !important;
+}
+.cart-total{
+  width:var(--num-money-cap) !important;
+  text-align:right !important;
+}
+
+/* Chi tiết đơn: # | Tên | Đ.Giá | SL | T.Tiền */
+.order-detail-compact-grid{
+  grid-template-columns:var(--num-stt-cap) minmax(0,1fr) var(--num-price-cap) var(--num-qty-cap) var(--num-money-cap) !important;
+}
+.order-detail-compact-grid .order-stt{
+  width:var(--num-stt-cap);
+  text-align:right !important;
+}
+.order-detail-compact-grid .order-price{
+  width:var(--num-price-cap);
+  text-align:right !important;
+}
+.order-detail-compact-grid .order-qty{
+  width:var(--num-qty-cap);
+  text-align:right !important;
+}
+.order-detail-compact-grid .order-total{
+  width:var(--num-money-cap);
+  text-align:right !important;
+}
+
+/* Tổng hợp: cùng một ruler cho header + body.
+   SL đủ xxx; tiền đủ xxx.xxx vì bảng có hàng TỔNG.
+   Gap là khoảng cách thật giữa mép các cột, không dùng padding giả. */
+.summary-compact-table tr{
+  grid-template-columns:minmax(0,1fr) var(--num-qty-cap) var(--num-total-cap) var(--num-total-cap) var(--num-total-cap) !important;
+  column-gap:var(--summary-col-gap) !important;
+  justify-content:stretch !important;
+}
+.summary-compact-table th:nth-child(2),
+.summary-compact-table td:nth-child(2){
+  width:var(--num-qty-cap) !important;
+  justify-self:end !important;
+  text-align:right !important;
+}
+.summary-compact-table th:nth-child(3),
+.summary-compact-table td:nth-child(3),
+.summary-compact-table th:nth-child(4),
+.summary-compact-table td:nth-child(4),
+.summary-compact-table th:nth-child(5),
+.summary-compact-table td:nth-child(5){
+  width:var(--num-total-cap) !important;
+  justify-self:end !important;
+  text-align:right !important;
+}
+
+/* Grand-total displays reserve xxx.xxx capacity, but values are not capped. */
+#cartTotalPriceDisplay,
+#detailModalTotal,
+#headerQuickTotal{
+  min-width:var(--num-total-cap);
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Editable SL has room for xxx by design; larger values remain valid. */
+.qty-edit-input{
+  min-width:var(--num-qty-cap) !important;
+  width:var(--num-qty-cap) !important;
+  max-width:none !important;
+}
+
+
+/* FIXED STYLE: role-permission-visibility */
+
+/* UI visibility only — Supabase RLS / views / RPC are the real security layer. */
+body[data-auth-role="user"] .profit-only{
+  display:none !important;
+}
+
+/* User summary: Nguồn | SL | Thu. Hide Chi + Lãi. Admin/Owner giữ đủ SL · Chi · Thu · Lãi. */
+body[data-auth-role="user"] .summary-compact-table th:nth-child(3),
+body[data-auth-role="user"] .summary-compact-table td:nth-child(3),
+body[data-auth-role="user"] .summary-compact-table th:nth-child(5),
+body[data-auth-role="user"] .summary-compact-table td:nth-child(5){
+  display:none !important;
+}
+body[data-auth-role="user"] .summary-compact-table tr{
+  grid-template-columns:minmax(0,1fr) var(--num-qty-cap) var(--num-total-cap) !important;
+}
+
+body[data-auth-role="user"] #saleCustomerTrigger{
+  cursor:default !important;
+}
+body[data-auth-role="user"] #saleCustomerTrigger:hover{
+  background:rgba(255,255,255,.10) !important;
+}
+body[data-auth-role="user"] #saleCustomerTrigger .ph-caret-down{
+  display:none !important;
+}
+
+
+/* FIXED STYLE: readonly-delivered-qty-style */
+
+.cart-qty-readonly{
+  width:var(--num-qty-cap,3.4ch);
+  min-width:var(--num-qty-cap,3.4ch);
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+  line-height:26px;
+}
+
+
+/* FIXED STYLE: summary-shared-max-content-ruler */
+
+/*
+  TỔNG HỢP — 1 ruler chung cho toàn bảng:
+  - Nguồn lấy phần rộng còn lại.
+  - SL / Chi / Thu / Lãi lấy đúng max-content lớn nhất của CHÍNH cột đó.
+  - Header + tất cả dòng + TỔNG cùng tham gia một grid, nên chân TỔNG không thể tự lệch cột.
+  - Khoảng hở giữa các cột số dùng cùng một gap responsive.
+*/
+.summary-compact-table{
+  --summary-shared-gap:clamp(10px,2vw,16px);
+  width:100% !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) max-content max-content max-content max-content !important;
+  column-gap:var(--summary-shared-gap) !important;
+  table-layout:auto !important;
+  align-items:center !important;
+}
+.summary-compact-table thead,
+.summary-compact-table tbody,
+.summary-compact-table tr{
+  display:contents !important;
+}
+.summary-compact-table th,
+.summary-compact-table td{
+  width:auto !important;
+  min-width:0 !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+  white-space:nowrap !important;
+  box-sizing:border-box;
+}
+.summary-compact-table th:first-child,
+.summary-compact-table td:first-child{
+  justify-self:stretch !important;
+  text-align:left !important;
+}
+.summary-compact-table th:nth-child(n+2),
+.summary-compact-table td:nth-child(n+2){
+  justify-self:end !important;
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1, "lnum" 1;
+}
+/* Optically keep SL/TỔNG on the same right edge as other numeric columns. */
+.summary-compact-table tbody tr.summary-total-row td:nth-child(n+2){
+  justify-self:end !important;
+}
+
+/* Tr giữ display:contents nên đường kẻ phải thuộc về cell. */
+.summary-compact-table thead th{
+  border-bottom:1px solid #f3f4f6;
+}
+.summary-compact-table tbody tr:not(.summary-total-row) > td{
+  border-bottom:1px solid #f9fafb;
+}
+.summary-compact-table tbody tr.summary-total-row > td{
+  border-top:1px solid rgba(0,0,0,.05);
+}
+.summary-compact-table td[colspan="5"]{
+  grid-column:1 / -1 !important;
+  justify-self:stretch !important;
+  text-align:center !important;
+  width:100% !important;
+}
+
+/* User chỉ thấy Nguồn | SL | Thu: vẫn dùng cùng nguyên tắc max-content. */
+body[data-auth-role="user"] .summary-compact-table{
+  grid-template-columns:minmax(0,1fr) max-content max-content !important;
+}
+
+
+/* FIXED STYLE: order-time-inline-calendar-style */
+
+#orderTimeCustomWrapper{
+  z-index:99999 !important;
+  background:rgba(15,23,42,.62) !important;
+  overflow:hidden;
+}
+#orderTimeCustomCard{
+  background:#ffffff !important;
+  opacity:1 !important;
+}
+
+#orderTimeCustomWrapper > div{
+  max-height:calc(100dvh - 32px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+#orderTimeCalendar{
+  position:relative;
+  z-index:1;
+  width:100%;
+  box-sizing:border-box;
+}
+.order-time-day{
+  aspect-ratio:1/1;
+  min-width:0;
+  border-radius:9px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  font-weight:700;
+  color:#374151;
+  background:transparent;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.order-time-day:not(:disabled){opacity:1;}
+.order-time-day:not(:disabled):hover{background:#f3f4f6;}
+.order-time-day.is-selected{background:var(--primary);color:#fff;}
+.order-time-day.is-in-range{background:var(--primary-light);color:var(--primary);}
+.order-time-day.is-today:not(.is-selected){box-shadow:inset 0 0 0 1px var(--primary);color:var(--primary);}
+.order-time-day:disabled{opacity:.22;cursor:not-allowed;pointer-events:none;}
+.order-time-day.is-outside{visibility:hidden;pointer-events:none;}
+body[data-auth-role="user"] #completedTimeFilterButton,
+body[data-auth-role="user"] #pendingTimeFilterButton{
+  display:flex !important;
+}
+
+
+/* FIXED STYLE: app-selection-policy */
+
+#appContainer,
+#appContainer *,
+#orderTimeCustomWrapper,
+#orderTimeCustomWrapper *{
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+input,
+textarea,
+[contenteditable="true"],
+.allow-text-select{
+  -webkit-user-select:text !important;
+  user-select:text !important;
+}
+
