@@ -1,65 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#1e293b">
-<meta name="app-build-id" content="source-main">
-<title>taphoa.xyz</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-<link rel="stylesheet" href="./src/styles/base.css">
-<link rel="stylesheet" href="./src/styles/shell.css">
-<link rel="stylesheet" href="./src/styles/taphoa-tailwind.css">
+    <meta charset="UTF-8">
+    <meta name="app-build-id" content="source-main">
+    <!-- TAPHOA_GEMINI_100_SAMPLE_FIXED · sole production UI source -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>App Bán Hàng Chuyên Nghiệp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script type="module" src="./src/fixed-production-bridge.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>tailwind.config={theme:{extend:{fontFamily:{sans:['\"Be Vietnam Pro\"','sans-serif']},colors:{primary:'#16a34a',primaryLight:'#f0fdf4',success:'#16a34a',danger:'#ef4444',warning:'#f97316',dark:'#1e293b'}}}};</script>
+    <link rel="stylesheet" href="./src/fixed-ui-source-1.css">
+    <link rel="stylesheet" href="./src/fixed-ui-source-2.css">
+    <link rel="stylesheet" href="./src/fixed-ui-source-3.css">
+    <link rel="stylesheet" href="./src/fixed-ui-source-4.css">
 </head>
-<body>
-<div class="taphoa-viewport" id="taphoaViewport">
-  <section class="login-screen" id="loginScreen">
-    <div class="login-wrap">
-      <form class="login-card" id="loginForm">
-        <h1>Đăng nhập</h1>
-        <input class="login-field" id="loginUsername" autocomplete="username" placeholder="Tên đăng nhập">
-        <div class="login-password"><input class="login-field" id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu"><span id="loginEye" hidden aria-hidden="true"></span></div>
-        <label class="login-remember"><input id="loginRemember" type="checkbox">Nhớ tên đăng nhập</label>
-        <div class="login-error" id="loginError" hidden></div>
-        <button class="login-submit" id="loginSubmit" type="submit">Đăng nhập</button>
-      </form>
-    </div>
-  </section>
-
-  <section class="app-shell" id="appShell" hidden>
-    <header class="app-topbar" id="appTopbar">
-      <nav class="app-nav" id="appNav" aria-label="Điều hướng"></nav>
-    </header>
-    <main class="screen-host" id="screenHost"></main>
-    <div class="app-status-bar" id="appStatusBar"><i class="ph-fill ph-check-circle" aria-hidden="true"></i><span>Hệ thống sẵn sàng</span></div>
-
-    <button class="account-button" id="accountButton" type="button" aria-label="Tài khoản" aria-haspopup="dialog" aria-controls="accountSheet" hidden><span id="accountButtonInitials" aria-hidden="true">TK</span></button>
-    <div id="accountSheet" class="account-sheet" hidden>
-      <button class="account-sheet-backdrop" id="accountSheetBackdrop" type="button" aria-label="Đóng"></button>
-      <section class="account-sheet-card" role="dialog" aria-modal="true" aria-labelledby="accountSheetTitle">
-        <div class="account-sheet-handle" aria-hidden="true"></div>
-        <header class="account-sheet-header">
-          <div class="account-sheet-avatar" id="accountSheetAvatar" aria-hidden="true">TK</div>
-          <div class="account-sheet-copy">
-            <strong id="accountSheetTitle">Tài khoản</strong>
-            <span id="accountName">Tài khoản</span>
-            <small id="accountHandle"></small>
-          </div>
-          <button class="account-sheet-close" id="accountSheetClose" type="button" aria-label="Đóng">×</button>
-        </header>
-        <button class="account-logout" id="accountLogout" type="button">Đăng xuất</button>
-      </section>
-    </div>
-    <div class="system-toast" id="systemToast" hidden></div>
-  </section>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script type="module" src="./src/core/ime-stability.js"></script>
-<script type="module" src="./src/app.js"></script>
-<script type="module" src="./src/core/ui-system.js"></script>
-<script type="module" src="./src/core/app-update-bootstrap.js"></script>
+<body class="bg-gray-300 flex justify-center h-screen items-center font-sans antialiased text-gray-800 m-0 overflow-hidden pc-mode">
+    <script src="./src/fixed-ui-markup-1.js"></script>
+    <script src="./src/fixed-ui-markup-2.js"></script>
+    <script src="./src/fixed-ui-markup-3.js"></script>
+    <script src="./src/fixed-ui-markup-4.js"></script>
+    <script src="./src/fixed-ui-markup-5.js"></script>
+    <script src="./src/fixed-ui-runtime-1.js"></script>
+    <script src="./src/fixed-ui-runtime-2.js"></script>
+    <script src="./src/fixed-ui-runtime-3.js"></script>
+    <script src="./src/fixed-ui-runtime-4.js"></script>
+    <script src="./src/fixed-ui-runtime-5.js"></script>
+    <script src="./src/fixed-ui-runtime-6.js"></script>
+    <script src="./src/fixed-ui-runtime-7.js"></script>
+    <script src="./src/fixed-ui-runtime-8.js"></script>
+    <script src="./src/fixed-ui-runtime-9.js"></script>
+    <script src="./src/fixed-ui-runtime-10.js"></script>
+    <script src="./src/fixed-ui-runtime-11.js"></script>
+    <script src="./src/fixed-ui-runtime-12.js"></script>
+    <script src="./src/fixed-ui-runtime-13.js"></script>
+    <script src="./src/fixed-production-overrides.js"></script>
+    <script src="./src/fixed-ui-behavior.js"></script>
 </body>
 </html>
