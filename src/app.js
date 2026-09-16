@@ -5,7 +5,6 @@ import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
 import {NAV_ITEMS,createRouter,normalizeRoute} from './core/router.js';
 import {createSystemLayer} from './core/system.js';
-import {icon} from './core/icons.js';
 
 const $=id=>document.getElementById(id);
 const auth=createAuthService();
@@ -23,12 +22,20 @@ let lifecycleBound=false;
 let accountReturnFocus=null;
 let tabSwipeCleanup=null;
 
+const navIconClass={
+  sales:'ph-fill ph-shopping-cart',
+  delivered:'ph ph-clipboard-text',
+  pending:'ph ph-note-pencil',
+  debt:'ph ph-money',
+  settings:'ph ph-gear'
+};
+
 function navMarkup(active){
-  return NAV_ITEMS.map(item=>`<button type="button" data-nav="${item.id}" aria-current="${active===item.id?'page':'false'}"><span class="app-nav-icon">${icon(item.icon,{size:18})}</span><span class="app-nav-label">${item.label}</span></button>`).join('');
+  return NAV_ITEMS.map(item=>`<button type="button" data-nav="${item.id}" aria-current="${active===item.id?'page':'false'}"><span class="app-nav-icon"><i class="${navIconClass[item.id]||'ph ph-circle'}" aria-hidden="true"></i></span><span class="app-nav-label">${item.label}</span></button>`).join('');
 }
 
 async function loadScreen(id){
-  const modules={sales:()=>import('./screens/sales.js'),delivered:()=>import('./screens/delivered.js'),pending:()=>import('./screens/pending.js'),debt:()=>import('./screens/debt.js')};
+  const modules={sales:()=>import('./screens/sales.js'),delivered:()=>import('./screens/delivered.js'),pending:()=>import('./screens/pending.js'),debt:()=>import('./screens/debt.js'),settings:()=>import('./screens/settings.js')};
   return modules[id]?.();
 }
 
@@ -77,9 +84,9 @@ function bindTabSwipe(){
   if(!host)return()=>{};
   let gesture=null;
   let suppressClickUntil=0;
-  const rowSurface=target=>target?.closest?.('.sales-product-row,.delivered-order-card,.pending-order-card,.debt-customer-row');
+  const rowSurface=target=>target?.closest?.('.fixed-product-card,.fixed-order-card,.fixed-debt-customer,.sales-product-row,.delivered-order-card,.pending-order-card,.debt-customer-row');
   const ignoredTarget=target=>{
-    if(target?.closest?.('input,textarea,select,[contenteditable="true"],.sales-groups,.sales-cart-overlay,.delivered-overlay,.pending-overlay,.debt-overlay,.account-sheet'))return true;
+    if(target?.closest?.('input,textarea,select,[contenteditable="true"],.fixed-group-rail,.fixed-cart-mobile-wrap,.fixed-customer-modal,.delivered-overlay,.pending-overlay,.debt-overlay,.account-sheet'))return true;
     const button=target?.closest?.('button');
     return Boolean(button&&!rowSurface(target));
   };
@@ -154,6 +161,12 @@ function bindLifecycle(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('data sync',error));});
 }
 
+async function logoutToLogin(){
+  await auth.logout();
+  closeAccountSheet({restoreFocus:false});
+  openLogin();
+}
+
 function screenContext(root){
   return {
     root,identity,auth,business,system,
@@ -162,12 +175,15 @@ function screenContext(root){
     refresh,
     navigate:id=>router?.navigate(id),
     editOrder:order=>appState.setEditOrder(order),
-    consumeEditOrder:()=>appState.consumeEditOrder()
+    consumeEditOrder:()=>appState.consumeEditOrder(),
+    openAccount:openAccountSheet,
+    logout:logoutToLogin
   };
 }
 
 async function mountRoute(route){
   const id=normalizeRoute(`#${route}`);
+  $('appShell').dataset.route=id;
   $('appNav').innerHTML=navMarkup(id);
   activeCleanup?.();activeCleanup=null;
   $('screenHost').replaceChildren();
@@ -212,7 +228,7 @@ $('accountSheetBackdrop').addEventListener('click',()=>closeAccountSheet());
 $('accountSheetClose').addEventListener('click',()=>closeAccountSheet());
 $('accountLogout').addEventListener('click',async()=>{
   const button=$('accountLogout');button.disabled=true;button.textContent='Đang đăng xuất...';
-  try{await auth.logout();closeAccountSheet({restoreFocus:false});openLogin();}
+  try{await logoutToLogin();}
   catch(error){console.error(error);system.toast('Không đăng xuất được');}
   finally{button.disabled=false;button.textContent='Đăng xuất';}
 });
@@ -223,7 +239,7 @@ $('loginForm').addEventListener('submit',async event=>{
   if($('loginRemember').checked)localStorage.setItem(CONFIG.usernameStorageKey,username);else localStorage.removeItem(CONFIG.usernameStorageKey);
   try{const info=await auth.login(username,password);await openApp(info);}
   catch(e){error.textContent=e?.message||'Sai tài khoản hoặc mật khẩu';error.hidden=false;}
-  finally{submit.disabled=false;submit.textContent='Đăng nhập →';}
+  finally{submit.disabled=false;submit.textContent='Đăng nhập';}
 });
 
 const savedUsername=localStorage.getItem(CONFIG.usernameStorageKey)||'';
