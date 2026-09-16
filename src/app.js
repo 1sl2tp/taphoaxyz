@@ -216,7 +216,6 @@ $('accountLogout').addEventListener('click',async()=>{
   finally{button.disabled=false;button.textContent='Đăng xuất';}
 });
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('accountSheet').hidden)closeAccountSheet();});
-$('loginEye').addEventListener('click',()=>{const input=$('loginPassword');input.type=input.type==='password'?'text':'password';});
 $('loginForm').addEventListener('submit',async event=>{
   event.preventDefault();const username=$('loginUsername').value.trim(),password=$('loginPassword').value,error=$('loginError'),submit=$('loginSubmit');
   error.hidden=true;submit.disabled=true;submit.textContent='Đang đăng nhập...';
