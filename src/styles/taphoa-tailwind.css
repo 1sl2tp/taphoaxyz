@@ -31,3 +31,42 @@ button,input,select,textarea{font-family:inherit}
   background:#18181b;
   color:#fff;
 }
+
+/* Sales action palette: preserve the pre-redesign TAPHOA owner instead of the
+   temporary all-black redesign controls. Scope stays inside Sales only. */
+[data-screen-id="sales"] .sales-cart-quick,
+[data-screen-id="sales"] .sales-cart-quick.is-active{
+  border-color:var(--ui-line-strong,#cfd5dc);
+  background:#fff;
+  color:var(--ui-primary,#1565c0);
+}
+[data-screen-id="sales"] .sales-cart-quick.is-active>span{
+  color:var(--ui-text-secondary,#525b66);
+}
+[data-screen-id="sales"] .sales-group[aria-pressed="true"]{
+  border-color:var(--ui-primary,#1565c0);
+  background:var(--ui-primary,#1565c0);
+  color:#fff;
+}
+[data-screen-id="sales"] .sales-qty button:last-child,
+[data-screen-id="sales"] .sales-cart-qty button:last-child{
+  border-color:var(--ui-success,#26735b);
+  background:var(--ui-success,#26735b);
+  color:#fff;
+}
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="clear"]{
+  border-color:var(--ui-danger,#a32920);
+  background:#fff;
+  color:var(--ui-danger,#a32920);
+}
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="pending"]{
+  border-color:var(--ui-warning,#c36b12);
+  background:#fff;
+  color:var(--ui-warning,#c36b12);
+}
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="done"],
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="update"]{
+  border-color:var(--ui-success,#26735b);
+  background:var(--ui-success,#26735b);
+  color:#fff;
+}
