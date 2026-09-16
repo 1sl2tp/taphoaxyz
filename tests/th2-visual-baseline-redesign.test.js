@@ -7,7 +7,9 @@ const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 test('final visual owner is imported after legacy Tailwind sources',async()=>{
   const entry=await read('src/styles/taphoa-tailwind.entry.css');
   assert.match(entry,/taphoa-th2-final\.css/);
+  assert.match(entry,/taphoa-th2-auth\.css/);
   assert.ok(entry.lastIndexOf('taphoa-th2-final.css')>entry.lastIndexOf('taphoa-tailwind.input.css'));
+  assert.ok(entry.lastIndexOf('taphoa-th2-auth.css')>entry.lastIndexOf('taphoa-th2-final.css'));
 });
 
 test('main screens use flat regions instead of nested rounded cards',async()=>{
@@ -59,7 +61,7 @@ test('popup layers have fixed chrome, scroll body and visibly different depth',a
 });
 
 test('account sheet and login are part of the same touch-first system',async()=>{
-  const css=await read('src/styles/taphoa-th2-final.css');
+  const css=await read('src/styles/taphoa-th2-auth.css');
   assert.match(css,/\.account-sheet-card[^}]*border-radius\s*:\s*20px\s+20px\s+0\s+0/);
   assert.match(css,/\.account-sheet-close[^}]*min-width\s*:\s*44px/);
   assert.match(css,/\.account-logout[^}]*min-height\s*:\s*48px/);
