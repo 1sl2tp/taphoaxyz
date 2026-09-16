@@ -5,7 +5,9 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const index=read('index.html');
 const ui=read('src/core/ui-system.js');
-const css=read('src/styles/taphoa-tailwind.input.css');
+const entry=read('src/styles/taphoa-tailwind.entry.css');
+const baseCss=read('src/styles/taphoa-tailwind.input.css');
+const th3Css=read('src/styles/taphoa-th3.css');
 const sales=read('src/screens/sales.js');
 const delivered=read('src/screens/delivered.js');
 const pending=read('src/screens/pending.js');
@@ -16,18 +18,23 @@ test('Thẻ 3 ROOT: rendered markup owns hierarchy without semantic or structura
   assert.doesNotMatch(ui,/decoratePendingCards|DETAIL_UI_CONFIG|replaceText\(/);
 });
 
+test('Thẻ 3 ROOT: Tailwind composes modules into one final visual output',()=>{
+  assert.match(entry,/@import "\.\/taphoa-tailwind\.input\.css"/);
+  assert.match(entry,/@import "\.\/taphoa-th3\.css"/);
+  assert.match(baseCss,/@import "tailwindcss"/);
+});
+
 test('Thẻ 3 Sales: zero quantity keeps a fixed visible minus zero plus axis and customer row has no timestamp',()=>{
   assert.match(sales,/value="\$\{qty\}" aria-label="Số lượng/);
   assert.doesNotMatch(sales,/class="sales-time"/);
-  assert.doesNotMatch(css,/sales-qty button:disabled\{visibility:hidden\}/);
-  assert.match(css,/sales-qty button:disabled\{[^}]*opacity:/s);
+  assert.match(th3Css,/sales-qty button:disabled\{[^}]*visibility:visible[^}]*opacity:/s);
 });
 
 test('Thẻ 3 Sales: data zone is structural and only the table owns the visible frame',()=>{
-  const zone=css.match(/\.ui-zone-data\{([^}]*)\}/)?.[1]||'';
-  assert.doesNotMatch(zone,/border:/);
-  assert.doesNotMatch(zone,/border-radius:/);
-  assert.match(css,/\.ui-table\{[^}]*border:1px solid var\(--tap-line\)/s);
+  const zone=th3Css.match(/\.ui-zone-data\{([^}]*)\}/)?.[1]||'';
+  assert.match(zone,/border:0/);
+  assert.match(zone,/border-radius:0/);
+  assert.match(baseCss,/\.ui-table\{[^}]*border:1px solid var\(--tap-line\)/s);
 });
 
 test('Thẻ 3 Delivered: customer is primary, section copy is concise, detail header owns share and close',()=>{
@@ -54,6 +61,7 @@ test('Thẻ 3 Debt: grocery wording is concise and Ghi nợ is semantic debt not
   assert.doesNotMatch(debt,/data-quick-action="debt"[^>]*ui-action-danger/);
   assert.doesNotMatch(debt,/data-detail-action="debt"[^>]*ui-action-danger/);
   assert.match(debt,/ui-action-debt/);
+  assert.match(th3Css,/\.ui-action-debt\{/);
 });
 
 test('Thẻ 3 Debt: customer row prioritizes debt age rather than exact transaction timestamp',()=>{
@@ -65,7 +73,7 @@ test('Thẻ 3 Debt: customer row prioritizes debt age rather than exact transact
 test('Thẻ 3 popups: print headers use title-left with right action cluster and scrolling gutters are stable',()=>{
   assert.match(delivered,/delivered-print-panel[^`]*<strong>[^<]+<\/strong><div class="ui-action-group">[^`]*data-print-now[^`]*data-print-close/s);
   assert.match(pending,/pending-print-panel[^`]*<strong>[^<]+<\/strong><div class="ui-action-group">[^`]*data-print-now[^`]*data-print-close/s);
-  assert.match(css,/scrollbar-gutter:stable/);
+  assert.match(th3Css,/scrollbar-gutter:stable/);
 });
 
 test('Thẻ 3 shell: login and account actions use the final semantic action system',()=>{
