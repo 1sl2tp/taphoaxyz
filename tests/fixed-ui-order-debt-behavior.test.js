@@ -18,8 +18,10 @@ test('cart orders lines by most recently selected or increased item',async()=>{
 });
 
 test('order lists preserve backend newest-first order instead of reversing it',async()=>{
-  const runtime=await read('src/fixed-ui-runtime-8.js');
-  assert.doesNotMatch(runtime,/Object\.keys\(orders\)\.reverse\(\)/);
+  const pending=await read('src/fixed-ui-runtime-10.js');
+  const delivered=await read('src/fixed-ui-runtime-11.js');
+  assert.doesNotMatch(pending,/Object\.keys\(orders\)\.reverse\(\)/);
+  assert.doesNotMatch(delivered,/Object\.keys\(orders\)\.reverse\(\)/);
 });
 
 test('customer selector displays username/code instead of internal uuid',async()=>{
@@ -38,11 +40,12 @@ test('order rows carry short display code and hidden backend uuid',async()=>{
 
 test('debt history hides reversals, keeps backend balance-after and opens order detail directly',async()=>{
   const bridge=await read('src/fixed-production-bridge.js');
-  const runtime=await read('src/fixed-ui-runtime-8.js');
+  const debtList=await read('src/fixed-ui-runtime-11.js');
+  const debtDetail=await read('src/fixed-ui-runtime-12.js');
   assert.match(bridge,/balanceAfter/);
   assert.match(bridge,/entryType/);
-  assert.match(runtime,/entryType\s*!==\s*['"]reversal['"]/);
-  assert.match(runtime,/showOrderDetailMobile\(orderId,\s*sheetName\)/);
+  assert.match(debtList,/entryType\s*!==\s*['"]reversal['"]/);
+  assert.match(debtDetail,/showOrderDetailMobile\(orderId,\s*sheetName\)/);
 });
 
 test('desktop debt detail uses the same left-workspace geometry as order detail',async()=>{
