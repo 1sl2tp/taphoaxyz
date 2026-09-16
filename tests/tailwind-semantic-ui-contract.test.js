@@ -11,14 +11,17 @@ test('TAPHOA uses real Tailwind v4 as the final visual owner',async()=>{
   assert.match(pkg.scripts?.['ui:build']||'',/@tailwindcss\/cli/);
   const index=await read('index.html');
   assert.match(index,/\.\/src\/styles\/taphoa-tailwind\.css/);
+  assert.match(index,/\.\/src\/core\/semantic-ui\.js/);
   assert.doesNotMatch(index,/chatgpt-ui\.css|iphone-visual-cleanup\.css|classic\.css/);
 });
 
 test('semantic UI roles preserve main to popup flow instead of converting screens to split view',async()=>{
-  const ui=await read('src/core/ui-system.js');
+  const ui=await read('src/core/semantic-ui.js');
   for(const role of ['ui-main','ui-toolbar','ui-table','ui-row','ui-action','ui-popup-l1','ui-popup-l2'])assert.match(ui,new RegExp(role));
   for(const screen of ['sales','delivered','pending','debt'])assert.match(ui,new RegExp(`data-screen-id=.${screen}.`));
-  assert.match(ui,/data-ui-layer/);
+  assert.match(ui,/uiLayer/);
+  assert.match(ui,/popup-level-1/);
+  assert.match(ui,/popup-level-2/);
 });
 
 test('Tailwind source defines touch-first type and surface hierarchy',async()=>{
