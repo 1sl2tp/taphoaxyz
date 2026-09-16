@@ -7,14 +7,15 @@
   [data-screen-id="delivered"] .delivered-search button{position:absolute;right:2px;top:2px}
   [data-screen-id="delivered"] .delivered-time{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px}
   [data-screen-id="delivered"] .delivered-time button{min-height:44px}
-  [data-screen-id="delivered"] .delivered-time button[aria-pressed="true"]{border-color:#18181b;background:#18181b;color:#fff}
+  [data-screen-id="delivered"] .delivered-time button[aria-pressed="true"]{border-color:#18181b;background:#18181b;color:#fff!important;-webkit-text-fill-color:#fff!important}
+  [data-screen-id="delivered"] .delivered-time button[aria-pressed="true"] .ui-icon{color:#fff!important;stroke:currentColor!important}
   [data-screen-id="delivered"] .delivered-calendar{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:90;padding:12px;background:#fff;border:1px solid var(--tap-line);border-radius:16px;box-shadow:var(--tap-shadow-popup)}
   [data-screen-id="delivered"] .delivered-calendar-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   [data-screen-id="delivered"] .delivered-calendar-nav button{min-width:44px;min-height:44px;border:0;background:transparent;color:var(--tap-text)}
   [data-screen-id="delivered"] .delivered-week,[data-screen-id="delivered"] .delivered-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
   [data-screen-id="delivered"] .delivered-week span{padding:4px;color:var(--tap-muted);font-size:12px;font-weight:650;text-align:center}
   [data-screen-id="delivered"] .delivered-days button{min-height:44px;border:0;border-radius:10px;background:transparent}
-  [data-screen-id="delivered"] .delivered-days button[aria-pressed="true"]{background:#18181b;color:#fff;font-weight:700}
+  [data-screen-id="delivered"] .delivered-days button[aria-pressed="true"]{background:#18181b;color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:700}
   [data-screen-id="delivered"] .delivered-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--tap-line)}
   [data-screen-id="delivered"] .delivered-quick button{min-height:44px;border:0;border-radius:10px;background:#f4f4f5;font-size:13px;font-weight:600}
   [data-screen-id="delivered"] .delivered-calendar-close{display:flex;align-items:center;justify-content:space-between;margin-top:8px;color:var(--tap-muted);font-size:12px}
