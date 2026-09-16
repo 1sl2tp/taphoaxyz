@@ -4,39 +4,37 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
-test('sales cart uses compact total summary and semantic edit actions',()=>{
+test('sales cart keeps compact copy while Tailwind owns semantic edit actions',()=>{
   const runtime=read('src/core/ui-system.js');
-  const css=read('src/styles/iphone-visual-cleanup.css');
+  const css=read('src/styles/taphoa-tailwind.input.css');
   assert.match(runtime,/SP ·/);
   assert.match(runtime,/setAttribute\('placeholder','Ghi chú'\)/);
-  assert.doesNotMatch(runtime,/if\(panel\.dataset\.uiCompact\)return/);
-  assert.match(runtime,/if\(panel\.dataset\.uiCompact\)continue/);
-  assert.match(css,/\[data-sales-action="cancel-edit"\][^{]*\{[^}]*var\(--ui-line\)/s);
-  assert.match(css,/\[data-sales-action="update"\][^{]*\{[^}]*var\(--ui-primary\)/s);
+  assert.match(css,/\[data-sales-action="update"\][^}]*bg-zinc-900/s);
+  assert.match(css,/\[data-sales-action="clear"\][^}]*var\(--tap-danger\)/s);
 });
 
-test('pending cards lead with customer and compact order id',()=>{
+test('pending cards lead with readable customer and compact order context',()=>{
   const runtime=read('src/core/ui-system.js');
-  const css=read('src/styles/iphone-visual-cleanup.css');
+  const css=read('src/styles/taphoa-tailwind.input.css');
   assert.match(runtime,/function decoratePendingCards/);
   assert.match(runtime,/pending-order-customer/);
   assert.match(runtime,/compactOrderId\(card\.dataset\.orderOpen\)/);
-  assert.match(css,/\.pending-order-customer\{[^}]*font-weight:750/s);
-  assert.match(css,/\.pending-order-context-line\{[^}]*var\(--ui-muted\)/s);
+  assert.match(css,/\.pending-order-customer\s*\{[^}]*font-size:15px/s);
 });
 
-test('debt screen uses neutral shared surfaces instead of a separate gradient app',()=>{
-  const css=read('src/styles/iphone-visual-cleanup.css');
-  assert.match(css,/\[data-screen-id="debt"\] \.debt-hero\{[^}]*background:var\(--ui-page\)!important/s);
-  assert.match(css,/\.debt-total-row>div\{[^}]*background:var\(--ui-panel\)!important/s);
-  assert.match(css,/\.debt-shop:after\{[^}]*display:none!important/s);
-  assert.match(css,/\.debt-shop-avatar\{[^}]*width:40px!important;[^}]*height:40px!important/s);
+test('debt main uses separate information and action zones instead of a gradient/card stack',()=>{
+  const css=read('src/styles/taphoa-tailwind.input.css');
+  assert.match(css,/\.debt-hero\s*\{[^}]*bg-tap-page/s);
+  assert.match(css,/\.debt-total-row>div\s*\{[^}]*bg-white/s);
+  assert.match(css,/\.debt-customer-row\s*\{[^}]*border-radius:0!important/s);
+  assert.match(css,/\.debt-quick-actions\s*\{[^}]*grid-template-columns/s);
 });
 
-test('cleanup cascade loads after shared visuals but before scroll ownership',()=>{
+test('Tailwind final owner loads after screen geometry and before scroll ownership',()=>{
   const html=read('index.html');
-  const shared=html.indexOf('./src/styles/ui-system.css');
-  const cleanup=html.indexOf('./src/styles/iphone-visual-cleanup.css');
+  const debt=html.indexOf('./src/styles/debt.css');
+  const tailwind=html.indexOf('./src/styles/taphoa-tailwind.css');
   const scroll=html.indexOf('./src/styles/scroll-owner.css');
-  assert.ok(shared>=0&&cleanup>shared&&scroll>cleanup);
+  assert.ok(debt>=0&&tailwind>debt&&scroll>tailwind);
+  assert.doesNotMatch(html,/iphone-visual-cleanup\.css/);
 });
