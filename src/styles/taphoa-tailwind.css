@@ -70,3 +70,16 @@ button,input,select,textarea{font-family:inherit}
   background:var(--ui-success,#26735b);
   color:#fff;
 }
+
+/* Dark controls must keep their label/icon visible. Safari can retain inherited
+   text fill on buttons, so set both color and -webkit-text-fill-color. */
+.ui-action-primary,
+[data-screen-id="sales"] .sales-qty button:last-child,
+[data-screen-id="sales"] .sales-cart-qty button:last-child,
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="done"],
+[data-screen-id="sales"] .sales-cart-actions [data-sales-action="update"],
+[data-screen-id="debt"] .debt-quick-actions button:nth-of-type(1),
+[data-screen-id="debt"] [data-detail-action="collect"]{
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+}
