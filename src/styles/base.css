@@ -29,7 +29,8 @@ button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:tran
 [hidden]{display:none!important}
 input,button,select,textarea{min-height:var(--tap)}
 input,select,textarea{-webkit-user-select:text;user-select:text}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ui-primary);outline-offset:2px}
+button:focus-visible{outline:2px solid var(--ui-primary);outline-offset:2px}
+input:focus,input:focus-visible,select:focus,select:focus-visible,textarea:focus,textarea:focus-visible{outline:none!important;outline-offset:0!important;box-shadow:none!important}
 @media (pointer:coarse){
   input,select,textarea{font-size:16px}
 }
