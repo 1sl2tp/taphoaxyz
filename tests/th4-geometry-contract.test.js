@@ -4,10 +4,11 @@ import {readFile} from 'node:fs/promises';
 
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
-test('Thẻ 4 geometry owner is the last visual geometry layer',async()=>{
+test('retired Thẻ 4 geometry override is not part of the current visual stack',async()=>{
   const entry=await read('src/styles/taphoa-tailwind.entry.css');
-  assert.match(entry,/taphoa-th4-geometry\.css/);
-  assert.ok(entry.lastIndexOf('taphoa-th4-geometry.css')>entry.lastIndexOf('taphoa-th2-auth.css'));
+  assert.doesNotMatch(entry,/taphoa-th4-geometry\.css/);
+  assert.match(entry,/taphoa-sales-redesign\.css/);
+  assert.ok(entry.lastIndexOf('taphoa-sales-redesign.css')>entry.lastIndexOf('taphoa-th3.css'));
 });
 
 test('Sales price and cart columns follow left middle right geometry',async()=>{
