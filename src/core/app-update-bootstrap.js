@@ -14,7 +14,14 @@ const buildFromMeta=()=>String(document.querySelector('meta[name="app-build-id"]
 const currentBuild=buildFromUrl()||readStored(APPLIED_BUILD_KEY)||buildFromMeta()||'bootstrap';
 if(buildFromUrl())writeStored(APPLIED_BUILD_KEY,currentBuild);
 
+function loginCanReload(){
+  const login=document.getElementById('loginScreen');
+  if(!login||login.hidden)return false;
+  return !String(document.getElementById('loginPassword')?.value||'');
+}
+
 function hasFocusedEdit(){
+  if(loginCanReload())return false;
   const active=document.activeElement;
   if(!active||active===document.body)return false;
   return focusedInputBlocksReload(active);
