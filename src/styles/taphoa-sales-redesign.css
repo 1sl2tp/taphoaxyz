@@ -11,8 +11,10 @@
   [data-screen-id="sales"] .sales-cart-quick{display:grid;grid-template-columns:auto;gap:1px;justify-items:end;min-width:96px;min-height:48px;padding:5px 11px;border-color:var(--tap-line-strong);background:#fff}
   [data-screen-id="sales"] .sales-cart-quick>span{color:var(--tap-muted);font-size:12px;font-weight:650}
   [data-screen-id="sales"] .sales-cart-quick>strong{font-size:14px;font-weight:780;white-space:nowrap;font-variant-numeric:tabular-nums}
-  [data-screen-id="sales"] .sales-cart-quick.is-active{border-color:#18181b;background:#18181b;color:#fff}
-  [data-screen-id="sales"] .sales-cart-quick.is-active>span{color:#d4d4d8}
+  [data-screen-id="sales"] .sales-cart-quick.is-active{border-color:#18181b;background:#18181b;color:#fff!important;-webkit-text-fill-color:#fff!important}
+  [data-screen-id="sales"] .sales-cart-quick.is-active>span{color:#d4d4d8;-webkit-text-fill-color:#d4d4d8}
+  [data-screen-id="sales"] .sales-cart-quick.is-active>strong,[data-screen-id="sales"] .sales-cart-quick.is-active .ui-icon{color:#fff!important;-webkit-text-fill-color:#fff!important}
+  [data-screen-id="sales"] .sales-cart-quick.is-active .ui-icon{stroke:currentColor!important}
 
   [data-screen-id="sales"] .sales-search-tools{position:relative;padding:0;background:transparent}
   [data-screen-id="sales"] .sales-search-tools>input{min-height:50px;padding:10px 44px 10px 43px;border:1px solid var(--tap-line-strong);border-radius:15px;background:#fff;box-shadow:0 1px 2px rgba(24,24,27,.03);font-size:16px}
@@ -21,7 +23,7 @@
 
   [data-screen-id="sales"] .sales-group-rail{gap:7px;padding:0 0 2px;background:transparent}
   [data-screen-id="sales"] .sales-group-rail .sales-group{min-height:42px;padding-inline:15px;border:1px solid var(--tap-line);border-radius:999px;background:#fff;color:#52525b;font-size:14px}
-  [data-screen-id="sales"] .sales-group-rail .sales-group[aria-pressed="true"]{border-color:#18181b;background:#18181b;color:#fff}
+  [data-screen-id="sales"] .sales-group-rail .sales-group[aria-pressed="true"]{border-color:#18181b;background:#18181b;color:#fff!important;-webkit-text-fill-color:#fff!important}
 
   /* Product data is a flat operating list, not another rounded card. */
   [data-screen-id="sales"] .sales-products-region{background:#fff;border-block:1px solid var(--tap-line);border-inline:0;border-radius:0;overflow:hidden}
@@ -38,7 +40,8 @@
   [data-screen-id="sales"] .sales-unit{padding-bottom:1px;color:#a1a1aa;font-size:12px}
   [data-screen-id="sales"] .sales-qty{grid-template-columns:44px 34px 44px;gap:4px}
   [data-screen-id="sales"] .sales-qty button{border-color:var(--tap-line-strong);border-radius:13px;background:#fff;color:#3f3f46}
-  [data-screen-id="sales"] .sales-qty button:last-child{border-color:#18181b;background:#18181b;color:#fff}
+  [data-screen-id="sales"] .sales-qty button:last-child{border-color:#18181b;background:#18181b;color:#fff!important;-webkit-text-fill-color:#fff!important}
+  [data-screen-id="sales"] .sales-qty button:last-child .ui-icon{color:#fff!important;stroke:currentColor!important}
   [data-screen-id="sales"] .sales-qty-value{width:34px;font-size:16px;font-weight:800}
 
   /* Cart has explicit chrome -> data -> summary -> action hierarchy. */
