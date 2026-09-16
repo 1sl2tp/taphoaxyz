@@ -22,7 +22,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Write version marker
+      - name: Write synchronized build identity
         env:
           GITHUB_SHA: ${{ github.sha }}
         run: |
@@ -34,12 +34,24 @@ jobs:
             "published_from": "github-main"
           }
           EOF
-      - name: Commit version marker
+          python - <<'PY'
+          import os,re
+          from pathlib import Path
+          path=Path('index.html')
+          text=path.read_text()
+          build=os.environ['GITHUB_SHA']
+          pattern=r'(<meta\s+name="app-build-id"\s+content=")[^"]*("\s*/?>)'
+          updated,count=re.subn(pattern,lambda m:f'{m.group(1)}{build}{m.group(2)}',text,count=1)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one app-build-id meta, found {count}')
+          path.write_text(updated)
+          PY
+      - name: Commit synchronized build identity
         env:
           GITHUB_SHA: ${{ github.sha }}
         run: |
-          if git diff --quiet -- version.json; then
-            echo "Version marker already current"
+          if git diff --quiet -- version.json index.html; then
+            echo "Build identity already current"
             exit 0
           fi
           git fetch origin main
@@ -49,6 +61,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add version.json
+          git add version.json index.html
           git commit -m "chore: publish app build ${GITHUB_SHA:0:12}"
           git push origin HEAD:main
