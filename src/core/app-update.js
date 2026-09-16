@@ -18,6 +18,27 @@ export function focusedInputBlocksReload(active){
   return !['button','submit','reset','checkbox','radio','range','file','hidden','color'].includes(type);
 }
 
+export function refreshStylesheetLinks(root=globalThis.document,build='',{baseHref=globalThis.location?.href||'http://localhost/'}={}){
+  const nextBuild=String(build||'').trim();
+  if(!root||!nextBuild)return 0;
+  let base;
+  try{base=new URL(String(baseHref||'http://localhost/'));}catch{return 0;}
+  let changed=0;
+  for(const link of Array.from(root.querySelectorAll?.('link[rel="stylesheet"][href]')||[])){
+    const raw=String(link.getAttribute?.('href')||'').trim();
+    if(!raw)continue;
+    try{
+      const url=new URL(raw,base);
+      if(url.origin!==base.origin)continue;
+      if(url.searchParams.get('__build')===nextBuild)continue;
+      url.searchParams.set('__build',nextBuild);
+      link.setAttribute?.('href',url.toString());
+      changed+=1;
+    }catch{}
+  }
+  return changed;
+}
+
 export function createAppUpdateController({
   currentBuild='',
   fetchVersion=async()=>null,
