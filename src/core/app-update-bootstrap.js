@@ -3,7 +3,7 @@ import {createAppUpdateController,focusedInputBlocksReload,hasUnsavedSalesDom,re
 const VERSION_URL='./version.json';
 const BUILD_PARAM='__build';
 const APPLIED_BUILD_KEY='taphoa.xyz.app.applied-build';
-const CHECK_INTERVAL_MS=45000;
+const CHECK_INTERVAL_MS=4000;
 let registration=null;
 let hotStyleBuild='';
 
@@ -92,7 +92,9 @@ function bind(){
   window.addEventListener('online',()=>void checkForUpdate({reason:'online'}));
   document.addEventListener('input',()=>controller.maybeReload(),true);
   document.addEventListener('focusout',()=>controller.maybeReload(),true);
-  setInterval(()=>void checkForUpdate({reason:'interval'}),CHECK_INTERVAL_MS);
+  setInterval(()=>{
+    if(!document.visibilityState||document.visibilityState==='visible')void checkForUpdate({reason:'fast-ui'});
+  },CHECK_INTERVAL_MS);
 }
 
 async function boot(){
@@ -107,6 +109,7 @@ else void boot();
 
 window.TAPHOAAppUpdate=Object.freeze({
   check:checkForUpdate,
+  refreshNow:()=>checkForUpdate({reason:'manual-fast-ui'}),
   maybeReload:controller.maybeReload,
   safeToReload,
   snapshot:controller.snapshot,
