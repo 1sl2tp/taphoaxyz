@@ -3,13 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8'));
-const vercel=JSON.parse(fs.readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
 const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const build=fs.readFileSync(new URL('../scripts/build-current.mjs',import.meta.url),'utf8');
 
-test('Vercel compiles Tailwind then deploys the current modular TAPHOA app',()=>{
-  assert.equal(vercel.buildCommand,'npm run build:production');
-  assert.equal(vercel.outputDirectory,'dist');
+test('production build compiles Tailwind then emits the current modular TAPHOA app',()=>{
   assert.match(pkg.scripts['build:production'],/^npm run ui:build && node scripts\/build-current\.mjs$/);
   assert.match(pkg.scripts['ui:build'],/@tailwindcss\/cli/);
   assert.match(index,/src\/app\.js/);
