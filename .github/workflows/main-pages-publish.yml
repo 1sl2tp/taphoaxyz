@@ -1,0 +1,62 @@
+name: TAPHOA main publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'version.json'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - 'package.json'
+      - 'src/**'
+      - 'scripts/**'
+      - '.github/workflows/main-pages-publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install build dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build exact main commit
+        run: npm run build:production
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Bind beta.taphoa.xyz
+        run: printf '%s\n' 'beta.taphoa.xyz' > dist/CNAME
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4
