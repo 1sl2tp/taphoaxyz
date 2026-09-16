@@ -62,3 +62,15 @@ export function normalizeFixedSalesHeaderChildren(header,expectedChildren=[]){
   });
   expected.forEach(child=>header.appendChild(child));
 }
+
+const fixedUiRegressionApi=Object.freeze({
+  parseLedgerTime,
+  sortLedgerRowsOldestFirst,
+  isInternalDebtEntry,
+  visibleDebtHistoryNewestFirst,
+  normalizeFixedSalesHeaderChildren,
+});
+
+if(typeof globalThis!=='undefined'){
+  globalThis.TAPHOA_FIXED_REGRESSIONS=fixedUiRegressionApi;
+}
