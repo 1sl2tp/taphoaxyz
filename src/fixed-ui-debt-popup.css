@@ -1,0 +1,35 @@
+/* Desktop Công nợ uses the same left-workspace geometry as Chi tiết đơn. */
+.pc-mode #customerDebtModalWrapper,
+body[data-force-pc="1"] #customerDebtModalWrapper{
+  left:0 !important;
+  right:480px !important;
+  top:0 !important;
+  bottom:0 !important;
+  width:auto !important;
+  height:auto !important;
+  justify-content:stretch !important;
+  background:#fff !important;
+}
+.pc-mode #customerDebtBackdrop,
+body[data-force-pc="1"] #customerDebtBackdrop{
+  display:none !important;
+}
+.pc-mode #customerDebtBottomSheet,
+body[data-force-pc="1"] #customerDebtBottomSheet{
+  position:relative !important;
+  width:100% !important;
+  height:100% !important;
+  max-height:none !important;
+  border-radius:0 !important;
+  transform:none !important;
+  box-shadow:none !important;
+  background:#fff !important;
+}
+.pc-mode #customerDebtBottomSheet > .cart-handle,
+body[data-force-pc="1"] #customerDebtBottomSheet > .cart-handle{
+  display:none !important;
+}
+.pc-mode #customerDebtContentToShare,
+body[data-force-pc="1"] #customerDebtContentToShare{
+  min-height:0 !important;
+}
