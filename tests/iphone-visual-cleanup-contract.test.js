@@ -30,11 +30,11 @@ test('debt main uses separate information and action zones instead of a gradient
   assert.match(css,/\.debt-quick-actions\s*\{[^}]*grid-template-columns/s);
 });
 
-test('Tailwind final owner loads after screen geometry and before scroll ownership',()=>{
+test('Tailwind is the final business layout owner before scroll ownership',()=>{
   const html=read('index.html');
-  const debt=html.indexOf('./src/styles/debt.css');
   const tailwind=html.indexOf('./src/styles/taphoa-tailwind.css');
   const scroll=html.indexOf('./src/styles/scroll-owner.css');
-  assert.ok(debt>=0&&tailwind>debt&&scroll>tailwind);
+  assert.ok(tailwind>=0&&scroll>tailwind);
+  assert.doesNotMatch(html,/src\/styles\/(?:sales|delivered|pending|debt)\.css/);
   assert.doesNotMatch(html,/iphone-visual-cleanup\.css/);
 });
