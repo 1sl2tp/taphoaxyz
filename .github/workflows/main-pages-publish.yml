@@ -46,8 +46,8 @@ jobs:
         env:
           GITHUB_SHA: ${{ github.sha }}
 
-      - name: Bind beta.taphoa.xyz
-        run: printf '%s\n' 'beta.taphoa.xyz' > dist/CNAME
+      - name: Bind app.taphoa.xyz
+        run: printf '%s\n' 'app.taphoa.xyz' > dist/CNAME
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
