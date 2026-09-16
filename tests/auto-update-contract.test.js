@@ -110,6 +110,18 @@ test('runtime wires update checks and service worker into the app shell',async()
   assert.match(worker,/SKIP_WAITING/);
 });
 
+test('FAST UI checks for a new build within five seconds and has one verification command',async()=>{
+  const bootstrap=await read('src/core/app-update-bootstrap.js');
+  const interval=bootstrap.match(/const CHECK_INTERVAL_MS=(\d+);/);
+  assert.ok(interval,'CHECK_INTERVAL_MS must be explicit');
+  assert.ok(Number(interval[1])<=5000,`FAST UI interval must be <=5000ms, got ${interval[1]}`);
+  const pkg=JSON.parse(await read('package.json'));
+  const command=String(pkg.scripts?.['fast:ui']||'');
+  assert.match(command,/ui:build/,'fast:ui must rebuild UI CSS');
+  assert.match(command,/dark-controls-contrast\.test\.js/,'fast:ui must verify dark control contrast');
+  assert.match(command,/auto-update-contract\.test\.js/,'fast:ui must verify update behavior');
+});
+
 test('production build includes the updater marker and service worker',async()=>{
   const build=await read('scripts/build-current.mjs');
   assert.match(build,/version\.json/);
