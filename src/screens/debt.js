@@ -36,12 +36,12 @@ export function ledgerRows(transactions=[]){
 function avatarInitials(name){const parts=String(name||'').trim().split(/\s+/).filter(Boolean);if(!parts.length)return'KH';return parts.slice(-2).map(part=>part[0]?.toUpperCase()||'').join('');}
 
 function customerOptions(customers=[],selected=''){
-  return customers.filter(c=>c.active!==false).map(c=>`<button type="button" class="debt-customer-option" data-customer-pick="${esc(c.id)}" aria-selected="${String(c.id)===String(selected)}"><span>${esc(avatarInitials(c.ten||c.name))}</span><b>${esc(c.ten||c.name)}</b></button>`).join('');
+  return customers.filter(c=>c.active!==false).map(c=>`<button type="button" class="debt-customer-option ui-row" data-customer-pick="${esc(c.id)}" aria-selected="${String(c.id)===String(selected)}"><span>${esc(avatarInitials(c.ten||c.name))}</span><b>${esc(c.ten||c.name)}</b></button>`).join('');
 }
 
 function customerRow(row){
   const amount=balance(row),owed=amount>0,credit=amount<0,last=fmtDate(lastAt(row)),days=daysSince(lastAt(row)),name=customerName(row);
-  return `<button type="button" class="debt-customer-row" data-customer-open="${esc(row.maKH||row.id)}">
+  return `<button type="button" class="debt-customer-row ui-row" data-customer-open="${esc(row.maKH||row.id)}">
     <span class="debt-avatar">${esc(avatarInitials(name))}</span>
     <span class="debt-customer-copy"><b>${esc(name)}</b>${last?`<small>GD cuối: ${esc(last)}${owed&&days>0?` · Nợ ${days} ngày`:''}</small>`:''}</span>
     <strong class="${owed?'is-owed':credit?'is-credit':''}">${credit?'+':''}${money(Math.abs(amount))}</strong>
@@ -50,21 +50,21 @@ function customerRow(row){
 
 function groupMarkup(label,rows,tone,sortControls=false,state={}){
   if(!rows.length)return'';
-  return `<div class="debt-group-head ${tone}"><span>${label} (${rows.length})</span>${sortControls?`<div class="debt-sort"><span>Sắp xếp</span><button type="button" data-sort-menu>${state.sortBy==='count'?'Số lần GD':state.sortBy==='days'?'Số ngày nợ':'Số nợ'}</button><button type="button" data-sort-dir>${state.sortDir==='desc'?'↓':'↑'}</button>${state.sortOpen?`<div class="debt-sort-menu"><button type="button" data-sort="total">Số nợ</button><button type="button" data-sort="count">Số lần giao dịch</button><button type="button" data-sort="days">Số ngày nợ</button></div>`:''}</div>`:''}</div>${rows.map(customerRow).join('')}`;
+  return `<div class="debt-group-head ${tone}"><span>${label} (${rows.length})</span>${sortControls?`<div class="debt-sort"><span>Sắp xếp</span><button class="ui-action ui-action-secondary" type="button" data-sort-menu>${state.sortBy==='count'?'Số lần GD':state.sortBy==='days'?'Số ngày nợ':'Số nợ'}</button><button class="ui-icon-button" type="button" data-sort-dir aria-label="Đổi chiều sắp xếp">${state.sortDir==='desc'?'↓':'↑'}</button>${state.sortOpen?`<div class="debt-sort-menu"><button type="button" data-sort="total">Số nợ</button><button type="button" data-sort="count">Số lần giao dịch</button><button type="button" data-sort="days">Số ngày nợ</button></div>`:''}</div>`:''}</div>${rows.map(customerRow).join('')}`;
 }
 
 function summaryMarkup(summary){
-  const totals=debtTotals(summary);return `<div class="debt-total-row"><div><small>⚠️ TỔNG NỢ</small><strong>${money(totals.owed)}</strong><span>${totals.owedCount} khách còn nợ</span></div>${totals.credit>0?`<div><small>💚 TỔNG DƯ TIỀN</small><strong>${money(totals.credit)}</strong><span>${totals.creditCount} khách dư</span></div>`:''}</div>`;
+  const totals=debtTotals(summary);return `<div class="debt-total-row ui-summary"><div><small>TỔNG NỢ</small><strong>${money(totals.owed)}</strong><span>${totals.owedCount} khách còn nợ</span></div>${totals.credit>0?`<div><small>TỔNG DƯ TIỀN</small><strong>${money(totals.credit)}</strong><span>${totals.creditCount} khách dư</span></div>`:''}</div>`;
 }
 
 function quickFormMarkup(customers,state){
   if(!state.canManage)return'';const chosen=customers.find(c=>String(c.id)===String(state.selectedCustomerId));
-  return `<div class="debt-quick"><b>⚡ LẬP PHIẾU NHANH</b><div class="debt-customer-picker"><input data-customer-query value="${esc(state.customerQuery||chosen?.ten||chosen?.name||'')}" placeholder="Tìm khách hàng..."><span>▾</span>${state.customerOpen?`<div class="debt-customer-options">${customerOptions(customers,state.selectedCustomerId)||'<div>Không có khách</div>'}</div>`:''}</div><div class="debt-quick-actions"><input data-quick-amount inputmode="numeric" value="${esc(state.amount||'')}" placeholder="Số tiền..."><button type="button" data-quick-action="collect">💵 Thu</button><button type="button" data-quick-action="debt">📌 Nợ</button></div></div>`;
+  return `<div class="debt-quick ui-form"><b>LẬP PHIẾU NHANH</b><div class="debt-customer-picker"><input data-customer-query value="${esc(state.customerQuery||chosen?.ten||chosen?.name||'')}" placeholder="Tìm khách hàng..."><span>▾</span>${state.customerOpen?`<div class="debt-customer-options">${customerOptions(customers,state.selectedCustomerId)||'<div>Không có khách</div>'}</div>`:''}</div><div class="debt-quick-actions ui-action-group"><input data-quick-amount inputmode="numeric" value="${esc(state.amount||'')}" placeholder="Số tiền..."><button class="ui-action ui-action-primary" type="button" data-quick-action="collect">Thu tiền</button><button class="ui-action ui-action-danger" type="button" data-quick-action="debt">Ghi nợ</button></div></div>`;
 }
 
 function transactionMarkup(tx){
-  const row=ledgerRows([tx])[0],isDebt=row.kind==='debt',linked=Boolean(row.orderId);return `<button type="button" class="debt-transaction-row" ${linked?`data-ledger-order="${esc(row.orderId)}"`:''} ${linked?'':'disabled'}>
-    <span><b>${isDebt?'📌 Ghi nợ':'💵 Thu tiền'}${linked?' ›':''}</b><small>${esc(tx.ghiChu||tx.note||row.orderId||'')}</small></span>
+  const row=ledgerRows([tx])[0],isDebt=row.kind==='debt',linked=Boolean(row.orderId);return `<button type="button" class="debt-transaction-row ui-row" ${linked?`data-ledger-order="${esc(row.orderId)}"`:''} ${linked?'':'disabled'}>
+    <span><b>${isDebt?'Ghi nợ':'Thu tiền'}${linked?' ›':''}</b><small>${esc(tx.ghiChu||tx.note||row.orderId||'')}</small></span>
     <span>${esc(fmtDate(tx.ngay||tx.occurred_at))}</span>
     <span><strong>${isDebt?'+':'-'}${money(Math.abs(Number(tx.soTien??tx.amount)||0))}</strong><small>${row.balanceAfter>0?'Nợ':'Dư'} <b>${money(Math.abs(row.balanceAfter))}</b></small></span>
   </button>`;
@@ -73,22 +73,22 @@ function transactionMarkup(tx){
 function debtDetailMarkup(detail,state){
   const customer=detail.customer||{},name=customer.ten||customer.name||customerName((state.summary||[]).find(x=>String(x.maKH)===String(state.selectedCustomerId))||{}),amount=Number(detail.soDu)||0,transactions=detail.transactions||[];
   const ledger=transactions.length?transactions.map(transactionMarkup).join(''):'<div class="debt-ledger-empty">Chưa có giao dịch</div>';
-  return `<div class="debt-overlay debt-detail-overlay" data-debt-detail><button class="debt-backdrop" type="button" data-debt-close aria-label="Đóng"></button><section class="debt-detail-panel">
-    <header><button type="button" data-debt-close>✕</button><button type="button" data-debt-share>🖼️ Chia sẻ ảnh</button></header>
-    <div class="debt-receipt" data-debt-share-target><div class="debt-shop"><div class="debt-shop-avatar">${esc(avatarInitials(state.shopName||'Cửa Hàng'))}</div><strong>${esc(state.shopName||'Cửa Hàng')}</strong></div><div class="debt-receipt-summary"><span><b>KH: ${esc(name)}</b><small>${fmtDay(new Date())}</small></span><span><strong>${money(Math.abs(amount))}</strong><small>${amount>0?'⚠️ Còn nợ':amount<0?'💚 Dư tiền':'✅ Đã xong'}</small></span></div>
-    <div class="debt-ledger-head"><span>Giao dịch</span><span>Ngày</span><span>Số tiền</span></div><div class="debt-ledger">${ledger}</div></div>
-    ${state.canManage?`<footer><input data-detail-amount inputmode="numeric" value="${esc(state.detailAmount??(amount>0?Math.round(amount):''))}" placeholder="Số tiền..."><div><button type="button" data-detail-action="collect">💵 Thu tiền</button><button type="button" data-detail-action="debt">📌 Ghi nợ</button></div></footer>`:''}
+  return `<div class="debt-overlay debt-detail-overlay" data-debt-detail><button class="debt-backdrop" type="button" data-debt-close aria-label="Đóng"></button><section class="debt-detail-panel ui-popup-l1">
+    <header class="ui-popup-header"><strong>${esc(name)}</strong><div class="ui-action-group"><button class="ui-action ui-action-secondary" type="button" data-debt-share>Chia sẻ ảnh</button><button class="ui-icon-button" type="button" data-debt-close aria-label="Đóng công nợ"></button></div></header>
+    <div class="debt-receipt" data-debt-share-target><div class="debt-shop"><div class="debt-shop-avatar">${esc(avatarInitials(state.shopName||'Cửa Hàng'))}</div><strong>${esc(state.shopName||'Cửa Hàng')}</strong></div><div class="debt-receipt-summary ui-summary"><span><b>KH: ${esc(name)}</b><small>${fmtDay(new Date())}</small></span><span><strong>${money(Math.abs(amount))}</strong><small>${amount>0?'Còn nợ':amount<0?'Dư tiền':'Đã xong'}</small></span></div>
+    <div class="debt-ledger-head ui-table-head"><span>Giao dịch</span><span>Ngày</span><span>Số tiền</span></div><div class="debt-ledger ui-table">${ledger}</div></div>
+    ${state.canManage?`<footer class="ui-form"><input data-detail-amount inputmode="numeric" value="${esc(state.detailAmount??(amount>0?Math.round(amount):''))}" placeholder="Số tiền..."><div class="ui-action-group"><button class="ui-action ui-action-primary" type="button" data-detail-action="collect">Thu tiền</button><button class="ui-action ui-action-danger" type="button" data-detail-action="debt">Ghi nợ</button></div></footer>`:''}
   </section></div>`;
 }
 
 function orderDetailMarkup(order){
-  const items=order.items||[];const qty=items.reduce((sum,item)=>sum+itemQty(item),0);return `<div class="debt-overlay debt-order-overlay" data-debt-order><button class="debt-backdrop" type="button" data-order-close aria-label="Đóng"></button><section class="debt-order-panel"><header><strong>${esc(order.id)}</strong><span>✅ Đã giao</span><button type="button" data-order-share>🖼️</button><button type="button" data-order-close>✕</button></header><div class="debt-order-meta"><b>KH: ${esc(order.tenKH)}</b> · ${esc(order.id)} · ${esc(fmtDate(order.ngay))}</div><div class="debt-order-head"><span>#</span><span>Tên</span><span>SL</span><span>Đ.Giá</span><span>T.Tiền</span></div><div class="debt-order-lines" data-order-share-target>${items.map((item,index)=>`<div><span>${item.lineNo||index+1}.</span><span>${esc(itemName(item))}${item.ghiChu?`<small>${esc(item.ghiChu)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div><div class="debt-order-total"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div></section></div>`;
+  const items=order.items||[];const qty=items.reduce((sum,item)=>sum+itemQty(item),0);return `<div class="debt-overlay debt-order-overlay" data-debt-order><button class="debt-backdrop" type="button" data-order-close aria-label="Đóng"></button><section class="debt-order-panel ui-popup-l2"><header class="ui-popup-header"><strong>${esc(order.id)}</strong><span>Đã giao</span><button class="ui-action ui-action-secondary" type="button" data-order-share>Chia sẻ</button><button class="ui-icon-button" type="button" data-order-close aria-label="Đóng đơn"></button></header><div class="debt-order-meta"><b>KH: ${esc(order.tenKH)}</b> · ${esc(order.id)} · ${esc(fmtDate(order.ngay))}</div><div class="debt-order-head ui-table-head"><span>#</span><span>Tên</span><span>SL</span><span>Đ.Giá</span><span>T.Tiền</span></div><div class="debt-order-lines ui-table" data-order-share-target>${items.map((item,index)=>`<div class="ui-row"><span>${item.lineNo||index+1}.</span><span>${esc(itemName(item))}${item.ghiChu?`<small>${esc(item.ghiChu)}</small>`:''}</span><span>${itemQty(item)}</span><span>${money(itemPrice(item))}</span><strong>${money(itemPrice(item)*itemQty(item))}</strong></div>`).join('')}</div><div class="debt-order-total ui-summary"><b>Tổng ${qty} SP</b><strong>${money(order.tongTien)}</strong></div></section></div>`;
 }
 
 export function debtMarkup(input={}){
   const state={summary:input.summary||[],customers:input.customers||[],canManage:input.canManage!==false,sortBy:input.sortBy||'total',sortDir:input.sortDir||'desc',sortOpen:Boolean(input.sortOpen),selectedCustomerId:input.selectedCustomerId||'',customerOpen:Boolean(input.customerOpen),customerQuery:input.customerQuery||'',amount:input.amount||'',detailAmount:input.detailAmount,detail:input.detail||null,selectedOrder:input.selectedOrder||null,shopName:input.shopName||'Cửa Hàng'};
   const groups=debtGroups(state.summary,state.sortBy,state.sortDir);
-  return `<section class="debt-screen" data-screen-id="debt"><section class="debt-hero">${summaryMarkup(state.summary)}${quickFormMarkup(state.customers,state)}</section><section class="debt-list">${groupMarkup('⚠️ CÒN NỢ',groups.owe,'owed',true,state)}${groupMarkup('💚 DƯ TIỀN',groups.credit,'credit',false,state)}${groupMarkup('✅ ĐÃ THANH TOÁN',groups.clear,'clear',false,state)}${state.summary.length?'':'<div class="debt-empty">Chưa có công nợ</div>'}</section>${state.detail?debtDetailMarkup(state.detail,state):''}${state.selectedOrder?orderDetailMarkup(state.selectedOrder):''}</section>`;
+  return `<section class="debt-screen ui-main" data-screen-id="debt"><section class="debt-hero">${summaryMarkup(state.summary)}${quickFormMarkup(state.customers,state)}</section><section class="debt-list ui-table">${groupMarkup('CÒN NỢ',groups.owe,'owed',true,state)}${groupMarkup('DƯ TIỀN',groups.credit,'credit',false,state)}${groupMarkup('ĐÃ THANH TOÁN',groups.clear,'clear',false,state)}${state.summary.length?'':'<div class="debt-empty">Chưa có công nợ</div>'}</section>${state.detail?debtDetailMarkup(state.detail,state):''}${state.selectedOrder?orderDetailMarkup(state.selectedOrder):''}</section>`;
 }
 
 async function ensureHtml2Canvas(){
