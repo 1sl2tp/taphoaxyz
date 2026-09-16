@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const startup=fs.readFileSync(new URL('../src/fixed-startup-nonblocking.js',import.meta.url),'utf8');
-const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
+const owner=fs.readFileSync(new URL('../src/fixed-production-start-owner.js',import.meta.url),'utf8');
 
 test('external UI libraries do not block parsing of the FIXED app shell',()=>{
   for(const url of [
@@ -20,8 +20,17 @@ test('external UI libraries do not block parsing of the FIXED app shell',()=>{
 test('preview onload is neutralized before production override owns startup',()=>{
   const neutralizer=index.indexOf('window.onload=null');
   const override=index.indexOf('fixed-production-overrides.js');
+  const ownerScript=index.indexOf('fixed-production-start-owner.js');
   assert.ok(neutralizer>0,'index must explicitly neutralize the FIXED preview onload');
   assert.ok(override>neutralizer,'preview onload must be neutralized before production override loads');
+  assert.ok(ownerScript>override,'production owner must capture the override bootstrap after it loads');
+});
+
+test('production owner captures only the real production onload then clears it',()=>{
+  assert.match(owner,/const boot=window\.onload/);
+  assert.match(owner,/TAPHOA_FIXED_PRODUCTION_BOOT/);
+  assert.match(owner,/window\.onload=null/);
+  assert.match(owner,/taphoa-fixed-production-ready/);
 });
 
 test('production startup waits for both DOM and the real production bridge',()=>{
@@ -30,10 +39,4 @@ test('production startup waits for both DOM and the real production bridge',()=>
   assert.match(startup,/taphoa-fixed-production-ready/);
   assert.match(startup,/TAPHOA_FIXED_PRODUCTION_BOOT/);
   assert.doesNotMatch(startup,/const boot=window\.onload/,'startup must not capture the preview window.onload handler');
-});
-
-test('production override exports one explicit bootstrap owner instead of window.onload',()=>{
-  assert.match(overrides,/TAPHOA_FIXED_PRODUCTION_BOOT/);
-  assert.match(overrides,/taphoa-fixed-production-ready/);
-  assert.doesNotMatch(overrides,/window\.onload\s*=\s*async\s*function/);
 });
