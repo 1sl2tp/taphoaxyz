@@ -1,7 +1,7 @@
-name: V1.29 security check
+name: TAPHOA production security check
 on:
   push:
-    branches: [main, security/v1.29]
+    branches: [main]
   pull_request:
 jobs:
   build-security-contract:
@@ -13,14 +13,17 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: npm run build:production
-      - run: node --test tests/shared-auth-contract.test.js tests/production-build-contract.test.js
-      - name: Verify current modular runtime security contract
+      - run: node --test tests/shared-auth-contract.test.js tests/production-build-contract.test.js tests/fixed-ui-full-replacement.test.js
+      - name: Verify FIXED runtime security contract
         run: |
           test -f dist/index.html
+          test -f dist/src/fixed-production-bridge.js
           test -f dist/src/core/config.js
           test -f dist/src/core/auth.js
           test -f dist/src/core/business.js
-          grep -q 'src/app.js' dist/index.html
+          grep -q 'TAPHOA_GEMINI_100_SAMPLE_FIXED' dist/index.html
+          grep -q 'fixed-production-bridge.js' dist/index.html
+          ! grep -q 'src/app.js' dist/index.html
           grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' dist/src/core/config.js
           grep -q 'taphoa.xyz.auth.v2' dist/src/core/config.js
           grep -q 'signInWithPassword' dist/src/core/auth.js
