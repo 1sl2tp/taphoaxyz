@@ -1,5 +1,6 @@
 @layer components {
   /* Live publish sentinel: smoke must prove this exact visual generation is served. */
+  /* Republish trigger: Safari dark-control contrast fix is owned here. */
   [data-screen-id="sales"]{--taphoa-sales-layout:TAPHOA_SALES_LAYOUT_V2;max-width:1180px;width:100%;margin-inline:auto;gap:12px}
 
   /* MAIN context is no longer one framed card. Each job has one clear region. */
