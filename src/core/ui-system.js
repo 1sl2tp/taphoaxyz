@@ -42,7 +42,7 @@ export function decorateShellUi(root){
 export function decorateUi(root){
   if(!root)return;
   decorateShellUi(root);hydrateSearch(root);
-  hydrateButton(root,'[data-search-clear],[data-delivered-clear],[data-cart-close],[data-detail-close],[data-order-close],[data-print-close],[data-source-close],[data-debt-close]','close',{size:18});
+  hydrateButton(root,'[data-search-clear],[data-delivered-clear],.ui-icon-button[data-cart-close],.ui-icon-button[data-detail-close],.ui-icon-button[data-order-close],.ui-icon-button[data-print-close],.ui-icon-button[data-source-close],.ui-icon-button[data-debt-close]','close',{size:18});
   hydrateButton(root,'[data-receipt-share],[data-debt-share],[data-order-share]','share',{text:button=>cleanActionText(button.textContent)||'Chia sẻ ảnh',size:18});
   hydrateButton(root,'[data-print-now],[data-source-action="print"],[data-detail-action="print"],[data-order-action="print"]','print',{text:button=>cleanActionText(button.textContent)||'In',size:18});
   hydrateButton(root,'[data-delete-all],[data-detail-action="delete"],[data-order-action="delete"],[data-sales-action="clear"]','trash',{text:button=>cleanActionText(button.textContent)||'Xoá',size:18});
