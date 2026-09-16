@@ -15,6 +15,9 @@ test('walk-in order migration allows null customer and skips customer debt',()=>
   assert.match(migration,/alter\s+table\s+public\.taphoa_orders[\s\S]*customer_account_id\s+drop\s+not\s+null/i);
   assert.match(migration,/v_customer\s+is\s+not\s+null[\s\S]*customer_not_found/i);
   assert.match(migration,/v_status\s*=\s*'delivered'\s+and\s+v_customer\s+is\s+not\s+null/i);
+  const lifecycleDebtGuards=(migration.match(/if\s+o\.customer_account_id\s+is\s+not\s+null\s+then/gi)||[]).length;
+  assert.ok(lifecycleDebtGuards>=2,'deliver and reverse must both skip debt for Khách lẻ');
   assert.match(migration,/left\s+join\s+public\.v21_accounts\s+c/i);
   assert.match(migration,/coalesce\([^\n]*display_name[^\n]*'Khách lẻ'/i);
+  assert.match(migration,/'maKH'\s*,\s*case\s+when\s+o\.customer_account_id\s+is\s+null\s+then\s+'le'/i);
 });
