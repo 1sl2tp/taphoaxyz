@@ -18,15 +18,15 @@
       <div class="login-brand">
         <img class="login-logo" src="./src/assets/logo.jpg" alt="logo">
         <div class="login-brand-name" data-ui-type="shell-title">taphoa.xyz</div>
-        <div class="login-brand-sub" data-ui-type="meta">Quản lý đơn hàng thông minh</div>
+        <div class="login-brand-sub" data-ui-type="meta">Bán hàng · đơn · công nợ</div>
       </div>
       <form class="login-card" id="loginForm">
         <h1 data-ui-type="panel-title">Đăng nhập</h1>
         <div class="login-field"><input id="loginUsername" autocomplete="username" placeholder="Tên đăng nhập"></div>
-        <div class="login-field"><input class="login-password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu"><button class="login-eye" type="button" id="loginEye" aria-label="Hiện mật khẩu"></button></div>
+        <div class="login-field"><input class="login-password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu"><button class="login-eye ui-icon-button" type="button" id="loginEye" aria-label="Hiện mật khẩu"></button></div>
         <label class="login-remember" data-ui-type="body"><input id="loginRemember" type="checkbox">Lưu mật khẩu</label>
         <div class="login-error" id="loginError" data-ui-type="meta" hidden></div>
-        <button class="login-submit" id="loginSubmit" type="submit" data-ui-type="action">Đăng nhập →</button>
+        <button class="login-submit ui-action ui-action-primary" id="loginSubmit" type="submit" data-ui-type="action">Đăng nhập</button>
       </form>
     </div>
   </section>
@@ -49,7 +49,7 @@
           </div>
           <button class="account-sheet-close ui-icon-button" id="accountSheetClose" type="button" aria-label="Đóng"></button>
         </header>
-        <button class="account-logout ui-button ui-button-danger" id="accountLogout" type="button" data-ui-type="action">Đăng xuất</button>
+        <button class="account-logout ui-action ui-action-danger" id="accountLogout" type="button" data-ui-type="action">Đăng xuất</button>
       </section>
     </div>
     <div class="system-toast" id="systemToast" hidden></div>
@@ -59,7 +59,6 @@
 <script type="module" src="./src/core/ime-stability.js"></script>
 <script type="module" src="./src/app.js"></script>
 <script type="module" src="./src/core/ui-system.js"></script>
-<script type="module" src="./src/core/semantic-ui.js"></script>
 <script type="module" src="./src/core/scroll-owner.js"></script>
 <script type="module" src="./src/core/app-update-bootstrap.js"></script>
 </body>
