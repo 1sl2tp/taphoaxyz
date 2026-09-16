@@ -4,12 +4,13 @@ import {readFile} from 'node:fs/promises';
 
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
-test('final visual owner is imported after legacy Tailwind sources',async()=>{
+test('current visual owner excludes retired Thẻ 2 overrides',async()=>{
   const entry=await read('src/styles/taphoa-tailwind.entry.css');
-  assert.match(entry,/taphoa-th2-final\.css/);
-  assert.match(entry,/taphoa-th2-auth\.css/);
-  assert.ok(entry.lastIndexOf('taphoa-th2-final.css')>entry.lastIndexOf('taphoa-tailwind.input.css'));
-  assert.ok(entry.lastIndexOf('taphoa-th2-auth.css')>entry.lastIndexOf('taphoa-th2-final.css'));
+  assert.doesNotMatch(entry,/taphoa-th2-final\.css/);
+  assert.doesNotMatch(entry,/taphoa-th2-auth\.css/);
+  assert.match(entry,/taphoa-th3\.css/);
+  assert.match(entry,/taphoa-sales-redesign\.css/);
+  assert.ok(entry.lastIndexOf('taphoa-sales-redesign.css')>entry.lastIndexOf('taphoa-th3.css'));
 });
 
 test('main screens use flat regions instead of nested rounded cards',async()=>{
