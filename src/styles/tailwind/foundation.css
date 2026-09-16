@@ -29,7 +29,9 @@
   .ui-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--tap-touch);padding:0 13px;border:1px solid var(--tap-line);border-radius:var(--tap-radius-control);background:#fff;color:var(--tap-text);font-size:var(--tap-text-action);font-weight:650;line-height:1.1;transition:background-color var(--tap-motion-fast),border-color var(--tap-motion-fast),color var(--tap-motion-fast)}
   .ui-action:hover{background:#fafafa}
   .ui-action:active{background:#f4f4f5}
-  .ui-action-primary{@apply border-zinc-900 bg-zinc-900 text-white;min-height:var(--tap-touch-lg)}
+  .ui-action-primary{@apply border-zinc-900 bg-zinc-900 text-white;min-height:var(--tap-touch-lg);color:#fff!important;-webkit-text-fill-color:#fff!important}
+  .ui-action-primary .ui-icon,.ui-action-primary>span{color:#fff!important;-webkit-text-fill-color:#fff!important}
+  .ui-action-primary .ui-icon{stroke:currentColor!important}
   .ui-action-secondary{background:#fff;border-color:var(--tap-line);color:var(--tap-text)}
   .ui-action-success{color:var(--tap-success);border-color:color-mix(in srgb,var(--tap-success) 32%,transparent);background:color-mix(in srgb,var(--tap-success) 7%,white)}
   .ui-action-danger{color:var(--tap-danger);border-color:color-mix(in srgb,var(--tap-danger) 32%,transparent);background:color-mix(in srgb,var(--tap-danger) 6%,white)}
