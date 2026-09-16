@@ -24,6 +24,12 @@ test('Vercel builds only when runtime changed since the last successful deployme
   }
 });
 
+test('Vercel ignored-build check fails open to a real build when the previous SHA is unavailable',async()=>{
+  const cfg=JSON.parse(await read('vercel.json'));
+  assert.match(cfg.ignoreCommand,/git cat-file -e/);
+  assert.match(cfg.ignoreCommand,/then exit 1; fi/);
+});
+
 test('build identity audit cannot create recursive main commits',async()=>{
   const workflow=await read('.github/workflows/publish-version-marker.yml');
   assert.match(workflow,/workflow_dispatch/);

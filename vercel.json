@@ -2,5 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build:production",
   "outputDirectory": "dist",
-  "ignoreCommand": "base=${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}; git diff --quiet \"$base\" HEAD -- index.html manifest.webmanifest package.json package-lock.json sw.js version.json src scripts vercel.json"
+  "ignoreCommand": "base=${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}; if ! git cat-file -e \"$base^{commit}\" 2>/dev/null; then exit 1; fi; git diff --quiet \"$base\" HEAD -- index.html manifest.webmanifest package.json package-lock.json sw.js version.json src scripts vercel.json"
 }
