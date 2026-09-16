@@ -58,6 +58,16 @@ test('popup layers have fixed chrome, scroll body and visibly different depth',a
   assert.match(css,/\.ui-popup-header[^}]*top\s*:\s*0/);
 });
 
+test('account sheet and login are part of the same touch-first system',async()=>{
+  const css=await read('src/styles/taphoa-th2-final.css');
+  assert.match(css,/\.account-sheet-card[^}]*border-radius\s*:\s*20px\s+20px\s+0\s+0/);
+  assert.match(css,/\.account-sheet-close[^}]*min-width\s*:\s*44px/);
+  assert.match(css,/\.account-logout[^}]*min-height\s*:\s*48px/);
+  assert.match(css,/\.login-card[^}]*box-shadow\s*:\s*none/);
+  assert.match(css,/\.login-field[^}]*min-height\s*:\s*52px/);
+  assert.match(css,/\.login-submit[^}]*min-height\s*:\s*52px/);
+});
+
 test('mobile and desktop preserve same MAIN to popup flow',async()=>{
   const css=await read('src/styles/taphoa-th2-final.css');
   assert.match(css,/@media\s*\(max-width:\s*479px\)/);
