@@ -23,7 +23,11 @@ test('business screen markup owns semantic roles directly instead of depending o
   const debt=await read('src/screens/debt.js');
 
   assert.match(sales,/sales-screen ui-main/);
-  assert.match(sales,/sales-pinned-head ui-context ui-toolbar/);
+  assert.match(sales,/sales-pinned-head sales-main-context ui-context ui-toolbar/);
+  assert.match(sales,/sales-customer-row sales-customer-bar/);
+  assert.match(sales,/sales-search-row sales-search-tools/);
+  assert.match(sales,/sales-groups sales-group-rail/);
+  assert.match(sales,/sales-products sales-products-region ui-zone-data/);
   assert.match(sales,/sales-product-list ui-table/);
   assert.match(sales,/sales-product-row ui-row/);
   assert.match(sales,/sales-cart-panel[^"`]*ui-popup-l1/);
