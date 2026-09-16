@@ -12,25 +12,31 @@ test('shared UI system owns core visual tokens and typography roles',()=>{
   assert.match(ui,/font-variant-numeric:\s*tabular-nums/);
 });
 
-test('index loads Tailwind after screen geometry and semantic runtime before scroll ownership',()=>{
+test('index loads one Tailwind visual owner and icon runtime before scroll ownership',()=>{
   const html=read('index.html');
-  const debt=html.indexOf('./src/styles/debt.css');
   const tailwind=html.indexOf('./src/styles/taphoa-tailwind.css');
   const owner=html.indexOf('./src/styles/scroll-owner.css');
   const uiRuntime=html.indexOf('./src/core/ui-system.js');
-  const semanticRuntime=html.indexOf('./src/core/semantic-ui.js');
   const scrollRuntime=html.indexOf('./src/core/scroll-owner.js');
-  assert.ok(tailwind>debt&&tailwind<owner);
-  assert.ok(uiRuntime>0&&semanticRuntime>uiRuntime&&scrollRuntime>semanticRuntime);
+  assert.ok(tailwind>=0&&tailwind<owner);
+  assert.ok(uiRuntime>0&&scrollRuntime>uiRuntime);
+  assert.doesNotMatch(html,/src\/core\/semantic-ui\.js/);
+  assert.doesNotMatch(html,/src\/styles\/(?:sales|delivered|pending|debt)\.css/);
 });
 
-test('shared UI runtime declares semantic order detail families',async()=>{
-  const mod=await import('../src/core/ui-system.js');
-  assert.deepEqual(Object.keys(mod.DETAIL_UI_CONFIG).sort(),['debt','delivered','pending']);
-  assert.equal(mod.DETAIL_UI_CONFIG.pending.title,'Đơn tạm');
-  assert.equal(mod.DETAIL_UI_CONFIG.delivered.title,'Đã giao');
-  assert.equal(mod.DETAIL_UI_CONFIG.debt.title,'Công nợ');
-  for(const config of Object.values(mod.DETAIL_UI_CONFIG))for(const key of ['panel','header','title','context','head','lines','total'])assert.ok(config[key],`missing ${key}`);
+test('screen sources declare semantic order detail families without runtime structure rewriting',()=>{
+  const runtime=read('src/core/ui-system.js');
+  const delivered=read('src/screens/delivered.js');
+  const pending=read('src/screens/pending.js');
+  const debt=read('src/screens/debt.js');
+  assert.doesNotMatch(runtime,/DETAIL_UI_CONFIG|decoratePendingCards|replaceText\(/);
+  assert.match(delivered,/delivered-detail-panel ui-popup-l1/);
+  assert.match(delivered,/delivered-print-panel ui-popup-l2/);
+  assert.match(pending,/pending-detail-panel ui-popup-l1/);
+  assert.match(pending,/pending-source-panel ui-popup-l1/);
+  assert.match(pending,/pending-print-panel ui-popup-l2/);
+  assert.match(debt,/debt-detail-panel ui-popup-l1/);
+  assert.match(debt,/debt-order-panel ui-popup-l2/);
 });
 
 test('compactOrderId preserves short ids and abbreviates long technical ids',async()=>{
@@ -46,8 +52,8 @@ test('shell and sales consume shared UI tokens',()=>{
   assert.match(sales,/var\(--ui-(?:panel|text|line|primary)/);
 });
 
-test('legacy shared UI source still covers ancillary popup families used by the decorator',()=>{
+test('legacy shared UI source still covers ancillary popup families kept for non-runtime reference',()=>{
   const ui=read('src/styles/ui-system.css');
-  for(const selector of ['.pending-source-panel','.pending-print-panel','.delivered-print-panel','.debt-detail-panel'])assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
-  for(const selector of ['.pending-backdrop','.delivered-backdrop','.debt-backdrop'])assert.ok(ui.includes(selector),`shared UI system must cover ${selector}`);
+  for(const selector of ['.pending-source-panel','.pending-print-panel','.delivered-print-panel','.debt-detail-panel'])assert.ok(ui.includes(selector),`shared UI reference must cover ${selector}`);
+  for(const selector of ['.pending-backdrop','.delivered-backdrop','.debt-backdrop'])assert.ok(ui.includes(selector),`shared UI reference must cover ${selector}`);
 });
