@@ -4,7 +4,8 @@
   body{@apply m-0 font-sans text-tap-text;background:var(--tap-main);font-size:var(--tap-text-body)}
   button,input,select,textarea{@apply font-sans}
   button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #a1a1aa;outline-offset:2px}
+  button:focus-visible{outline:2px solid #a1a1aa;outline-offset:2px}
+  input:focus,input:focus-visible,select:focus,select:focus-visible,textarea:focus,textarea:focus-visible{outline:none!important;outline-offset:0!important;box-shadow:none!important}
   input,select,textarea{min-height:var(--tap-touch);font-size:16px}
 }
 
