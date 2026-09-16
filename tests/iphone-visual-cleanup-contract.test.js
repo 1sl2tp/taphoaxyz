@@ -8,7 +8,7 @@ test('sales cart keeps compact copy while Tailwind owns semantic edit actions',(
   const sales=read('src/screens/sales.js');
   const runtime=read('src/core/ui-system.js');
   const css=read('src/styles/taphoa-tailwind.input.css');
-  assert.match(sales,/\$\{totals\.totalQty\}\?`\$\{totals\.totalQty\} SP ·/);
+  assert.match(sales,/\$\{totals\.totalQty\} SP · \$\{money\(totals\.total\)\}/);
   assert.match(sales,/placeholder="Ghi chú"/);
   assert.doesNotMatch(runtime,/replaceChildren\(\)|uiCompact/);
   assert.match(css,/\[data-sales-action="update"\][^}]*bg-zinc-900/s);
