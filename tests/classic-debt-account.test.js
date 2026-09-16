@@ -17,11 +17,11 @@ test('Debt preserves its existing share targets and classic receipt/table geomet
   assert.match(classic,/\.debt-order-head/);
 });
 
-test('Debt keeps the existing summary, quick form, customer rows and detail geometry',()=>{
-  assert.match(debt,/class="debt-total-row"/);
-  assert.match(debt,/class="debt-quick"/);
-  assert.match(debt,/class="debt-customer-row"/);
-  assert.match(debt,/class="debt-detail-panel"/);
+test('Debt keeps the existing summary, quick form, customer rows and detail geometry with semantic roles',()=>{
+  assert.match(debt,/class="debt-total-row ui-summary"/);
+  assert.match(debt,/class="debt-quick ui-form"/);
+  assert.match(debt,/class="debt-customer-row ui-row"/);
+  assert.match(debt,/class="debt-detail-panel ui-popup-l1"/);
   assert.match(classic,/\.debt-total-row/);
   assert.match(classic,/\.debt-quick/);
   assert.match(classic,/\.debt-detail-panel/);
