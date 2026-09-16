@@ -11,6 +11,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm install --no-audit --no-fund
       - run: npm run build:production
       - run: node --test tests/shared-auth-contract.test.js tests/production-build-contract.test.js
       - name: Verify current modular runtime security contract
