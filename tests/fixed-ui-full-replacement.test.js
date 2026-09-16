@@ -27,11 +27,8 @@ const cssPaths=Array.from({length:4},(_,i)=>`src/fixed-ui-source-${i+1}.css`);
 test('production index loads only the complete FIXED frontend runtime',async()=>{
   const html=await read('index.html');
   assert.match(html,/TAPHOA_GEMINI_100_SAMPLE_FIXED/);
-  for(const path of [...cssPaths,...markupPaths,...runtimePaths,'src/fixed-production-overrides.js','src/fixed-production-direct-startup.js','src/fixed-ui-behavior.js'])
+  for(const path of [...cssPaths,...markupPaths,...runtimePaths,'src/fixed-production-bridge.js','src/fixed-production-overrides.js','src/fixed-ui-behavior.js'])
     assert.ok(html.includes(`./${path}`),`index missing FIXED source: ${path}`);
-  assert.ok(await exists('src/fixed-production-bridge.js'),'production bridge source must exist');
-  const direct=await read('src/fixed-production-direct-startup.js');
-  assert.match(direct,/import\(['"]\.\/fixed-production-bridge\.js['"]\)/,'direct startup must own bridge loading');
   for(const oldMarker of ['id="screenHost"','id="appNav"','./src/app.js','./src/styles/'])
     assert.ok(!html.includes(oldMarker),`legacy UI still loaded: ${oldMarker}`);
 });

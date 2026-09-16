@@ -20,13 +20,6 @@ const first=(obj,keys,fallback='')=>{
   return fallback;
 };
 
-function ledgerNoteWithOrderId(note,orderId,movement){
-  const id=text(orderId).trim();
-  const base=text(note).trim()||(id?`Ghi nợ đơn ${id}`:(Number(movement)<0?'Thu tiền mặt':'Ghi nợ phát sinh'));
-  if(!id)return base;
-  return base.toUpperCase().includes(id.toUpperCase())?base:`${base} ${id}`.trim();
-}
-
 function viTime(value){
   const d=value?new Date(value):new Date();
   if(Number.isNaN(d.getTime()))return text(value);
@@ -115,8 +108,7 @@ function ledgerToRows(detail={}){
   return (detail.transactions||[]).map((tx,index)=>{
     const movement=num(first(tx,['bienDong','movement','soTien','amount'],0));
     const orderId=text(first(tx,['maDon','order_id'],''));
-    const rawNote=text(first(tx,['ghiChu','note'],''));
-    const note=ledgerNoteWithOrderId(rawNote,orderId,movement);
+    const note=text(first(tx,['ghiChu','note'],orderId?`Ghi nợ đơn ${orderId}`:(movement<0?'Thu tiền mặt':'Ghi nợ phát sinh')));
     return [
       text(first(tx,['id','maGD','transaction_id'],`TX${index+1}`)),
       customerId,

@@ -17,14 +17,12 @@ jobs:
       - name: Verify FIXED runtime security contract
         run: |
           test -f dist/index.html
-          test -f dist/src/fixed-production-direct-startup.js
           test -f dist/src/fixed-production-bridge.js
           test -f dist/src/core/config.js
           test -f dist/src/core/auth.js
           test -f dist/src/core/business.js
           grep -q 'TAPHOA_GEMINI_100_SAMPLE_FIXED' dist/index.html
-          grep -q 'fixed-production-direct-startup.js' dist/index.html
-          grep -q 'fixed-production-bridge.js' dist/src/fixed-production-direct-startup.js
+          grep -q 'fixed-production-bridge.js' dist/index.html
           ! grep -q 'src/app.js' dist/index.html
           grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' dist/src/core/config.js
           grep -q 'taphoa.xyz.auth.v2' dist/src/core/config.js
