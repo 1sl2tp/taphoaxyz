@@ -4,13 +4,15 @@ import {readFile} from 'node:fs/promises';
 
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8').catch(()=> '');
 
-test('production build stamps the deployment SHA into emitted index and version',async()=>{
+test('production build stamps and verifies the deployment SHA in emitted index and version',async()=>{
   const build=await read('scripts/build-current.mjs');
   assert.match(build,/VERCEL_GIT_COMMIT_SHA/);
   assert.match(build,/GITHUB_SHA/);
   assert.match(build,/dist\/index\.html/);
   assert.match(build,/dist\/version\.json/);
   assert.match(build,/app-build-id/);
+  assert.match(build,/Stamped app-build-id mismatch/);
+  assert.match(build,/Stamped version build_id mismatch/);
 });
 
 test('Vercel builds only when runtime changed since the last successful deployment',async()=>{
@@ -36,6 +38,12 @@ test('build identity audit cannot create recursive main commits',async()=>{
   assert.match(workflow,/contents:\s*read/);
   assert.doesNotMatch(workflow,/contents:\s*write/);
   assert.doesNotMatch(workflow,/git push/);
+});
+
+test('production smoke parses the rendered meta tag instead of a literal backslash-s sequence',async()=>{
+  const workflow=await read('.github/workflows/taphoa-production-cutover-smoke.yml');
+  assert.ok(workflow.includes('<meta[^>]*name='),'smoke must parse the rendered meta tag');
+  assert.ok(!workflow.includes('\\\\s+content='),'smoke must not search for a literal \\s sequence');
 });
 
 test('production smoke only auto-runs for runtime paths',async()=>{

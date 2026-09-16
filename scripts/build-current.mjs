@@ -23,6 +23,12 @@ if(buildId){
   version.build_id=buildId;
   version.published_from=process.env.VERCEL_GIT_COMMIT_SHA?'vercel-git':'build-environment';
   await writeFile(versionPath,`${JSON.stringify(version,null,2)}\n`);
+
+  const stampedIndex=await readFile(indexPath,'utf8');
+  const stampedMeta=stampedIndex.match(/<meta\s+name=["']app-build-id["']\s+content=["']([^"']+)["']/i)?.[1]||'';
+  if(stampedMeta!==buildId)throw new Error(`Stamped app-build-id mismatch: ${stampedMeta||'<empty>'} != ${buildId}`);
+  const stampedVersion=JSON.parse(await readFile(versionPath,'utf8'));
+  if(stampedVersion.build_id!==buildId)throw new Error(`Stamped version build_id mismatch: ${stampedVersion.build_id||'<empty>'} != ${buildId}`);
 }
 
 console.log(`CURRENT PRODUCTION BUILD PASS${buildId?` ${buildId}`:''}`);

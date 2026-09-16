@@ -37,7 +37,7 @@ jobs:
               && auth="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/auth.js?cb=${cb}" 2>/dev/null)" \
               && business="$(curl -fsSL --max-time 20 "https://beta.taphoa.xyz/src/core/business.js?cb=${cb}" 2>/dev/null)"; then
               live_build="$(python -c 'import json,sys; print(json.load(sys.stdin).get("build_id", ""))' <<<"$version" 2>/dev/null || true)"
-              live_meta="$(python -c 'import re,sys; m=re.search(r"name=[\"'\"']app-build-id[\"'\"']\\s+content=[\"'\"']([^\"'\"']+)",sys.stdin.read()); print(m.group(1) if m else "")' <<<"$index" 2>/dev/null || true)"
+              live_meta="$(python -c 'import re,sys; m=re.search(r"<meta[^>]*name=\"app-build-id\"[^>]*content=\"([^\"]+)\"",sys.stdin.read(),re.I); print(m.group(1) if m else "")' <<<"$index" 2>/dev/null || true)"
               echo "attempt $i: build_id=${live_build:0:12} app-build-id=${live_meta:0:12} expected=${GITHUB_SHA:0:12}"
               if [ "$live_build" = "$GITHUB_SHA" ] \
                 && [ "$live_meta" = "$GITHUB_SHA" ] \
