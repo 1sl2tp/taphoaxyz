@@ -1,3 +1,10 @@
+        let cartTouchSeq = 0;
+
+        function touchCartItem(maSp, item = cart[maSp]) {
+            if (!item) return;
+            item._touch = ++cartTouchSeq;
+        }
+
         function refreshCartTotalsOnly() {
             let totalQty = 0;
             let totalPrice = 0;
@@ -40,7 +47,8 @@
 
             const qty = Math.max(1, parsed);
             const meta = getQtyMeta(maSp, input);
-            cart[maSp] = { name: meta.name, price: meta.price, qty };
+            cart[maSp] = { name: meta.name, price: meta.price, qty, _touch: Number(cart[maSp]?._touch) || 0 };
+            touchCartItem(maSp);
 
             syncQtyEditors(maSp, qty, input);
 
@@ -66,7 +74,8 @@
             input.value = qty;
 
             const meta = getQtyMeta(maSp, input);
-            cart[maSp] = { name: meta.name, price: meta.price, qty };
+            cart[maSp] = { name: meta.name, price: meta.price, qty, _touch: Number(cart[maSp]?._touch) || 0 };
+            touchCartItem(maSp);
             syncQtyEditors(maSp, qty, input);
 
             if (input.dataset.qtyEditor === 'cart') {
@@ -82,15 +91,17 @@
             if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') {
                 return;
             }
-            if (!cart[maSp]) cart[maSp] = { name: tenSp, price: giaBan, qty: 0 };
+            if (!cart[maSp]) cart[maSp] = { name: tenSp, price: giaBan, qty: 0, _touch: 0 };
             cart[maSp].qty += change;
             if (cart[maSp].qty <= 0) delete cart[maSp];
+            else if (change > 0) touchCartItem(maSp);
             renderProductList();
             renderCartUI();
         }
 
         function clearCart() { 
             cart = {};
+            cartTouchSeq = 0;
             editingOrderId = null;
             editingOrderSheet = null;
             document.getElementById('cartEditBadge').classList.add('hidden');
