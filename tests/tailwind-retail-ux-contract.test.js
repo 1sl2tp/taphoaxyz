@@ -1,0 +1,77 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+
+const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const UI_EMOJI=/[🛒✅⏳📝🗑️📦⚠️💚⚡💵📌🖼️✕]/u;
+
+test('Tailwind retail foundation exposes density motion and semantic component roles',async()=>{
+  const css=await read('src/styles/taphoa-tailwind.input.css');
+  for(const token of ['--tap-density:8','--tap-motion-fast:','--tap-motion-normal:','--tap-touch:44px','--tap-touch-lg:48px']){
+    assert.ok(css.includes(token),`missing retail UX token ${token}`);
+  }
+  for(const selector of ['.ui-context','.ui-summary','.ui-table-head','.ui-form','.ui-action-group','.ui-action-secondary']){
+    assert.match(css,new RegExp(`\\${selector.replace('.','.') }\\s*\\{`),`missing semantic component ${selector}`);
+  }
+  assert.match(css,/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+});
+
+test('business screen markup owns semantic roles directly instead of depending on a post-render skin',async()=>{
+  const sales=await read('src/screens/sales.js');
+  const delivered=await read('src/screens/delivered.js');
+  const pending=await read('src/screens/pending.js');
+  const debt=await read('src/screens/debt.js');
+
+  assert.match(sales,/sales-screen ui-main/);
+  assert.match(sales,/sales-pinned-head ui-context ui-toolbar/);
+  assert.match(sales,/sales-product-list ui-table/);
+  assert.match(sales,/sales-product-row ui-row/);
+  assert.match(sales,/sales-cart-panel[^"`]*ui-popup-l1/);
+
+  assert.match(delivered,/delivered-screen ui-main/);
+  assert.match(delivered,/delivered-filter ui-context ui-toolbar/);
+  assert.match(delivered,/delivered-summary[^"`]*ui-summary/);
+  assert.match(delivered,/delivered-list[^"`]*ui-table/);
+  assert.match(delivered,/delivered-detail-panel[^"`]*ui-popup-l1/);
+  assert.match(delivered,/delivered-print-panel[^"`]*ui-popup-l2/);
+
+  assert.match(pending,/pending-screen ui-main/);
+  assert.match(pending,/pending-summary[^"`]*ui-summary/);
+  assert.match(pending,/pending-list[^"`]*ui-table/);
+  assert.match(pending,/pending-detail-panel[^"`]*ui-popup-l1/);
+  assert.match(pending,/pending-print-panel[^"`]*ui-popup-l2/);
+
+  assert.match(debt,/debt-screen ui-main/);
+  assert.match(debt,/debt-quick[^"`]*ui-form/);
+  assert.match(debt,/debt-list[^"`]*ui-table/);
+  assert.match(debt,/debt-detail-panel[^"`]*ui-popup-l1/);
+  assert.match(debt,/debt-order-panel[^"`]*ui-popup-l2/);
+});
+
+test('business screen source contains no emoji UI glyphs',async()=>{
+  for(const path of ['src/screens/sales.js','src/screens/delivered.js','src/screens/pending.js','src/screens/debt.js']){
+    const source=await read(path);
+    assert.doesNotMatch(source,UI_EMOJI,`${path} still contains UI emoji`);
+  }
+});
+
+test('data rows remain rows while controls remain actions',async()=>{
+  const semantic=await read('src/core/semantic-ui.js');
+  assert.match(semantic,/Only true controls are actions/);
+  assert.doesNotMatch(semantic,/ACTIONS\s*=\s*\[[\s\S]*data-order-open/);
+  assert.doesNotMatch(semantic,/ACTIONS\s*=\s*\[[\s\S]*data-customer-open/);
+});
+
+test('redesign preserves current MAIN to popup flow and stable Sales search behavior',async()=>{
+  const sales=await read('src/screens/sales.js');
+  const delivered=await read('src/screens/delivered.js');
+  const pending=await read('src/screens/pending.js');
+  const debt=await read('src/screens/debt.js');
+
+  assert.match(sales,/sales-cart-overlay/);
+  assert.match(delivered,/delivered-overlay/);
+  assert.match(pending,/pending-overlay/);
+  assert.match(debt,/debt-overlay/);
+  assert.match(sales,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)[\s\S]*applySalesSearchVisibility\(root,state\)/);
+  assert.doesNotMatch(sales,/if\(event\.target\.matches\('\[data-sales-search\]'\)\)[\s\S]{0,260}render\(\)/);
+});
