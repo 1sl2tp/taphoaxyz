@@ -10,7 +10,7 @@ test('customer auth role is rendered with restricted user permissions',async()=>
 });
 
 test('cart orders lines by most recently selected or increased item',async()=>{
-  const runtime=await read('src/fixed-ui-runtime-5.js');
+  const runtime=await read('src/fixed-ui-runtime-6.js');
   const behavior=await read('src/fixed-ui-behavior.js');
   assert.match(behavior,/__lastTouched/);
   assert.match(runtime,/__lastTouched/);
