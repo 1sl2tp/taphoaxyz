@@ -22,12 +22,14 @@ test('Sales source hierarchy is customer search groups data and cart, not one fr
   assert.match(sales,/sales-cart-summary/);
 });
 
-test('GitHub Pages production workflow builds and deploys dist from main',async()=>{
-  const workflow=await read('.github/workflows/deploy-github-pages.yml');
-  for(const required of ['actions/configure-pages@','actions/upload-pages-artifact@','actions/deploy-pages@','npm run build:production','path: ./dist','pages: write','id-token: write']){
-    assert.ok(workflow.includes(required),`Pages deploy missing ${required}`);
+test('production build stays platform-neutral and emits the current static app',async()=>{
+  const pkg=JSON.parse(await read('package.json'));
+  const build=await read('scripts/build-current.mjs');
+  assert.match(pkg.scripts['build:production'],/ui:build/);
+  assert.match(pkg.scripts['build:production'],/build-current\.mjs/);
+  for(const required of ["cp('index.html','dist/index.html')","cp('version.json','dist/version.json')","cp('sw.js','dist/sw.js')","cp('src','dist/src',{recursive:true})"]){
+    assert.ok(build.includes(required),`production build missing ${required}`);
   }
-  assert.match(workflow,/branches:\s*\[main\]/);
 });
 
 test('production smoke proves the live build identity and current visual asset',async()=>{
