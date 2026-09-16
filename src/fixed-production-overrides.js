@@ -8,9 +8,11 @@
   const backend=()=>window.TAPHOA_PRODUCTION;
   const sheetNames=['sanpham','khachhang','dontam','dongiao','thuchi'];
   const uniqueOrderIds=rows=>Array.from(new Set((rows||[]).slice(1).map(r=>String(r?.[0]||'').trim()).filter(Boolean)));
+  const resolveOrderId=value=>backend()?.resolveOrderId?.(value)||String(value||'');
 
   function productionRole(info){
     const role=String(info?.identity?.role||backend()?.getIdentity?.()?.role||'admin').toLowerCase();
+    if(role==='customer')return 'user';
     return ['owner','admin','user'].includes(role)?role:'admin';
   }
 
@@ -102,13 +104,14 @@
 
     const targetSheet=editingOrderId?(editingOrderSheet||(String(editingOrderId).startsWith('DG')?'dongiao':'dontam')):tab;
     const status=targetSheet==='dongiao'?'done':'pending';
+    const internalEditOrderId=editingOrderId?resolveOrderId(editingOrderId):'';
     const items=Object.entries(cart).map(([maSP,item],index)=>({
       maSP:String(maSP),sl:Number(item.qty)||0,gia:Number(item.price)||0,lineNo:index+1,ghiChu:String(item.note||'')
     })).filter(item=>item.sl>0);
 
     showLoading('Đang xử lý đẩy đơn...');
     try{
-      await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:String(editingOrderId||''),items});
+      await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:internalEditOrderId,items});
       showToast(editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
       resetSaleSession();
       closeCartMobile();
@@ -141,7 +144,8 @@
   requestClearSheet=function(sheetName){
     if(sheetName==='dongiao')return denyPermission('Đã giao không hỗ trợ Xóa toàn bộ.');
     if(sheetName==='dontam'&&!hasPermission('canClearAllDrafts'))return denyPermission('Tài khoản này không được Xóa toàn bộ Đơn tạm.');
-    const ids=uniqueOrderIds(appData[sheetName]);
+    const displayIds=uniqueOrderIds(appData[sheetName]);
+    const ids=displayIds.map(resolveOrderId);
     if(!ids.length){showToast('Không có đơn để xóa.','warning');return;}
     showConfirmModal('Xóa toàn bộ dữ liệu?',`Hành động này sẽ xóa sạch tất cả ${ids.length} đơn tạm. Bạn chắc chắn chứ?`,'Xóa sạch','bg-danger',async()=>{
       showLoading('Đang xóa toàn bộ...');
@@ -157,13 +161,14 @@
 
   requestDeleteOrder=function(sheetName,orderId){
     if(currentAuthRole==='user'&&sheetName==='dongiao')return denyPermission('User không được xóa đơn đã giao.');
+    const internalOrderId=resolveOrderId(orderId);
     const title=sheetName==='dongiao'?'Hoàn đơn đã giao':'Xóa đơn hàng';
     const desc=sheetName==='dongiao'?`Bạn có chắc chắn muốn hoàn đơn ${orderId} không?`:`Bạn có chắc chắn muốn xóa đơn ${orderId} không?`;
     showConfirmModal(title,desc,sheetName==='dongiao'?'Hoàn đơn':'Xóa đơn','bg-danger',async()=>{
       closeOrderMobile();showLoading(sheetName==='dongiao'?'Đang hoàn đơn...':'Đang xóa đơn...');
       try{
-        if(sheetName==='dongiao')await backend().reverseOrder(orderId,'Hoàn đơn');
-        else await backend().deletePending(orderId);
+        if(sheetName==='dongiao')await backend().reverseOrder(internalOrderId,'Hoàn đơn');
+        else await backend().deletePending(internalOrderId);
         await refreshFixedSheets(['dontam','dongiao','thuchi']);
         if(orderId===editingOrderId||sheetName==='dontam')resetSaleSession();
         showToast(sheetName==='dongiao'?'Đã hoàn đơn '+orderId:'Đã xóa đơn '+orderId,'success');
@@ -177,7 +182,7 @@
     if(!hasPermission('canViewDebt'))return denyPermission('Tài khoản này không được xem Công nợ.');
     try{
       const detail=await backend().debtLedger(maKh);
-      const header=(appData.thuchi&&appData.thuchi[0])||['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian'];
+      const header=(appData.thuchi&&appData.thuchi[0])||['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian','Dư nợ sau GD','Loại','Mã đơn hiển thị','Mã đơn nội bộ'];
       const other=(appData.thuchi||[]).slice(1).filter(r=>String(r?.[1]||'')!==String(maKh));
       appData.thuchi=[header,...other,...backend().ledgerToRows(detail)];
       renderCongNo();
