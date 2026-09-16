@@ -52,21 +52,18 @@ test('sales workspace stretches the product scroller into the bounded viewport r
 
 test('detail panels keep chrome fixed and give long inner lists the scroll',()=>{
   const css=read('src/styles/scroll-owner.css');
-  for(const panel of ['.delivered-detail-panel','.delivered-print-panel','.pending-source-panel','.pending-detail-panel','.pending-print-panel','.debt-detail-panel','.debt-order-panel']){
-    mustContain(css,panel,'overflow:hidden','display:grid');
-  }
-  for(const list of ['.delivered-detail-lines','.delivered-print-lines','.pending-source-detail-lines','.pending-detail-lines','.pending-print-lines','.debt-ledger','.debt-order-lines']){
-    mustContain(css,list,'min-height:0','overflow:auto');
-  }
+  for(const panel of ['.delivered-detail-panel','.delivered-print-panel','.pending-source-panel','.pending-detail-panel','.pending-print-panel','.debt-detail-panel','.debt-order-panel'])mustContain(css,panel,'overflow:hidden','display:grid');
+  for(const list of ['.delivered-detail-lines','.delivered-print-lines','.pending-source-detail-lines','.pending-detail-lines','.pending-print-lines','.debt-ledger','.debt-order-lines'])mustContain(css,list,'min-height:0','overflow:auto');
 });
 
-test('index activates scroll owner CSS after screen CSS and starts runtime',()=>{
+test('index activates scroll owner after the Tailwind screen layout and starts runtime',()=>{
   const html=read('index.html');
-  const debtCss=html.indexOf('./src/styles/debt.css');
+  const tailwindCss=html.indexOf('./src/styles/taphoa-tailwind.css');
   const ownerCss=html.indexOf('./src/styles/scroll-owner.css');
   const runtime=html.indexOf('./src/core/scroll-owner.js');
-  assert.ok(debtCss>=0,'debt.css must stay loaded');
-  assert.ok(ownerCss>debtCss,'scroll-owner.css must load after screen styles so ownership overrides win');
+  assert.ok(tailwindCss>=0,'Tailwind screen layout must be loaded');
+  assert.ok(ownerCss>tailwindCss,'scroll-owner.css must load after Tailwind so scroll ownership wins');
+  assert.doesNotMatch(html,/src\/styles\/(?:sales|delivered|pending|debt)\.css/);
   assert.ok(runtime>=0,'scroll-owner runtime must be loaded');
 });
 
@@ -86,9 +83,7 @@ test('scroll owner runtime restores scrollTop after screen re-render',async()=>{
 });
 
 test('scroll owner runtime records each repeated list independently',async()=>{
-  let mod;
-  try{mod=await import('../src/core/scroll-owner.js');}
-  catch(error){assert.fail(`scroll-owner runtime missing: ${error.message}`);}
+  const mod=await import('../src/core/scroll-owner.js');
   const positions=new Map();
   const listeners=[];
   const nodeA={scrollTop:11,addEventListener(type,fn){listeners.push([type,fn,this]);}};
