@@ -1,0 +1,35 @@
+name: TAPHOA diagnose beta host
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-beta-host.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve beta host
+        shell: bash
+        run: |
+          set -x
+          echo '=== CNAME ==='
+          dig +short CNAME beta.taphoa.xyz || true
+          echo '=== A ==='
+          dig +short A beta.taphoa.xyz || true
+          echo '=== AAAA ==='
+          dig +short AAAA beta.taphoa.xyz || true
+          echo '=== NS taphoa.xyz ==='
+          dig +short NS taphoa.xyz || true
+          echo '=== HTTPS headers ==='
+          curl -sSIL --max-time 20 https://beta.taphoa.xyz/ || true
+          echo '=== version ==='
+          curl -fsSL --max-time 20 "https://beta.taphoa.xyz/version.json?cb=${GITHUB_SHA}" || true
+          echo
+          echo '=== root markers ==='
+          curl -fsSL --max-time 20 "https://beta.taphoa.xyz/?cb=${GITHUB_SHA}" | grep -Eo 'app-build-id[^>]*|github[^< >]*|taphoa-tailwind[^"'\'' ]*|src/app.js' | head -30 || true
