@@ -4,12 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f4f4f5">
-<meta name="app-build-id" content="6534d837b48775a1e0e3b9d5ac47d4bcb0ad442c">
+<meta name="app-build-id" content="f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0">
 <title>taphoa.xyz</title>
 <link rel="stylesheet" href="./src/styles/base.css">
 <link rel="stylesheet" href="./src/styles/shell.css">
 <link rel="stylesheet" href="./src/styles/taphoa-tailwind.css">
 <link rel="stylesheet" href="./src/styles/scroll-owner.css">
+<style id="taphoa-dark-contrast-hotfix">
+[data-screen-id="delivered"] .delivered-time button[aria-pressed="true"],
+[data-screen-id="delivered"] .delivered-days button[aria-pressed="true"]{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+[data-screen-id="delivered"] .delivered-time button[aria-pressed="true"] *,
+[data-screen-id="delivered"] .delivered-days button[aria-pressed="true"] *{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  fill:currentColor!important;
+  stroke:currentColor!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+</style>
 </head>
 <body>
 <div class="taphoa-viewport" id="taphoaViewport">
