@@ -34,7 +34,7 @@ jobs:
                 && grep -q 'app-build-id' <<<"$index" \
                 && grep -q 'build_id' <<<"$version" \
                 && grep -q 'src/app.js' <<<"$index" \
-                && grep -q 'TAPHOA_SALES_LAYOUT_V2' <<<"$css" \
+                && grep -q 'TAPHOA_TH2_LAYOUT_V1' <<<"$css" \
                 && grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' <<<"$config" \
                 && grep -q 'taphoa.xyz.auth.v2' <<<"$config" \
                 && grep -q 'signInWithPassword' <<<"$auth" \
@@ -43,7 +43,7 @@ jobs:
                 && grep -q 'taphoa_save_order' <<<"$business" \
                 && ! grep -q 'crdbhkdeqyehsbzgggbs' <<<"$config$auth$business" \
                 && ! grep -q 'shop-auth\|shop_identities' <<<"$config$auth$business"; then
-                echo "PRODUCTION CUTOVER PASS: exact code build and Sales V2 visual asset are live"
+                echo "PRODUCTION CUTOVER PASS: exact code build and Thẻ 2 final visual asset are live"
                 ok=1
                 break
               fi
