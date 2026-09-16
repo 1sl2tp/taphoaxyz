@@ -7,11 +7,13 @@ const vercel=JSON.parse(fs.readFileSync(new URL('../vercel.json',import.meta.url
 const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const build=fs.readFileSync(new URL('../scripts/build-current.mjs',import.meta.url),'utf8');
 
-test('Vercel deploys the current modular TAPHOA app, not the legacy V1.33 artifact',()=>{
+test('Vercel compiles Tailwind then deploys the current modular TAPHOA app',()=>{
   assert.equal(vercel.buildCommand,'npm run build:production');
   assert.equal(vercel.outputDirectory,'dist');
-  assert.equal(pkg.scripts['build:production'],'node scripts/build-current.mjs');
+  assert.match(pkg.scripts['build:production'],/^npm run ui:build && node scripts\/build-current\.mjs$/);
+  assert.match(pkg.scripts['ui:build'],/@tailwindcss\/cli/);
   assert.match(index,/src\/app\.js/);
+  assert.match(index,/src\/styles\/taphoa-tailwind\.css/);
   assert.match(build,/cp\([^)]*index\.html/);
   assert.match(build,/cp\([^)]*manifest\.webmanifest/);
   assert.match(build,/cp\([^)]*src/);
