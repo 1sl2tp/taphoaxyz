@@ -9,11 +9,7 @@
   --color-tap-line-strong: #d4d4d8;
   --color-tap-text: #18181b;
   --color-tap-muted: #71717a;
-  --color-tap-soft: #a1a1aa;
   --color-tap-primary: #18181b;
-  --color-tap-success: #218554;
-  --color-tap-danger: #c93b3b;
-  --color-tap-warning: #a16207;
 }
 
 :root {
@@ -29,18 +25,17 @@
   --tap-radius-popup: 20px;
   --tap-shadow-popup: 0 18px 48px rgba(24,24,27,.16);
   --tap-shadow-l2: 0 24px 70px rgba(24,24,27,.22);
-  --tap-page: #f4f4f5;
-  --tap-panel: #fff;
-  --tap-subtle: #fafafa;
-  --tap-line: #e4e4e7;
-  --tap-line-strong: #d4d4d8;
-  --tap-text: #18181b;
-  --tap-muted: #71717a;
-  --tap-soft: #a1a1aa;
-  --tap-primary: #18181b;
-  --tap-success: #218554;
-  --tap-danger: #c93b3b;
-  --tap-warning: #a16207;
+  --tap-page:#f4f4f5;
+  --tap-panel:#fff;
+  --tap-subtle:#fafafa;
+  --tap-line:#e4e4e7;
+  --tap-line-strong:#d4d4d8;
+  --tap-text:#18181b;
+  --tap-muted:#71717a;
+  --tap-primary:#18181b;
+  --tap-success:#218554;
+  --tap-danger:#c93b3b;
+  --tap-warning:#a16207;
 }
 
 @layer base {
@@ -53,48 +48,47 @@
 }
 
 @layer components {
-  /* Semantic hierarchy: shell -> main -> popup L1 -> popup L2. */
   .ui-main { @apply bg-tap-page text-tap-text; min-height:100%; font-size:var(--tap-text-body); }
-  .ui-toolbar { @apply bg-tap-panel border-b border-tap-line; }
+  .ui-toolbar { @apply bg-white border-b border-tap-line; }
   .ui-section { @apply bg-tap-page; }
-  .ui-surface { @apply bg-tap-panel border border-tap-line; border-radius:var(--tap-radius-panel); }
-  .ui-table { @apply overflow-hidden bg-tap-panel border-y border-tap-line; }
-  .ui-row { @apply bg-tap-panel border-b border-tap-line last:border-b-0; min-height:56px; }
+  .ui-surface { @apply bg-white border border-tap-line; border-radius:var(--tap-radius-panel); }
+  .ui-table { @apply overflow-hidden bg-white border-y border-tap-line; }
+  .ui-row { @apply bg-white border-b border-tap-line; min-height:56px; }
+  .ui-row:last-child { border-bottom:0; }
   .ui-row:active { @apply bg-zinc-50; }
-  .ui-action { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-tap-line bg-tap-panel px-3 font-semibold text-tap-text transition-colors duration-150; min-height:var(--tap-touch); font-size:var(--tap-text-action); }
+  .ui-action { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-tap-line bg-white px-3 font-semibold text-zinc-900 transition-colors duration-150; min-height:var(--tap-touch); font-size:var(--tap-text-action); }
   .ui-action:hover { @apply bg-zinc-50; }
   .ui-action:active { @apply bg-zinc-100; }
-  .ui-action-primary { @apply border-tap-primary bg-tap-primary text-white; }
+  .ui-action-primary { @apply border-zinc-900 bg-zinc-900 text-white; }
   .ui-action-success { color:var(--tap-success); border-color:color-mix(in srgb,var(--tap-success) 34%,transparent); background:color-mix(in srgb,var(--tap-success) 7%,white); }
   .ui-action-danger { color:var(--tap-danger); border-color:color-mix(in srgb,var(--tap-danger) 34%,transparent); background:color-mix(in srgb,var(--tap-danger) 6%,white); }
   .ui-icon-button { @apply inline-grid place-items-center rounded-xl border border-transparent bg-transparent text-zinc-600 transition-colors duration-150; width:var(--tap-touch); height:var(--tap-touch); min-width:var(--tap-touch); min-height:var(--tap-touch); padding:0; }
   .ui-icon-button:hover,.ui-icon-button:active { @apply bg-zinc-100 text-zinc-950; }
   .ui-icon { width:20px; height:20px; stroke-width:1.8; }
-  .ui-popup-l1,.ui-popup-l2 { @apply bg-tap-panel text-tap-text border border-tap-line; border-radius:var(--tap-radius-popup); }
+  .ui-popup-l1,.ui-popup-l2 { @apply bg-white text-zinc-950 border border-tap-line; border-radius:var(--tap-radius-popup); }
   .ui-popup-l1 { box-shadow:var(--tap-shadow-popup); }
   .ui-popup-l2 { box-shadow:var(--tap-shadow-l2); border-color:var(--tap-line-strong); }
   .ui-popup-header { @apply flex items-center gap-3 border-b border-tap-line px-4; min-height:56px; }
-  .ui-popup-actions { @apply grid gap-2 border-t border-tap-line bg-tap-subtle p-3; }
+  .ui-popup-actions { @apply grid gap-2 border-t border-tap-line bg-zinc-50 p-3; }
 
-  /* Layer 0: navigation / app shell. */
+  /* Layer 0 — shell/navigation. */
   .app-topbar { @apply bg-white border-b border-tap-line shadow-none; }
   .app-nav { @apply bg-white; min-height:64px; }
   .app-nav button { @apply text-zinc-500 transition-colors duration-150; min-height:60px; font-size:var(--tap-text-meta); }
   .app-nav button:hover,.app-nav button:active { @apply bg-zinc-50 text-zinc-950; }
   .app-nav button[aria-current="page"] { @apply bg-zinc-100 text-zinc-950 font-semibold; }
   .app-nav-icon { @apply grid place-items-center; height:24px; }
-  .app-nav-label { margin-top:3px; font-size:12px; line-height:1.15; font-weight:550; }
+  .app-nav-label { margin-top:3px; font-size:12px; line-height:1.15; font-weight:600; }
   .account-button { width:44px; height:44px; min-height:44px; @apply rounded-full border border-tap-line bg-white text-sm font-semibold text-zinc-700; }
 
-  /* Layer 1: Sales main. */
-  [data-screen-id="sales"].ui-main { @apply bg-tap-page; }
+  /* Sales MAIN — toolbar / filters / row collection. */
   [data-screen-id="sales"] .sales-pinned-head { @apply bg-white border-b border-tap-line; }
   [data-screen-id="sales"] .sales-customer-row { @apply bg-white px-3 py-2; gap:8px; }
   [data-screen-id="sales"] .sales-customer-input,
   [data-screen-id="sales"] .sales-search-row>input { @apply border border-tap-line bg-white text-zinc-950 shadow-none; border-radius:var(--tap-radius-control); min-height:var(--tap-touch-lg); }
   [data-screen-id="sales"] .sales-customer-input { font-size:15px; font-weight:650; }
   [data-screen-id="sales"] .sales-time { color:var(--tap-muted); font-size:13px; font-variant-numeric:tabular-nums; }
-  [data-screen-id="sales"] .sales-cart-quick { @apply ui-action; white-space:nowrap; }
+  [data-screen-id="sales"] .sales-cart-quick { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-tap-line bg-white px-3 font-semibold text-zinc-900; min-height:44px; font-size:15px; white-space:nowrap; }
   [data-screen-id="sales"] .sales-search-row { @apply bg-white px-3 pt-2; }
   [data-screen-id="sales"] .sales-search-row>input { padding-left:42px; font-size:16px; }
   [data-screen-id="sales"] .ui-search-leading-icon { left:26px; color:var(--tap-muted); }
@@ -113,25 +107,23 @@
   [data-screen-id="sales"] .sales-qty button:last-child { @apply border-zinc-900 bg-zinc-900 text-white; }
   [data-screen-id="sales"] .sales-qty-value { width:44px; min-height:44px; text-align:center; font-size:16px; font-weight:700; border:0; background:transparent; }
   [data-screen-id="sales"] .sales-cart-desktop { display:none!important; }
-  [data-screen-id="sales"] .sales-cart-backdrop { background:rgba(24,24,27,.38)!important; backdrop-filter:blur(2px); }
-  [data-screen-id="sales"] .sales-cart-panel { @apply ui-popup-l1; overflow:hidden; }
-  [data-screen-id="sales"] .sales-cart-head { @apply ui-popup-header; }
-  [data-screen-id="sales"] .sales-cart-body { @apply bg-white; }
+  [data-screen-id="sales"] .sales-cart-backdrop { background:rgba(24,24,27,.40)!important; backdrop-filter:blur(2px); }
+  [data-screen-id="sales"] .sales-cart-panel { @apply bg-white border border-tap-line text-zinc-950; border-radius:var(--tap-radius-popup); box-shadow:var(--tap-shadow-popup)!important; overflow:hidden; }
+  [data-screen-id="sales"] .sales-cart-head { @apply flex items-center gap-3 border-b border-tap-line px-4; min-height:56px; }
   [data-screen-id="sales"] .sales-cart-table-head { @apply grid bg-zinc-50 px-3 py-2 text-zinc-500; font-size:12px; font-weight:650; }
   [data-screen-id="sales"] .sales-cart-line { @apply border-b border-tap-line px-3 py-2; min-height:62px; }
-  [data-screen-id="sales"] .sales-cart-actions { @apply ui-popup-actions; grid-template-columns:repeat(3,minmax(0,1fr)); }
-  [data-screen-id="sales"] .sales-cart-actions button { @apply ui-action; }
+  [data-screen-id="sales"] .sales-cart-actions { @apply grid gap-2 border-t border-tap-line bg-zinc-50 p-3; grid-template-columns:repeat(3,minmax(0,1fr)); }
+  [data-screen-id="sales"] .sales-cart-actions button { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-tap-line bg-white px-3 font-semibold text-zinc-900; min-height:44px; font-size:15px; }
   [data-screen-id="sales"] .sales-cart-actions [data-sales-action="done"],
-  [data-screen-id="sales"] .sales-cart-actions [data-sales-action="update"] { @apply ui-action-primary; }
-  [data-screen-id="sales"] .sales-cart-actions [data-sales-action="clear"] { @apply ui-action-danger; }
+  [data-screen-id="sales"] .sales-cart-actions [data-sales-action="update"] { @apply border-zinc-900 bg-zinc-900 text-white; }
+  [data-screen-id="sales"] .sales-cart-actions [data-sales-action="clear"] { color:var(--tap-danger); border-color:color-mix(in srgb,var(--tap-danger) 34%,transparent); background:color-mix(in srgb,var(--tap-danger) 6%,white); }
 
-  /* Delivered main: toolbar -> summary table -> order rows. */
-  [data-screen-id="delivered"] { @apply bg-tap-page; }
+  /* Delivered MAIN. */
   [data-screen-id="delivered"] .delivered-filter { @apply bg-white border-b border-tap-line p-3 shadow-none; }
   [data-screen-id="delivered"] .delivered-search input { @apply w-full rounded-xl border border-tap-line bg-white px-3 text-base; min-height:48px; }
   [data-screen-id="delivered"] .delivered-time { @apply grid grid-cols-2 gap-2 mt-2; }
-  [data-screen-id="delivered"] .delivered-time button { @apply ui-action; }
-  [data-screen-id="delivered"] .delivered-time button[aria-pressed="true"] { @apply ui-action-primary; }
+  [data-screen-id="delivered"] .delivered-time button { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-tap-line bg-white px-3 font-semibold text-zinc-900; min-height:44px; font-size:15px; }
+  [data-screen-id="delivered"] .delivered-time button[aria-pressed="true"] { @apply border-zinc-900 bg-zinc-900 text-white; }
   [data-screen-id="delivered"] .delivered-summary { @apply bg-white border-y border-tap-line px-3 py-3 shadow-none; margin-top:8px; }
   [data-screen-id="delivered"] .delivered-summary h2 { font-size:17px; line-height:1.25; font-weight:700; margin-bottom:8px; }
   [data-screen-id="delivered"] .delivered-summary-grid { @apply grid items-center border-b border-tap-line py-2; min-height:40px; font-size:14px; }
@@ -142,10 +134,9 @@
   [data-screen-id="delivered"] .delivered-order-card:active { @apply bg-zinc-50; }
   [data-screen-id="delivered"] .delivered-order-top>strong { font-size:17px; font-weight:750; font-variant-numeric:tabular-nums; }
   [data-screen-id="delivered"] .delivered-order-mid { color:var(--tap-muted); font-size:13px; }
-  [data-screen-id="delivered"] .delivered-calendar { @apply ui-popup-l1 bg-white p-3; }
+  [data-screen-id="delivered"] .delivered-calendar { @apply bg-white border border-tap-line p-3; border-radius:var(--tap-radius-popup); box-shadow:var(--tap-shadow-popup); }
 
-  /* Pending main: summary is a real table, list is a row collection. */
-  [data-screen-id="pending"] { @apply bg-tap-page; }
+  /* Pending MAIN. */
   [data-screen-id="pending"] .pending-summary { @apply bg-white border-y border-tap-line px-3 py-3 shadow-none; }
   [data-screen-id="pending"] .pending-summary>header { @apply flex items-center justify-between gap-3 mb-2; }
   [data-screen-id="pending"] .pending-summary h2 { margin:0; font-size:18px; font-weight:750; }
@@ -160,8 +151,7 @@
   [data-screen-id="pending"] .pending-order-customer { font-size:15px!important; font-weight:700!important; }
   [data-screen-id="pending"] .pending-order-side>strong { font-size:17px!important; font-weight:750!important; font-variant-numeric:tabular-nums; }
 
-  /* Debt main: information zone and action zone are distinct; customer list is rows, not cards. */
-  [data-screen-id="debt"] { @apply bg-tap-page; }
+  /* Debt MAIN. */
   [data-screen-id="debt"] .debt-hero { @apply bg-tap-page p-2; }
   [data-screen-id="debt"] .debt-total-row { @apply grid gap-2; }
   [data-screen-id="debt"] .debt-total-row>div { @apply bg-white border border-tap-line px-4 py-3 shadow-none; border-radius:var(--tap-radius-panel); }
@@ -172,45 +162,42 @@
   [data-screen-id="debt"] .debt-quick>b { display:block; color:var(--tap-muted); font-size:12px; font-weight:700; margin-bottom:8px; }
   [data-screen-id="debt"] .debt-customer-picker>input,[data-screen-id="debt"] .debt-quick-actions input { @apply rounded-xl border border-tap-line bg-white px-3; min-height:48px; }
   [data-screen-id="debt"] .debt-quick-actions { @apply grid gap-2 mt-2; grid-template-columns:minmax(0,1fr) auto auto; }
-  [data-screen-id="debt"] .debt-quick-actions button { @apply ui-action; min-width:108px; }
-  [data-screen-id="debt"] .debt-quick-actions button:nth-of-type(1) { @apply ui-action-success; }
-  [data-screen-id="debt"] .debt-quick-actions button:nth-of-type(2) { @apply ui-action-danger; }
+  [data-screen-id="debt"] .debt-quick-actions button { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-tap-line bg-white px-3 font-semibold; min-height:44px; font-size:15px; min-width:108px; }
+  [data-screen-id="debt"] .debt-quick-actions button:nth-of-type(1) { color:var(--tap-success); border-color:color-mix(in srgb,var(--tap-success) 34%,transparent); background:color-mix(in srgb,var(--tap-success) 7%,white); }
+  [data-screen-id="debt"] .debt-quick-actions button:nth-of-type(2) { color:var(--tap-danger); border-color:color-mix(in srgb,var(--tap-danger) 34%,transparent); background:color-mix(in srgb,var(--tap-danger) 6%,white); }
   [data-screen-id="debt"] .debt-list { @apply bg-tap-page px-2 pb-3; }
   [data-screen-id="debt"] .debt-group-head { @apply flex items-center justify-between bg-tap-page px-2 pt-4 pb-2; color:var(--tap-muted); font-size:13px; font-weight:700; }
   [data-screen-id="debt"] .debt-customer-row { @apply grid w-full bg-white border-0 border-b border-tap-line px-3 text-left shadow-none; border-radius:0!important; min-height:68px; }
-  [data-screen-id="debt"] .debt-customer-row:first-of-type { border-top-left-radius:var(--tap-radius-panel)!important; border-top-right-radius:var(--tap-radius-panel)!important; }
   [data-screen-id="debt"] .debt-customer-copy b { font-size:15px; font-weight:700; }
   [data-screen-id="debt"] .debt-customer-copy small { color:var(--tap-muted); font-size:13px; }
   [data-screen-id="debt"] .debt-customer-row>strong { font-size:16px; font-weight:750; font-variant-numeric:tabular-nums; }
 
-  /* Popup level 1: same flow as before, clearer hierarchy. */
+  /* Popup level 1. */
   .sales-cart-panel.ui-popup-l1,
   .delivered-detail-panel.ui-popup-l1,
   .pending-detail-panel.ui-popup-l1,
   .pending-source-panel.ui-popup-l1,
   .debt-detail-panel.ui-popup-l1,
-  .account-sheet-card.ui-popup-l1 { @apply bg-white border border-tap-line; box-shadow:var(--tap-shadow-popup)!important; }
+  .account-sheet-card.ui-popup-l1 { @apply bg-white border border-tap-line text-zinc-950; box-shadow:var(--tap-shadow-popup)!important; }
   .delivered-backdrop,.pending-backdrop,.debt-backdrop,.sales-cart-backdrop,.account-sheet-backdrop { background:rgba(24,24,27,.40)!important; backdrop-filter:blur(2px); }
-  .delivered-detail-panel>header,.pending-detail-panel>header,.pending-source-panel>header,.debt-detail-panel>header { @apply ui-popup-header; }
-  .delivered-detail-panel>footer,.pending-detail-panel>footer,.debt-detail-panel>footer { @apply ui-popup-actions; }
-  .delivered-detail-panel>footer button,.pending-detail-panel>footer button,.pending-source-panel button,.debt-detail-panel button { @apply ui-action; }
+  .delivered-detail-panel>header,.pending-detail-panel>header,.pending-source-panel>header,.debt-detail-panel>header { @apply flex items-center gap-3 border-b border-tap-line px-4; min-height:56px; }
+  .delivered-detail-panel>footer,.pending-detail-panel>footer,.debt-detail-panel>footer { @apply grid gap-2 border-t border-tap-line bg-zinc-50 p-3; }
+  .delivered-detail-panel>footer button,.pending-detail-panel>footer button,.pending-source-panel button,.debt-detail-panel button { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-tap-line bg-white px-3 font-semibold text-zinc-900; min-height:44px; font-size:15px; }
   .classic-receipt,.debt-receipt { @apply bg-white border border-tap-line shadow-none; border-radius:14px; }
   .classic-detail-table,.debt-ledger-head,.debt-order-head { font-size:13px; }
   .order-detail-title { font-size:18px; font-weight:750; }
   .order-detail-context { color:var(--tap-muted); font-size:13px; }
   .order-detail-total { font-size:16px; font-weight:750; }
 
-  /* Popup level 2: print/source/order drill-down sits above L1 with stronger elevation. */
+  /* Popup level 2. */
   .delivered-print-panel.ui-popup-l2,.pending-print-panel.ui-popup-l2,.debt-order-panel.ui-popup-l2 { @apply bg-white border border-tap-line-strong; box-shadow:var(--tap-shadow-l2)!important; }
 
-  /* Status and numbers. */
   .ui-status { @apply inline-flex items-center rounded-lg px-2 py-1; font-size:12px; line-height:1; font-weight:700; }
   .ui-status-success { color:var(--tap-success); background:color-mix(in srgb,var(--tap-success) 8%,white); }
   .ui-status-pending { color:var(--tap-warning); background:color-mix(in srgb,var(--tap-warning) 8%,white); }
   .ui-status-danger { color:var(--tap-danger); background:color-mix(in srgb,var(--tap-danger) 8%,white); }
   [data-ui-type="money-key"],[data-ui-type="money-row"],[data-ui-type="money-hero"] { font-variant-numeric:tabular-nums; }
 
-  /* Keep flow main -> popup on every desktop width. Desktop gets breathing room, not a split-view rewrite. */
   @media (min-width:768px) {
     .screen-host { @apply bg-tap-page; }
     .ui-main { width:min(100%,1100px); margin-inline:auto; }
