@@ -26,8 +26,10 @@ test('login surface uses the shared UI token family rather than fallback or para
   assert.match(css,/\.login-screen\s*\{[^}]*background:var\(--ui-panel\)[^}]*color:var\(--ui-text\)/is);
   assert.match(css,/\.login-wrap\s*\{[^}]*max-width:448px/is);
   assert.match(css,/\.login-card\s*\{[^}]*background:var\(--ui-panel\)[^}]*border[^;]*var\(--ui-line\)/is);
-  assert.match(css,/\.login-field input\s*\{[^}]*min-height:56px[^}]*border[^;]*var\(--ui-line\)[^}]*font-size:16px/is);
-  assert.match(css,/\.login-submit\s*\{[^}]*min-height:56px[^}]*var\(--ui-primary\)/is);
+  assert.match(css,/\.login-card>\.login-field[^\{]*\{[^}]*min-height:52px[^}]*border[^;]*var\(--ui-line\)[^}]*font-size:16px/is);
+  assert.match(css,/\.login-submit\s*\{[^}]*min-height:52px[^}]*var\(--ui-primary\)/is);
+  assert.match(css,/\.login-brand\s*\{[^}]*display:none!important/is);
+  assert.match(css,/\.login-eye\s*\{[^}]*display:none!important/is);
 });
 
 test('account control stays outside the four business navigation tabs',()=>{
