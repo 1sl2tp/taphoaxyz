@@ -1,13 +1,11 @@
         function renderCartUI() {
             const isDeliveredReadOnlyPreview = currentAuthRole === 'user' && editingOrderSheet === 'dongiao';
             let totalQty = 0; let totalPrice = 0; let index = 1; let html = '';
-            const cartEntries = Object.entries(cart).sort(([, a], [, b]) =>
-                String(a.name || '').trim().localeCompare(
-                    String(b.name || '').trim(),
-                    'vi',
-                    { sensitivity: 'base' }
-                )
-            );
+            const cartEntries = Object.entries(cart).sort(([, a], [, b]) => {
+                const touchDelta = (b._touch || 0) - (a._touch || 0);
+                if (touchDelta) return touchDelta;
+                return String(a.name || '').trim().localeCompare(String(b.name || '').trim(), 'vi', { sensitivity: 'base' });
+            });
             const lineCount = cartEntries.length;
             for (const [id, item] of cartEntries) {
                 totalQty += item.qty; totalPrice += (item.qty * item.price);
@@ -162,7 +160,7 @@
                     <button type="button" onclick="selectCustomer('${kh[0]}', '${kh[1]}')" class="allow-fast-click w-full p-3 rounded-xl border ${active ? 'border-primary bg-primaryLight' : 'border-gray-100 bg-white hover:bg-gray-50'} cursor-pointer flex justify-between items-center transition text-left">
                         <span class="pointer-events-none min-w-0">
                             <span class="block font-bold text-sm text-gray-900 truncate">${kh[1]}</span>
-                            <span class="block text-xs text-gray-400 mt-0.5">Mã: ${kh[0]}</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">Mã: ${kh[2] || kh[0]}</span>
                         </span>
                         ${active ? '<i class="ph-fill ph-check-circle text-primary text-[16px] pointer-events-none"></i>' : ''}
                     </button>`;
