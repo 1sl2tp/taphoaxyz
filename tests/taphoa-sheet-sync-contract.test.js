@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/index.ts',import.meta.url),'utf8');
 const cron=fs.readFileSync(new URL('../supabase/migrations/20260915040000_taphoa_sheet_sync_cron.sql',import.meta.url),'utf8');
+const realtime=fs.readFileSync(new URL('../supabase/migrations/20260917020000_taphoa_product_realtime_sheet_sync.sql',import.meta.url),'utf8');
 
 test('worker owns the exact management file and five source tabs',()=>{
   assert.match(worker,/1hGqAzIEqTMmULIeh5sCmed2R3XaiA9QZavtGRdNvyyU/);
@@ -29,24 +30,24 @@ test('manager row mapping is uniformly A code, B name, C cost, D sale price',()=
   assert.match(worker,/sale_price_vnd[^\n]*Math\.round\([^\n]*\*\s*1000\)/);
 });
 
-test('sync is strictly one-way into TAPHOA tables',()=>{
+test('sync remains TAPHOA-only and never touches GETLINK or NCC pairing',()=>{
   assert.match(worker,/taphoa_products/);
   assert.match(worker,/taphoa_sources/);
   assert.match(worker,/taphoa_sheet_sync_state/);
   assert.match(worker,/taphoa_revisions/);
   assert.doesNotMatch(worker,/getlink_supplier_products|getlink_supplier_pair_state|getlink_canonical/i);
-  assert.doesNotMatch(worker,/values:batchUpdate|:append\?|writePairToNcc|writePairToManager/i);
+  assert.doesNotMatch(worker,/writePairToNcc|writePairToManager/i);
 });
 
-test('worker skips unchanged Drive versions and atomic import deactivates missing product codes',()=>{
+test('worker skips unchanged Drive versions and delta import deactivates missing product codes',()=>{
   assert.match(worker,/modifiedTime/);
   assert.match(worker,/last_drive_modified_time/);
   assert.match(worker,/changed\s*:\s*false/);
-  assert.match(worker,/taphoa_apply_product_sync/);
-  assert.match(cron,/update\s+public\.taphoa_products[\s\S]*set\s+is_active\s*=\s*false/i);
-  assert.match(cron,/not\s+exists\s*\([\s\S]*jsonb_to_recordset\(p_products\)/i);
+  assert.match(worker,/taphoa_apply_product_delta/);
+  assert.match(realtime,/update\s+public\.taphoa_products[\s\S]*set\s+is_active\s*=\s*false/i);
+  assert.match(realtime,/jsonb_array_elements_text\(s\.codes\)/i);
   assert.match(worker,/last_sync_status/);
-  assert.match(cron,/where\s+domain\s*=\s*'products'/i);
+  assert.match(realtime,/domain\s*=\s*'products'/i);
 });
 
 test('cron is TAPHOA-owned and runs once per minute',()=>{
