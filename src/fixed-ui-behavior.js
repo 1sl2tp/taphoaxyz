@@ -118,7 +118,7 @@ renderCongNo = function() {
   __enrichDebtHistoryFromLedger();
 };
 
-/* Hoàn/đảo đơn vẫn tính vào số dư nhưng là nghiệp vụ ẩn, không vẽ thành giao dịch. */
+/* Đơn đã hoàn vẫn giữ trong data/audit nhưng ẩn cả dòng giao và dòng hoàn khỏi lịch sử nhìn thấy. */
 openCustomerDebtModal = function(maKh) {
   if (!hasPermission('canViewDebt')) return denyPermission('Tài khoản này không được xem Công nợ.');
   activeDebtCustomerId = maKh;
@@ -126,7 +126,16 @@ openCustomerDebtModal = function(maKh) {
   if (!kh) return;
   const tenKh = kh[1];
   const history = (window.customerDebtHistoryData && window.customerDebtHistoryData[maKh]) ? window.customerDebtHistoryData[maKh] : [];
-  const visibleHistory = history.filter(h => h.entryType !== 'reversal' && !/^Hoàn đơn\b/i.test(String(h.loaiGd || '')));
+  const reversedBackendOrderIds = new Set(
+    history
+      .filter(h => h.entryType === 'reversal' && h.backendOrderId)
+      .map(h => String(h.backendOrderId))
+  );
+  const visibleHistory = history.filter(h =>
+    h.entryType !== 'reversal' &&
+    !/^Hoàn đơn\b/i.test(String(h.loaiGd || '')) &&
+    !reversedBackendOrderIds.has(String(h.backendOrderId || ''))
+  );
 
   document.getElementById('cDebtModalName').innerText = 'KH: ' + tenKh;
   const storedBalance = window.customerDebtCurrentBalanceData?.[maKh];
@@ -137,8 +146,15 @@ openCustomerDebtModal = function(maKh) {
   totalEl.innerText = currentTotalDebt.toLocaleString('vi-VN') + ' đ';
   totalEl.className = `text-[18px] font-extrabold ${currentTotalDebt >= 0 ? 'text-danger' : 'text-success'}`;
 
+  const displayHistory = visibleHistory.map(h => ({ ...h }));
+  let displayRunningDebt = currentTotalDebt;
+  for (let i = displayHistory.length - 1; i >= 0; i -= 1) {
+    displayHistory[i].currentDebt = displayRunningDebt;
+    displayRunningDebt -= Number(displayHistory[i].soTien) || 0;
+  }
+
   let html = '';
-  visibleHistory.slice().reverse().forEach(h => {
+  displayHistory.slice().reverse().forEach(h => {
     const isThu = h.soTien < 0;
     const sign = isThu ? '' : '+';
     const badgeColor = isThu ? 'text-success bg-green-50' : 'text-danger bg-red-50';
@@ -159,7 +175,7 @@ openCustomerDebtModal = function(maKh) {
       </div>
     </div>`;
   });
-  if (visibleHistory.length === 0) html = '<p class="text-center text-gray-400 py-6 text-xs">Chưa có lịch sử giao dịch</p>';
+  if (displayHistory.length === 0) html = '<p class="text-center text-gray-400 py-6 text-xs">Chưa có lịch sử giao dịch</p>';
   document.getElementById('cDebtModalHistoryList').innerHTML = html;
 
   document.getElementById('customerDebtModalWrapper').classList.remove('hidden');
