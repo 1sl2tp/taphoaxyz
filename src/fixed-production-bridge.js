@@ -34,6 +34,13 @@ function saveSnapshot(){
   if(uid)snapshot.save(uid,appState.get());
 }
 
+function sourceDisplayName(product,state=appState.get()){
+  const key=text(first(product,['source_key','nhom','source','product_group','nguon'],'')).trim();
+  if(!key)return '';
+  const source=(state.sources||[]).find(row=>text(first(row,['id','key','source_key'],'')).trim()===key);
+  return text(first(source,['name','ten'],key));
+}
+
 function mapProductRows(state=appState.get()){
   return [
     ['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn'],
@@ -42,7 +49,7 @@ function mapProductRows(state=appState.get()){
       text(first(p,['ten','name','product_name'])),
       text(first(p,['von','cost','unit_cost'],'')),
       text(first(p,['gia','price','unit_price'],0)),
-      text(first(p,['nhom','source','product_group','nguon'],''))
+      sourceDisplayName(p,state)
     ])
   ];
 }
