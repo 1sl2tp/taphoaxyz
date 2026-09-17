@@ -225,7 +225,7 @@
                     ? `<img src="${getProductImageSrc(r)}" alt="" class="product-thumb shrink-0" loading="lazy">`
                     : '';
                 return `
-                <div class="bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 flex justify-between items-center hover:border-primary/30 transition">
+                <div class="product-card bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 flex justify-between items-center transition-colors">
                     <div class="flex items-center min-w-0 flex-1 pr-3 gap-3">
                         ${imageHtml}
                         <div class="min-w-0 flex-1">
