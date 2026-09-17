@@ -52,13 +52,14 @@ function mapProductRows(state=appState.get()){
 
 function mapCustomerRows(state=appState.get()){
   return [
-    ['Mã KH','Tên khách','Username','','Vai trò'],
+    ['Mã KH','Tên khách','Username','','Vai trò','Avatar'],
     ...(state.customers||[]).filter(c=>c&&c.active!==false).map(c=>[
       text(first(c,['id','maKH','customer_id'])),
       text(first(c,['ten','name','customer_name'])),
       text(first(c,['username','user_name','login'],'')),
       '',
-      text(first(c,['role'],'user'))
+      text(first(c,['role'],'user')),
+      text(first(c,['avatar','avatar_url','avatar_path'],''))
     ])
   ];
 }
