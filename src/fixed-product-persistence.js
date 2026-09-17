@@ -1,11 +1,10 @@
-/* Product editor persistence: Web -> Supabase immediately.
- * Sheet acknowledgement is handled asynchronously by taphoa-sheet-sync.
- */
+/* Product editor persistence: save one settled row snapshot through the Sheet mutation edge function. */
 (function(){
   'use strict';
 
   const saveChains=new Map();
   const lastSaved=new Map();
+  const saveTimers=new Map();
 
   function editorRow(index){
     if(!Number.isInteger(index)||!Array.isArray(productEditorRows?.[index]))return null;
@@ -35,16 +34,16 @@
   }
 
   async function saveNewProductEditorRow(index,payload){
-    if(!payload.source)return null;
+    if(!payload.source||payload.cost===''||payload.price==='')return null;
     const localKey=payload.product_code.toUpperCase();
     if(saveChains.has(localKey))return saveChains.get(localKey);
 
     const task=(async()=>{
       const api=window.TAPHOA_PRODUCTION;
       if(!api?.updateProduct)throw new Error('Production product API chưa sẵn sàng');
-      const result=await window.TAPHOA_PRODUCTION.updateProduct(payload);
+      const result=await api.updateProduct(payload);
       const assigned=String(result?.product_code||'').trim();
-      if(!assigned||isLocalPlaceholder(assigned))throw new Error('Supabase chưa cấp mã sản phẩm thật');
+      if(!assigned||isLocalPlaceholder(assigned)||/^TMP-/i.test(assigned))throw new Error('Sheet chưa cấp mã sản phẩm thật');
 
       const row=editorRow(index);
       if(row&&String(row[0]||'').trim().toUpperCase()===localKey){
@@ -81,7 +80,7 @@
     const task=previous.catch(()=>{}).then(async()=>{
       const api=window.TAPHOA_PRODUCTION;
       if(!api?.updateProduct)throw new Error('Production product API chưa sẵn sàng');
-      const result=await window.TAPHOA_PRODUCTION.updateProduct(payload);
+      const result=await api.updateProduct(payload);
       lastSaved.set(key,fingerprint);
       return result;
     });
@@ -99,15 +98,36 @@
     }
   }
 
-  window.saveProductEditorRow=saveProductEditorRow;
+  function scheduleProductEditorRowSave(index,delay=140){
+    if(!Number.isInteger(index))return;
+    const previous=saveTimers.get(index);
+    if(previous)clearTimeout(previous);
+    const timer=setTimeout(()=>{
+      saveTimers.delete(index);
+      saveProductEditorRow(index).catch(()=>{});
+    },Math.max(0,Number(delay)||0));
+    saveTimers.set(index,timer);
+  }
 
-  // Mobile keyboard “Xong” and desktop Tab/click-out both produce focusout.
+  window.saveProductEditorRow=saveProductEditorRow;
+  window.scheduleProductEditorRowSave=scheduleProductEditorRowSave;
+
+  // Blur/Tab/Xong can fire between fields; debounce so one settled B+C+D+Nguồn snapshot is sent.
   document.addEventListener('focusout',function(event){
     const input=event.target?.closest?.('#productEditorList [data-editor-field]');
     if(!input)return;
     const owner=input.closest('[data-editor-row]');
     const index=Number(owner?.dataset?.editorRow);
     if(!Number.isInteger(index))return;
-    saveProductEditorRow(index).catch(()=>{});
+    scheduleProductEditorRowSave(index);
+  },true);
+
+  // Capture the row before the runtime closes the source picker, then save after it applies the source.
+  document.addEventListener('click',function(event){
+    const option=event.target?.closest?.('#productEditorSourcePickerList [data-picker-source]');
+    if(!option)return;
+    const index=Number(productEditorSourcePickerRow);
+    if(!Number.isInteger(index))return;
+    scheduleProductEditorRowSave(index,0);
   },true);
 })();
