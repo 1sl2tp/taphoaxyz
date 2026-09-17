@@ -9,10 +9,12 @@ test('customer auth role is rendered with restricted user permissions',async()=>
   assert.match(source,/role\s*===\s*['"]customer['"]\s*\?\s*['"]user['"]/);
 });
 
-test('cart orders lines by most recently selected or increased item',async()=>{
+test('cart keeps existing line position when quantity changes and only promotes a newly added item',async()=>{
   const runtime=await read('src/fixed-ui-runtime-6.js');
   const behavior=await read('src/fixed-ui-behavior.js');
-  assert.match(behavior,/__lastTouched/);
+  assert.match(behavior,/const\s+wasInCart\s*=\s*Boolean\(cart\[maSp\]\)/);
+  assert.match(behavior,/if\s*\(!wasInCart\s*&&\s*change\s*>\s*0\)\s*cart\[maSp\]\.__lastTouched\s*=\s*\+\+__cartTouchSeq/);
+  assert.doesNotMatch(behavior,/if\s*\(change\s*>\s*0\)\s*cart\[maSp\]\.__lastTouched\s*=\s*\+\+__cartTouchSeq/);
   assert.match(runtime,/__lastTouched/);
   assert.doesNotMatch(runtime,/String\(a\.name[^\n]*localeCompare/);
 });
