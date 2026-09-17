@@ -42,7 +42,7 @@
     const task=(async()=>{
       const api=window.TAPHOA_PRODUCTION;
       if(!api?.updateProduct)throw new Error('Production product API chưa sẵn sàng');
-      const result=await api.updateProduct(payload);
+      const result=await window.TAPHOA_PRODUCTION.updateProduct(payload);
       const assigned=String(result?.product_code||'').trim();
       if(!assigned||isLocalPlaceholder(assigned))throw new Error('Supabase chưa cấp mã sản phẩm thật');
 
@@ -81,7 +81,7 @@
     const task=previous.catch(()=>{}).then(async()=>{
       const api=window.TAPHOA_PRODUCTION;
       if(!api?.updateProduct)throw new Error('Production product API chưa sẵn sàng');
-      const result=await api.updateProduct(payload);
+      const result=await window.TAPHOA_PRODUCTION.updateProduct(payload);
       lastSaved.set(key,fingerprint);
       return result;
     });
