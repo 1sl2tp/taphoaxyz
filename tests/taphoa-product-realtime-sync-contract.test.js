@@ -36,7 +36,7 @@ test('sheet is canonical for source identity and final product identity',()=>{
   assert.doesNotMatch(authorityMigration,/v_sp_max/i);
 });
 
-test('sheet sync enumerates dynamic tabs by sheetId and tracks rows with hidden O/P markers',()=>{
+test('sheet sync enumerates dynamic tabs by sheetId and isolates row tracking in hidden AY/AZ',()=>{
   assert.match(worker,/management_sheet_id/i);
   assert.match(worker,/sheetId/);
   assert.match(worker,/spreadsheets\/.*fields=/i);
@@ -44,9 +44,12 @@ test('sheet sync enumerates dynamic tabs by sheetId and tracks rows with hidden 
   assert.match(worker,/deleteSheet/);
   assert.match(worker,/__SYNC_ID/);
   assert.match(worker,/__SYNC_HASH/);
-  assert.match(worker,/C:/);
-  assert.match(worker,/P:/);
-  assert.match(worker,/A:P/);
+  assert.match(worker,/TRACKING_ID_INDEX\s*=\s*50/);
+  assert.match(worker,/TRACKING_HASH_INDEX\s*=\s*51/);
+  assert.match(worker,/AY/);
+  assert.match(worker,/AZ/);
+  assert.match(worker,/A:AZ/);
+  assert.doesNotMatch(worker,/O1:P1/);
   assert.doesNotMatch(worker,/const SOURCES=\[/);
 });
 
