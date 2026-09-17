@@ -1,0 +1,134 @@
+name: TEMP patch sheet worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/temp-patch-sheet-worker.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch worker
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('supabase/functions/taphoa-sheet-sync/index.ts')
+          s=p.read_text()
+
+          start=s.index('function parseCode(code:string)')
+          end=s.index('\n\nasync function authorized',start)
+          block=r'''function parseCode(code:string){const m=clean(code).toUpperCase().match(/^(.*?)(\d+)$/);return m?{prefix:m[1],n:Number(m[2])}:null;}
+          function allCodes(caches:Map<number,TabCache>){const out:string[]=[];for(const c of caches.values())for(let i=1;i<c.rows.length;i++){const code=clean(c.rows[i]?.[0]).toUpperCase();if(code)out.push(code);}return out;}
+          function dominantPrefix(cache:TabCache){
+            const prefixCounts=new Map<string,{count:number,max:number}>();
+            for(let i=1;i<cache.rows.length;i++){
+              const parsed=parseCode(clean(cache.rows[i]?.[0]));if(!parsed)continue;
+              const item=prefixCounts.get(parsed.prefix)||{count:0,max:0};item.count++;item.max=Math.max(item.max,parsed.n);prefixCounts.set(parsed.prefix,item);
+            }
+            let prefix="";let best={count:0,max:0};
+            for(const [p,v] of prefixCounts){if(v.count>best.count){prefix=p;best=v;}}
+            return {prefix,best};
+          }
+          export function allocateSheetCode(cache:TabCache,caches:Map<number,TabCache>,lastIssued=0,forcedPrefix=""){
+            const {prefix:detected,best}=dominantPrefix(cache);const prefix=forcedPrefix||detected||"SP-";
+            const codes=new Set(allCodes(caches));let maxSeen=Math.max(0,lastIssued,best.max);
+            for(const code of codes){const parsed=parseCode(code);if(parsed?.prefix===prefix)maxSeen=Math.max(maxSeen,parsed.n);}
+            let next=maxSeen+1;let candidate="";
+            do{candidate=prefix+String(next++).padStart(6,"0");}while(codes.has(candidate));
+            return candidate;
+          }
+          async function reserveSheetCode(cache:TabCache,caches:Map<number,TabCache>){
+            const {prefix:detected,best}=dominantPrefix(cache);const prefix=detected||"SP-";
+            const counterRows=await readManagerTab("__SYNC");
+            const counterSheetId=prefix==="SP-"?0:cache.meta.sheetId;
+            let counterIndex=-1;
+            for(let i=1;i<counterRows.length;i++){
+              const row=counterRows[i]||[];
+              if(clean(row[11])!=="source_counter"&&clean(row[11])!=="global_counter")continue;
+              if(Number(num(row[12])??-1)===counterSheetId&&clean(row[14]).toUpperCase()===prefix.toUpperCase()){counterIndex=i;break;}
+            }
+            let rowNo=0;let lastIssued=best.max;
+            if(counterIndex>=1){
+              rowNo=counterIndex+1;lastIssued=Math.max(lastIssued,Math.trunc(num(counterRows[counterIndex]?.[15])??0));
+            }else{
+              rowNo=2;
+              while(rowNo<=counterRows.length&&(counterRows[rowNo-1]||[]).slice(11,16).some(v=>clean(v)))rowNo++;
+              await writeRanges([{range:`'__SYNC'!L${rowNo}:P${rowNo}`,values:[[prefix==="SP-"?"global_counter":"source_counter",counterSheetId,prefix==="SP-"?"__generic__":cache.source.source_key,prefix,lastIssued]]}]);
+            }
+            const assigned=allocateSheetCode(cache,caches,lastIssued,prefix);const parsed=parseCode(assigned);
+            if(!parsed)throw new Error("sheet_code_parse_failed");
+            await writeRanges([{range:`'__SYNC'!P${rowNo}`,values:[[parsed.n]]}]);
+            return assigned;
+          }'''
+          s=s[:start]+block+s[end:]
+
+          old='const assigned=allocateSheetCode(cache,caches);'
+          count=s.count(old)
+          if count!=2:
+            raise SystemExit(f'expected 2 allocator call sites, got {count}')
+          s=s.replace(old,'const assigned=await reserveSheetCode(cache,caches);')
+
+          start=s.index('async function synchronize(force=false){')
+          end=s.index('\n\nDeno.serve',start)
+          sync=r'''async function synchronize(force=false){
+            const lockToken=crypto.randomUUID();
+            const {data:locked,error:lockError}=await admin.rpc("taphoa_acquire_sheet_sync_lock",{p_token:lockToken,p_seconds:120});
+            if(lockError)throw lockError;
+            if(locked!==true)return {ok:true,busy:true,changed:false};
+            try{
+              await setSyncState({last_sync_status:"running",last_error:""});
+              try{
+                let meta=await spreadsheetMeta();
+                const sourceCreates=await processSourceCreates(meta);
+                if(sourceCreates)meta=await spreadsheetMeta();
+                await reconcileSources(meta);
+                const sourceDeletes=await processSourceDeletes(meta);
+                if(sourceDeletes)meta=await spreadsheetMeta();
+                await reconcileSources(meta);
+
+                let caches=await loadCaches(meta);
+                const modifiedBefore=await driveModifiedTime();
+                const productCreates=await processProductCreates(caches,modifiedBefore);
+                if(productCreates)caches=await loadCaches(meta);
+                const productDeletes=await processProductDeletes(caches,modifiedBefore);
+                if(productDeletes)caches=await loadCaches(meta);
+                const productUpserts=await processProductUpserts(caches);
+                if(productUpserts)caches=await loadCaches(meta);
+                const allocated=await allocateBlankSheetRows(caches);
+                if(allocated)caches=await loadCaches(meta);
+
+                const modifiedTime=await driveModifiedTime();const syncState=await readSyncState();
+                const outbound=sourceCreates+sourceDeletes+productCreates+productDeletes+productUpserts+allocated;
+                if(!force&&outbound===0&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
+                  await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
+                  return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0)};
+                }
+                const inbound=await inboundScan(caches,modifiedTime);
+                await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
+                return {ok:true,changed:outbound>0||inbound.changedRows>0,modifiedTime,outbound:{sourceCreates,sourceDeletes,productCreates,productDeletes,productUpserts,allocated},...inbound};
+              }catch(error){
+                const message=String((error as Error)?.message??error).slice(0,1500);await setSyncState({last_sync_status:"error",last_error:message}).catch(()=>{});throw error;
+              }
+            }finally{
+              await admin.rpc("taphoa_release_sheet_sync_lock",{p_token:lockToken}).catch(()=>{});
+            }
+          }'''
+          s=s[:start]+sync+s[end:]
+          p.write_text(s)
+          PY
+      - name: Commit worker patch
+        shell: bash
+        run: |
+          git config user.name "1sl2tp"
+          git config user.email "1sl2tp@gmail.com"
+          git add supabase/functions/taphoa-sheet-sync/index.ts
+          git diff --cached --check
+          git commit -m "fix: serialize sheet sync and reserve product codes"
+          git push origin HEAD:main
