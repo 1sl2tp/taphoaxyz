@@ -51,8 +51,8 @@ test('sheet sync enumerates dynamic tabs by sheetId and tracks rows with hidden 
 });
 
 test('sheet-issued product codes never reuse a deleted highest code and sync is serialized',()=>{
-  assert.match(worker,/__SYNC/);
-  assert.match(worker,/last_issued_no/);
+  assert.match(worker,/readManagerTab\("__SYNC"\)/);
+  assert.match(worker,/counterRows\[counterIndex\]\?\.\[15\]/);
   assert.match(worker,/reserveSheetCode/i);
   assert.match(worker,/taphoa_acquire_sheet_sync_lock/);
   assert.match(worker,/taphoa_release_sheet_sync_lock/);
