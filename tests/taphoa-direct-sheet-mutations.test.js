@@ -32,9 +32,12 @@ test('browser product and source mutations use one edge-function request instead
 });
 
 test('product editor saves one settled row snapshot after source selection',async()=>{
-  const runtime=await read('src/fixed-ui-runtime-2.js');
   const persistence=await read('src/fixed-product-persistence.js');
-  assert.match(runtime,/saveProductEditorRow\(rowIndex\)/);
   assert.match(persistence,/scheduleProductEditorRowSave/);
   assert.match(persistence,/setTimeout/);
+  assert.match(persistence,/#productEditorSourcePickerList \[data-picker-source\]/);
+  assert.match(persistence,/scheduleProductEditorRowSave\(index/);
+  assert.match(persistence,/payload\.source/);
+  assert.match(persistence,/payload\.cost/);
+  assert.match(persistence,/payload\.price/);
 });
