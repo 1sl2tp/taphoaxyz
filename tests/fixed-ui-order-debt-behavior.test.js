@@ -33,6 +33,14 @@ test('customer selector displays username/code instead of internal uuid',async()
   assert.match(runtime,/kh\[2\]\s*\|\|\s*kh\[0\]/);
 });
 
+test('selecting a sale customer immediately refreshes cart footer actions',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-6.js');
+  assert.match(
+    runtime,
+    /selectedCustomer\s*=\s*\{\s*id,\s*name\s*\};[\s\S]{0,250}renderCartFooterActions\(\);[\s\S]{0,120}closeCustomerModal\(\);/
+  );
+});
+
 test('order rows carry short display code and hidden backend uuid',async()=>{
   const bridge=await read('src/fixed-production-bridge.js');
   assert.match(bridge,/orderDisplayCode/);
