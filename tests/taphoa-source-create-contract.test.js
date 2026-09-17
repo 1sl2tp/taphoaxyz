@@ -18,7 +18,7 @@ test('source creation is persisted Web -> Supabase and refreshed back to the edi
   assert.match(migrations,/create\s+or\s+replace\s+function\s+public\.taphoa_create_source_from_web/i);
   assert.match(migrations,/insert\s+into\s+public\.taphoa_sources/i);
   assert.match(migrations,/domain\s*=\s*'products'/i);
-  assert.match(business,/createSource\s*:\s*.*taphoa_create_source_from_web/s);
+  assert.match(business,/createSource\s*:\s*.*directSheetMutation\('create_source'/s);
   assert.match(bridge,/async\s+function\s+createSource\s*\(/);
   assert.match(bridge,/TAPHOA_PRODUCTION[\s\S]*createSource/);
   assert.match(runtime,/saveNewProductEditorSource\s*\([^)]*\)[\s\S]*TAPHOA_PRODUCTION\.createSource/);

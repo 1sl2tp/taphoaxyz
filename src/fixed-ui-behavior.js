@@ -186,9 +186,8 @@ openCustomerDebtModal = function(maKh) {
 };
 
 clickOrderFromDebt = function(orderId) {
-  closeCustomerDebtModal();
   const sheetName = String(orderId).startsWith('DG') ? 'dongiao' : 'dontam';
   viewingOrderId = orderId;
   window.activeViewingSheet = sheetName;
-  setTimeout(() => showOrderDetailMobile(orderId, sheetName), 320);
+  showOrderDetailMobile(orderId, sheetName);
 };

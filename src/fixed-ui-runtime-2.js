@@ -240,13 +240,20 @@
             requestDeleteProductEditorSource(deleteSource.dataset.deleteSource || '');
         }, true);
 
-        function chooseProductEditorSource(source) {
+        async function chooseProductEditorSource(source) {
             if (productEditorSourcePickerRow === null || !productEditorRows[productEditorSourcePickerRow]) return;
-            productEditorRows[productEditorSourcePickerRow][4] = source;
+            const selectedRow = productEditorSourcePickerRow;
+            productEditorRows[selectedRow][4] = source;
             syncProductEditorData();
             renderProductEditorSources();
             renderProductEditor();
             updateProductEditorDeleteButton();
+            try {
+                if (typeof window.saveProductEditorRow === 'function') await window.saveProductEditorRow(selectedRow);
+            } catch (error) {
+                console.error('save product source selection', error);
+                return;
+            }
             closeProductEditorSourcePicker();
         }
 
