@@ -1,0 +1,23 @@
+name: Product price save regression
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - fix/product-price-save-source
+    paths:
+      - .github/workflows/temp-product-price-save-red.yml
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/product-price-save-source
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/taphoa-product-realtime-sync-contract.test.js
