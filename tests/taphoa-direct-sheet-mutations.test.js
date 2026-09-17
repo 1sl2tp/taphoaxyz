@@ -41,3 +41,9 @@ test('product editor saves one settled row snapshot after source selection',asyn
   assert.match(persistence,/payload\.cost/);
   assert.match(persistence,/payload\.price/);
 });
+
+test('edge function never calls catch directly on Supabase PostgREST builders',async()=>{
+  const worker=await read('supabase/functions/taphoa-sheet-sync/index.ts');
+  assert.doesNotMatch(worker,/\.eq\([^\n;]*\)\.catch\(/);
+  assert.doesNotMatch(worker,/admin\.rpc\([^\n;]*\)\.catch\(/);
+});
