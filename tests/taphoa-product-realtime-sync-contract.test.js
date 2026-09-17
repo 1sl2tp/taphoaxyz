@@ -7,6 +7,8 @@ const deleteMigrationUrl=new URL('../supabase/migrations/20260917050000_taphoa_p
 const deleteMigration=fs.existsSync(deleteMigrationUrl)?fs.readFileSync(deleteMigrationUrl,'utf8'):'';
 const authorityMigrationUrl=new URL('../supabase/migrations/20260917130000_taphoa_sheet_authoritative_identity.sql',import.meta.url);
 const authorityMigration=fs.existsSync(authorityMigrationUrl)?fs.readFileSync(authorityMigrationUrl,'utf8'):'';
+const lockMigrationUrl=new URL('../supabase/migrations/20260917131000_taphoa_sync_lock_and_sheet_source.sql',import.meta.url);
+const lockMigration=fs.existsSync(lockMigrationUrl)?fs.readFileSync(lockMigrationUrl,'utf8'):'';
 const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/index.ts',import.meta.url),'utf8');
 const gateway=fs.readFileSync(new URL('../src/core/supabase.js',import.meta.url),'utf8');
 const business=fs.readFileSync(new URL('../src/core/business.js',import.meta.url),'utf8');
@@ -46,6 +48,16 @@ test('sheet sync enumerates dynamic tabs by sheetId and tracks rows with hidden 
   assert.match(worker,/P:/);
   assert.match(worker,/A:P/);
   assert.doesNotMatch(worker,/const SOURCES=\[/);
+});
+
+test('sheet-issued product codes never reuse a deleted highest code and sync is serialized',()=>{
+  assert.match(worker,/__SYNC/);
+  assert.match(worker,/last_issued_no/);
+  assert.match(worker,/reserveSheetCode/i);
+  assert.match(worker,/taphoa_acquire_sheet_sync_lock/);
+  assert.match(worker,/taphoa_release_sheet_sync_lock/);
+  assert.match(lockMigration,/taphoa_acquire_sheet_sync_lock/);
+  assert.match(lockMigration,/taphoa_release_sheet_sync_lock/);
 });
 
 test('web-created products stay pending until the Sheet returns a final code',()=>{
