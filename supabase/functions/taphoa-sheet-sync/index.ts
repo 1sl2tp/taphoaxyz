@@ -68,62 +68,24 @@ function sourceByKey(sourceKey:string):Source|undefined{return SOURCES.find(s=>s
 export function mapManagerRow(sourceKey:string,row:unknown[],rowNo:number,modifiedTime:string|null=null):TaphoaProduct|null{
   const source=sourceByKey(sourceKey);if(!source)return null;
 
-  if(sourceKey==="sua"){
-    const name=clean(row[0]);
-    const inputSheet=num(row[1]);
-    const saleSheet=num(row[2]);
-    const unitsRaw=num(row[6]);
-    const retailUnit=clean(row[7]);
-    const code=clean(row[15]).toUpperCase();
-    if(!name||!code)return null;
-    const input_price_vnd=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;
-    const sale_price_vnd=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
-    const units_per_carton=unitsRaw!==null&&unitsRaw>=1?unitsRaw:null;
-    const applied_profit_vnd=input_price_vnd!==null&&sale_price_vnd!==null?Math.max(0,sale_price_vnd-input_price_vnd):0;
-    const retail_price_vnd=sale_price_vnd!==null&&units_per_carton&&units_per_carton>1?Math.round(sale_price_vnd/units_per_carton):null;
-    const stock=input_price_vnd!==null?{status:"available" as StockStatus,label:""}:{status:"no_price" as StockStatus,label:"Chưa có giá"};
-    return {
-      product_code:code,source_key:source.source_key,source_row:rowNo,product_name:name,
-      input_price_vnd,input_price_basis:"carton",expected_profit_percent:null,applied_profit_vnd,
-      sale_price_vnd,carton_price_vnd:sale_price_vnd,retail_price_vnd,units_per_carton,retail_unit:retailUnit,
-      stock_status:stock.status,stock_label:stock.label,is_active:true,raw_row:[...row],sheet_updated_at:modifiedTime
-    };
-  }
-
-  const name=clean(row[0]);
-  const inputSheet=num(row[1]);
-  const status=clean(row[2]);
-  const basis:TaphoaProduct["input_price_basis"]=clean(row[3]).toLowerCase()==="lẻ"?"retail":"carton";
-  const expectedRatio=num(row[4]);
-  const appliedSheet=num(row[6]);
-  const unitsRaw=num(row[10]);
-  const retailUnit=clean(row[11]);
-  const code=clean(row[15]).toUpperCase();
-  if(!name||!code)return null;
+  const code=clean(row[0]).toUpperCase();
+  const name=clean(row[1]);
+  const inputSheet=num(row[2]);
+  const saleSheet=num(row[3]);
+  if(!code||!name)return null;
 
   const input_price_vnd=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;
-  const applied_profit_vnd=appliedSheet===null?0:Math.round(appliedSheet*1000);
-  const expected_profit_percent=expectedRatio===null?null:expectedRatio*100;
-  const units_per_carton=unitsRaw!==null&&unitsRaw>=1?unitsRaw:null;
-  const stock=statusInfo(status,inputSheet!==null&&inputSheet>0?inputSheet:null);
-  const sale_price_vnd=input_price_vnd===null?null:input_price_vnd+applied_profit_vnd;
-  let carton_price_vnd:number|null=null;
-  let retail_price_vnd:number|null=null;
-  if(sale_price_vnd!==null){
-    if(basis==="retail"){
-      retail_price_vnd=sale_price_vnd;
-      carton_price_vnd=units_per_carton&&units_per_carton>1?Math.round(sale_price_vnd*units_per_carton):null;
-    }else{
-      carton_price_vnd=sale_price_vnd;
-      retail_price_vnd=units_per_carton&&units_per_carton>1?Math.round(sale_price_vnd/units_per_carton):null;
-    }
-  }
+  const sale_price_vnd=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
+  const applied_profit_vnd=input_price_vnd!==null&&sale_price_vnd!==null?Math.max(0,sale_price_vnd-input_price_vnd):0;
+  const stock=sale_price_vnd!==null
+    ?{status:"available" as StockStatus,label:""}
+    :{status:"no_price" as StockStatus,label:"Chưa có giá"};
 
   return {
     product_code:code,source_key:source.source_key,source_row:rowNo,product_name:name,
-    input_price_vnd,input_price_basis:basis,expected_profit_percent,applied_profit_vnd,
-    sale_price_vnd,carton_price_vnd,retail_price_vnd,units_per_carton,retail_unit:retailUnit,
-    stock_status:stock.status,stock_label:stock.label,is_active:stock.active,raw_row:[...row],sheet_updated_at:modifiedTime
+    input_price_vnd,input_price_basis:"carton",expected_profit_percent:null,applied_profit_vnd,
+    sale_price_vnd,carton_price_vnd:sale_price_vnd,retail_price_vnd:null,units_per_carton:null,retail_unit:"",
+    stock_status:stock.status,stock_label:stock.label,is_active:true,raw_row:[...row],sheet_updated_at:modifiedTime
   };
 }
 
@@ -157,7 +119,7 @@ async function driveModifiedTime(){
   return new Date(value).toISOString();
 }
 async function readManagerTab(tab:string){
-  const range=`${quotedSheet(tab)}!A:P`;
+  const range=`${quotedSheet(tab)}!A:D`;
   const url=`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(MANAGEMENT_FILE_ID)}/values/${encodeURIComponent(range)}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`;
   const data=await (await googleFetch(url)).json();
   return Array.isArray(data?.values)?data.values as unknown[][]:[];
