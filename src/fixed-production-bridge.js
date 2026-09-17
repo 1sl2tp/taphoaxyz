@@ -7,7 +7,6 @@ const auth=createAuthService();
 const business=createApi({clientProvider:auth.getClient});
 const appState=createAppState();
 const snapshot=createSnapshotStore();
-const pendingSourceAliases=new Map();
 
 let identity=null;
 let bootstrapped=false;
@@ -29,32 +28,13 @@ function viTime(value){
 }
 
 function currentUid(){return text(identity?.uid);}
-
-function saveSnapshot(){
-  const uid=currentUid();
-  if(uid)snapshot.save(uid,appState.get());
-}
+function saveSnapshot(){const uid=currentUid();if(uid)snapshot.save(uid,appState.get());}
 
 function sourceDisplayName(product,state=appState.get()){
   const key=text(first(product,['source_key','nhom','source','product_group','nguon'],'')).trim();
   if(!key)return '';
   const source=(state.sources||[]).find(row=>text(first(row,['id','key','source_key'],'')).trim()===key);
-  if(source)return text(first(source,['name','ten'],key));
-  for(const [name,pendingKey] of pendingSourceAliases)if(pendingKey===key)return name;
-  return key;
-}
-
-function sourceKeyFromDisplayName(value,state=appState.get()){
-  const wanted=text(value).trim();
-  if(!wanted)return '';
-  const pending=pendingSourceAliases.get(wanted.toLowerCase());
-  if(pending)return pending;
-  const source=(state.sources||[]).find(row=>{
-    const key=text(first(row,['id','key','source_key'],'')).trim();
-    const name=text(first(row,['name','ten'],key)).trim();
-    return key===wanted||name===wanted;
-  });
-  return source?text(first(source,['id','key','source_key'],wanted)).trim():wanted;
+  return source?text(first(source,['name','ten'],key)):key;
 }
 
 function mapProductRows(state=appState.get()){
@@ -126,10 +106,7 @@ function mapOrderRows(kind,state=appState.get()){
 function debtBalance(row){return num(first(row,['soDu','balance','total'],0));}
 function debtCustomerId(row){return text(first(row,['maKH','id','customer_id']));}
 function debtLastAt(row){return first(row,['lastTransaction','last','ngay','last_at'],new Date());}
-
-function debtHeader(){
-  return ['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian','Dư nợ sau GD','Loại nội bộ','Mã đơn','Mã đơn DB'];
-}
+function debtHeader(){return ['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian','Dư nợ sau GD','Loại nội bộ','Mã đơn','Mã đơn DB'];}
 
 function mapDebtSummaryRows(state=appState.get()){
   const rows=[debtHeader()];
@@ -249,47 +226,9 @@ async function attachSession(info){
 
 async function login(username,password){return attachSession(await auth.login(username,password));}
 async function restore(){const info=await auth.restore();if(!info)return null;return attachSession(info);}
-async function logout(){stopSync();await auth.logout();identity=null;bootstrapped=false;appState.reset();pendingSourceAliases.clear();}
-
+async function logout(){stopSync();await auth.logout();identity=null;bootstrapped=false;appState.reset();}
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){return business.debtLedger(customerId);}
-
-async function createSource(name){
-  const requested=text(name).trim();
-  const result=await business.createSource(requested);
-  const sourceName=text(result?.name||requested).trim();
-  const sourceKey=text(result?.source_key).trim();
-  if(sourceName&&sourceKey)pendingSourceAliases.set(sourceName.toLowerCase(),sourceKey);
-  await refresh(['products']);
-  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
-  return result;
-}
-
-async function deleteSource(source){
-  const sourceValue=text(source).trim();
-  const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
-  const result=await business.deleteSource(source_key);
-  if(sourceValue)pendingSourceAliases.delete(sourceValue.toLowerCase());
-  await refresh(['products']);
-  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
-  return result;
-}
-
-async function updateProduct(payload={}){
-  const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();
-  const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
-  const result=await business.updateProduct({...payload,source_key});
-  await refresh(['products']);
-  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
-  return result;
-}
-
-async function deleteProduct(code){
-  const result=await business.deleteProduct(String(code||'').trim());
-  await refresh(['products']);
-  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
-  return result;
-}
 async function saveOrder(payload){const result=await business.saveOrder(payload);await refresh(['orders','debt']);return result;}
 async function deliverOrder(id){const result=await business.deliverOrder(id);await refresh(['orders','debt']);return result;}
 async function reverseOrder(id,reason='Hoàn đơn'){const result=await business.reverseOrder(id,reason);await refresh(['orders','debt']);return result;}
@@ -302,7 +241,7 @@ window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('tapho
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
-  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,createSource,deleteSource,updateProduct,deleteProduct,
+  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
