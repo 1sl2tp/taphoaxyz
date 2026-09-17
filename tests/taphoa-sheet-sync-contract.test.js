@@ -20,15 +20,21 @@ test('worker owns the exact management file and discovers product sources dynami
   assert.doesNotMatch(worker,/const SOURCES=\[/);
 });
 
-test('manager business row mapping remains A code, B name, C cost, D sale price with O/P reserved for sync metadata',()=>{
+test('manager business mapping stays A:D and sync metadata is isolated in hidden AY:AZ',()=>{
   assert.match(worker,/row\?\.\[0\]/);
   assert.match(worker,/row\?\.\[1\]/);
   assert.match(worker,/row\?\.\[2\]/);
   assert.match(worker,/row\?\.\[3\]/);
   assert.match(worker,/TRACKING_ID_HEADER/);
   assert.match(worker,/TRACKING_HASH_HEADER/);
-  assert.match(worker,/\?\.\[14\]/);
-  assert.match(worker,/\?\.\[15\]/);
+  assert.match(worker,/TRACKING_ID_INDEX\s*=\s*50/);
+  assert.match(worker,/TRACKING_HASH_INDEX\s*=\s*51/);
+  assert.match(worker,/A:AZ/);
+  assert.match(worker,/AY1:AZ1/);
+  assert.match(worker,/startIndex:50,endIndex:52/);
+  assert.doesNotMatch(worker,/O1:P1/);
+  assert.doesNotMatch(worker,/\?\.\[14\]/);
+  assert.doesNotMatch(worker,/\?\.\[15\]/);
   assert.doesNotMatch(worker,/sourceKey\s*===\s*["']sua["']/);
   assert.match(worker,/const code=clean\(row\?\.\[0\]\)\.toUpperCase\(\)/);
   assert.match(worker,/const name=clean\(row\?\.\[1\]\)/);
