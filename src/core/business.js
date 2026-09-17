@@ -33,6 +33,7 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
     debtLedger:(maKH,{beforeAt=null,beforeId=null,limit=50}={})=>gateway.rpc('taphoa_debt_ledger_page',{
       p_customer_id:String(maKH||''),p_before_at:beforeAt||null,p_before_id:beforeId??null,p_limit:Math.max(1,Math.min(100,num(limit)||50))
     }),
+    syncSheet:body=>gateway.invoke?gateway.invoke('taphoa-sheet-sync',{body:{force:true,...(body||{})}}):Promise.resolve({ok:false,skipped:true}),
     createSource:name=>gateway.rpc('taphoa_create_source_from_web',{p_name:String(name||'')}),
     deleteSource:source=>gateway.rpc('taphoa_delete_source_from_web',{p_source:String(source||'')}),
     updateProduct:payload=>gateway.rpc('taphoa_update_product_from_web',{p_product:payload||{}}),
