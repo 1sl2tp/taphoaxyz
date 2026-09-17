@@ -22,6 +22,6 @@ test('source management is Sheet-owned and web has no source mutation path',()=>
   assert.doesNotMatch(business,/directSheetMutation|createSource\s*:|deleteSource\s*:/);
   assert.doesNotMatch(bridge,/async\s+function\s+createSource|async\s+function\s+deleteSource/);
   assert.doesNotMatch(runtime,/TAPHOA_PRODUCTION\.createSource|TAPHOA_PRODUCTION\.deleteSource/);
-  assert.match(migrations,/revoke\s+execute\s+on\s+function\s+public\.taphoa_create_source_from_web\(text\)\s+from\s+authenticated/i);
-  assert.match(migrations,/revoke\s+execute\s+on\s+function\s+public\.taphoa_delete_source_from_web\(text\)\s+from\s+authenticated/i);
+  assert.match(migrations,/revoke\s+(?:all|execute)\s+on\s+function\s+public\.taphoa_create_source_from_web\(text\)\s+from\s+(?:public\s*,\s*anon\s*,\s*)?authenticated/i);
+  assert.match(migrations,/revoke\s+(?:all|execute)\s+on\s+function\s+public\.taphoa_delete_source_from_web\(text\)\s+from\s+(?:public\s*,\s*anon\s*,\s*)?authenticated/i);
 });
