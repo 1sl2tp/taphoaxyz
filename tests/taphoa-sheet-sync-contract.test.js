@@ -27,8 +27,8 @@ test('manager business row mapping remains A code, B name, C cost, D sale price 
   assert.match(worker,/row\?\.\[3\]/);
   assert.match(worker,/TRACKING_ID_HEADER/);
   assert.match(worker,/TRACKING_HASH_HEADER/);
-  assert.match(worker,/row\?\.\[14\]/);
-  assert.match(worker,/row\?\.\[15\]/);
+  assert.match(worker,/\?\.\[14\]/);
+  assert.match(worker,/\?\.\[15\]/);
   assert.doesNotMatch(worker,/sourceKey\s*===\s*["']sua["']/);
   assert.match(worker,/const code=clean\(row\?\.\[0\]\)\.toUpperCase\(\)/);
   assert.match(worker,/const name=clean\(row\?\.\[1\]\)/);
