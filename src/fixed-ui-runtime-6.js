@@ -32,7 +32,7 @@
             
             let strTotal = totalPrice.toLocaleString('vi-VN');
             document.getElementById('headerQuickQty').innerText = totalQty; document.getElementById('headerQuickTotal').innerText = strTotal;
-            document.getElementById('cartCountBadgeMob').innerText = totalQty; document.getElementById('cartTotalMob').innerText = strTotal + ' đ';
+            document.getElementById('cartCountBadgeMob').innerText = totalQty; document.getElementById('cartTotalMob').innerText = strTotal;
             const cartLineCountEl = document.getElementById('cartLineCountDisplay');
             if (cartLineCountEl) cartLineCountEl.innerText = lineCount;
             document.getElementById('cartTotalQtyDisplay').innerText = totalQty;
