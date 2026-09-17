@@ -16,7 +16,7 @@
             setText('headerQuickQty', totalQty);
             setText('headerQuickTotal', strTotal);
             setText('cartCountBadgeMob', totalQty);
-            setText('cartTotalMob', strTotal + ' đ');
+            setText('cartTotalMob', strTotal);
             setText('cartLineCountDisplay', entries.length);
             setText('cartTotalQtyDisplay', totalQty);
             setText('cartTotalPriceDisplay', strTotal);
