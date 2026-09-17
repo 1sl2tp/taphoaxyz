@@ -69,11 +69,12 @@ jobs:
           }'''
           s=s[:start]+block+s[end:]
 
-          old='const assigned=allocateSheetCode(cache,caches);'
-          count=s.count(old)
-          if count!=2:
-            raise SystemExit(f'expected 2 allocator call sites, got {count}')
-          s=s.replace(old,'const assigned=await reserveSheetCode(cache,caches);')
+          old1='code=allocateSheetCode(cache,caches);'
+          old2='const assigned=allocateSheetCode(cache,caches);'
+          if s.count(old1)!=1 or s.count(old2)!=1:
+            raise SystemExit(f'allocator call sites changed: code={s.count(old1)} assigned={s.count(old2)}')
+          s=s.replace(old1,'code=await reserveSheetCode(cache,caches);')
+          s=s.replace(old2,'const assigned=await reserveSheetCode(cache,caches);')
 
           start=s.index('async function synchronize(force=false){')
           end=s.index('\n\nDeno.serve',start)
