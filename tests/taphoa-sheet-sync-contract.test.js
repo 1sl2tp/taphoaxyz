@@ -27,10 +27,12 @@ test('manager business mapping stays A:D and sync metadata is isolated in hidden
   assert.match(worker,/row\?\.\[3\]/);
   assert.match(worker,/TRACKING_ID_HEADER/);
   assert.match(worker,/TRACKING_HASH_HEADER/);
+  assert.match(worker,/TRACKING_ID_COL\s*=\s*"AY"/);
+  assert.match(worker,/TRACKING_HASH_COL\s*=\s*"AZ"/);
   assert.match(worker,/TRACKING_ID_INDEX\s*=\s*50/);
   assert.match(worker,/TRACKING_HASH_INDEX\s*=\s*51/);
   assert.match(worker,/A:AZ/);
-  assert.match(worker,/AY1:AZ1/);
+  assert.match(worker,/TRACKING_ID_COL\}1:\$\{TRACKING_HASH_COL\}1/);
   assert.match(worker,/startIndex:50,endIndex:52/);
   assert.doesNotMatch(worker,/O1:P1/);
   assert.doesNotMatch(worker,/\?\.\[14\]/);
