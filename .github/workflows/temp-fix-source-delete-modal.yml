@@ -1,0 +1,50 @@
+name: TEMP fix source delete modal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/temp-fix-source-delete-modal.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Raise source delete confirmation above picker
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/fixed-ui-markup-5.js')
+          s=p.read_text()
+          old='z-[120] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300\\" id=\\"confirmModal'
+          new='z-[160] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300\\" id=\\"confirmModal'
+          if old not in s:
+              raise SystemExit('confirmModal z-index pattern not found')
+          s2=s.replace(old,new,1)
+          if s2==s:
+              raise SystemExit('no change')
+          p.write_text(s2)
+          PY
+      - name: Verify
+        run: |
+          npm install --no-audit --no-fund
+          node --test tests/fixed-ui-source-delete-modal.test.js
+          npm run build:production
+          node --test tests/*.test.js
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name "1sl2tp"
+          git config user.email "1sl2tp@gmail.com"
+          git add src/fixed-ui-markup-5.js
+          git diff --cached --check
+          git commit -m "fix: show source delete confirmation above picker"
+          git push origin HEAD:main
