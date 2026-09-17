@@ -155,7 +155,7 @@ function mapManagerRow(sourceKey:string,row:unknown[],rowNo:number,modifiedTime:
 }
 function parseCode(code:string){const m=clean(code).toUpperCase().match(/^(.*?)(\d+)$/);return m?{prefix:m[1],n:Number(m[2])}:null;}
 function allCodes(caches:Map<number,TabCache>){const out:string[]=[];for(const c of caches.values())for(let i=1;i<c.rows.length;i++){const code=clean(c.rows[i]?.[0]).toUpperCase();if(code)out.push(code);}return out;}
-export function allocateSheetCode(cache:TabCache,caches:Map<number,TabCache>){
+function dominantPrefix(cache:TabCache){
   const prefixCounts=new Map<string,{count:number,max:number}>();
   for(let i=1;i<cache.rows.length;i++){
     const parsed=parseCode(clean(cache.rows[i]?.[0]));if(!parsed)continue;
@@ -163,16 +163,38 @@ export function allocateSheetCode(cache:TabCache,caches:Map<number,TabCache>){
   }
   let prefix="";let best={count:0,max:0};
   for(const [p,v] of prefixCounts){if(v.count>best.count){prefix=p;best=v;}}
-  const codes=new Set(allCodes(caches));
-  let next=0;
-  if(prefix){next=best.max+1;}else{
-    prefix="SP-";
-    for(const code of codes){const m=code.match(/^SP-(\d+)$/);if(m)next=Math.max(next,Number(m[1]));}
-    next++;
-  }
-  let candidate="";
+  return {prefix,best};
+}
+export function allocateSheetCode(cache:TabCache,caches:Map<number,TabCache>,lastIssued=0,forcedPrefix=""){
+  const {prefix:detected,best}=dominantPrefix(cache);const prefix=forcedPrefix||detected||"SP-";
+  const codes=new Set(allCodes(caches));let maxSeen=Math.max(0,lastIssued,best.max);
+  for(const code of codes){const parsed=parseCode(code);if(parsed?.prefix===prefix)maxSeen=Math.max(maxSeen,parsed.n);}
+  let next=maxSeen+1;let candidate="";
   do{candidate=prefix+String(next++).padStart(6,"0");}while(codes.has(candidate));
   return candidate;
+}
+async function reserveSheetCode(cache:TabCache,caches:Map<number,TabCache>){
+  const {prefix:detected,best}=dominantPrefix(cache);const prefix=detected||"SP-";
+  const counterRows=await readManagerTab("__SYNC");
+  const counterSheetId=prefix==="SP-"?0:cache.meta.sheetId;
+  let counterIndex=-1;
+  for(let i=1;i<counterRows.length;i++){
+    const row=counterRows[i]||[];
+    if(clean(row[11])!=="source_counter"&&clean(row[11])!=="global_counter")continue;
+    if(Number(num(row[12])??-1)===counterSheetId&&clean(row[14]).toUpperCase()===prefix.toUpperCase()){counterIndex=i;break;}
+  }
+  let rowNo=0;let lastIssued=best.max;
+  if(counterIndex>=1){
+    rowNo=counterIndex+1;lastIssued=Math.max(lastIssued,Math.trunc(num(counterRows[counterIndex]?.[15])??0));
+  }else{
+    rowNo=2;
+    while(rowNo<=counterRows.length&&(counterRows[rowNo-1]||[]).slice(11,16).some(v=>clean(v)))rowNo++;
+    await writeRanges([{range:`'__SYNC'!L${rowNo}:P${rowNo}`,values:[[prefix==="SP-"?"global_counter":"source_counter",counterSheetId,prefix==="SP-"?"__generic__":cache.source.source_key,prefix,lastIssued]]}]);
+  }
+  const assigned=allocateSheetCode(cache,caches,lastIssued,prefix);const parsed=parseCode(assigned);
+  if(!parsed)throw new Error("sheet_code_parse_failed");
+  await writeRanges([{range:`'__SYNC'!P${rowNo}`,values:[[parsed.n]]}]);
+  return assigned;
 }
 
 async function authorized(req:Request){
@@ -277,7 +299,7 @@ export async function finalizeProductCreate(req:any,cache:TabCache,caches:Map<nu
   }
   let code=clean(cache.rows[rowIndex]?.[0]).toUpperCase();
   if(!code){
-    code=allocateSheetCode(cache,caches);
+    code=await reserveSheetCode(cache,caches);
     const input=num(req.input_price_vnd),sale=num(req.sale_price_vnd);const hash=await sha256(canonicalText(code,clean(req.product_name),input,sale));
     await writeRanges([
       {range:`${quotedSheet(cache.meta.title)}!A${rowIndex+1}`,values:[[code]]},
@@ -351,7 +373,7 @@ async function allocateBlankSheetRows(caches:Map<number,TabCache>){
   for(const cache of caches.values()){
     for(let i=1;i<cache.rows.length;i++){
       const row=cache.rows[i]||[];const code=clean(row[0]);const name=clean(row[1]);if(code||!name)continue;
-      const assigned=allocateSheetCode(cache,caches);const inputSheet=num(row[2]),saleSheet=num(row[3]);const input=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;const sale=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
+      const assigned=await reserveSheetCode(cache,caches);const inputSheet=num(row[2]),saleSheet=num(row[3]);const input=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;const sale=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
       const hash=await sha256(canonicalText(assigned,name,input,sale));
       await writeRanges([{range:`${quotedSheet(cache.meta.title)}!A${i+1}`,values:[[assigned]]},{range:`${quotedSheet(cache.meta.title)}!O${i+1}:P${i+1}`,values:[[productMarker(assigned),hash]]}]);
       cache.rows[i][0]=assigned;cache.rows[i][14]=productMarker(assigned);cache.rows[i][15]=hash;changed++;
@@ -385,38 +407,46 @@ async function inboundScan(caches:Map<number,TabCache>,modifiedTime:string){
 }
 
 async function synchronize(force=false){
-  await setSyncState({last_sync_status:"running",last_error:""});
+  const lockToken=crypto.randomUUID();
+  const {data:locked,error:lockError}=await admin.rpc("taphoa_acquire_sheet_sync_lock",{p_token:lockToken,p_seconds:120});
+  if(lockError)throw lockError;
+  if(locked!==true)return {ok:true,busy:true,changed:false};
   try{
-    let meta=await spreadsheetMeta();
-    const sourceCreates=await processSourceCreates(meta);
-    if(sourceCreates)meta=await spreadsheetMeta();
-    await reconcileSources(meta);
-    const sourceDeletes=await processSourceDeletes(meta);
-    if(sourceDeletes)meta=await spreadsheetMeta();
-    await reconcileSources(meta);
+    await setSyncState({last_sync_status:"running",last_error:""});
+    try{
+      let meta=await spreadsheetMeta();
+      const sourceCreates=await processSourceCreates(meta);
+      if(sourceCreates)meta=await spreadsheetMeta();
+      await reconcileSources(meta);
+      const sourceDeletes=await processSourceDeletes(meta);
+      if(sourceDeletes)meta=await spreadsheetMeta();
+      await reconcileSources(meta);
 
-    let caches=await loadCaches(meta);
-    const modifiedBefore=await driveModifiedTime();
-    const productCreates=await processProductCreates(caches,modifiedBefore);
-    if(productCreates)caches=await loadCaches(meta);
-    const productDeletes=await processProductDeletes(caches,modifiedBefore);
-    if(productDeletes)caches=await loadCaches(meta);
-    const productUpserts=await processProductUpserts(caches);
-    if(productUpserts)caches=await loadCaches(meta);
-    const allocated=await allocateBlankSheetRows(caches);
-    if(allocated)caches=await loadCaches(meta);
+      let caches=await loadCaches(meta);
+      const modifiedBefore=await driveModifiedTime();
+      const productCreates=await processProductCreates(caches,modifiedBefore);
+      if(productCreates)caches=await loadCaches(meta);
+      const productDeletes=await processProductDeletes(caches,modifiedBefore);
+      if(productDeletes)caches=await loadCaches(meta);
+      const productUpserts=await processProductUpserts(caches);
+      if(productUpserts)caches=await loadCaches(meta);
+      const allocated=await allocateBlankSheetRows(caches);
+      if(allocated)caches=await loadCaches(meta);
 
-    const modifiedTime=await driveModifiedTime();const syncState=await readSyncState();
-    const outbound=sourceCreates+sourceDeletes+productCreates+productDeletes+productUpserts+allocated;
-    if(!force&&outbound===0&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
+      const modifiedTime=await driveModifiedTime();const syncState=await readSyncState();
+      const outbound=sourceCreates+sourceDeletes+productCreates+productDeletes+productUpserts+allocated;
+      if(!force&&outbound===0&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
+        await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
+        return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0)};
+      }
+      const inbound=await inboundScan(caches,modifiedTime);
       await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
-      return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0)};
+      return {ok:true,changed:outbound>0||inbound.changedRows>0,modifiedTime,outbound:{sourceCreates,sourceDeletes,productCreates,productDeletes,productUpserts,allocated},...inbound};
+    }catch(error){
+      const message=String((error as Error)?.message??error).slice(0,1500);await setSyncState({last_sync_status:"error",last_error:message}).catch(()=>{});throw error;
     }
-    const inbound=await inboundScan(caches,modifiedTime);
-    await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
-    return {ok:true,changed:outbound>0||inbound.changedRows>0,modifiedTime,outbound:{sourceCreates,sourceDeletes,productCreates,productDeletes,productUpserts,allocated},...inbound};
-  }catch(error){
-    const message=String((error as Error)?.message??error).slice(0,1500);await setSyncState({last_sync_status:"error",last_error:message}).catch(()=>{});throw error;
+  }finally{
+    await admin.rpc("taphoa_release_sheet_sync_lock",{p_token:lockToken}).catch(()=>{});
   }
 }
 
