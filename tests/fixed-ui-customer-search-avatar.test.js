@@ -33,6 +33,6 @@ test('customer avatar flows from v21 account data through frontend rows into sel
     'customer avatar must use the appended customer row field without shifting existing role index');
   assert.match(migrations, /'avatar'\s*,\s*nullif\(a\.avatar_path\s*,\s*''\)/i,
     'customer frontend RPC must expose v21 avatar_path');
-  assert.match(migrations, /taphoa_revisions[\s\S]*domain\s*=\s*'customers'/i,
+  assert.match(migrations, /taphoa_bump_customers_revision_from_v21_accounts[\s\S]*values\s*\(\s*'customers'\s*,\s*1\s*,\s*now\(\)\s*\)[\s\S]*on conflict\s*\(\s*domain\s*\)\s*do update[\s\S]*revision\s*=\s*public\.taphoa_revisions\.revision\s*\+\s*1/i,
     'customer/account changes must bump the customers revision so open web sessions refresh');
 });
