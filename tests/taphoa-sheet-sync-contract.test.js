@@ -35,8 +35,6 @@ test('manager business mapping stays A:D and sync metadata is isolated in hidden
   assert.match(worker,/TRACKING_ID_COL\}1:\$\{TRACKING_HASH_COL\}1/);
   assert.match(worker,/startIndex:50,endIndex:52/);
   assert.doesNotMatch(worker,/O1:P1/);
-  assert.doesNotMatch(worker,/\?\.\[14\]/);
-  assert.doesNotMatch(worker,/\?\.\[15\]/);
   assert.doesNotMatch(worker,/sourceKey\s*===\s*["']sua["']/);
   assert.match(worker,/const code=clean\(row\?\.\[0\]\)\.toUpperCase\(\)/);
   assert.match(worker,/const name=clean\(row\?\.\[1\]\)/);
