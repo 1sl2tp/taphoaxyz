@@ -20,5 +20,6 @@ jobs:
           node-version: '22'
       - run: npm install --no-audit --no-fund
       - run: node --test tests/taphoa-migration-contract.test.js
-      - run: node --test tests/*.test.js
+      - run: node --test tests/taphoa-product-realtime-sync-contract.test.js
       - run: npm run build:production
+      - run: node --test tests/*.test.js
