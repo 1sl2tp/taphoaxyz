@@ -1,15 +1,16 @@
 /* FIXED STYLE: compact-cart-numeric-cluster */
 
 /* Giỏ hàng: Tên SP giữ toàn bộ phần dư; cụm Đ.GIÁ | SL | T.TIỀN dùng
-   khoảng cách thật cố định để không bị giãn khi giá hiển thị đã rút gọn. */
+   track số cố định để số tăng không làm dịch SL hay mép phải T.TIỀN.
+   T.TIỀN giữ 56px, đủ ngưỡng hiển thị 100.000 theo ruler hiện tại. */
 .cart-compact-grid{
-  grid-template-columns:minmax(0,1fr) var(--num-price-cap) 72px var(--num-money-cap) !important;
+  grid-template-columns:minmax(0,1fr) 48px 72px 56px !important;
   column-gap:12px !important;
   justify-content:stretch !important;
 }
 
-/* Neo Đ.GIÁ về mép phải và T.TIỀN về mép trái của hai cột số.
-   Như vậy khoảng nhìn thực tế hai bên vùng SL đều đúng bằng column-gap. */
+/* Đ.GIÁ và T.TIỀN đều bám mép phải track cố định.
+   Khoảng hình học quanh vùng SL luôn tính theo full track, không theo độ dài số hiện tại. */
 .cart-price{
   justify-self:stretch;
   text-align:right !important;
@@ -17,7 +18,9 @@
 
 .cart-total{
   justify-self:stretch;
-  text-align:left !important;
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
 }
 
 .cart-qty{
