@@ -26,6 +26,15 @@ export function createSupabaseGateway({clientProvider,config=CONFIG}={}) {
         throw err;
       }
       return data;
+    },
+    async invoke(name,{body={}}={}) {
+      const client=await provider();
+      const {data,error}=await client.functions.invoke(name,{body});
+      if(error){
+        const err=Object.assign(new Error(error.message||String(error.code||'FUNCTION_ERROR')),{code:String(error.code||'FUNCTION_ERROR'),details:error.details||''});
+        throw err;
+      }
+      return data;
     }
   };
 }
