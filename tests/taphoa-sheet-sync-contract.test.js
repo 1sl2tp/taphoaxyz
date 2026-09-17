@@ -45,7 +45,8 @@ test('manager business mapping stays A:D and sync metadata is isolated in hidden
 });
 
 test('sync remains TAPHOA-only and never touches GETLINK or NCC pairing',()=>{
-  assert.match(worker,/taphoa_products/);
+  assert.match(worker,/taphoa_apply_product_delta/);
+  assert.match(worker,/taphoa_product_sheet_state/);
   assert.match(worker,/taphoa_sources/);
   assert.match(worker,/taphoa_sheet_sync_state/);
   assert.match(authority,/taphoa_revisions/);
@@ -57,6 +58,7 @@ test('worker skips unchanged Drive versions and Sheet delta can tombstone missin
   assert.match(worker,/modifiedTime/);
   assert.match(worker,/last_drive_modified_time/);
   assert.match(worker,/changed:false/);
+  assert.match(worker,/metadataOnly:true/);
   assert.match(worker,/taphoa_apply_product_delta/);
   assert.match(authority,/update\s+public\.taphoa_products[\s\S]*is_active=false/i);
   assert.match(authority,/jsonb_array_elements_text\(s\.codes\)/i);
