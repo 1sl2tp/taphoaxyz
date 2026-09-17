@@ -25,10 +25,6 @@ function defaultIdFactory(){
 export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
   if(!gateway?.rpc)throw new Error('gateway.rpc is required');
   const commandId=()=>String(idFactory());
-  const directSheetMutation=(action,payload={})=>{
-    if(!gateway?.invoke)throw new Error('gateway.invoke is required');
-    return gateway.invoke('taphoa-sheet-sync',{body:{action,...payload}});
-  };
   return {
     bootstrap:()=>gateway.rpc('taphoa_app_bootstrap',{}),
     meta:()=>gateway.rpc('taphoa_app_meta',{}),
@@ -37,11 +33,6 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
     debtLedger:(maKH,{beforeAt=null,beforeId=null,limit=50}={})=>gateway.rpc('taphoa_debt_ledger_page',{
       p_customer_id:String(maKH||''),p_before_at:beforeAt||null,p_before_id:beforeId??null,p_limit:Math.max(1,Math.min(100,num(limit)||50))
     }),
-    syncSheet:body=>gateway.invoke?gateway.invoke('taphoa-sheet-sync',{body:{force:true,...(body||{})}}):Promise.resolve({ok:false,skipped:true}),
-    createSource:name=>directSheetMutation('create_source',{name:String(name||'')}),
-    deleteSource:source=>directSheetMutation('delete_source',{source:String(source||'')}),
-    updateProduct:payload=>directSheetMutation(/^(?:SP\d+|TMP-)/i.test(String(payload?.product_code||payload?.maSP||''))?'create_product':'update_product',{product:payload||{}}),
-    deleteProduct:code=>directSheetMutation('delete_product',{product_code:String(code||'')}),
     saveOrder:payload=>gateway.rpc('taphoa_save_order',{p_order:orderRpcPayload(payload),p_command_id:commandId()}),
     deliverOrder:id=>gateway.rpc('taphoa_deliver_order',{p_order_id:String(id||''),p_command_id:commandId()}),
     reverseOrder:(id,reason='Hoàn đơn')=>gateway.rpc('taphoa_reverse_order',{p_order_id:String(id||''),p_reason:String(reason||'Hoàn đơn'),p_command_id:commandId()}),
