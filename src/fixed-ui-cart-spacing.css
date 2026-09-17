@@ -1,0 +1,18 @@
+/* FIXED STYLE: compact-cart-numeric-cluster */
+
+/* Giỏ hàng: Tên SP giữ toàn bộ phần dư; cụm Đ.GIÁ | SL | T.TIỀN dùng
+   khoảng cách thật cố định để không bị giãn khi giá hiển thị đã rút gọn. */
+.cart-compact-grid{
+  grid-template-columns:minmax(0,1fr) var(--num-price-cap) 72px var(--num-money-cap) !important;
+  column-gap:12px !important;
+  justify-content:stretch !important;
+}
+
+.cart-price,
+.cart-total{
+  justify-self:stretch;
+}
+
+.cart-qty{
+  justify-self:center;
+}
