@@ -13,13 +13,15 @@ const migrations=fs.readdirSync(path.join(root,'supabase/migrations'))
 const business=fs.readFileSync(path.join(root,'src/core/business.js'),'utf8');
 const bridge=fs.readFileSync(path.join(root,'src/fixed-production-bridge.js'),'utf8');
 const runtime=fs.readFileSync(path.join(root,'src/fixed-ui-runtime-2.js'),'utf8');
+const worker=fs.readFileSync(path.join(root,'supabase/functions/taphoa-sheet-sync/index.ts'),'utf8');
 
-test('source creation is persisted Web -> Supabase and refreshed back to the editor',()=>{
-  assert.match(migrations,/create\s+or\s+replace\s+function\s+public\.taphoa_create_source_from_web/i);
-  assert.match(migrations,/insert\s+into\s+public\.taphoa_sources/i);
-  assert.match(migrations,/domain\s*=\s*'products'/i);
-  assert.match(business,/createSource\s*:\s*.*directSheetMutation\('create_source'/s);
-  assert.match(bridge,/async\s+function\s+createSource\s*\(/);
-  assert.match(bridge,/TAPHOA_PRODUCTION[\s\S]*createSource/);
-  assert.match(runtime,/saveNewProductEditorSource\s*\([^)]*\)[\s\S]*TAPHOA_PRODUCTION\.createSource/);
+test('source management is Sheet-owned and web has no source mutation path',()=>{
+  assert.match(worker,/reconcileSources/);
+  assert.match(worker,/management_sheet_id/);
+  assert.match(worker,/taphoa_sources/);
+  assert.doesNotMatch(business,/directSheetMutation|createSource\s*:|deleteSource\s*:/);
+  assert.doesNotMatch(bridge,/async\s+function\s+createSource|async\s+function\s+deleteSource/);
+  assert.doesNotMatch(runtime,/TAPHOA_PRODUCTION\.createSource|TAPHOA_PRODUCTION\.deleteSource/);
+  assert.match(migrations,/revoke\s+execute\s+on\s+function\s+public\.taphoa_create_source_from_web\(text\)\s+from\s+authenticated/i);
+  assert.match(migrations,/revoke\s+execute\s+on\s+function\s+public\.taphoa_delete_source_from_web\(text\)\s+from\s+authenticated/i);
 });
