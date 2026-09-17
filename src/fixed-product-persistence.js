@@ -21,18 +21,57 @@
       product_code:productCode,
       name,
       cost:String(row[2]??'').replace(/\./g,'').trim(),
-      price:String(row[3]??'').replace(/\./g,'').trim()
+      price:String(row[3]??'').replace(/\./g,'').trim(),
+      source:String(row[4]??'').trim()
     };
   }
 
   function payloadKey(payload){
-    return JSON.stringify([payload.product_code,payload.name,payload.cost,payload.price]);
+    return JSON.stringify([payload.product_code,payload.name,payload.cost,payload.price,payload.source]);
+  }
+
+  function isLocalPlaceholder(code){
+    return /^SP\d+$/i.test(String(code||'').trim());
+  }
+
+  async function saveNewProductEditorRow(index,payload){
+    if(!payload.source)return null;
+    const localKey=payload.product_code.toUpperCase();
+    if(saveChains.has(localKey))return saveChains.get(localKey);
+
+    const task=(async()=>{
+      const api=window.TAPHOA_PRODUCTION;
+      if(!api?.updateProduct)throw new Error('Production product API chưa sẵn sàng');
+      const result=await api.updateProduct(payload);
+      const assigned=String(result?.product_code||'').trim();
+      if(!assigned||isLocalPlaceholder(assigned))throw new Error('Supabase chưa cấp mã sản phẩm thật');
+
+      const row=editorRow(index);
+      if(row&&String(row[0]||'').trim().toUpperCase()===localKey){
+        row[0]=assigned;
+        if(typeof syncProductEditorData==='function')syncProductEditorData();
+      }
+
+      const savedPayload={...payload,product_code:assigned};
+      lastSaved.set(assigned.toUpperCase(),payloadKey(savedPayload));
+      return result;
+    })();
+
+    saveChains.set(localKey,task);
+    try{
+      return await task;
+    }catch(error){
+      console.error('create product editor row',error);
+      if(typeof showToast==='function')showToast('Không thêm được sản phẩm.','warning');
+      throw error;
+    }finally{
+      if(saveChains.get(localKey)===task)saveChains.delete(localKey);
+    }
   }
 
   async function saveProductEditorRow(index){
     const payload=rowPayload(index);if(!payload)return null;
-    // add-row persistence is wired separately; never send a local placeholder as an update.
-    if(/^SP\d+$/i.test(payload.product_code))return null;
+    if(isLocalPlaceholder(payload.product_code))return saveNewProductEditorRow(index,payload);
 
     const key=payload.product_code.toUpperCase();
     const fingerprint=payloadKey(payload);
@@ -42,7 +81,7 @@
     const task=previous.catch(()=>{}).then(async()=>{
       const api=window.TAPHOA_PRODUCTION;
       if(!api?.updateProduct)throw new Error('Production product API chưa sẵn sàng');
-      const result=await window.TAPHOA_PRODUCTION.updateProduct(payload);
+      const result=await api.updateProduct(payload);
       lastSaved.set(key,fingerprint);
       return result;
     });
