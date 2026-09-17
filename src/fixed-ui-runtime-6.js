@@ -61,6 +61,8 @@
                 return;
             }
             customerSelectionContext = context || 'sale';
+            const search = document.getElementById('customerSearchInput');
+            if (search) search.value = '';
             renderCustomerList();
             document.getElementById('customerModal').classList.remove('pointer-events-none', 'opacity-0');
             document.getElementById('customerBox').classList.remove('scale-95');
@@ -138,13 +140,38 @@
             ));
         }
 
+        function customerInitials(name) {
+            const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return '?';
+            return parts.slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase();
+        }
+
+        function customerAvatarMarkup(kh) {
+            const avatarUrl = String(kh[5] || '').trim();
+            const initials = escapeProductEditorValue(customerInitials(kh[1] || kh[2] || kh[0]));
+            if (!avatarUrl) {
+                return `<span class="customer-avatar w-10 h-10 rounded-full bg-primaryLight text-primary border border-primary/10 flex items-center justify-center text-[11px] font-extrabold shrink-0">${initials}</span>`;
+            }
+            const safeUrl = escapeProductEditorValue(avatarUrl);
+            return `<span class="relative w-10 h-10 shrink-0">
+                <img class="customer-avatar w-10 h-10 rounded-full object-cover bg-gray-100 border border-gray-100" src="${safeUrl}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <span class="customer-avatar absolute inset-0 rounded-full bg-primaryLight text-primary border border-primary/10 items-center justify-center text-[11px] font-extrabold" style="display:none">${initials}</span>
+            </span>`;
+        }
+
         function renderCustomerList() {
             const list = document.getElementById('customerSelectList');
             if (!list) return;
 
-            const rows = getCustomerRowsForSelector();
+            const query = normalizeSearchText(document.getElementById('customerSearchInput')?.value || '');
+            const queryTokens = query ? query.split(' ').filter(Boolean) : [];
+            const rows = getCustomerRowsForSelector().filter(kh => {
+                if (!queryTokens.length) return true;
+                const haystack = normalizeSearchText(`${kh[1] || ''} ${kh[2] || ''} ${kh[0] || ''}`);
+                return queryTokens.every(token => haystack.includes(token));
+            });
             if (!rows.length) {
-                list.innerHTML = '<p class="text-center text-gray-400 py-8 text-xs">Chưa có khách hàng mẫu.</p>';
+                list.innerHTML = `<p class="text-center text-gray-400 py-8 text-xs">${query ? 'Không tìm thấy khách hàng.' : 'Chưa có khách hàng.'}</p>`;
                 return;
             }
 
@@ -157,11 +184,14 @@
                 const customerCode = kh[2] || kh[0];
                 return `
                     <button type="button" onclick="selectCustomer('${kh[0]}', '${kh[1]}')" class="allow-fast-click w-full p-3 rounded-xl border ${active ? 'border-primary bg-primaryLight' : 'border-gray-100 bg-white hover:bg-gray-50'} cursor-pointer flex justify-between items-center transition text-left">
-                        <span class="pointer-events-none min-w-0">
-                            <span class="block font-bold text-sm text-gray-900 truncate">${kh[1]}</span>
-                            <span class="block text-xs text-gray-400 mt-0.5">Mã: ${customerCode}</span>
+                        <span class="pointer-events-none min-w-0 flex items-center gap-3 flex-1">
+                            ${customerAvatarMarkup(kh)}
+                            <span class="min-w-0 flex-1">
+                                <span class="block font-bold text-sm text-gray-900 truncate">${kh[1]}</span>
+                                <span class="block text-xs text-gray-400 mt-0.5 truncate">Mã: ${customerCode}</span>
+                            </span>
                         </span>
-                        ${active ? '<i class="ph-fill ph-check-circle text-primary text-[16px] pointer-events-none"></i>' : ''}
+                        ${active ? '<i class="ph-fill ph-check-circle text-primary text-[16px] pointer-events-none ml-2"></i>' : ''}
                     </button>`;
             }).join('');
         }
