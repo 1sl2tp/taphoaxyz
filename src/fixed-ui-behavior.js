@@ -13,6 +13,84 @@ updateCart = function(maSp, tenSp, giaBan, change) {
   renderCartUI();
 };
 
+function parseCartPriceInputValue(value) {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  return digits ? Number(digits) : 0;
+}
+
+function formatCartPriceInputValue(value) {
+  return parseCartPriceInputValue(value).toLocaleString('vi-VN');
+}
+
+function selectCartPriceInputValue(input) {
+  if (!input) return;
+  requestAnimationFrame(() => {
+    try { input.select(); } catch (e) {}
+  });
+}
+
+function syncCartPriceToQtyEditors(maSp, price) {
+  document.querySelectorAll('[data-qty-id]').forEach(el => {
+    if (String(el.dataset.qtyId) === String(maSp)) el.dataset.qtyPrice = String(price);
+  });
+}
+
+function previewCartPriceInput(input) {
+  if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') return;
+  if (!input) return;
+  const maSp = input.dataset.priceId;
+  const item = cart[maSp];
+  if (!maSp || !item) return;
+  const raw = String(input.value || '').trim();
+  if (raw === '') return;
+  const price = parseCartPriceInputValue(raw);
+  item.price = price;
+  input.value = formatCartPriceInputValue(price);
+  syncCartPriceToQtyEditors(maSp, price);
+  const row = input.closest('.cart-compact-grid');
+  const totalEl = row?.querySelector('.cart-total');
+  if (totalEl) totalEl.innerText = ((Number(item.qty) || 0) * price).toLocaleString('vi-VN');
+  refreshCartTotalsOnly();
+}
+
+function commitCartPriceEditor(input) {
+  if (!input) return;
+  const maSp = input.dataset.priceId;
+  const item = cart[maSp];
+  if (!maSp || !item) return;
+  if (String(input.value || '').trim() === '') {
+    input.value = formatCartPriceInputValue(item.price);
+    return;
+  }
+  previewCartPriceInput(input);
+}
+
+const __fixedGetQtyMeta = getQtyMeta;
+getQtyMeta = function(maSp, input) {
+  const existing = cart[maSp];
+  const existingPrice = Number(existing?.price);
+  const meta = __fixedGetQtyMeta(maSp, input);
+  if (existing && Number.isFinite(existingPrice)) meta.price = existing.price;
+  return meta;
+};
+
+const __fixedRenderCartUI = renderCartUI;
+renderCartUI = function() {
+  __fixedRenderCartUI();
+  if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') return;
+
+  const cartEntries = Object.entries(cart).sort(([, a], [, b]) =>
+    (Number(b.__lastTouched) || 0) - (Number(a.__lastTouched) || 0)
+  );
+  const rows = Array.from(document.querySelectorAll('#cartItemList .cart-compact-grid'));
+  rows.forEach((row, index) => {
+    const [maSp, item] = cartEntries[index] || [];
+    const priceCell = row.querySelector('.cart-price');
+    if (!maSp || !item || !priceCell) return;
+    priceCell.innerHTML = `<input type="text" inputmode="numeric" value="${formatCartPriceInputValue(item.price)}" data-price-editor="cart" data-price-id="${maSp}" onfocus="selectCartPriceInputValue(this)" onmouseup="event.preventDefault(); selectCartPriceInputValue(this)" oninput="previewCartPriceInput(this)" onblur="commitCartPriceEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="w-full min-w-0 text-right font-semibold text-gray-700 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 p-0 m-0 tabular-nums">`;
+  });
+};
+
 /* Backend trả đơn mới nhất trước. Sau renderer gốc, đưa card về đúng thứ tự đó. */
 function stabilizeNewestOrderCards(sheetName, containerId) {
   const container = document.getElementById(containerId);
