@@ -19,8 +19,8 @@ function filesUnder(dir){
 
 const moneySuffixPatterns=[
   /(["'`])\s*đ\s*\1/,
-  /\$\{[^}\n]+\}\s*đ\b/,
-  /\b\d[\d.,]*\s*đ\b/
+  /\$\{[^}\n]+\}\s*đ(?![\p{L}\p{N}_])/u,
+  /\b\d[\d.,]*\s*đ(?![\p{L}\p{N}_])/u
 ];
 
 test('money displays do not append the đ currency suffix anywhere in the production source',()=>{
