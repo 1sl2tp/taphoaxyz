@@ -41,6 +41,17 @@ function sourceDisplayName(product,state=appState.get()){
   return text(first(source,['name','ten'],key));
 }
 
+function sourceKeyFromDisplayName(value,state=appState.get()){
+  const wanted=text(value).trim();
+  if(!wanted)return '';
+  const source=(state.sources||[]).find(row=>{
+    const key=text(first(row,['id','key','source_key'],'')).trim();
+    const name=text(first(row,['name','ten'],key)).trim();
+    return key===wanted||name===wanted;
+  });
+  return source?text(first(source,['id','key','source_key'],wanted)).trim():wanted;
+}
+
 function mapProductRows(state=appState.get()){
   return [
     ['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn'],
@@ -238,6 +249,14 @@ async function logout(){stopSync();await auth.logout();identity=null;bootstrappe
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){return business.debtLedger(customerId);}
 
+async function updateProduct(payload={}){
+  const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();
+  const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
+  const result=await business.updateProduct({...payload,source_key});
+  await refresh(['products']);
+  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
+  return result;
+}
 async function saveOrder(payload){const result=await business.saveOrder(payload);await refresh(['orders','debt']);return result;}
 async function deliverOrder(id){const result=await business.deliverOrder(id);await refresh(['orders','debt']);return result;}
 async function reverseOrder(id,reason='Hoàn đơn'){const result=await business.reverseOrder(id,reason);await refresh(['orders','debt']);return result;}
@@ -250,7 +269,7 @@ window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('tapho
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
-  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
+  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,updateProduct,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
