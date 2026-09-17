@@ -230,7 +230,7 @@
                         ${imageHtml}
                         <div class="min-w-0 flex-1">
                             <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
-                            <p class="text-[13px] font-bold text-primary mt-1">${giaBan.toLocaleString('vi-VN')} đ</p>
+                            <p class="text-[13px] font-bold text-primary mt-1">${giaBan.toLocaleString('vi-VN')}</p>
                         </div>
                     </div>
                     <div class="flex items-center shrink-0">
