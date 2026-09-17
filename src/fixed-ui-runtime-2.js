@@ -96,6 +96,9 @@
 
         function saveAndFetch() { let url = document.getElementById('inputScriptUrl').value.trim(); if(url) { SheetDB.init(url); loadData(); showToast("Đã cập nhật kết nối dữ liệu.", "success"); } }
 
+        // Product/source management is intentionally read-only on the Web.
+        // The management Sheet is the only place that may add, edit or delete product data.
+        // These lightweight definitions remain only so retired editor hooks cannot break older runtime code.
         let productEditorRows = [];
         let productEditorSourceFilter = 'Tất cả';
         let productEditorCustomSources = [];
@@ -103,16 +106,18 @@
         let productEditorSourcePickerRow = null;
         const CORE_PRODUCT_EDITOR_SOURCE_KEYS = new Set(['hang-u','thuoc-la','sua','masan','hang-thuong']);
 
+        function productEditorReadOnlyNotice() {
+            showToast("Quản lý sản phẩm trong file Quản trị.", "warning");
+        }
+
         function getProductEditorSources() {
             const backendSources = (window.TAPHOA_PRODUCTION?.getState?.()?.sources || [])
                 .map(source => String(source?.name || source?.ten || source?.source_name || source?.source_key || '').trim())
                 .filter(Boolean);
-            const sources = [
+            return Array.from(new Set([
                 ...backendSources,
-                ...productEditorRows.map(r => String(r[4] || '').trim()).filter(Boolean),
-                ...productEditorCustomSources.map(v => String(v || '').trim()).filter(Boolean),
-            ];
-            return Array.from(new Set(sources));
+                ...productEditorRows.map(r => String(r[4] || '').trim()).filter(Boolean)
+            ]));
         }
 
         function productEditorSourceKey(sourceName) {
@@ -126,30 +131,19 @@
             return String(source?.source_key || source?.key || source?.id || '').trim();
         }
 
-        function canDeleteProductEditorSource(sourceName) {
-            const key = productEditorSourceKey(sourceName);
-            return !!key && !CORE_PRODUCT_EDITOR_SOURCE_KEYS.has(key);
+        function canDeleteProductEditorSource() {
+            return false;
         }
 
         function updateProductEditorDeleteButton() {
             const btn = document.getElementById('productEditorDeleteRow');
             if (!btn) return;
-            const active = productEditorActiveRow !== null && !!productEditorRows[productEditorActiveRow];
-            btn.classList.toggle('opacity-50', !active);
-            btn.classList.toggle('pointer-events-none', !active);
-            btn.classList.toggle('text-white/60', !active);
-            btn.classList.toggle('text-white', active);
+            btn.classList.add('opacity-50', 'pointer-events-none', 'text-white/60');
+            btn.classList.remove('text-white');
         }
 
         function openAddSourceModal() {
-            const modal = document.getElementById('productEditorAddSourceModal');
-            if (!modal) return;
-            modal.classList.remove('hidden');
-            const input = document.getElementById('productEditorNewSourceInput');
-            if (input) {
-                input.value = '';
-                setTimeout(() => input.focus(), 0);
-            }
+            productEditorReadOnlyNotice();
         }
 
         function closeAddSourceModal() {
@@ -157,31 +151,11 @@
         }
 
         async function saveNewProductEditorSource() {
-            const input = document.getElementById('productEditorNewSourceInput');
-            const value = String(input?.value || '').trim();
-            if (!value) {
-                showToast("Nhập tên nguồn trước.", "warning");
-                return;
-            }
-            try {
-                const result = await window.TAPHOA_PRODUCTION.createSource(value);
-                const savedName = String(result?.name || value).trim();
-                const exists = getProductEditorSources().some(v => v.toLowerCase() === savedName.toLowerCase());
-                if (!exists) productEditorCustomSources.push(savedName);
-                renderProductEditorSources();
-                renderProductEditorSourcePicker();
-                closeAddSourceModal();
-                showToast("Đã thêm nguồn mới.", "success");
-            } catch (error) {
-                console.error('create product source', error);
-                showToast("Không thêm được nguồn.", "warning");
-            }
+            productEditorReadOnlyNotice();
         }
 
-        function openProductEditorSourcePicker(index) {
-            productEditorSourcePickerRow = index;
-            renderProductEditorSourcePicker();
-            document.getElementById('productEditorSourcePickerModal')?.classList.remove('hidden');
+        function openProductEditorSourcePicker() {
+            productEditorReadOnlyNotice();
         }
 
         function closeProductEditorSourcePicker() {
@@ -196,65 +170,17 @@
             list.innerHTML = sources.length
                 ? sources.map(source => {
                     const safe = escapeProductEditorValue(source);
-                    if (!canDeleteProductEditorSource(source)) {
-                        return `<button type="button" class="product-editor-picker-option mb-2 last:mb-0" data-picker-source="${safe}">${safe}</button>`;
-                    }
-                    return `<div class="relative mb-2 last:mb-0">
-                        <button type="button" class="product-editor-picker-option !mb-0 pr-12" data-picker-source="${safe}">${safe}</button>
-                        <button type="button" data-delete-source="${safe}" class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg text-red-500 text-lg font-bold" aria-label="Xóa nguồn ${safe}">×</button>
-                    </div>`;
+                    return `<div class="product-editor-picker-option mb-2 last:mb-0 opacity-70">${safe}</div>`;
                 }).join('')
                 : '<div class="p-4 text-center text-gray-400 text-sm">Chưa có nguồn.</div>';
         }
 
-        function requestDeleteProductEditorSource(source) {
-            const value = String(source || '').trim();
-            if (!value || !canDeleteProductEditorSource(value)) return;
-            showConfirmModal(
-                "Xóa nguồn?",
-                `Bạn có chắc muốn xóa nguồn ${value}?`,
-                "Xóa",
-                "bg-danger",
-                async () => {
-                    try {
-                        await window.TAPHOA_PRODUCTION.deleteSource(value);
-                        productEditorCustomSources = productEditorCustomSources.filter(v => String(v || '').trim() !== value);
-                        if (productEditorSourceFilter === value) productEditorSourceFilter = 'Tất cả';
-                        renderProductEditorSources();
-                        renderProductEditorSourcePicker();
-                        showToast("Đã xóa nguồn.", "success");
-                    } catch (error) {
-                        console.error('delete product source', error);
-                        const message = String(error?.message || error || '');
-                        showToast(message.includes('source_has_active_products') ? "Nguồn còn sản phẩm, hãy xóa hoặc chuyển sản phẩm trước." : "Không xóa được nguồn.", "warning");
-                    }
-                }
-            );
+        function requestDeleteProductEditorSource() {
+            productEditorReadOnlyNotice();
         }
 
-        document.addEventListener('click', function(e) {
-            const deleteSource = e.target.closest('#productEditorSourcePickerList [data-delete-source]');
-            if (!deleteSource) return;
-            e.preventDefault();
-            e.stopPropagation();
-            requestDeleteProductEditorSource(deleteSource.dataset.deleteSource || '');
-        }, true);
-
-        async function chooseProductEditorSource(source) {
-            if (productEditorSourcePickerRow === null || !productEditorRows[productEditorSourcePickerRow]) return;
-            const selectedRow = productEditorSourcePickerRow;
-            productEditorRows[selectedRow][4] = source;
-            syncProductEditorData();
-            renderProductEditorSources();
-            renderProductEditor();
-            updateProductEditorDeleteButton();
-            try {
-                if (typeof window.saveProductEditorRow === 'function') await window.saveProductEditorRow(selectedRow);
-            } catch (error) {
-                console.error('save product source selection', error);
-                return;
-            }
-            closeProductEditorSourcePicker();
+        async function chooseProductEditorSource() {
+            productEditorReadOnlyNotice();
         }
 
         function setProductEditorActiveRow(index, shouldRender = true) {
@@ -265,78 +191,26 @@
         }
 
         function deleteSelectedProductEditorRows() {
-            if (productEditorActiveRow === null || !productEditorRows[productEditorActiveRow]) return;
-            const row = productEditorRows[productEditorActiveRow];
-            const code = String(row[0] || '').trim();
-            const name = String(row[1] || '').trim() || 'dòng chưa có tên';
-            const localOnly = /^SP\d+$/i.test(code);
-
-            showConfirmModal(
-                "Xóa dòng?",
-                `Bạn có chắc muốn xóa ${name}?`,
-                "Xóa",
-                "bg-danger",
-                async () => {
-                    try {
-                        if (code && !localOnly) await window.TAPHOA_PRODUCTION.deleteProduct(code);
-                        const index = productEditorRows.indexOf(row);
-                        if (index >= 0) productEditorRows.splice(index, 1);
-                        productEditorActiveRow = null;
-                        syncProductEditorData();
-                        renderProductEditorSources();
-                        renderProductEditor();
-                        updateProductEditorDeleteButton();
-                        showToast("Đã xóa dòng hiện tại.", "success");
-                    } catch (error) {
-                        console.error('delete product editor row', error);
-                        showToast("Không xóa được sản phẩm.", "warning");
-                    }
-                }
-            );
+            productEditorReadOnlyNotice();
         }
 
         function openProductEditor() {
-            if (!hasPermission('canManageProducts')) {
-                return denyPermission('Cập nhật sản phẩm và Giá vốn chỉ dành cho Owner.');
-            }
-            if (!appData.sanpham || appData.sanpham.length <= 1) {
-                showToast("Chưa có dữ liệu sản phẩm.", "warning");
-                return;
-            }
-            productEditorRows = appData.sanpham.slice(1).map(r => [...r]);
-            productEditorSourceFilter = 'Tất cả';
-            productEditorCustomSources = [];
-            productEditorActiveRow = null;
-            productEditorSourcePickerRow = null;
-            document.getElementById('productEditorSearch').value = '';
-            renderProductEditorSources();
-            renderProductEditor();
-            const page = document.getElementById('productEditorPage');
-            page.classList.remove('hidden');
-            page.classList.add('flex');
+            productEditorReadOnlyNotice();
         }
 
         function closeProductEditor() {
-            syncProductEditorData();
-            renderSourceTags();
-            renderProductList();
-            renderDonTam();
-            renderDaGiao();
             closeProductEditorSourcePicker();
             closeAddSourceModal();
             const page = document.getElementById('productEditorPage');
-            page.classList.add('hidden');
-            page.classList.remove('flex');
+            page?.classList.add('hidden');
+            page?.classList.remove('flex');
         }
 
         function renderProductEditorSources() {
             const container = document.getElementById('productEditorSourceChips');
             if (!container) return;
-
             const sources = ['Tất cả', ...getProductEditorSources()];
-
             if (!sources.includes(productEditorSourceFilter)) productEditorSourceFilter = 'Tất cả';
-
             container.innerHTML = sources.map(source => {
                 const active = source === productEditorSourceFilter;
                 const cls = active
@@ -355,32 +229,7 @@
         });
 
         function addProductEditorRow() {
-            let maxNumber = 0;
-            productEditorRows.forEach(r => {
-                const m = String(r[0] || '').match(/(\d+)$/);
-                if (m) maxNumber = Math.max(maxNumber, Number(m[1]) || 0);
-            });
-            const nextId = `SP${String(maxNumber + 1).padStart(3, '0')}`;
-            const defaultSource = productEditorSourceFilter === 'Tất cả' ? '' : productEditorSourceFilter;
-            productEditorRows.unshift([nextId, '', '', '', defaultSource]);
-            productEditorActiveRow = 0;
-            syncProductEditorData();
-
-            renderProductEditorSources();
-            renderProductEditor();
-            updateProductEditorDeleteButton();
-
-            const scrollOwner = document.getElementById('productEditorScroll');
-            scrollOwner?.scrollTo({top:0,left:0,behavior:'auto'});
-
-            requestAnimationFrame(() => {
-                scrollOwner?.scrollTo({top:0,left:0,behavior:'auto'});
-                const row = document.querySelector('[data-editor-row="0"]');
-                if (row) {
-                    row.querySelector('[data-editor-field="1"]')?.focus({preventScroll:true});
-                    scrollOwner?.scrollTo({top:0,left:0,behavior:'auto'});
-                }
-            });
+            productEditorReadOnlyNotice();
         }
 
         function rawProductEditorNumber(value) {
