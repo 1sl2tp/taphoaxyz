@@ -1,11 +1,25 @@
-# PRODUCT EDITOR SYNC RULES
+# PRODUCT DATA SYNC RULES
 
-Áp dụng cho Cài đặt → Cập nhật sản phẩm.
+`Cài đặt → Cập nhật sản phẩm` đã nghỉ hẳn. Web không còn là nơi tạo, sửa hoặc xóa nguồn/sản phẩm.
 
-1. Mỗi lần chỉ sửa và kiểm tra một thao tác: Tạo nguồn → Thêm sản phẩm → Sửa giá → Xóa dòng.
-2. Gate đầu tiên luôn là Web ↔ Supabase. Chỉ khi thao tác đó ghi thật vào Supabase và web đọc lại đúng mới chuyển sang bước kế tiếp.
-3. Không coi thay đổi local/UI là đã lưu.
-4. Với phạm vi này, thay đổi được đưa trực tiếp vào `main` theo yêu cầu hiện tại của dự án; trước khi chốt phải chạy test/build hiện có và kiểm tra production publish.
-5. Chỉ sau khi Web ↔ Supabase PASS mới nối/kiểm tra tiếp Supabase ↔ Quản trị/Google Sheet.
-6. Mã sản phẩm là định danh bất biến; không đổi mã do sắp xếp, thêm hoặc xóa dòng.
-7. Không chạy reset/fresh-start hoặc thao tác dữ liệu diện rộng để sửa một lỗi cục bộ.
+## Luồng dữ liệu khóa
+
+**Quản trị / Google Sheet → Supabase → Web**
+
+1. Google Sheet Quản trị là nơi duy nhất tạo, sửa, xóa nguồn và sản phẩm.
+2. Supabase là bản dữ liệu phục vụ ứng dụng; Web chỉ đọc sản phẩm/nguồn từ Supabase.
+3. Không có luồng Web → Supabase → Sheet cho dữ liệu nguồn/sản phẩm.
+4. Worker tự động kiểm tra file Quản trị mỗi phút. Nếu file không đổi thì không nhập lại dữ liệu.
+5. Nguồn được nhận diện theo `sheetId`; đổi tên tab không đổi danh tính nguồn.
+6. Dữ liệu sản phẩm của mỗi tab là A:D: `Mã SP | Tên sản phẩm | Giá vốn | Giá bán của mình`.
+7. Nếu người quản trị thêm một dòng có tên nhưng chưa có Mã SP, worker được phép cấp Mã SP ngay trong Sheet. Đây là thao tác quản trị nội bộ từ chính Sheet, không phải dữ liệu đẩy ngược từ Web/Supabase.
+8. Metadata kỹ thuật `__SYNC_ID` / `__SYNC_HASH` được phép nằm ở AY/AZ và không phải dữ liệu nghiệp vụ.
+9. Xóa dòng/tab ở Quản trị được phản ánh một chiều xuống Supabase/Web; worker không được tạo/xóa/sửa dòng hoặc tab theo yêu cầu phát sinh từ Web.
+10. Không chạy reset/fresh-start hoặc thao tác dữ liệu diện rộng để đổi sang kiến trúc một chiều.
+
+## Gate
+
+- Không còn pending outbound nào được phép đẩy từ Supabase lên Sheet.
+- Cron `taphoa_sheet_sync_every_minute` phải hoạt động mỗi phút.
+- Worker không được xử lý `taphoa_product_outbox`, `taphoa_product_create_requests`, `taphoa_source_sync_requests` như hàng đợi outbound.
+- Production Web không được load persistence của product editor và business service không được expose create/update/delete source/product.
