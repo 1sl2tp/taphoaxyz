@@ -31,17 +31,17 @@ test('all TAPHOA mutations are namespaced and command-idempotent',()=>{
 
 test('customer can save only their own pending order',()=>{
   const fn=latestFunction('taphoa_save_order');
-  assert.match(fn,/taphoa_role[^\n;]*customer/i);
-  assert.match(fn,/v_status\s*<>\s*'pending'/i);
-  assert.match(fn,/v_customer[^\n;]*account_id/i);
-  assert.match(fn,/customer_account_id[^\n;]*account_id/i);
+  assert.match(fn,/v_role\s+not\s+in\s*\(\s*'admin'\s*,\s*'customer'\s*\)/i);
+  assert.match(fn,/if\s+v_role\s*=\s*'customer'[\s\S]*?v_status\s*<>\s*'pending'/i);
+  assert.match(fn,/v_customer\s+is\s+distinct\s+from\s+v_account_id/i);
+  assert.match(fn,/v_order\.customer_account_id\s+is\s+distinct\s+from\s+v_account_id/i);
   assert.match(fn,/v_order\.status\s*<>\s*'pending'/i);
 });
 
 test('customer can delete only their own pending order',()=>{
   const fn=latestFunction('taphoa_delete_pending_order');
-  assert.match(fn,/taphoa_role[^\n;]*customer/i);
-  assert.match(fn,/o\.customer_account_id[^\n;]*account_id/i);
+  assert.match(fn,/v_role\s+not\s+in\s*\(\s*'admin'\s*,\s*'customer'\s*\)/i);
+  assert.match(fn,/v_role\s*=\s*'customer'\s+and\s+o\.customer_account_id\s+is\s+distinct\s+from\s+v_account_id/i);
   assert.match(fn,/o\.status\s*<>\s*'pending'/i);
 });
 
