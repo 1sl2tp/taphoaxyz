@@ -28,6 +28,10 @@ test('sheet sync uses modifiedTime gate plus per-row SHA hashes and writes pendi
   assert.match(worker,/A:D/);
 });
 
+test('unchanged sheet sync leaves monitor state at success instead of running',()=>{
+  assert.match(worker,/if\(!force&&syncState\?\.last_drive_modified_time[\s\S]*setSyncState\(\{last_sync_status:\"success\"[\s\S]*changed:false/);
+});
+
 test('fixed production UI saves a blurred product row through Supabase instead of local-only state',()=>{
   assert.match(business,/updateProduct/);
   assert.match(business,/taphoa_update_product_from_web/);
