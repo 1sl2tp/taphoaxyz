@@ -85,7 +85,8 @@
             if (!cart[maSp]) cart[maSp] = { name: tenSp, price: giaBan, qty: 0 };
             cart[maSp].qty += change;
             if (cart[maSp].qty <= 0) delete cart[maSp];
-            renderProductList();
+            const nextQty = cart[maSp]?.qty || 0;
+            syncQtyEditors(maSp, nextQty);
             renderCartUI();
         }
 
