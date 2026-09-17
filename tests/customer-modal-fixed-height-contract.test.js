@@ -7,7 +7,7 @@ const markup = fs.readFileSync(new URL('../src/fixed-ui-markup-5.js', import.met
 test('customer picker keeps a fixed modal height while filtering', () => {
   assert.match(
     markup,
-    /id=\\\"customerBox\\\"[^\n]*h-\\\[80vh\\\][^\n]*max-h-\\\[80vh\\\]/,
+    /class=\\\"[^\"]*h-\\\[80vh\\\][^\"]*max-h-\\\[80vh\\\][^\"]*\\\" id=\\\"customerBox\\\"/,
     'customerBox must keep an explicit 80vh height so realtime search only changes the inner list'
   );
 });
