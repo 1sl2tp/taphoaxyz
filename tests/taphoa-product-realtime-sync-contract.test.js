@@ -79,13 +79,13 @@ test('product/source deletes are queued until Sheet deletion is acknowledged',()
   assert.match(worker,/processSourceDeletes/i);
 });
 
-test('web mutations can kick the sheet worker immediately while cron remains retry safety',()=>{
+test('web mutations use one direct sheet function request while cron remains retry safety',()=>{
   assert.match(gateway,/functions\.invoke/);
-  assert.match(business,/syncSheet/);
-  assert.match(bridge,/syncSheetSoon/);
-  assert.match(bridge,/createSource[\s\S]*syncSheetSoon/);
-  assert.match(bridge,/updateProduct[\s\S]*syncSheetSoon/);
-  assert.match(bridge,/deleteProduct[\s\S]*syncSheetSoon/);
+  assert.match(business,/directSheetMutation/);
+  assert.match(business,/create_source/);
+  assert.match(business,/update_product/);
+  assert.match(business,/delete_product/);
+  assert.doesNotMatch(bridge,/syncSheetSoon/);
 });
 
 test('sheet sync uses modifiedTime gate plus per-row SHA hashes',()=>{
@@ -96,13 +96,13 @@ test('sheet sync uses modifiedTime gate plus per-row SHA hashes',()=>{
   assert.match(worker,/last_pushed_hash/);
 });
 
-test('fixed production UI saves a blurred product row through Supabase instead of local-only state',()=>{
+test('fixed production UI saves a settled product row through the direct Sheet mutation path',()=>{
   assert.match(business,/updateProduct/);
-  assert.match(business,/taphoa_update_product_from_web/);
+  assert.match(business,/directSheetMutation/);
   assert.match(bridge,/updateProduct/);
   assert.match(persistence,/saveProductEditorRow/);
-  assert.match(persistence,/focusout/);
-  assert.match(persistence,/TAPHOA_PRODUCTION\.updateProduct/);
+  assert.match(persistence,/scheduleProductEditorRowSave/);
+  assert.match(persistence,/updateProduct/);
   assert.match(index,/fixed-product-persistence\.js/);
 });
 

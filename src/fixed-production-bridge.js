@@ -254,18 +254,12 @@ async function logout(){stopSync();await auth.logout();identity=null;bootstrappe
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){return business.debtLedger(customerId);}
 
-async function syncSheetSoon(){
-  try{return await business.syncSheet({force:true});}
-  catch(error){console.warn('taphoa sheet sync',error);return null;}
-}
-
 async function createSource(name){
   const requested=text(name).trim();
   const result=await business.createSource(requested);
   const sourceName=text(result?.name||requested).trim();
   const sourceKey=text(result?.source_key).trim();
   if(sourceName&&sourceKey)pendingSourceAliases.set(sourceName.toLowerCase(),sourceKey);
-  await syncSheetSoon();
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
@@ -275,7 +269,6 @@ async function deleteSource(source){
   const sourceValue=text(source).trim();
   const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
   const result=await business.deleteSource(source_key);
-  await syncSheetSoon();
   if(sourceValue)pendingSourceAliases.delete(sourceValue.toLowerCase());
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
@@ -285,14 +278,7 @@ async function deleteSource(source){
 async function updateProduct(payload={}){
   const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();
   const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
-  let result=await business.updateProduct({...payload,source_key});
-  await syncSheetSoon();
-  if(/^TMP-/i.test(text(result?.product_code))){
-    try{
-      const resolved=await business.updateProduct({...payload,product_code:result.product_code,source_key});
-      if(resolved?.product_code)result=resolved;
-    }catch(error){console.warn('resolve pending product',error);}
-  }
+  const result=await business.updateProduct({...payload,source_key});
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
@@ -300,7 +286,6 @@ async function updateProduct(payload={}){
 
 async function deleteProduct(code){
   const result=await business.deleteProduct(String(code||'').trim());
-  await syncSheetSoon();
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;

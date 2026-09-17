@@ -219,7 +219,7 @@ async function authorized(req:Request){
   const userClient=createClient(SUPABASE_URL,ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false},global:{headers:{Authorization:authorization}}});
   const {data:ctx,error}=await userClient.rpc("taphoa_access_context");
   if(error||ctx?.allowed!==true||ctx?.taphoa_role!=="admin")return null;
-  return {kind:"admin" as const};
+  return {kind:"admin" as const,userClient};
 }
 async function readSyncState(){const {data,error}=await admin.from("taphoa_sheet_sync_state").select("*").eq("id",1).single();if(error)throw error;return data;}
 async function setSyncState(patch:Record<string,unknown>){const {error}=await admin.from("taphoa_sheet_sync_state").update({...patch,updated_at:new Date().toISOString()}).eq("id",1);if(error)throw error;}
@@ -303,20 +303,20 @@ async function refreshCache(cache:TabCache){cache.rows=await readManagerTab(cach
 
 export async function finalizeProductCreate(req:any,cache:TabCache,caches:Map<number,TabCache>,modifiedTime:string){
   const marker=createMarker(req.request_id);let rowIndex=cache.rows.findIndex((r,index)=>index>0&&clean(r?.[TRACKING_ID_INDEX])===marker);
+  let code=rowIndex>=1?clean(cache.rows[rowIndex]?.[0]).toUpperCase():"";
   if(rowIndex<1){
-    const pHash=await pendingHash(req.product_name,num(req.input_price_vnd),num(req.sale_price_vnd));
-    const values=rowWithTracking(["",req.product_name,sheetUnit(num(req.input_price_vnd)),sheetUnit(num(req.sale_price_vnd))],marker,pHash);
-    await appendManagerRow(cache.meta.title,values);await refreshCache(cache);
-    rowIndex=cache.rows.findIndex((r,index)=>index>0&&clean(r?.[TRACKING_ID_INDEX])===marker);
+    code=await reserveSheetCode(cache,caches);
+    const input=num(req.input_price_vnd),sale=num(req.sale_price_vnd);const hash=await sha256(canonicalText(code,clean(req.product_name),input,sale));
+    const values=rowWithTracking([code,req.product_name,sheetUnit(num(req.input_price_vnd)),sheetUnit(num(req.sale_price_vnd))],marker,hash);
+    const appendedRow=await appendManagerRow(cache.meta.title,values);await refreshCache(cache);
+    rowIndex=appendedRow>1?appendedRow-1:cache.rows.findIndex((r,index)=>index>0&&clean(r?.[TRACKING_ID_INDEX])===marker);
     if(rowIndex<1)throw new Error("pending_sheet_row_not_found");
     await admin.from("taphoa_product_create_requests").update({status:"sheet_written",management_sheet_id:cache.meta.sheetId,sheet_row:rowIndex+1,sheet_marker:marker,updated_at:new Date().toISOString()}).eq("request_id",req.request_id);
-  }
-  let code=clean(cache.rows[rowIndex]?.[0]).toUpperCase();
-  if(!code){
+  }else if(!code){
     code=await reserveSheetCode(cache,caches);
     const input=num(req.input_price_vnd),sale=num(req.sale_price_vnd);const hash=await sha256(canonicalText(code,clean(req.product_name),input,sale));
     await writeRanges([
-      {range:`${quotedSheet(cache.meta.title)}!A${rowIndex+1}`,values:[[code]]},
+      {range:`${quotedSheet(cache.meta.title)}!A${rowIndex+1}:D${rowIndex+1}`,values:[[code,req.product_name,sheetUnit(input),sheetUnit(sale)]]},
       {range:`${quotedSheet(cache.meta.title)}!${TRACKING_ID_COL}${rowIndex+1}:${TRACKING_HASH_COL}${rowIndex+1}`,values:[[marker,hash]]}
     ]);
     await refreshCache(cache);
@@ -420,6 +420,76 @@ async function inboundScan(caches:Map<number,TabCache>,modifiedTime:string){
   return {totalRows,changedRows:changed.length,acked,result};
 }
 
+
+async function directMutation(action:string,body:any,userClient:any){
+  const lockToken=crypto.randomUUID();
+  const {data:locked,error:lockError}=await admin.rpc("taphoa_acquire_sheet_sync_lock",{p_token:lockToken,p_seconds:120});
+  if(lockError)throw lockError;
+  if(locked!==true)throw new Error("sheet_sync_busy");
+  try{
+    const rpc=async(name:string,args:Record<string,unknown>)=>{
+      const {data,error}=await userClient.rpc(name,args);
+      if(error)throw error;
+      return data;
+    };
+
+    if(action==="create_source"){
+      const result=await rpc("taphoa_create_source_from_web",{p_name:clean(body?.name)});
+      let meta=await spreadsheetMeta();
+      const created=await processSourceCreates(meta);if(created)meta=await spreadsheetMeta();
+      await reconcileSources(meta);
+      const source=(await loadSources()).find(s=>s.source_key===clean(result?.source_key));
+      if(!source||source.sync_status!=="active"||source.management_sheet_id===null)throw new Error("source_create_not_finalized");
+      return {...result,pending:false,management_sheet_id:source.management_sheet_id};
+    }
+
+    if(action==="delete_source"){
+      const result=await rpc("taphoa_delete_source_from_web",{p_source:clean(body?.source)});
+      let meta=await spreadsheetMeta();await reconcileSources(meta);
+      const deleted=await processSourceDeletes(meta);if(deleted)meta=await spreadsheetMeta();
+      await reconcileSources(meta);
+      const source=(await loadSources()).find(s=>s.source_key===clean(result?.source_key));
+      if(source&&source.sync_status!=="deleted")throw new Error("source_delete_not_finalized");
+      return {...result,pending:false};
+    }
+
+    if(action==="create_product"||action==="update_product"){
+      const product=body?.product||{};
+      const result=await rpc("taphoa_update_product_from_web",{p_product:product});
+      let meta=await spreadsheetMeta();await reconcileSources(meta);
+      let caches=await loadCaches(meta);const modifiedBefore=await driveModifiedTime();
+      if(action==="create_product"||result?.pending===true||/^TMP-/i.test(clean(result?.product_code))){
+        await processProductCreates(caches,modifiedBefore);
+        const requestId=clean(result?.request_id);if(!requestId)throw new Error("product_create_request_missing");
+        const {data:reqRow,error:reqError}=await admin.from("taphoa_product_create_requests").select("final_product_code,status").eq("request_id",requestId).single();
+        if(reqError)throw reqError;
+        if(reqRow?.status!=="finalized"||!clean(reqRow?.final_product_code))throw new Error("product_create_not_finalized");
+        return {...result,pending:false,created:true,product_code:clean(reqRow.final_product_code)};
+      }
+      await processProductUpserts(caches);
+      const code=clean(result?.product_code);
+      const {count,error:pendingError}=await admin.from("taphoa_product_outbox").select("id",{count:"exact",head:true}).eq("product_code",code).eq("status","pending");
+      if(pendingError)throw pendingError;if((count||0)>0)throw new Error("product_update_not_pushed");
+      return {...result,pending:false};
+    }
+
+    if(action==="delete_product"){
+      const result=await rpc("taphoa_delete_product_from_web",{p_product_code:clean(body?.product_code)});
+      let meta=await spreadsheetMeta();await reconcileSources(meta);
+      const caches=await loadCaches(meta);const modifiedBefore=await driveModifiedTime();
+      await processProductDeletes(caches,modifiedBefore);
+      const code=clean(result?.product_code||body?.product_code).toUpperCase();
+      const {data:product,error:productError}=await admin.from("taphoa_products").select("sync_status").eq("product_code",code).maybeSingle();
+      if(productError)throw productError;if(product&&product.sync_status!=="deleted")throw new Error("product_delete_not_finalized");
+      return {...result,pending:false};
+    }
+
+    throw new Error("unsupported_action");
+  }finally{
+    await admin.rpc("taphoa_release_sheet_sync_lock",{p_token:lockToken}).catch(()=>{});
+  }
+}
+
 async function synchronize(force=false){
   const lockToken=crypto.randomUUID();
   const {data:locked,error:lockError}=await admin.rpc("taphoa_acquire_sheet_sync_lock",{p_token:lockToken,p_seconds:120});
@@ -469,7 +539,12 @@ Deno.serve(async req=>{
   try{
     if(req.method!=="GET"&&req.method!=="POST")return json({error:"method_not_allowed"},405);
     const access=await authorized(req);if(!access)return json({error:"unauthorized"},401);
-    let force=false;if(req.method==="POST"){const body=await req.json().catch(()=>({}));force=body?.force===true;}
-    return json(await synchronize(force));
+    const body=req.method==="POST"?await req.json().catch(()=>({})):{};
+    const action=clean(body?.action);
+    if(action){
+      if(access.kind!=="admin")return json({error:"admin_required"},403);
+      return json(await directMutation(action,body,access.userClient));
+    }
+    return json(await synchronize(body?.force===true));
   }catch(error){return json({ok:false,error:String((error as Error)?.message??error)},500);}
 });
