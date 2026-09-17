@@ -52,7 +52,7 @@
             if (detailLineCountEl) detailLineCountEl.innerText = items.length;
             const detailTotalQtyEl = document.getElementById('detailTotalQtyDisplay');
             if (detailTotalQtyEl) detailTotalQtyEl.innerText = totalQty;
-            document.getElementById('detailModalTotal').innerText = total.toLocaleString('vi-VN') + " đ";
+            document.getElementById('detailModalTotal').innerText = total.toLocaleString('vi-VN');
             const orderCodeEl = document.getElementById('detailModalOrderCode');
             if (orderCodeEl) orderCodeEl.innerText = "Mã đơn: " + orderId;
 
