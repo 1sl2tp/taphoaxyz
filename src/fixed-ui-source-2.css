@@ -307,3 +307,9 @@ body[data-force-pc="1"] #orderDetailContentToShare{
   margin:0;
 }
 
+/* Product card: keep green hover on mouse/trackpad, never synthesize it from touch taps. */
+@media (hover: hover) and (pointer: fine){
+  .product-card:hover{
+    border-color:color-mix(in srgb,var(--app-primary,#16a34a) 30%,#e5e7eb) !important;
+  }
+}
