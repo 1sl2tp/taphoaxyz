@@ -7,6 +7,7 @@ const auth=createAuthService();
 const business=createApi({clientProvider:auth.getClient});
 const appState=createAppState();
 const snapshot=createSnapshotStore();
+const pendingSourceAliases=new Map();
 
 let identity=null;
 let bootstrapped=false;
@@ -38,12 +39,16 @@ function sourceDisplayName(product,state=appState.get()){
   const key=text(first(product,['source_key','nhom','source','product_group','nguon'],'')).trim();
   if(!key)return '';
   const source=(state.sources||[]).find(row=>text(first(row,['id','key','source_key'],'')).trim()===key);
-  return text(first(source,['name','ten'],key));
+  if(source)return text(first(source,['name','ten'],key));
+  for(const [name,pendingKey] of pendingSourceAliases)if(pendingKey===key)return name;
+  return key;
 }
 
 function sourceKeyFromDisplayName(value,state=appState.get()){
   const wanted=text(value).trim();
   if(!wanted)return '';
+  const pending=pendingSourceAliases.get(wanted.toLowerCase());
+  if(pending)return pending;
   const source=(state.sources||[]).find(row=>{
     const key=text(first(row,['id','key','source_key'],'')).trim();
     const name=text(first(row,['name','ten'],key)).trim();
@@ -244,13 +249,23 @@ async function attachSession(info){
 
 async function login(username,password){return attachSession(await auth.login(username,password));}
 async function restore(){const info=await auth.restore();if(!info)return null;return attachSession(info);}
-async function logout(){stopSync();await auth.logout();identity=null;bootstrapped=false;appState.reset();}
+async function logout(){stopSync();await auth.logout();identity=null;bootstrapped=false;appState.reset();pendingSourceAliases.clear();}
 
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){return business.debtLedger(customerId);}
 
+async function syncSheetSoon(){
+  try{return await business.syncSheet({force:true});}
+  catch(error){console.warn('taphoa sheet sync',error);return null;}
+}
+
 async function createSource(name){
-  const result=await business.createSource(String(name||'').trim());
+  const requested=text(name).trim();
+  const result=await business.createSource(requested);
+  const sourceName=text(result?.name||requested).trim();
+  const sourceKey=text(result?.source_key).trim();
+  if(sourceName&&sourceKey)pendingSourceAliases.set(sourceName.toLowerCase(),sourceKey);
+  await syncSheetSoon();
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
@@ -260,6 +275,8 @@ async function deleteSource(source){
   const sourceValue=text(source).trim();
   const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
   const result=await business.deleteSource(source_key);
+  await syncSheetSoon();
+  if(sourceValue)pendingSourceAliases.delete(sourceValue.toLowerCase());
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
@@ -268,7 +285,14 @@ async function deleteSource(source){
 async function updateProduct(payload={}){
   const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();
   const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
-  const result=await business.updateProduct({...payload,source_key});
+  let result=await business.updateProduct({...payload,source_key});
+  await syncSheetSoon();
+  if(/^TMP-/i.test(text(result?.product_code))){
+    try{
+      const resolved=await business.updateProduct({...payload,product_code:result.product_code,source_key});
+      if(resolved?.product_code)result=resolved;
+    }catch(error){console.warn('resolve pending product',error);}
+  }
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
@@ -276,6 +300,7 @@ async function updateProduct(payload={}){
 
 async function deleteProduct(code){
   const result=await business.deleteProduct(String(code||'').trim());
+  await syncSheetSoon();
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
