@@ -267,3 +267,18 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   justify-self:end;
 }
 
+
+/* FIXED STYLE: centered-leading-index-columns */
+
+/* Keep STT/# labels and values on the center axis of their own narrow column.
+   This creates a cleaner visual gap before the product name without widening the table. */
+.source-detail-stt,
+.source-detail-table-head > :first-child{
+  text-align:center !important;
+}
+.order-detail-compact-grid .order-stt{
+  text-align:center !important;
+}
+.cart-left .cart-stt{
+  text-align:center !important;
+}
