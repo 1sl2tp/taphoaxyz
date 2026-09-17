@@ -249,6 +249,13 @@ async function logout(){stopSync();await auth.logout();identity=null;bootstrappe
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){return business.debtLedger(customerId);}
 
+async function createSource(name){
+  const result=await business.createSource(String(name||'').trim());
+  await refresh(['products']);
+  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
+  return result;
+}
+
 async function updateProduct(payload={}){
   const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();
   const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
@@ -269,7 +276,7 @@ window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('tapho
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
-  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,updateProduct,
+  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,createSource,updateProduct,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()

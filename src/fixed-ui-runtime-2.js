@@ -103,7 +103,11 @@
         let productEditorSourcePickerRow = null;
 
         function getProductEditorSources() {
+            const backendSources = (window.TAPHOA_PRODUCTION?.getState?.()?.sources || [])
+                .map(source => String(source?.name || source?.ten || source?.source_name || source?.source_key || '').trim())
+                .filter(Boolean);
             const sources = [
+                ...backendSources,
                 ...productEditorRows.map(r => String(r[4] || '').trim()).filter(Boolean),
                 ...productEditorCustomSources.map(v => String(v || '').trim()).filter(Boolean),
             ];
@@ -135,19 +139,26 @@
             document.getElementById('productEditorAddSourceModal')?.classList.add('hidden');
         }
 
-        function saveNewProductEditorSource() {
+        async function saveNewProductEditorSource() {
             const input = document.getElementById('productEditorNewSourceInput');
             const value = String(input?.value || '').trim();
             if (!value) {
                 showToast("Nhập tên nguồn trước.", "warning");
                 return;
             }
-            const exists = getProductEditorSources().some(v => v.toLowerCase() === value.toLowerCase());
-            if (!exists) productEditorCustomSources.push(value);
-            renderProductEditorSources();
-            renderProductEditorSourcePicker();
-            closeAddSourceModal();
-            showToast("Đã thêm nguồn mới.", "success");
+            try {
+                const result = await window.TAPHOA_PRODUCTION.createSource(value);
+                const savedName = String(result?.name || value).trim();
+                const exists = getProductEditorSources().some(v => v.toLowerCase() === savedName.toLowerCase());
+                if (!exists) productEditorCustomSources.push(savedName);
+                renderProductEditorSources();
+                renderProductEditorSourcePicker();
+                closeAddSourceModal();
+                showToast("Đã thêm nguồn mới.", "success");
+            } catch (error) {
+                console.error('create product source', error);
+                showToast("Không thêm được nguồn.", "warning");
+            }
         }
 
         function openProductEditorSourcePicker(index) {
