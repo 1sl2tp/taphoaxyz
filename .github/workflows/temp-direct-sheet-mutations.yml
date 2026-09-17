@@ -6,16 +6,34 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply direct mutation patch
+        run: python tools/apply_direct_sheet_mutations.py
+      - name: Commit generated implementation when needed
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No implementation changes to commit"
+            exit 0
+          fi
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/functions/taphoa-sheet-sync/index.ts src/fixed-production-bridge.js tests/taphoa-product-realtime-sync-contract.test.js
+          git commit -m "fix: direct sheet mutations"
+          git push origin HEAD:fix/direct-sheet-mutations
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
       - run: node --test tests/taphoa-direct-sheet-mutations.test.js
+      - run: node --test tests/taphoa-product-realtime-sync-contract.test.js tests/business.test.js
       - run: npm run build:production
