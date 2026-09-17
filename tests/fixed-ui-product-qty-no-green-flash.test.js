@@ -9,7 +9,7 @@ const runtime4 = fs.readFileSync(path.join(here, '..', 'src', 'fixed-ui-runtime-
 const runtime5 = fs.readFileSync(path.join(here, '..', 'src', 'fixed-ui-runtime-5.js'), 'utf8');
 const css2 = fs.readFileSync(path.join(here, '..', 'src', 'fixed-ui-source-2.css'), 'utf8');
 
-test('product card keeps green hover only on true hover pointers so touch quantity taps do not flash the border', () => {
+test('product card border stays neutral during quantity interaction on every pointer type', () => {
   const renderStart = runtime4.indexOf('function renderProductList()');
   const renderEnd = runtime4.indexOf('function selectQtyInputValue', renderStart);
   assert.notEqual(renderStart, -1, 'renderProductList must exist');
@@ -17,14 +17,14 @@ test('product card keeps green hover only on true hover pointers so touch quanti
 
   const productRender = runtime4.slice(renderStart, renderEnd);
   assert.match(productRender, /class=\"product-card\b/,
-    'product cards need a stable class for pointer-aware hover styling');
+    'product cards need a stable class for interaction styling');
   assert.doesNotMatch(productRender, /hover:border-primary\/30/,
-    'touch devices must not receive Tailwind hover border state from quantity taps');
+    'quantity interaction must not inherit a Tailwind green hover border');
 
-  assert.match(css2, /@media\s*\(hover:\s*hover\)\s*and\s*\(pointer:\s*fine\)/,
-    'green hover border must be limited to devices that really support hover');
-  assert.match(css2, /\.product-card:hover\s*\{[^}]*border-color:/s,
-    'desktop pointer hover must still show the green product-card border');
+  assert.doesNotMatch(css2, /\.product-card:hover\s*\{[^}]*var\(--app-primary/s,
+    'product cards must never turn their border green merely because the pointer is inside');
+  assert.match(css2, /\.product-card\s*,\s*\.product-card:hover\s*,\s*\.product-card:focus-within\s*\{[^}]*border-color:\s*#f3f4f6\s*!important/s,
+    'hover and focus-within must keep the same neutral gray border while quantity is edited');
 
   const updateStart = runtime5.indexOf('function updateCart(');
   const updateEnd = runtime5.indexOf('function clearCart()', updateStart);
@@ -33,7 +33,7 @@ test('product card keeps green hover only on true hover pointers so touch quanti
 
   const updateCart = runtime5.slice(updateStart, updateEnd);
   assert.doesNotMatch(updateCart, /renderProductList\s*\(/,
-    'quantity +/- must not rebuild hovered product cards');
+    'quantity +/- must not rebuild product cards');
   assert.match(updateCart, /syncQtyEditors\s*\(/,
     'quantity +/- must update visible quantity inputs in place');
 });
