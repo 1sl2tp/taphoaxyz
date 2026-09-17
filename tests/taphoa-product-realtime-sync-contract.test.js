@@ -24,6 +24,13 @@ test('management Sheet remains the one-way product authority',()=>{
   assert.match(lock,/taphoa_acquire_sheet_sync_lock/);
 });
 
+test('Masan is excluded from Supabase product sync while # remains eligible',()=>{
+  assert.match(worker,/MASAN_SHEET_ID\s*=\s*1608078911/);
+  assert.match(worker,/meta\.sheetId\s*!==\s*MASAN_SHEET_ID/);
+  assert.doesNotMatch(worker,/CORE_KEYS[^\n]*masan/);
+  assert.doesNotMatch(worker,/SYSTEM_TABS[^\n]*#/);
+});
+
 test('sheet worker has no Supabase/Web outbound mutation queue',()=>{
   for(const retired of [
     'directMutation(',
