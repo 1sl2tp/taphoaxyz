@@ -1,0 +1,13 @@
+/* FIXED STYLE: pending-summary-finance-colors */
+
+/* Đơn tạm có utility text-primary riêng; khóa màu tài chính theo đúng nghĩa cột,
+   độc lập với màu theme hiện tại. Áp dụng cho header, từng dòng và dòng tổng. */
+#tab-don-tam .summary-compact-table :is(th,td):nth-child(3){
+  color:#ef4444 !important;
+}
+#tab-don-tam .summary-compact-table :is(th,td):nth-child(4){
+  color:#2563eb !important;
+}
+#tab-don-tam .summary-compact-table :is(th,td):nth-child(5){
+  color:#16a34a !important;
+}
