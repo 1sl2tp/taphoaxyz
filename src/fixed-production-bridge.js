@@ -256,10 +256,26 @@ async function createSource(name){
   return result;
 }
 
+async function deleteSource(source){
+  const sourceValue=text(source).trim();
+  const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
+  const result=await business.deleteSource(source_key);
+  await refresh(['products']);
+  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
+  return result;
+}
+
 async function updateProduct(payload={}){
   const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();
   const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
   const result=await business.updateProduct({...payload,source_key});
+  await refresh(['products']);
+  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
+  return result;
+}
+
+async function deleteProduct(code){
+  const result=await business.deleteProduct(String(code||'').trim());
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
@@ -276,7 +292,7 @@ window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('tapho
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
-  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,createSource,updateProduct,
+  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,createSource,deleteSource,updateProduct,deleteProduct,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
