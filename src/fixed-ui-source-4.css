@@ -282,3 +282,16 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 .cart-left .cart-stt{
   text-align:center !important;
 }
+
+/* FIXED STYLE: summary-finance-colors */
+
+/* Tổng hợp: Chi đỏ, Thu xanh nước biển, Lãi xanh lá — áp dụng cả header và số liệu. */
+.summary-compact-table :is(th,td):nth-child(3){
+  color:#ef4444 !important;
+}
+.summary-compact-table :is(th,td):nth-child(4){
+  color:#2563eb !important;
+}
+.summary-compact-table :is(th,td):nth-child(5){
+  color:#16a34a !important;
+}
