@@ -178,6 +178,7 @@
 
             selectedCustomer = { id, name };
             document.getElementById('selectedCustomerDisplay').innerText = name;
+            renderCartFooterActions();
             closeCustomerModal();
         }
 
