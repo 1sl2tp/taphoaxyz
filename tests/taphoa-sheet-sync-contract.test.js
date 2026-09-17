@@ -17,11 +17,16 @@ test('worker owns the exact management file and five source tabs',()=>{
   }
 });
 
-test('manager row mapping is A B C D E G K L P and prices are thousand VND to VND',()=>{
-  for(const index of [0,1,2,3,4,6,10,11,15]) assert.match(worker,new RegExp(`row\\[${index}\\]`));
+test('manager row mapping is uniformly A code, B name, C cost, D sale price',()=>{
+  for(const index of [0,1,2,3]) assert.match(worker,new RegExp(`row\\[${index}\\]`));
+  for(const oldIndex of [4,6,10,11,15]) assert.doesNotMatch(worker,new RegExp(`row\\[${oldIndex}\\]`));
+  assert.doesNotMatch(worker,/sourceKey\s*===\s*["']sua["']/);
+  assert.match(worker,/const\s+code\s*=\s*clean\(row\[0\]\)\.toUpperCase\(\)/);
+  assert.match(worker,/const\s+name\s*=\s*clean\(row\[1\]\)/);
+  assert.match(worker,/const\s+inputSheet\s*=\s*num\(row\[2\]\)/);
+  assert.match(worker,/const\s+saleSheet\s*=\s*num\(row\[3\]\)/);
   assert.match(worker,/input_price_vnd[^\n]*Math\.round\([^\n]*\*\s*1000\)/);
-  assert.match(worker,/applied_profit_vnd[^\n]*Math\.round\([^\n]*\*\s*1000\)/);
-  assert.match(worker,/expected_profit_percent[^\n]*\*\s*100/);
+  assert.match(worker,/sale_price_vnd[^\n]*Math\.round\([^\n]*\*\s*1000\)/);
 });
 
 test('sync is strictly one-way into TAPHOA tables',()=>{
