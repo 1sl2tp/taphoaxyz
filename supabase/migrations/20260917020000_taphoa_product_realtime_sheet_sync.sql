@@ -51,7 +51,7 @@ immutable
 set search_path = public
 as $$
   select encode(
-    digest(
+    extensions.digest(
       upper(btrim(coalesce(p_code,''))) || '|' ||
       btrim(coalesce(p_name,'')) || '|' ||
       coalesce(p_input_price_vnd::text,'') || '|' ||
