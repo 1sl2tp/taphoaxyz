@@ -26,7 +26,6 @@ type TaphoaProduct={
   raw_row:unknown[];sheet_updated_at:string|null;
 };
 type SheetState={product_code:string;source_key:string;sheet_row:number;sheet_hash:string;last_pushed_hash:string};
-
 type OutboxRow={id:number;product_code:string;source_key:string;payload:Record<string,unknown>;row_hash:string;attempts:number};
 
 const admin=createClient(SUPABASE_URL,SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -167,6 +166,7 @@ async function synchronize(force=false){
     const modifiedTime=await driveModifiedTime();
     const syncState=await readSyncState();
     if(!force&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
+      await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
       return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0)};
     }
 
