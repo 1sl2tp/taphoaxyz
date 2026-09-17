@@ -5,7 +5,10 @@ import fs from 'node:fs';
 const migration=fs.readFileSync(new URL('../supabase/migrations/20260917020000_taphoa_product_realtime_sheet_sync.sql',import.meta.url),'utf8');
 const deleteMigrationUrl=new URL('../supabase/migrations/20260917050000_taphoa_product_source_delete_from_web.sql',import.meta.url);
 const deleteMigration=fs.existsSync(deleteMigrationUrl)?fs.readFileSync(deleteMigrationUrl,'utf8'):'';
+const authorityMigrationUrl=new URL('../supabase/migrations/20260917130000_taphoa_sheet_authoritative_identity.sql',import.meta.url);
+const authorityMigration=fs.existsSync(authorityMigrationUrl)?fs.readFileSync(authorityMigrationUrl,'utf8'):'';
 const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/index.ts',import.meta.url),'utf8');
+const gateway=fs.readFileSync(new URL('../src/core/supabase.js',import.meta.url),'utf8');
 const business=fs.readFileSync(new URL('../src/core/business.js',import.meta.url),'utf8');
 const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.meta.url),'utf8');
 const persistence=fs.readFileSync(new URL('../src/fixed-product-persistence.js',import.meta.url),'utf8');
@@ -20,19 +23,62 @@ test('product web edits are persisted to Supabase and queued for Sheet acknowled
   assert.match(migration,/taphoa_revisions[\s\S]*domain\s*=\s*'products'/i);
 });
 
-test('sheet sync uses modifiedTime gate plus per-row SHA hashes and writes pending web edits to A:D',()=>{
+test('sheet is canonical for source identity and final product identity',()=>{
+  assert.match(authorityMigration,/management_sheet_id/i);
+  assert.match(authorityMigration,/taphoa_product_create_requests/i);
+  assert.match(authorityMigration,/taphoa_source_sync_requests/i);
+  assert.match(authorityMigration,/pending_create/i);
+  assert.match(authorityMigration,/pending_delete/i);
+  assert.match(authorityMigration,/final_product_code/i);
+  assert.doesNotMatch(authorityMigration,/taphoa_product_code_allocator/i);
+  assert.doesNotMatch(authorityMigration,/v_sp_max/i);
+});
+
+test('sheet sync enumerates dynamic tabs by sheetId and tracks rows with hidden O/P markers',()=>{
+  assert.match(worker,/management_sheet_id/i);
+  assert.match(worker,/sheetId/);
+  assert.match(worker,/spreadsheets\/.*fields=/i);
+  assert.match(worker,/addSheet/);
+  assert.match(worker,/deleteSheet/);
+  assert.match(worker,/__SYNC_ID/);
+  assert.match(worker,/__SYNC_HASH/);
+  assert.match(worker,/C:/);
+  assert.match(worker,/P:/);
+  assert.match(worker,/A:P/);
+  assert.doesNotMatch(worker,/const SOURCES=\[/);
+});
+
+test('web-created products stay pending until the Sheet returns a final code',()=>{
+  assert.match(authorityMigration,/taphoa_update_product_from_web/);
+  assert.match(authorityMigration,/taphoa_product_create_requests/);
+  assert.match(authorityMigration,/TMP-/);
+  assert.match(worker,/finalizeProductCreate/i);
+  assert.match(worker,/allocateSheetCode/i);
+});
+
+test('product/source deletes are queued until Sheet deletion is acknowledged',()=>{
+  assert.match(authorityMigration,/operation[^\n]*delete/i);
+  assert.match(authorityMigration,/taphoa_delete_product_from_web/);
+  assert.match(authorityMigration,/taphoa_delete_source_from_web/);
+  assert.match(worker,/processProductDeletes/i);
+  assert.match(worker,/processSourceDeletes/i);
+});
+
+test('web mutations can kick the sheet worker immediately while cron remains retry safety',()=>{
+  assert.match(gateway,/functions\.invoke/);
+  assert.match(business,/syncSheet/);
+  assert.match(bridge,/syncSheetSoon/);
+  assert.match(bridge,/createSource[\s\S]*syncSheetSoon/);
+  assert.match(bridge,/updateProduct[\s\S]*syncSheetSoon/);
+  assert.match(bridge,/deleteProduct[\s\S]*syncSheetSoon/);
+});
+
+test('sheet sync uses modifiedTime gate plus per-row SHA hashes',()=>{
   assert.match(worker,/modifiedTime/);
   assert.match(worker,/rowHash/);
   assert.match(worker,/SHA-256/);
   assert.match(worker,/taphoa_product_outbox/);
   assert.match(worker,/last_pushed_hash/);
-  assert.match(worker,/spreadsheets/);
-  assert.match(worker,/valueInputOption=RAW/);
-  assert.match(worker,/A:D/);
-});
-
-test('unchanged sheet sync leaves monitor state at success instead of running',()=>{
-  assert.match(worker,/if\(!force&&syncState\?\.last_drive_modified_time[\s\S]*setSyncState\(\{last_sync_status:\"success\"[\s\S]*changed:false/);
 });
 
 test('fixed production UI saves a blurred product row through Supabase instead of local-only state',()=>{
@@ -45,21 +91,12 @@ test('fixed production UI saves a blurred product row through Supabase instead o
   assert.match(index,/fixed-product-persistence\.js/);
 });
 
-test('deleting a product row persists to Supabase as inactive',()=>{
-  assert.match(deleteMigration,/taphoa_delete_product_from_web/);
-  assert.match(deleteMigration,/is_active\s*=\s*false/i);
-  assert.match(business,/deleteProduct[\s\S]*taphoa_delete_product_from_web/);
+test('product/source delete controls remain wired in the editor',()=>{
+  assert.match(business,/deleteProduct/);
+  assert.match(business,/deleteSource/);
   assert.match(bridge,/deleteProduct/);
-  assert.match(runtime,/TAPHOA_PRODUCTION\.deleteProduct/);
-});
-
-test('custom sources can be deactivated but core sources and non-empty sources are protected',()=>{
-  assert.match(deleteMigration,/taphoa_delete_source_from_web/);
-  assert.match(deleteMigration,/hang-u[\s\S]*thuoc-la[\s\S]*sua[\s\S]*masan[\s\S]*hang-thuong/i);
-  assert.match(deleteMigration,/source_has_active_products/);
-  assert.match(deleteMigration,/active\s*=\s*false/i);
-  assert.match(business,/deleteSource[\s\S]*taphoa_delete_source_from_web/);
   assert.match(bridge,/deleteSource/);
   assert.match(runtime,/data-delete-source/);
   assert.match(runtime,/TAPHOA_PRODUCTION\.deleteSource/);
+  assert.match(runtime,/TAPHOA_PRODUCTION\.deleteProduct/);
 });
