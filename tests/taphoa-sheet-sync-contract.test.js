@@ -5,49 +5,58 @@ import fs from 'node:fs';
 const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/index.ts',import.meta.url),'utf8');
 const cron=fs.readFileSync(new URL('../supabase/migrations/20260915040000_taphoa_sheet_sync_cron.sql',import.meta.url),'utf8');
 const realtime=fs.readFileSync(new URL('../supabase/migrations/20260917020000_taphoa_product_realtime_sheet_sync.sql',import.meta.url),'utf8');
+const authority=fs.readFileSync(new URL('../supabase/migrations/20260917130000_taphoa_sheet_authoritative_identity.sql',import.meta.url),'utf8');
 
-test('worker owns the exact management file and five source tabs',()=>{
+test('worker owns the exact management file and discovers product sources dynamically by sheetId',()=>{
   assert.match(worker,/1hGqAzIEqTMmULIeh5sCmed2R3XaiA9QZavtGRdNvyyU/);
-  for(const [key,tab,prefix] of [
-    ['hang-u','Hàng U','HU-'],['thuoc-la','Thuốc lá','TL-'],['sua','Sữa','SUA-'],
-    ['masan','Hàng masan','MAS-'],['hang-thuong','Hàng thường','HT-']
-  ]){
-    assert.match(worker,new RegExp(key));
-    assert.match(worker,new RegExp(tab));
-    assert.match(worker,new RegExp(prefix));
-  }
+  assert.match(worker,/spreadsheetMeta/);
+  assert.match(worker,/sheetId/);
+  assert.match(worker,/management_sheet_id/);
+  assert.match(authority,/305224020/);
+  assert.match(authority,/583030487/);
+  assert.match(authority,/1822935945/);
+  assert.match(authority,/1608078911/);
+  assert.match(authority,/1330446015/);
+  assert.doesNotMatch(worker,/const SOURCES=\[/);
 });
 
-test('manager row mapping is uniformly A code, B name, C cost, D sale price',()=>{
-  for(const index of [0,1,2,3]) assert.match(worker,new RegExp(`row\\[${index}\\]`));
-  for(const oldIndex of [4,6,10,11,15]) assert.doesNotMatch(worker,new RegExp(`row\\[${oldIndex}\\]`));
+test('manager business row mapping remains A code, B name, C cost, D sale price with O/P reserved for sync metadata',()=>{
+  assert.match(worker,/row\?\.\[0\]/);
+  assert.match(worker,/row\?\.\[1\]/);
+  assert.match(worker,/row\?\.\[2\]/);
+  assert.match(worker,/row\?\.\[3\]/);
+  assert.match(worker,/TRACKING_ID_HEADER/);
+  assert.match(worker,/TRACKING_HASH_HEADER/);
+  assert.match(worker,/row\?\.\[14\]/);
+  assert.match(worker,/row\?\.\[15\]/);
   assert.doesNotMatch(worker,/sourceKey\s*===\s*["']sua["']/);
-  assert.match(worker,/const\s+code\s*=\s*clean\(row\[0\]\)\.toUpperCase\(\)/);
-  assert.match(worker,/const\s+name\s*=\s*clean\(row\[1\]\)/);
-  assert.match(worker,/const\s+inputSheet\s*=\s*num\(row\[2\]\)/);
-  assert.match(worker,/const\s+saleSheet\s*=\s*num\(row\[3\]\)/);
-  assert.match(worker,/input_price_vnd[^\n]*Math\.round\([^\n]*\*\s*1000\)/);
-  assert.match(worker,/sale_price_vnd[^\n]*Math\.round\([^\n]*\*\s*1000\)/);
+  assert.match(worker,/const code=clean\(row\?\.\[0\]\)\.toUpperCase\(\)/);
+  assert.match(worker,/const name=clean\(row\?\.\[1\]\)/);
+  assert.match(worker,/const inputSheet=num\(row\?\.\[2\]\)/);
+  assert.match(worker,/const saleSheet=num\(row\?\.\[3\]\)/);
+  assert.match(worker,/Math\.round\(inputSheet\*1000\)/);
+  assert.match(worker,/Math\.round\(saleSheet\*1000\)/);
 });
 
 test('sync remains TAPHOA-only and never touches GETLINK or NCC pairing',()=>{
   assert.match(worker,/taphoa_products/);
   assert.match(worker,/taphoa_sources/);
   assert.match(worker,/taphoa_sheet_sync_state/);
-  assert.match(worker,/taphoa_revisions/);
+  assert.match(authority,/taphoa_revisions/);
   assert.doesNotMatch(worker,/getlink_supplier_products|getlink_supplier_pair_state|getlink_canonical/i);
   assert.doesNotMatch(worker,/writePairToNcc|writePairToManager/i);
 });
 
-test('worker skips unchanged Drive versions and delta import deactivates missing product codes',()=>{
+test('worker skips unchanged Drive versions and Sheet delta can tombstone missing product codes',()=>{
   assert.match(worker,/modifiedTime/);
   assert.match(worker,/last_drive_modified_time/);
-  assert.match(worker,/changed\s*:\s*false/);
+  assert.match(worker,/changed:false/);
   assert.match(worker,/taphoa_apply_product_delta/);
-  assert.match(realtime,/update\s+public\.taphoa_products[\s\S]*set\s+is_active\s*=\s*false/i);
-  assert.match(realtime,/jsonb_array_elements_text\(s\.codes\)/i);
+  assert.match(authority,/update\s+public\.taphoa_products[\s\S]*is_active=false/i);
+  assert.match(authority,/jsonb_array_elements_text\(s\.codes\)/i);
   assert.match(worker,/last_sync_status/);
-  assert.match(realtime,/domain\s*=\s*'products'/i);
+  assert.match(authority,/domain='products'/i);
+  assert.match(realtime,/taphoa_product_sheet_state/);
 });
 
 test('cron is TAPHOA-owned and runs once per minute',()=>{
