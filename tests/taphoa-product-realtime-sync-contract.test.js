@@ -6,7 +6,8 @@ const migration=fs.readFileSync(new URL('../supabase/migrations/20260917020000_t
 const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/index.ts',import.meta.url),'utf8');
 const business=fs.readFileSync(new URL('../src/core/business.js',import.meta.url),'utf8');
 const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.meta.url),'utf8');
-const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
+const persistence=fs.readFileSync(new URL('../src/fixed-product-persistence.js',import.meta.url),'utf8');
+const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 
 test('product web edits are persisted to Supabase and queued for Sheet acknowledgement',()=>{
   assert.match(migration,/taphoa_product_sheet_state/);
@@ -31,7 +32,8 @@ test('fixed production UI saves a blurred product row through Supabase instead o
   assert.match(business,/updateProduct/);
   assert.match(business,/taphoa_update_product_from_web/);
   assert.match(bridge,/updateProduct/);
-  assert.match(overrides,/saveProductEditorRow/);
-  assert.match(overrides,/focusout/);
-  assert.match(overrides,/backend\(\)\.updateProduct/);
+  assert.match(persistence,/saveProductEditorRow/);
+  assert.match(persistence,/focusout/);
+  assert.match(persistence,/TAPHOA_PRODUCTION\.updateProduct/);
+  assert.match(index,/fixed-product-persistence\.js/);
 });
