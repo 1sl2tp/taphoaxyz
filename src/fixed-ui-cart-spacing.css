@@ -8,9 +8,16 @@
   justify-content:stretch !important;
 }
 
-.cart-price,
+/* Neo Đ.GIÁ về mép phải và T.TIỀN về mép trái của hai cột số.
+   Như vậy khoảng nhìn thực tế hai bên vùng SL đều đúng bằng column-gap. */
+.cart-price{
+  justify-self:stretch;
+  text-align:right !important;
+}
+
 .cart-total{
   justify-self:stretch;
+  text-align:left !important;
 }
 
 .cart-qty{
