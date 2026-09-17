@@ -9,7 +9,7 @@
             document.getElementById('cDebtModalName').innerText = "KH: " + tenKh;
             let currentTotalDebt = history.length > 0 ? history[history.length - 1].currentDebt : 0;
             let totalEl = document.getElementById('cDebtModalTotal');
-            totalEl.innerText = currentTotalDebt.toLocaleString('vi-VN') + " đ";
+            totalEl.innerText = currentTotalDebt.toLocaleString('vi-VN');
             totalEl.className = `text-[18px] font-extrabold ${currentTotalDebt >= 0 ? 'text-danger' : 'text-success'}`;
 
             let html = '';
