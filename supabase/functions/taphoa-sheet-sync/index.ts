@@ -283,7 +283,12 @@ async function synchronize(force=false){
       const message=String((error as Error)?.message??error).slice(0,1500);await setSyncState({last_sync_status:"error",last_error:message}).catch(()=>{});throw error;
     }
   }finally{
-    await admin.rpc("taphoa_release_sheet_sync_lock",{p_token:lockToken}).catch(()=>{});
+    try{
+      const {error:releaseError}=await admin.rpc("taphoa_release_sheet_sync_lock",{p_token:lockToken});
+      if(releaseError)console.error("taphoa_release_sheet_sync_lock_failed",releaseError.message);
+    }catch(releaseError){
+      console.error("taphoa_release_sheet_sync_lock_failed",String((releaseError as Error)?.message??releaseError));
+    }
   }
 }
 
