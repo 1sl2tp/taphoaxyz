@@ -1,0 +1,55 @@
+name: TEMP production cleanup 20260918
+
+on:
+  push:
+    branches: [fix/production-cleanup-20260918]
+    paths:
+      - .github/workflows/temp-production-cleanup-20260918.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/production-cleanup-20260918
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Remove automatic K-N history mutation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('supabase/functions/taphoa-sheet-sync/index.ts')
+          s=p.read_text()
+          s=s.replace('const MARKET_PRICE_HISTORY_SHEET_ID=1330446015;\n','')
+          s=re.sub(r'\n// MARKET_PRICE_HISTORY_HELPER_START.*?// MARKET_PRICE_HISTORY_HELPER_END\n','\n',s,flags=re.S)
+          s=re.sub(r'\nasync function syncMarketPriceHistory\(caches:Map<number,TabCache>\)\{.*?\n\}\n\nasync function inboundScan','\nasync function inboundScan',s,flags=re.S)
+          s=s.replace('const marketHistoryUpdated=await syncMarketPriceHistory(caches);\n      const scanModifiedTime=allocated||marketHistoryUpdated?await driveModifiedTime():modifiedTime;','const scanModifiedTime=allocated?await driveModifiedTime():modifiedTime;')
+          s=s.replace('return {ok:true,changed:allocated>0||marketHistoryUpdated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,allocated,marketHistoryUpdated,...inbound};','return {ok:true,changed:allocated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,allocated,...inbound};')
+          forbidden=['MARKET_PRICE_HISTORY_SHEET_ID','nextMarketPriceHistory','syncMarketPriceHistory','marketHistoryUpdated']
+          left=[x for x in forbidden if x in s]
+          if left:
+            raise SystemExit('automatic market history tokens remain: '+','.join(left))
+          p.write_text(s)
+          PY
+      - name: Verify
+        run: |
+          npm install --no-audit --no-fund
+          node --test tests/taphoa-sheet-sync-contract.test.js
+          npm run build:production
+          node --test tests/*.test.js
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "1sl2tp"
+          git config user.email "1sl2tp@gmail.com"
+          git add supabase/functions/taphoa-sheet-sync/index.ts
+          git diff --cached --check
+          git commit -m "fix: keep market price history manual"
+          git push origin HEAD:fix/production-cleanup-20260918
