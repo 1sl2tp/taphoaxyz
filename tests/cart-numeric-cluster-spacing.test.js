@@ -1,8 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 
-const css = fs.readFileSync('src/fixed-ui-source-4.css','utf8');
+const css = fs.readdirSync('src')
+  .filter(name => /^fixed-ui-.*\.css$/.test(name))
+  .sort()
+  .map(name => fs.readFileSync(path.join('src', name), 'utf8'))
+  .join('\n');
 
 test('cart numeric cluster uses fixed equal gaps instead of space-between', () => {
   assert.match(css, /FIXED STYLE: compact-cart-numeric-cluster/);
