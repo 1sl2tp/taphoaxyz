@@ -41,3 +41,8 @@ test('fixed production UI saves a blurred product row through Supabase instead o
   assert.match(persistence,/TAPHOA_PRODUCTION\.updateProduct/);
   assert.match(index,/fixed-product-persistence\.js/);
 });
+
+test('price-only product edits do not send a blank source_key that rejects the RPC',()=>{
+  assert.doesNotMatch(bridge,/business\.updateProduct\(\{\.\.\.payload,source_key\}\)/);
+  assert.match(bridge,/sourceValue[\s\S]*if\s*\(sourceValue\)[\s\S]*source_key/);
+});
