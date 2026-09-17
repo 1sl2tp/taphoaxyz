@@ -143,7 +143,7 @@ openCustomerDebtModal = function(maKh) {
     ? Number(storedBalance)
     : (history.length > 0 ? Number(history[history.length - 1].currentDebt) || 0 : 0);
   const totalEl = document.getElementById('cDebtModalTotal');
-  totalEl.innerText = currentTotalDebt.toLocaleString('vi-VN') + ' đ';
+  totalEl.innerText = currentTotalDebt.toLocaleString('vi-VN');
   totalEl.className = `text-[18px] font-extrabold ${currentTotalDebt >= 0 ? 'text-danger' : 'text-success'}`;
 
   const displayHistory = visibleHistory.map(h => ({ ...h }));
