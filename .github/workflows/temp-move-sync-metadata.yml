@@ -1,4 +1,5 @@
 name: TEMP move sync metadata
+# retry after contract fix
 
 on:
   push:
