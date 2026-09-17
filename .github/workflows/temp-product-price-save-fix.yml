@@ -1,0 +1,44 @@
+name: Product price save implementation
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - fix/product-price-save-source
+    paths:
+      - .github/workflows/temp-product-price-save-fix.yml
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/product-price-save-source
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fix blank source on price-only product edits
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('src/fixed-production-bridge.js')
+          text=path.read_text(encoding='utf-8')
+          old="""async function updateProduct(payload={}){\n  const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();\n  const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;\n  const result=await business.updateProduct({...payload,source_key});\n  await refresh(['products']);\n  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));\n  return result;\n}"""
+          new="""async function updateProduct(payload={}){\n  const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();\n  const nextPayload={...payload};\n  if(sourceValue){\n    nextPayload.source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;\n  }else{\n    delete nextPayload.source_key;\n    delete nextPayload.source;\n    delete nextPayload.sourceName;\n  }\n  const result=await business.updateProduct(nextPayload);\n  await refresh(['products']);\n  window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));\n  return result;\n}"""
+          if old not in text:
+              raise SystemExit('expected updateProduct block not found')
+          path.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
+      - run: node --test tests/taphoa-product-realtime-sync-contract.test.js
+      - run: npm install --no-audit --no-fund
+      - run: npm run build:production
+      - name: Commit fix
+        run: |
+          git config user.name "1sl2tp"
+          git config user.email "1sl2tp@gmail.com"
+          git add src/fixed-production-bridge.js
+          git commit -m "fix: preserve source on price-only product edits"
+          git push origin HEAD:fix/product-price-save-source
