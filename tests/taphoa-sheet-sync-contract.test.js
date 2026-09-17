@@ -75,25 +75,10 @@ test('cron is TAPHOA-owned and runs once per minute',()=>{
   assert.doesNotMatch(cron,/getlink-sheet-sync|getlink-api/);
 });
 
-test('Thường snapshots each changed market price from C into four-slot K:N history',()=>{
-  const startMarker='// MARKET_PRICE_HISTORY_HELPER_START';
-  const endMarker='// MARKET_PRICE_HISTORY_HELPER_END';
-  const start=worker.indexOf(startMarker);
-  const end=worker.indexOf(endMarker);
-  assert.notEqual(start,-1,'market price history helper must exist');
-  assert.ok(end>start,'market price history helper must have a closing marker');
-  const helperSource=worker.slice(start+startMarker.length,end).replace(/\bexport\s+/g,'');
-  const nextMarketPriceHistory=Function(`${helperSource}; return nextMarketPriceHistory;`)();
-
-  assert.deepEqual(nextMarketPriceHistory(555,[null,null,null,null]),[555,null,null,null]);
-  assert.equal(nextMarketPriceHistory(555,[555,null,null,null]),null,'same latest price must not duplicate');
-  assert.deepEqual(nextMarketPriceHistory(585,[555,null,null,null]),[555,585,null,null]);
-  assert.deepEqual(nextMarketPriceHistory(615,[555,585,600,null]),[555,585,600,615]);
-  assert.deepEqual(nextMarketPriceHistory(625,[555,585,600,615]),[585,600,615,625],'full history keeps the four newest distinct prices');
-  assert.equal(nextMarketPriceHistory(null,[555,null,null,null]),null,'blank C must not mutate history');
-
-  assert.match(worker,/MARKET_PRICE_HISTORY_SHEET_ID\s*=\s*1330446015/);
-  assert.match(worker,/syncMarketPriceHistory/);
-  assert.match(worker,/K\$\{i\+1\}:N\$\{i\+1\}/);
-  assert.match(worker,/marketHistoryUpdated/);
+test('sheet sync never mutates manual market price history K:N',()=>{
+  assert.doesNotMatch(worker,/MARKET_PRICE_HISTORY_SHEET_ID/);
+  assert.doesNotMatch(worker,/nextMarketPriceHistory/);
+  assert.doesNotMatch(worker,/syncMarketPriceHistory/);
+  assert.doesNotMatch(worker,/K\$\{i\+1\}:N\$\{i\+1\}/);
+  assert.doesNotMatch(worker,/marketHistoryUpdated/);
 });
