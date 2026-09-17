@@ -53,6 +53,13 @@ test('debt history hides reversals, keeps backend balance-after and opens order 
   assert.match(behavior,/showOrderDetailMobile\(orderId,\s*sheetName\)/);
 });
 
+test('debt history hides both the sale and reversal rows of an order that was reversed',async()=>{
+  const behavior=await read('src/fixed-ui-behavior.js');
+  assert.match(behavior,/const\s+reversedBackendOrderIds\s*=\s*new\s+Set/);
+  assert.match(behavior,/h\.entryType\s*===\s*['"]reversal['"][\s\S]*h\.backendOrderId/);
+  assert.match(behavior,/!reversedBackendOrderIds\.has\(String\(h\.backendOrderId\s*\|\|\s*['"]{2}\)\)/);
+});
+
 test('desktop debt detail uses the same left-workspace geometry as order detail',async()=>{
   const css=await read('src/fixed-ui-debt-popup.css');
   assert.match(css,/\.pc-mode\s+#customerDebtModalWrapper/);
