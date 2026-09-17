@@ -251,8 +251,15 @@ async function debtLedger(customerId){return business.debtLedger(customerId);}
 
 async function updateProduct(payload={}){
   const sourceValue=text(payload.source_key??payload.source??payload.sourceName??'').trim();
-  const source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
-  const result=await business.updateProduct({...payload,source_key});
+  const nextPayload={...payload};
+  if(sourceValue){
+    nextPayload.source_key=sourceKeyFromDisplayName(sourceValue)||sourceValue;
+  }else{
+    delete nextPayload.source_key;
+    delete nextPayload.source;
+    delete nextPayload.sourceName;
+  }
+  const result=await business.updateProduct(nextPayload);
   await refresh(['products']);
   window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed:['products']}}));
   return result;
