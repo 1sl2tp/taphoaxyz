@@ -6,6 +6,7 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE_ROLE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const MANAGEMENT_FILE_ID="1hGqAzIEqTMmULIeh5sCmed2R3XaiA9QZavtGRdNvyyU";
 const SYSTEM_TABS=new Set(["Lịch sử giá","__SYNC","__SYNC_LOG"]);
+const MASAN_SHEET_ID=1608078911;
 const TRACKING_ID_HEADER="__SYNC_ID";
 const TRACKING_HASH_HEADER="__SYNC_HASH";
 const TRACKING_ID_COL="AY";
@@ -13,7 +14,7 @@ const TRACKING_HASH_COL="AZ";
 const TRACKING_ID_INDEX=50;
 const TRACKING_HASH_INDEX=51;
 const TRACKING_COLUMN_COUNT=52;
-const CORE_KEYS=new Set(["hang-u","thuoc-la","sua","masan","hang-thuong"]);
+const CORE_KEYS=new Set(["hang-u","thuoc-la","sua","hang-thuong"]);
 
 const admin=createClient(SUPABASE_URL,SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 let googleJwt:JWT|null=null;
@@ -43,7 +44,7 @@ export function num(v:unknown):number|null{
 }
 function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});}
 function quotedSheet(name:string){return `'${name.replace(/'/g,"''")}'`;}
-function isEligibleTab(meta:SheetMeta){return !meta.hidden&&!SYSTEM_TABS.has(meta.title)&&!meta.title.startsWith("__");}
+function isEligibleTab(meta:SheetMeta){return !meta.hidden&&!SYSTEM_TABS.has(meta.title)&&!meta.title.startsWith("__")&&meta.sheetId!==MASAN_SHEET_ID;}
 function productMarker(code:string){return `P:${clean(code).toUpperCase()}`;}
 function canonicalText(code:string,name:string,input:number|null,sale:number|null){return `${code.toUpperCase().trim()}|${name.trim()}|${input??""}|${sale??""}`;}
 async function sha256(text:string){
