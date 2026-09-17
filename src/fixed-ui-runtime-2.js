@@ -101,6 +101,7 @@
         let productEditorCustomSources = [];
         let productEditorActiveRow = null;
         let productEditorSourcePickerRow = null;
+        const CORE_PRODUCT_EDITOR_SOURCE_KEYS = new Set(['hang-u','thuoc-la','sua','masan','hang-thuong']);
 
         function getProductEditorSources() {
             const backendSources = (window.TAPHOA_PRODUCTION?.getState?.()?.sources || [])
@@ -112,6 +113,22 @@
                 ...productEditorCustomSources.map(v => String(v || '').trim()).filter(Boolean),
             ];
             return Array.from(new Set(sources));
+        }
+
+        function productEditorSourceKey(sourceName) {
+            const wanted = String(sourceName || '').trim();
+            if (!wanted) return '';
+            const source = (window.TAPHOA_PRODUCTION?.getState?.()?.sources || []).find(item => {
+                const key = String(item?.source_key || item?.key || item?.id || '').trim();
+                const name = String(item?.name || item?.ten || key).trim();
+                return key === wanted || name === wanted;
+            });
+            return String(source?.source_key || source?.key || source?.id || '').trim();
+        }
+
+        function canDeleteProductEditorSource(sourceName) {
+            const key = productEditorSourceKey(sourceName);
+            return !!key && !CORE_PRODUCT_EDITOR_SOURCE_KEYS.has(key);
         }
 
         function updateProductEditorDeleteButton() {
@@ -177,9 +194,51 @@
             if (!list) return;
             const sources = getProductEditorSources();
             list.innerHTML = sources.length
-                ? sources.map(source => `<button type="button" class="product-editor-picker-option mb-2 last:mb-0" data-picker-source="${escapeProductEditorValue(source)}">${escapeProductEditorValue(source)}</button>`).join('')
+                ? sources.map(source => {
+                    const safe = escapeProductEditorValue(source);
+                    if (!canDeleteProductEditorSource(source)) {
+                        return `<button type="button" class="product-editor-picker-option mb-2 last:mb-0" data-picker-source="${safe}">${safe}</button>`;
+                    }
+                    return `<div class="relative mb-2 last:mb-0">
+                        <button type="button" class="product-editor-picker-option !mb-0 pr-12" data-picker-source="${safe}">${safe}</button>
+                        <button type="button" data-delete-source="${safe}" class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg text-red-500 text-lg font-bold" aria-label="Xóa nguồn ${safe}">×</button>
+                    </div>`;
+                }).join('')
                 : '<div class="p-4 text-center text-gray-400 text-sm">Chưa có nguồn.</div>';
         }
+
+        function requestDeleteProductEditorSource(source) {
+            const value = String(source || '').trim();
+            if (!value || !canDeleteProductEditorSource(value)) return;
+            showConfirmModal(
+                "Xóa nguồn?",
+                `Bạn có chắc muốn xóa nguồn ${value}?`,
+                "Xóa",
+                "bg-danger",
+                async () => {
+                    try {
+                        await window.TAPHOA_PRODUCTION.deleteSource(value);
+                        productEditorCustomSources = productEditorCustomSources.filter(v => String(v || '').trim() !== value);
+                        if (productEditorSourceFilter === value) productEditorSourceFilter = 'Tất cả';
+                        renderProductEditorSources();
+                        renderProductEditorSourcePicker();
+                        showToast("Đã xóa nguồn.", "success");
+                    } catch (error) {
+                        console.error('delete product source', error);
+                        const message = String(error?.message || error || '');
+                        showToast(message.includes('source_has_active_products') ? "Nguồn còn sản phẩm, hãy xóa hoặc chuyển sản phẩm trước." : "Không xóa được nguồn.", "warning");
+                    }
+                }
+            );
+        }
+
+        document.addEventListener('click', function(e) {
+            const deleteSource = e.target.closest('#productEditorSourcePickerList [data-delete-source]');
+            if (!deleteSource) return;
+            e.preventDefault();
+            e.stopPropagation();
+            requestDeleteProductEditorSource(deleteSource.dataset.deleteSource || '');
+        }, true);
 
         function chooseProductEditorSource(source) {
             if (productEditorSourcePickerRow === null || !productEditorRows[productEditorSourcePickerRow]) return;
@@ -201,21 +260,30 @@
         function deleteSelectedProductEditorRows() {
             if (productEditorActiveRow === null || !productEditorRows[productEditorActiveRow]) return;
             const row = productEditorRows[productEditorActiveRow];
+            const code = String(row[0] || '').trim();
             const name = String(row[1] || '').trim() || 'dòng chưa có tên';
+            const localOnly = /^SP\d+$/i.test(code);
 
             showConfirmModal(
                 "Xóa dòng?",
                 `Bạn có chắc muốn xóa ${name}?`,
                 "Xóa",
                 "bg-danger",
-                () => {
-                    productEditorRows.splice(productEditorActiveRow, 1);
-                    productEditorActiveRow = null;
-                    syncProductEditorData();
-                    renderProductEditorSources();
-                    renderProductEditor();
-                    updateProductEditorDeleteButton();
-                    showToast("Đã xóa dòng hiện tại.", "success");
+                async () => {
+                    try {
+                        if (code && !localOnly) await window.TAPHOA_PRODUCTION.deleteProduct(code);
+                        const index = productEditorRows.indexOf(row);
+                        if (index >= 0) productEditorRows.splice(index, 1);
+                        productEditorActiveRow = null;
+                        syncProductEditorData();
+                        renderProductEditorSources();
+                        renderProductEditor();
+                        updateProductEditorDeleteButton();
+                        showToast("Đã xóa dòng hiện tại.", "success");
+                    } catch (error) {
+                        console.error('delete product editor row', error);
+                        showToast("Không xóa được sản phẩm.", "warning");
+                    }
                 }
             );
         }
@@ -317,4 +385,3 @@
             if (!raw) return '';
             return raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         }
-
