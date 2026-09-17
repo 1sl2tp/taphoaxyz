@@ -7,7 +7,6 @@ const SERVICE_ROLE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const MANAGEMENT_FILE_ID="1hGqAzIEqTMmULIeh5sCmed2R3XaiA9QZavtGRdNvyyU";
 const SYSTEM_TABS=new Set(["Lịch sử giá","__SYNC","__SYNC_LOG"]);
 const MASAN_SHEET_ID=1608078911;
-const MARKET_PRICE_HISTORY_SHEET_ID=1330446015;
 const TRACKING_ID_HEADER="__SYNC_ID";
 const TRACKING_HASH_HEADER="__SYNC_HASH";
 const TRACKING_ID_COL="AY";
@@ -45,20 +44,6 @@ export function num(v:unknown):number|null{
   return Number.isFinite(parsed)?parsed:null;
 }
 
-// MARKET_PRICE_HISTORY_HELPER_START
-export function nextMarketPriceHistory(currentPrice,history){
-  const price=typeof currentPrice==="number"?currentPrice:Number(String(currentPrice??"").trim().replace(",","."));
-  if(!Number.isFinite(price)||price<=0)return null;
-  const values=(Array.isArray(history)?history:[]).slice(0,4).map(value=>{
-    const parsed=typeof value==="number"?value:Number(String(value??"").trim().replace(",","."));
-    return Number.isFinite(parsed)&&parsed>0?parsed:null;
-  }).filter(value=>value!==null);
-  if(values.length&&values[values.length-1]===price)return null;
-  const next=values.length<4?[...values,price]:[...values.slice(-3),price];
-  while(next.length<4)next.push(null);
-  return next;
-}
-// MARKET_PRICE_HISTORY_HELPER_END
 
 function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});}
 function quotedSheet(name:string){return `'${name.replace(/'/g,"''")}'`;}
@@ -259,18 +244,6 @@ async function allocateBlankSheetRows(caches:Map<number,TabCache>){
   return changed;
 }
 
-async function syncMarketPriceHistory(caches:Map<number,TabCache>){
-  const cache=caches.get(MARKET_PRICE_HISTORY_SHEET_ID);if(!cache)return 0;
-  const writes:Array<{range:string;values:unknown[][]}>=[];
-  for(let i=1;i<cache.rows.length;i++){
-    const row=cache.rows[i]||[];if(!clean(row[1]))continue;
-    const next=nextMarketPriceHistory(row[2],row.slice(10,14));if(!next)continue;
-    writes.push({range:`${quotedSheet(cache.meta.title)}!K${i+1}:N${i+1}`,values:[next.map(value=>value??"")]});
-    for(let slot=0;slot<4;slot++)row[10+slot]=next[slot];
-  }
-  await writeRanges(writes);return writes.length;
-}
-
 async function inboundScan(caches:Map<number,TabCache>,modifiedTime:string){
   const {data:stateRows,error:stateError}=await admin.from("taphoa_product_sheet_state").select("product_code,source_key,sheet_row,sheet_hash");if(stateError)throw stateError;
   const stateMap=new Map<string,SheetState>((stateRows||[]).map((s:SheetState)=>[s.product_code,s]));
@@ -315,12 +288,11 @@ async function synchronize(force=false){
       }
       const meta=await spreadsheetMeta();await reconcileSources(meta);let caches=await loadCaches(meta);
       const allocated=await allocateBlankSheetRows(caches);if(allocated)caches=await loadCaches(meta);
-      const marketHistoryUpdated=await syncMarketPriceHistory(caches);
-      const scanModifiedTime=allocated||marketHistoryUpdated?await driveModifiedTime():modifiedTime;
+      const scanModifiedTime=allocated?await driveModifiedTime():modifiedTime;
       const inbound=await inboundScan(caches,scanModifiedTime);
       const finalModifiedTime=await driveModifiedTime();
       await setSyncState({last_drive_modified_time:finalModifiedTime,last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:"",last_imported_row_count:inbound.totalRows});
-      return {ok:true,changed:allocated>0||marketHistoryUpdated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,allocated,marketHistoryUpdated,...inbound};
+      return {ok:true,changed:allocated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,allocated,...inbound};
     }catch(error){
       const message=String((error as Error)?.message??error).slice(0,1500);await setSyncState({last_sync_status:"error",last_error:message}).catch(()=>{});throw error;
     }
