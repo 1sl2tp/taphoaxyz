@@ -32,7 +32,6 @@ type ProductRow={
   input_price_basis:"carton";expected_profit_percent:null;applied_profit_vnd:number;sale_price_vnd:number|null;
   carton_price_vnd:number|null;retail_price_vnd:null;units_per_carton:null;retail_unit:string;
   stock_status:"available"|"no_price";stock_label:string;is_active:boolean;raw_row:unknown[];sheet_updated_at:string|null;
-  support_price_low_vnd:number|null;support_price_high_vnd:number|null;
 };
 type SheetState={product_code:string;source_key:string;sheet_row:number;sheet_hash:string};
 type TabCache={meta:SheetMeta;source:SourceRow;rows:unknown[][]};
@@ -55,16 +54,12 @@ function json(body:unknown,status=200){return new Response(JSON.stringify(body),
 function quotedSheet(name:string){return `'${name.replace(/'/g,"''")}'`;}
 function isEligibleTab(meta:SheetMeta){return !meta.hidden&&!SYSTEM_TABS.has(meta.title)&&!meta.title.startsWith("__")&&meta.sheetId!==MASAN_SHEET_ID;}
 function productMarker(code:string){return `P:${clean(code).toUpperCase()}`;}
-function canonicalText(code:string,name:string,input:number|null,sale:number|null,supportLow:number|null,supportHigh:number|null){
-  return `${code.toUpperCase().trim()}|${name.trim()}|${input??""}|${sale??""}|${supportLow??""}|${supportHigh??""}`;
-}
+function canonicalText(code:string,name:string,input:number|null,sale:number|null){return `${code.toUpperCase().trim()}|${name.trim()}|${input??""}|${sale??""}`;}
 async function sha256(text:string){
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(text));
   return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
-async function rowHash(product:ProductRow){
-  return sha256(canonicalText(product.product_code,product.product_name,product.input_price_vnd,product.sale_price_vnd,product.support_price_low_vnd,product.support_price_high_vnd));
-}
+async function rowHash(product:ProductRow){return sha256(canonicalText(product.product_code,product.product_name,product.input_price_vnd,product.sale_price_vnd));}
 
 async function googleToken(){
   if(!googleJwt){
@@ -193,15 +188,12 @@ function mapManagerRow(sourceKey:string,row:unknown[],rowNo:number,modifiedTime:
   const code=clean(row?.[0]).toUpperCase();const name=clean(row?.[1]);
   if(!code||!name)return null;
   const inputSheet=num(row?.[2]);const saleSheet=num(row?.[3]);
-  const supportLowSheet=num(row?.[14]);const supportHighSheet=num(row?.[15]);
   const input=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;
   const sale=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
-  const supportLow=supportLowSheet!==null&&supportLowSheet>0?Math.round(supportLowSheet*1000):null;
-  const supportHigh=supportHighSheet!==null&&supportHighSheet>0?Math.round(supportHighSheet*1000):null;
   return {product_code:code,source_key:sourceKey,source_row:rowNo,product_name:name,input_price_vnd:input,input_price_basis:"carton",
     expected_profit_percent:null,applied_profit_vnd:input!==null&&sale!==null?Math.max(0,sale-input):0,sale_price_vnd:sale,carton_price_vnd:sale,
     retail_price_vnd:null,units_per_carton:null,retail_unit:"",stock_status:sale!==null?"available":"no_price",stock_label:sale!==null?"":"Chưa có giá",
-    is_active:true,raw_row:[...row.slice(0,16)],sheet_updated_at:modifiedTime,support_price_low_vnd:supportLow,support_price_high_vnd:supportHigh};
+    is_active:true,raw_row:[...row.slice(0,4)],sheet_updated_at:modifiedTime};
 }
 function parseCode(code:string){const m=clean(code).toUpperCase().match(/^(.*?)(\d+)$/);return m?{prefix:m[1],n:Number(m[2])}:null;}
 function allCodes(caches:Map<number,TabCache>){
@@ -294,11 +286,8 @@ async function allocateBlankSheetRows(caches:Map<number,TabCache>){
     for(let i=1;i<cache.rows.length;i++){
       const row=cache.rows[i]||[];const code=clean(row[0]);const name=clean(row[1]);if(code||!name)continue;
       const assigned=await reserveSheetCode(cache,caches);const inputSheet=num(row[2]),saleSheet=num(row[3]);
-      const supportLowSheet=num(row[14]),supportHighSheet=num(row[15]);
       const input=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;const sale=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
-      const supportLow=supportLowSheet!==null&&supportLowSheet>0?Math.round(supportLowSheet*1000):null;
-      const supportHigh=supportHighSheet!==null&&supportHighSheet>0?Math.round(supportHighSheet*1000):null;
-      const hash=await sha256(canonicalText(assigned,name,input,sale,supportLow,supportHigh));
+      const hash=await sha256(canonicalText(assigned,name,input,sale));
       await writeRanges([
         {range:`${quotedSheet(cache.meta.title)}!A${i+1}`,values:[[assigned]]},
         {range:`${quotedSheet(cache.meta.title)}!${TRACKING_ID_COL}${i+1}:${TRACKING_HASH_COL}${i+1}`,values:[[productMarker(assigned),hash]]}
