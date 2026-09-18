@@ -221,11 +221,6 @@
             if (filtered.length === 0) { document.getElementById('productList').innerHTML = `<div class="py-10 text-center text-gray-400 text-sm">Không tìm thấy sản phẩm.</div>`; return; }
             document.getElementById('productList').innerHTML = filtered.map(r => {
                 let maSp = r[0]; let tenSp = r[1]; let giaBan = Number(r[3]) || 0; let qty = cart[maSp] ? cart[maSp].qty : 0;
-                const supportFrom = Number(r[6]) || 0;
-                const supportTo = Number(r[7]) || 0;
-                const supportHtml = supportFrom > 0 && supportTo > 0
-                    ? `<p class="text-[11px] font-medium text-gray-900 mt-0.5">Giá hỗ trợ: khoảng ${supportFrom.toLocaleString('vi-VN')}-${supportTo.toLocaleString('vi-VN')}</p>`
-                    : '';
                 const imageHtml = productViewMode === 'image'
                     ? `<img src="${getProductImageSrc(r)}" alt="" class="product-thumb shrink-0" loading="lazy">`
                     : '';
@@ -236,7 +231,6 @@
                         <div class="min-w-0 flex-1">
                             <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
                             <p class="text-[13px] font-bold text-primary mt-1">${giaBan.toLocaleString('vi-VN')}</p>
-                            ${supportHtml}
                         </div>
                     </div>
                     <div class="flex items-center shrink-0">
