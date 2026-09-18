@@ -70,3 +70,21 @@ test('automatic manager sync stays scheduled every minute',()=>{
   assert.match(cron,/'\* \* \* \* \*'/);
   assert.match(cron,/taphoa-sheet-sync/);
 });
+
+
+test('NCC cost prices are bridged into Manager by product code before the manager gate',()=>{
+  for(const id of [
+    '15A3wy0YXlVajFWTTeLXCUh580QhwIlwaBIyn9RdR2XU',
+    '1gzTLCx575q6pFtpIU5RU8D8SUmxCMft6_jrBOVRDIY8',
+    '1dKwYp6LAR8Lb9YLy4xnf5CP2FA_VyENfZ9-1rEc3wa8',
+    '1i1ge5hOPmWi7oxjE5F5hD96f9Zvvp_0HQzwgawZiFgs'
+  ]) assert.ok(worker.includes(id),`missing NCC file ${id}`);
+  assert.match(worker,/async function syncNccPricesToManager/);
+  assert.match(worker,/readSpreadsheetValues\(source\.fileId,source\.sheetName,"A:C"\)/);
+  assert.match(worker,/managerMeta\.title,"A:C"/);
+  assert.match(worker,/!C\$\{i\+1\}/);
+  assert.match(worker,/const ncc=await syncNccPricesToManager\(meta\);[\s\S]*const modifiedTime=await driveModifiedTime/);
+  assert.match(worker,/ncc\.changedRows===0[\s\S]*metadataOnly/);
+  assert.doesNotMatch(worker,/writes\.push\(\{range:[^\n]*!A\$\{i\+1\}/);
+  assert.doesNotMatch(worker,/writes\.push\(\{range:[^\n]*!B\$\{i\+1\}/);
+});

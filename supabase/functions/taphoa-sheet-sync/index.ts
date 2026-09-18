@@ -15,6 +15,12 @@ const TRACKING_ID_INDEX=50;
 const TRACKING_HASH_INDEX=51;
 const TRACKING_COLUMN_COUNT=52;
 const CORE_KEYS=new Set(["hang-u","thuoc-la","sua","hang-thuong"]);
+const NCC_PRICE_SOURCES=Object.freeze([
+  {sourceKey:"sua",fileId:"15A3wy0YXlVajFWTTeLXCUh580QhwIlwaBIyn9RdR2XU",sheetName:"Sữa",managementSheetId:1822935945},
+  {sourceKey:"hang-u",fileId:"1gzTLCx575q6pFtpIU5RU8D8SUmxCMft6_jrBOVRDIY8",sheetName:"Hàng U",managementSheetId:305224020},
+  {sourceKey:"thuoc-la",fileId:"1dKwYp6LAR8Lb9YLy4xnf5CP2FA_VyENfZ9-1rEc3wa8",sheetName:"Thuốc lá",managementSheetId:583030487},
+  {sourceKey:"hang-thuong",fileId:"1i1ge5hOPmWi7oxjE5F5hD96f9Zvvp_0HQzwgawZiFgs",sheetName:"Hàng thường",managementSheetId:1330446015},
+]);
 
 const admin=createClient(SUPABASE_URL,SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 let googleJwt:JWT|null=null;
@@ -95,11 +101,14 @@ async function spreadsheetMeta():Promise<SheetMeta[]>{
     hidden:s?.properties?.hidden===true,columnCount:Number(s?.properties?.gridProperties?.columnCount||16)
   })).filter((s:SheetMeta)=>Number.isFinite(s.sheetId)&&!!s.title);
 }
-async function readManagerTab(tab:string){
-  const range=`${quotedSheet(tab)}!A:AZ`;
-  const url=`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(MANAGEMENT_FILE_ID)}/values/${encodeURIComponent(range)}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`;
+async function readSpreadsheetValues(spreadsheetId:string,tab:string,columns="A:C"){
+  const range=`${quotedSheet(tab)}!${columns}`;
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`;
   const data=await (await googleFetch(url)).json();
   return Array.isArray(data?.values)?data.values as unknown[][]:[];
+}
+async function readManagerTab(tab:string){
+  return readSpreadsheetValues(MANAGEMENT_FILE_ID,tab,"A:AZ");
 }
 async function writeRanges(data:Array<{range:string;values:unknown[][]}>,valueInputOption="RAW"){
   if(!data.length)return;
@@ -110,6 +119,62 @@ async function batchUpdate(requests:Record<string,unknown>[]){
   if(!requests.length)return;
   const url=`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(MANAGEMENT_FILE_ID)}:batchUpdate`;
   await googleFetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({requests})});
+}
+function nccPriceValue(value:unknown){
+  if(value===null||value===undefined||clean(value)==="")return {valid:true,value:null as number|null};
+  if(typeof value!=="number"&&!/\d/.test(clean(value)))return {valid:false,value:null as number|null};
+  const parsed=num(value);
+  if(parsed===null||!Number.isFinite(parsed)||parsed<0)return {valid:false,value:null as number|null};
+  return {valid:true,value:parsed>0?parsed:null as number|null};
+}
+function managerPriceValue(value:unknown){
+  const parsed=num(value);
+  return parsed!==null&&Number.isFinite(parsed)&&parsed>0?parsed:null;
+}
+async function syncNccPricesToManager(meta:SheetMeta[]){
+  let changedRows=0,matchedRows=0,ignoredCodes=0,invalidPrices=0,duplicateCodes=0;
+  const errors:Array<{sourceKey:string;error:string}>=[];
+  const writes:Array<{range:string;values:unknown[][]}>=[];
+  for(const source of NCC_PRICE_SOURCES){
+    try{
+      const managerMeta=meta.find(sheet=>sheet.sheetId===source.managementSheetId);
+      if(!managerMeta){errors.push({sourceKey:source.sourceKey,error:"manager_sheet_missing"});continue;}
+      const [nccRows,managerRows]=await Promise.all([
+        readSpreadsheetValues(source.fileId,source.sheetName,"A:C"),
+        readSpreadsheetValues(MANAGEMENT_FILE_ID,managerMeta.title,"A:C")
+      ]);
+      const sourcePrices=new Map<string,number|null>();
+      const duplicate=new Set<string>();
+      for(let i=1;i<nccRows.length;i++){
+        const row=nccRows[i]||[];const code=clean(row[0]).toUpperCase();
+        if(!code)continue;
+        const parsed=nccPriceValue(row[2]);
+        if(!parsed.valid){invalidPrices++;continue;}
+        if(sourcePrices.has(code)){duplicate.add(code);duplicateCodes++;continue;}
+        sourcePrices.set(code,parsed.value);
+      }
+      const managerCodes=new Set<string>();
+      for(let i=1;i<managerRows.length;i++){
+        const row=managerRows[i]||[];const code=clean(row[0]).toUpperCase();
+        if(!code)continue;
+        managerCodes.add(code);
+        if(!sourcePrices.has(code)||duplicate.has(code))continue;
+        matchedRows++;
+        const next=sourcePrices.get(code)??null;
+        const current=managerPriceValue(row[2]);
+        if(current===next)continue;
+        writes.push({range:`${quotedSheet(managerMeta.title)}!C${i+1}`,values:[[next===null?"":next]]});
+        changedRows++;
+      }
+      for(const code of sourcePrices.keys())if(!managerCodes.has(code))ignoredCodes++;
+    }catch(error){
+      const message=String((error as Error)?.message??error).slice(0,500);
+      errors.push({sourceKey:source.sourceKey,error:message});
+      console.warn("taphoa_ncc_price_sync_failed",source.sourceKey,message);
+    }
+  }
+  await writeRanges(writes);
+  return {changedRows,matchedRows,ignoredCodes,invalidPrices,duplicateCodes,errors};
 }
 async function ensureTrackingColumns(meta:SheetMeta){
   if(meta.columnCount<TRACKING_COLUMN_COUNT){
@@ -281,18 +346,20 @@ async function synchronize(force=false){
   try{
     await setSyncState({last_sync_status:"running",last_error:""});
     try{
+      const meta=await spreadsheetMeta();
+      const ncc=await syncNccPricesToManager(meta);
       const modifiedTime=await driveModifiedTime();const syncState=await readSyncState();
-      if(!force&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
+      if(!force&&ncc.changedRows===0&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
         await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
-        return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0),metadataOnly:true};
+        return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0),metadataOnly:true,ncc};
       }
-      const meta=await spreadsheetMeta();await reconcileSources(meta);let caches=await loadCaches(meta);
+      await reconcileSources(meta);let caches=await loadCaches(meta);
       const allocated=await allocateBlankSheetRows(caches);if(allocated)caches=await loadCaches(meta);
       const scanModifiedTime=allocated?await driveModifiedTime():modifiedTime;
       const inbound=await inboundScan(caches,scanModifiedTime);
       const finalModifiedTime=await driveModifiedTime();
       await setSyncState({last_drive_modified_time:finalModifiedTime,last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:"",last_imported_row_count:inbound.totalRows});
-      return {ok:true,changed:allocated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,allocated,...inbound};
+      return {ok:true,changed:ncc.changedRows>0||allocated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,ncc,allocated,...inbound};
     }catch(error){
       const message=String((error as Error)?.message??error).slice(0,1500);await setSyncState({last_sync_status:"error",last_error:message}).catch(()=>{});throw error;
     }

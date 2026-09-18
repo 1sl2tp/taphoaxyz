@@ -2,7 +2,7 @@
 
 **Goal:** Khóa dữ liệu nguồn/sản phẩm theo một chiều `Quản trị / Google Sheet → Supabase → Web`; Web chỉ đọc Supabase.
 
-**Architecture:** Giữ worker `taphoa-sheet-sync` và cron mỗi phút. Worker đọc workbook Quản trị, nhận diện nguồn theo `sheetId`, cấp Mã SP cho dòng mới chưa có mã, tính delta và ghi Supabase. Không xử lý bất kỳ outbox/request nào phát sinh từ Web và không nhận action create/update/delete từ browser.
+**Architecture:** Giữ worker `taphoa-sheet-sync` và cron mỗi phút. Worker trước hết đọc 4 file NCC lõi và đồng bộ **chỉ Giá vốn C theo Mã SP** vào workbook Quản trị; Mã SP + Tên vẫn do Quản trị sở hữu. Sau đó worker đọc workbook Quản trị, nhận diện nguồn theo `sheetId`, cấp Mã SP cho dòng mới chưa có mã, tính delta và ghi Supabase. Không xử lý bất kỳ outbox/request nào phát sinh từ Web và không nhận action create/update/delete từ browser.
 
 **Tech Stack:** Supabase Edge Functions (Deno), PostgreSQL/pg_cron, Google Sheets API, JavaScript static frontend, Node test runner.
 
