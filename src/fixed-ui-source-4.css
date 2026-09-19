@@ -268,6 +268,50 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 }
 
 
+/* FIXED STYLE: sales-header-compact-capacity
+   Customer gives space first; quick cart reserves xxx | xxx.xxx without wasting gaps. */
+#tab-ban-hang > header{
+  column-gap:8px !important;
+}
+#saleCustomerTrigger{
+  min-width:0 !important;
+  max-width:184px !important;
+  padding-left:10px !important;
+  padding-right:8px !important;
+  gap:6px !important;
+}
+#saleCustomerTrigger #selectedCustomerDisplay{
+  min-width:0 !important;
+  max-width:none !important;
+  flex:1 1 auto !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+#saleCustomerTrigger .ph-caret-down{
+  margin-left:-2px !important; /* name -> caret = 4px while icon -> name stays 6px */
+  flex:none !important;
+}
+#tab-ban-hang > header > :last-child{
+  min-width:120px !important;
+  padding-left:8px !important;
+  padding-right:8px !important;
+  gap:8px !important;
+}
+#headerQuickQty{
+  width:34px !important;
+  min-width:34px !important;
+  padding-left:4px !important;
+  padding-right:4px !important;
+  box-sizing:border-box !important;
+}
+#headerQuickTotal{
+  min-width:62px !important;
+  text-align:right !important;
+  font-variant-numeric:tabular-nums !important;
+}
+
+
 /* FIXED STYLE: centered-leading-index-columns */
 
 /* Keep STT/# labels and values on the center axis of their own narrow column.
