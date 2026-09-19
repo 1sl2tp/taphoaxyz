@@ -245,7 +245,7 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 /* Ngày/giờ nằm giữa 2 vùng: bên trái là Chọn khách hàng, bên phải là Giỏ. */
 #tab-ban-hang > header{
   display:grid !important;
-  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) !important;
+  grid-template-columns:auto minmax(0,1fr) auto !important;
   align-items:center !important;
   column-gap:12px;
 }
