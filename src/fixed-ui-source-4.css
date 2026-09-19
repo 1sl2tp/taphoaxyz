@@ -352,3 +352,29 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   caret-color: #111827;
   transition: background-color 9999s ease-out 0s;
 }
+
+
+/* LOGIN OUTLINE FIELD */
+#loginScreen .login-outline-field {
+  min-inline-size: 0;
+}
+#loginScreen .login-outline-field:focus-within {
+  border-color: #171717 !important;
+  box-shadow: 0 0 0 1px #171717 inset;
+}
+#loginScreen .login-outline-legend {
+  background: transparent !important;
+}
+#loginScreen input {
+  appearance: none;
+  -webkit-appearance: none;
+}
+#loginScreen input:-webkit-autofill,
+#loginScreen input:-webkit-autofill:hover,
+#loginScreen input:-webkit-autofill:focus,
+#loginScreen input:-webkit-autofill:active {
+  -webkit-text-fill-color: #171717 !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  caret-color: #171717;
+}

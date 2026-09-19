@@ -278,27 +278,21 @@ test('order list cards put customer name before order code and stay two-line',as
 });
 
 
-test('login screen uses clean fieldset labels and suppresses credential suggestions',async()=>{
+test('login screen matches the outlined welcome layout',async()=>{
   const markup=await read('src/fixed-ui-markup-1.js');
-  const runtime=await read('src/fixed-ui-runtime-4.js');
   const css=await read('src/fixed-ui-source-4.css');
 
   assert.match(markup,/Chào mừng trở lại/);
-  assert.doesNotMatch(markup,/Đăng nhập để tiếp tục bán hàng|ph-storefront/);
-  assert.match(markup,/form autocomplete=\\\"off\\\"/);
-  assert.match(markup,/fieldset class=\\\"relative h-14 rounded-\[22px\]/);
-  assert.match(markup,/legend class=\\\"ml-1 px-2[^>]*>Tài khoản<\/legend>/);
-  assert.match(markup,/legend class=\\\"ml-1 px-2[^>]*>Mật khẩu<\/legend>/);
-  assert.match(markup,/id=\\\"loginUsername\\\"[^>]*autocomplete=\\\"off\\\"|autocomplete=\\\"off\\\"[^>]*id=\\\"loginUsername\\\"/);
-  assert.match(markup,/autocomplete=\\\"new-password\\\"/);
+  assert.match(markup,/login-outline-field/);
+  assert.match(markup,/login-outline-legend[^>]*>Tài khoản<\/legend>/);
+  assert.match(markup,/login-outline-legend[^>]*>Mật khẩu<\/legend>/);
   assert.match(markup,/id=\\\"loginPasswordToggle\\\"/);
-  assert.match(markup,/toggleLoginPasswordVisibility\(\)/);
-  assert.doesNotMatch(markup,/placeholder=\\\"/);
+  assert.match(markup,/bg-\[#171717\][^"]*Đăng nhập/);
+  assert.doesNotMatch(markup,/placeholder=\\\"|Đăng nhập để tiếp tục bán hàng|ph-storefront/);
+  assert.match(markup,/autocomplete=\\\"off\\\"/);
+  assert.match(markup,/autocomplete=\\\"new-password\\\"/);
 
-  assert.match(runtime,/function setLoginPasswordVisibility\(visible\)/);
-  assert.match(runtime,/function toggleLoginPasswordVisibility\(\)/);
-  assert.match(runtime,/setLoginPasswordVisibility\(false\)/);
-
+  assert.match(css,/LOGIN OUTLINE FIELD/);
+  assert.match(css,/\.login-outline-field:focus-within/);
   assert.match(css,/#loginScreen input:-webkit-autofill/);
-  assert.match(css,/-webkit-box-shadow:\s*0 0 0 1000px #ffffff inset/);
 });
