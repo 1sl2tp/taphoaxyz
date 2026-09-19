@@ -106,3 +106,14 @@ test('debt surplus is shown as a positive amount with surplus wording instead of
   assert.match(behavior,/runningDebt\s*<\s*0[\s\S]{0,160}Dư/);
   assert.doesNotMatch(behavior,/>Nợ \$\{Number\(h\.currentDebt/);
 });
+
+
+test('editing a delivered order on the sales screen uses edit actions instead of draft/sell actions',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-5.js');
+  assert.match(runtime,/const\s+isEditingDeliveredOnSale\s*=\s*activeTabId\s*===\s*['"]tab-ban-hang['"][\s\S]{0,160}editingOrderSheet\s*===\s*['"]dongiao['"]/);
+  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,1200}clearEditingOrderContent\(\)[\s\S]{0,500}Xóa hàng/);
+  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,1600}requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
+  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,2200}updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
+  const block=runtime.match(/if \(isEditingDeliveredOnSale\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
+  assert.doesNotMatch(block,/Lưu tạm|BÁN NGAY|dayToanBoGioHang\(['"]dontam['"]\)/);
+});
