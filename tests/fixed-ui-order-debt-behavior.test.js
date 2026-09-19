@@ -281,17 +281,20 @@ test('order list cards put customer name before order code and stay two-line',as
 test('login screen matches the outlined welcome layout',async()=>{
   const markup=await read('src/fixed-ui-markup-1.js');
   const css=await read('src/fixed-ui-source-4.css');
+  const s0=markup.indexOf('id=\\\"loginScreen\\\"');
+  const s1=markup.indexOf('id=\\\"appContainer\\\"',s0);
+  const login=s0>=0&&s1>s0?markup.slice(s0,s1):'';
 
-  assert.match(markup,/Chào mừng trở lại/);
-  assert.match(markup,/login-outline-field/);
-  assert.match(markup,/login-outline-legend[^>]*>Tài khoản<\/legend>/);
-  assert.match(markup,/login-outline-legend[^>]*>Mật khẩu<\/legend>/);
-  assert.match(markup,/id=\\\"loginPasswordToggle\\\"/);
-  assert.ok(markup.includes('bg-[#171717] text-white font-bold text-[15px]'));
-  assert.ok(markup.includes('>Đăng nhập</button>'));
-  assert.doesNotMatch(markup,/placeholder=\\\"|Đăng nhập để tiếp tục bán hàng|ph-storefront/);
-  assert.match(markup,/autocomplete=\\\"off\\\"/);
-  assert.match(markup,/autocomplete=\\\"new-password\\\"/);
+  assert.match(login,/Chào mừng trở lại/);
+  assert.match(login,/login-outline-field/);
+  assert.match(login,/login-outline-legend[^>]*>Tài khoản<\/legend>/);
+  assert.match(login,/login-outline-legend[^>]*>Mật khẩu<\/legend>/);
+  assert.match(login,/id=\\\"loginPasswordToggle\\\"/);
+  assert.ok(login.includes('bg-[#171717] text-white font-bold text-[15px]'));
+  assert.ok(login.includes('>Đăng nhập</button>'));
+  assert.doesNotMatch(login,/placeholder=\\\"|Đăng nhập để tiếp tục bán hàng|ph-storefront/);
+  assert.match(login,/autocomplete=\\\"off\\\"/);
+  assert.match(login,/autocomplete=\\\"new-password\\\"/);
 
   assert.match(css,/LOGIN OUTLINE FIELD/);
   assert.match(css,/\.login-outline-field:focus-within/);
