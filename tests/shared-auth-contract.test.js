@@ -26,3 +26,19 @@ test('restore rechecks online access and stale identity hints cannot authorize',
   assert.match(auth,/Tài khoản không có quyền vào Tạp hóa/);
   assert.doesNotMatch(auth,/offline\s*:\s*true|navigator\.onLine\s*===\s*false/);
 });
+
+
+test('post-login refresh cannot turn a valid session into a login failure',()=>{
+  const runtime=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
+  assert.match(runtime,/info=await backend\(\)\.login\(username,password\)/);
+  assert.match(runtime,/showAppScreen\(\);[\s\S]{0,220}showToast\('Đăng nhập thành công\.'/);
+  const postRefresh=runtime.match(/catch\(error\)\{\s*console\.error\('post-login refresh'[\s\S]*?\n\s*\}/)?.[0]||'';
+  assert.doesNotMatch(postRefresh,/showLoginScreen\(\)/);
+});
+
+test('restore keeps a valid session even if UI refresh fails',()=>{
+  const runtime=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
+  assert.match(runtime,/info=await backend\(\)\.restore\(\)/);
+  assert.match(runtime,/if\(!info\)\{\s*showLoginScreen\(\);\s*return;\s*\}/);
+  assert.match(runtime,/showAppScreen\(\);\s*try\{\s*await refreshFixedSheets\(\);\s*\}catch\(error\)\{\s*console\.error\('post-restore refresh'/);
+});
