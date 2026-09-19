@@ -10,16 +10,16 @@
   "theme_color": "#16a34a",
   "icons": [
     {
-      "src": "./src/assets/app-icon.svg",
-      "sizes": "any",
+      "src": "./src/assets/app-icon.svg?v=20260919",
+      "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "./src/assets/logo.jpg",
-      "sizes": "200x200",
-      "type": "image/jpeg",
-      "purpose": "any"
+      "src": "./src/assets/app-icon.svg?v=20260919",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
