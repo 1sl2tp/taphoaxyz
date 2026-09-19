@@ -24,7 +24,7 @@ test('PWA is branded Bán Hàng and uses separate favicon and app icons', () => 
   assert.match(index, /<meta\s+name="theme-color"\s+content="#16a34a">/);
   assert.match(index, /<meta\s+name="apple-mobile-web-app-capable"\s+content="yes">/);
   assert.match(index, /<meta\s+name="apple-mobile-web-app-title"\s+content="Bán Hàng">/);
-  assert.match(index, /<link\s+rel="apple-touch-icon"\s+sizes="180x180"\s+href="\.\/src\/assets\/app-icon-180-v3\.png">/);
+  assert.match(index, /<link\s+rel="apple-touch-icon"\s+sizes="180x180"\s+href="\.\/src\/assets\/app-icon-180-bag-v4.png">/);
   assert.ok(!index.includes('logo.jpg'));
   assert.match(index, /navigator\.serviceWorker\.register\('\.\/sw\.js'\)/);
 });
