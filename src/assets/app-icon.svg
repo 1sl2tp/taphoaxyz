@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bán Hàng">
-  <rect width="512" height="512" rx="112" fill="#16a34a"/>
-  <path d="M112 174h54l33 154h194l31-104H185" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="218" cy="390" r="27" fill="#fff"/>
-  <circle cx="348" cy="390" r="27" fill="#fff"/>
+  <rect width="512" height="512" rx="116" fill="#16a34a"/>
+  <path d="M116 169h64l34 167h151l42-126H197" fill="none" stroke="#fff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="226" cy="386" r="31" fill="#fff"/>
+  <circle cx="337" cy="386" r="31" fill="#fff"/>
 </svg>
