@@ -119,14 +119,15 @@ test('delivered order cart uses delete-content, delete-order, update without a s
 });
 
 
-test('pending order cart uses delete, update, promote-to-delivered',async()=>{
+test('pending order cart separates clear-content, delete-order, update, and save-delivered',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   assert.match(runtime,/const\s+isPendingOrderCart\s*=\s*hasSelectedOrder\s*&&\s*editingOrderSheet\s*===\s*['"]dontam['"]/);
   assert.match(runtime,/const\s+canPromoteDraft\s*=\s*!isUser[\s\S]{0,160}isPendingOrderCart[\s\S]{0,160}hasItems[\s\S]{0,160}hasCustomer/);
   const block=runtime.match(/if \(isPendingOrderCart\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
-  assert.match(block,/requestDeleteEditingOrder\(\)[\s\S]{0,500}> Xóa/);
+  assert.match(block,/clearEditingOrderContent\(\)[\s\S]{0,500}> Xóa/);
+  assert.match(block,/requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
   assert.match(block,/updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
-  assert.match(block,/dayToanBoGioHang\(\\?'dongiao\\?'\)[\s\S]{0,700}Đã giao/);
+  assert.match(block,/dayToanBoGioHang\(\\?'dongiao\\?'\)[\s\S]{0,700}Lưu đã giao/);
   assert.doesNotMatch(block,/> Sửa|goToBanHangForEditing\(\)|Lưu tạm|BÁN NGAY/);
 });
 
@@ -149,4 +150,21 @@ test('cart share builds image from current cart values instead of stale detail D
   assert.match(runtime,/detailTotalQtyDisplay[\s\S]{0,300}totalQty/);
   assert.match(runtime,/detailModalTotal[\s\S]{0,300}totalPrice\.toLocaleString\('vi-VN'\)/);
   assert.match(runtime,/codeEl\.textContent = 'Mã đơn: ' \+ \(editingOrderId \|\| '--'\)/);
+});
+
+
+test('new sale cart exposes clear, save-draft, and save-delivered',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-5.js');
+  assert.match(runtime,/clearCart\(\)[\s\S]{0,700}> Xóa/);
+  assert.match(runtime,/dayToanBoGioHang\(\\?'dontam\\?'\)[\s\S]{0,700}Lưu tạm/);
+  assert.match(runtime,/dayToanBoGioHang\(\\?'dongiao\\?'\)[\s\S]{0,700}Lưu đã giao/);
+});
+
+
+test('choosing another customer does not clear loaded order identity',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-6.js');
+  const block=runtime.match(/function selectCustomer\(id, name\) \{([\s\S]*?)\n\s*\}/)?.[1]||'';
+  assert.match(block,/selectedCustomer\s*=\s*\{ id, name \}/);
+  assert.match(block,/renderCartFooterActions\(\)/);
+  assert.doesNotMatch(block,/editingOrderId\s*=|editingOrderSheet\s*=|resetSaleSession\(\)/);
 });

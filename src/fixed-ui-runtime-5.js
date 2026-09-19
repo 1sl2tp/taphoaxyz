@@ -173,18 +173,21 @@
                 return;
             }
 
-            // Đơn tạm: Xóa đơn tạm, cập nhật tại chỗ, hoặc duyệt thẳng sang Đã giao.
+            // Đơn tạm: tách dữ liệu đang nhập khỏi bản ghi đơn đã lưu; đổi khách không đổi nguồn DRAFT(orderId).
             if (isPendingOrderCart) {
                 owner.innerHTML = `
-                    <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
+                    <button ${hasItems ? 'onclick="clearEditingOrderContent()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${hasItems ? enabledNeutralBtn : disabledBtn}">
                         <i class="ph ph-trash"></i> Xóa
+                    </button>
+                    <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
+                        <i class="ph ph-trash"></i> Xóa đơn
                     </button>
                     <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledOutlinePrimaryBtn : disabledBtn}">
                         <i class="ph ph-floppy-disk"></i> Cập nhật
                     </button>
                     ${!isUser ? `
                     <button ${canPromoteDraft ? 'onclick="dayToanBoGioHang(\'dongiao\')"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
-                        <i class="ph-fill ph-check-circle"></i> Đã giao
+                        <i class="ph-fill ph-check-circle"></i> Lưu đã giao
                     </button>` : ''}`;
                 return;
             }
@@ -204,7 +207,7 @@
                 </button>
                 ${!isUser ? `
                 <button ${canSellNow ? 'onclick="dayToanBoGioHang(\'dongiao\')"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 ${canSellNow ? enabledPrimaryBtn : disabledBtn}">
-                    <i class="ph-fill ph-check-circle"></i> BÁN NGAY
+                    <i class="ph-fill ph-check-circle"></i> Lưu đã giao
                 </button>` : ''}`;
         }
 
