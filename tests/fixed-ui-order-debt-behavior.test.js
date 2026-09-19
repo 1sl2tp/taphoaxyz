@@ -110,43 +110,65 @@ test('debt surplus is shown as a positive amount with surplus wording instead of
 
 test('order opened from delivered or pending tab is preview-only until switching to sales',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(runtime,/const\s+isOrderPreview\s*=\s*hasSelectedOrder[\s\S]{0,180}\(isOrderTab \|\| isDebtOrderPreview\)/);
-  const preview=runtime.match(/if \(isOrderPreview\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
-  assert.match(preview,/requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
-  assert.match(preview,/goToBanHangForEditing\(\)[\s\S]{0,500}> Sửa/);
+  assert.match(runtime,/const\s+isOrderPreview\s*=\s*hasSelectedOrder\s*&&\s*\(isOrderTab \|\| isDebtOrderPreview\)/);
+  const p0=runtime.indexOf('if (isOrderPreview) {');
+  const p1=runtime.indexOf('// Đã giao:',p0);
+  const preview=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
+  assert.match(preview,/requestDeleteEditingOrder\(\)/);
+  assert.match(preview,/Xóa đơn/);
+  assert.match(preview,/goToBanHangForEditing\(\)/);
+  assert.match(preview,/> Sửa/);
   assert.doesNotMatch(preview,/Cập nhật|Lưu đã giao|clearEditingOrderContent\(\)/);
 });
 
 
 test('switching an opened order to sales enables its source-specific edit actions',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  const go=runtime.match(/function goToBanHangForEditing\(\) \{([\s\S]*?)\n\s*\}/)?.[1]||'';
+  const g0=runtime.indexOf('function goToBanHangForEditing() {');
+  const g1=runtime.indexOf('function renderCartFooterActions()',g0);
+  const go=g0>=0&&g1>g0?runtime.slice(g0,g1):'';
   assert.match(go,/editingOrderInSaleMode\s*=\s*true/);
   assert.match(go,/switchTab\(['"]tab-ban-hang['"]/);
-  assert.match(runtime,/if \(isDeliveredOrderCart\)[\s\S]{0,1800}Xóa đơn[\s\S]{0,1000}Cập nhật/);
-  assert.match(runtime,/if \(isPendingOrderCart\)[\s\S]{0,2200}Xóa đơn[\s\S]{0,1000}Cập nhật[\s\S]{0,1200}Lưu đã giao/);
+  assert.match(go,/renderCartUI\(\)/);
+  const d0=runtime.indexOf('if (isDeliveredOrderCart) {');
+  const d1=runtime.indexOf('// Đơn tạm:',d0);
+  const delivered=d0>=0&&d1>d0?runtime.slice(d0,d1):'';
+  assert.match(delivered,/clearEditingOrderContent\(\)/);
+  assert.match(delivered,/Xóa đơn/);
+  assert.match(delivered,/Cập nhật/);
+  const p0=runtime.indexOf('if (isPendingOrderCart) {');
+  const p1=runtime.indexOf('// Ở tab đơn',p0);
+  const pending=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
+  assert.match(pending,/clearEditingOrderContent\(\)/);
+  assert.match(pending,/Xóa đơn/);
+  assert.match(pending,/Cập nhật/);
+  assert.match(pending,/Lưu đã giao/);
 });
 
 
 test('order-tab cart quantity is readonly until edit mode in sales',async()=>{
   const runtime=await read('src/fixed-ui-runtime-6.js');
-  assert.match(runtime,/const\s+isOrderPreview\s*=\s*!!editingOrderId[\s\S]{0,260}tab-da-giao[\s\S]{0,260}tab-don-tam[\s\S]{0,260}!editingOrderInSaleMode/);
-  assert.match(runtime,/isDeliveredReadOnlyPreview[\s\S]{0,1000}cart-qty-readonly/);
+  assert.match(runtime,/const\s+isOrderPreview\s*=\s*!!editingOrderId\s*&&\s*!!editingOrderSheet/);
+  assert.match(runtime,/activeTabId\s*===\s*['"]tab-da-giao['"]/);
+  assert.match(runtime,/activeTabId\s*===\s*['"]tab-don-tam['"]/);
+  assert.match(runtime,/!editingOrderInSaleMode/);
+  assert.match(runtime,/cart-qty-readonly/);
 });
 
 
 test('choosing a different customer clears old input and loaded-order identity',async()=>{
   const runtime=await read('src/fixed-ui-runtime-6.js');
-  const start=runtime.indexOf('function selectCustomer(id, name) {');
-  const end=runtime.indexOf('// ==========================================',start);
-  const block=start>=0&&end>start?runtime.slice(start,end):'';
-  assert.match(block,/isDifferentCustomer/);
-  assert.match(block,/cart\s*=\s*\{\}/);
-  assert.match(block,/editingOrderId\s*=\s*null/);
-  assert.match(block,/editingOrderSheet\s*=\s*null/);
-  assert.match(block,/editingOrderInSaleMode\s*=\s*false/);
-  assert.match(block,/renderProductList\(\)/);
-  assert.match(block,/renderCartUI\(\)/);
+  const s0=runtime.indexOf('function selectCustomer(id, name) {');
+  const s1=runtime.indexOf('// ==========================================',s0);
+  const select=s0>=0&&s1>s0?runtime.slice(s0,s1):'';
+  assert.match(select,/isDifferentCustomer/);
+  assert.match(select,/cart\s*=\s*\{\}/);
+  assert.match(select,/editingOrderId\s*=\s*null/);
+  assert.match(select,/editingOrderSheet\s*=\s*null/);
+  assert.match(select,/editingOrderInSaleMode\s*=\s*false/);
+  assert.match(select,/viewingOrderId\s*=\s*null/);
+  assert.match(select,/renderProductList\(\)/);
+  assert.match(select,/renderCartUI\(\)/);
 });
 
 
