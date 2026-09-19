@@ -107,9 +107,11 @@
     if(!selectedCustomer.id){showAlertPopup('Lỗi thao tác','Vui lòng chọn khách hàng trước khi đẩy đơn!');openCustomerModal();return;}
     if(Object.keys(cart).length===0){showAlertPopup('Giỏ hàng trống','Vui lòng chọn ít nhất 1 sản phẩm!');return;}
 
-    const targetSheet=editingOrderId?(editingOrderSheet||(String(editingOrderId).startsWith('DG')?'dongiao':'dontam')):tab;
+    const sourceSheet=editingOrderId?(editingOrderSheet||(String(editingOrderId).startsWith('DG')?'dongiao':'dontam')):tab;
+    const isPromotingDraft=Boolean(editingOrderId)&&sourceSheet==='dontam'&&tab==='dongiao';
+    const targetSheet=isPromotingDraft?'dongiao':sourceSheet;
     const status=targetSheet==='dongiao'?'done':'pending';
-    const backendEditOrderId=editingOrderId?backendOrderIdFor(targetSheet,editingOrderId):'';
+    const backendEditOrderId=editingOrderId?backendOrderIdFor(sourceSheet,editingOrderId):'';
     const items=Object.entries(cart).map(([maSP,item],index)=>({
       maSP:String(maSP),sl:Number(item.qty)||0,gia:Number(item.price)||0,lineNo:index+1,ghiChu:String(item.note||'')
     })).filter(item=>item.sl>0);
@@ -117,7 +119,7 @@
     showLoading('Đang xử lý đẩy đơn...');
     try{
       await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items});
-      showToast(editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
+      showToast(isPromotingDraft?'Đã duyệt đơn sang Đã giao!':editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
       resetSaleSession();
       closeCartMobile();
       await refreshFixedSheets(['dontam','dongiao','thuchi']);

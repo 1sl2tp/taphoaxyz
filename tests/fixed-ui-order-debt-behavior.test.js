@@ -83,3 +83,13 @@ test('FIXED behavior runs before production bindings so Supabase wrappers stay o
   const html=await read('index.html');
   assert.ok(html.indexOf('fixed-ui-behavior.js') < html.indexOf('fixed-production-overrides.js'));
 });
+
+
+test('editing a pending order and selling now promotes the same backend order to delivered',async()=>{
+  const source=await read('src/fixed-production-overrides.js');
+  assert.match(source,/const\s+isPromotingDraft=Boolean\(editingOrderId\)&&sourceSheet===['"]dontam['"]&&tab===['"]dongiao['"]/);
+  assert.match(source,/const\s+targetSheet=isPromotingDraft\?['"]dongiao['"]:sourceSheet/);
+  assert.match(source,/backendOrderIdFor\(sourceSheet,editingOrderId\)/);
+  assert.match(source,/const\s+status=targetSheet===['"]dongiao['"]\?['"]done['"]:['"]pending['"]/);
+  assert.match(source,/Đã duyệt đơn sang Đã giao!/);
+});
