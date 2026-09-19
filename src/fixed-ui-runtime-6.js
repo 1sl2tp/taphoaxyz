@@ -53,11 +53,8 @@
             setTimeout(() => document.getElementById('cartBottomSheet').classList.remove('translate-y-full'), 10);
         }
         function closeCartMobile() {
-            // Khi đang sửa, nút X trên mobile chính là Hủy sửa.
-            if (editingOrderInSaleMode && editingOrderId && editingOrderSheet) {
-                cancelEditingOrder();
-                return;
-            }
+            // Khi đang sửa trên mobile, nút X chỉ đóng sheet Giỏ để người dùng sửa sản phẩm ở Bán hàng.
+            // Hủy sửa phải dùng nút Hủy rõ nghĩa ở footer, tránh bấm X nhầm làm quay lại Đã giao/Đơn tạm.
 
             // Đóng một preview thì bỏ luôn đơn preview; không giữ "đơn gần nhất" trong Giỏ.
             if (editingOrderId && editingOrderSheet && !editingOrderInSaleMode) {
