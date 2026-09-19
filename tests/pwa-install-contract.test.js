@@ -11,8 +11,9 @@ test('PWA is branded Bán Hàng and uses separate favicon and app icons', () => 
   assert.equal(manifest.display, 'standalone');
   assert.equal(manifest.start_url, './');
   assert.equal(manifest.scope, './');
-  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon.svg' && icon.sizes === 'any' && icon.purpose === 'any'));
-  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon.svg' && icon.sizes === 'any' && icon.purpose === 'maskable'));
+  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-192-v3.png' && icon.sizes === '192x192' && icon.purpose === 'any'));
+  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'any'));
+  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-maskable-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'maskable'));
   assert.ok(!manifest.icons.some(icon => String(icon.src || '').includes('logo.jpg')));
   assert.ok(!manifest.icons.some(icon => String(icon.src || '').includes('favicon.svg')));
 
@@ -23,7 +24,7 @@ test('PWA is branded Bán Hàng and uses separate favicon and app icons', () => 
   assert.match(index, /<meta\s+name="theme-color"\s+content="#16a34a">/);
   assert.match(index, /<meta\s+name="apple-mobile-web-app-capable"\s+content="yes">/);
   assert.match(index, /<meta\s+name="apple-mobile-web-app-title"\s+content="Bán Hàng">/);
-  assert.match(index, /<link\s+rel="apple-touch-icon"\s+href="\.\/src\/assets\/app-icon\.svg">/);
+  assert.match(index, /<link\s+rel="apple-touch-icon"\s+sizes="180x180"\s+href="\.\/src\/assets\/app-icon-180-v3\.png">/);
   assert.ok(!index.includes('logo.jpg'));
   assert.match(index, /navigator\.serviceWorker\.register\('\.\/sw\.js'\)/);
 });
