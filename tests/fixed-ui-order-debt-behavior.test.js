@@ -126,7 +126,19 @@ test('editing a delivered order on the sales screen uses edit actions instead of
 test('loaded order cart shows the existing share action beside close',async()=>{
   const markup=await read('src/fixed-ui-markup-3.js');
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(markup,/id=\\?"cartShareOrderBtn\\?"[\s\S]{0,260}shareOrderImage\(\)/);
+  assert.match(markup,/id=\\?"cartShareOrderBtn\\?"[\\s\\S]{0,260}shareCartOrderImage\\(\\)/);
   assert.match(markup,/cartShareOrderBtn[\s\S]{0,700}closeCartMobile\(\)/);
   assert.match(runtime,/hasLoadedOrder[\s\S]{0,260}cartShareOrderBtn[\s\S]{0,260}classList\.toggle\(['"]hidden['"],\s*!hasLoadedOrder\)/);
+});
+
+
+test('cart share builds image from current cart values instead of stale detail DOM',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-13.js');
+  assert.match(runtime,/async function shareCartOrderImage\(\)/);
+  assert.match(runtime,/Object\.entries\(cart \|\| \{\}\)/);
+  assert.match(runtime,/cloneItems\.innerHTML = rowsHtml/);
+  assert.match(runtime,/detailLineCountDisplay[\s\S]{0,300}cartEntries\.length/);
+  assert.match(runtime,/detailTotalQtyDisplay[\s\S]{0,300}totalQty/);
+  assert.match(runtime,/detailModalTotal[\s\S]{0,300}totalPrice\.toLocaleString\('vi-VN'\)/);
+  assert.match(runtime,/editingOrderId[\s\S]{0,700}detailModalOrderCode/);
 });
