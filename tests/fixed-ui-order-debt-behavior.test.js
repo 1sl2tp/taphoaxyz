@@ -93,3 +93,16 @@ test('editing a pending order and selling now promotes the same backend order to
   assert.match(source,/const\s+status=targetSheet===['"]dongiao['"]\?['"]done['"]:['"]pending['"]/);
   assert.match(source,/Đã duyệt đơn sang Đã giao!/);
 });
+
+
+test('debt surplus is shown as a positive amount with surplus wording instead of negative debt',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-11.js');
+  const behavior=await read('src/fixed-ui-behavior.js');
+  const markup=await read('src/fixed-ui-markup-4.js');
+  assert.match(runtime,/Math\.abs\(c\.debt\)\.toLocaleString\('vi-VN'\)/);
+  assert.match(markup,/id=\\\"cDebtModalBalanceLabel\\\"/);
+  assert.match(behavior,/currentTotalDebt\s*<\s*0[\s\S]{0,160}Số tiền còn dư/);
+  assert.match(behavior,/Math\.abs\(currentTotalDebt\)\.toLocaleString\('vi-VN'\)/);
+  assert.match(behavior,/runningDebt\s*<\s*0[\s\S]{0,160}Dư/);
+  assert.doesNotMatch(behavior,/>Nợ \$\{Number\(h\.currentDebt/);
+});

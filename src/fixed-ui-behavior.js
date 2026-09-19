@@ -221,8 +221,16 @@ openCustomerDebtModal = function(maKh) {
     ? Number(storedBalance)
     : (history.length > 0 ? Number(history[history.length - 1].currentDebt) || 0 : 0);
   const totalEl = document.getElementById('cDebtModalTotal');
-  totalEl.innerText = currentTotalDebt.toLocaleString('vi-VN');
-  totalEl.className = `text-[18px] font-extrabold ${currentTotalDebt >= 0 ? 'text-danger' : 'text-success'}`;
+  const balanceLabelEl = document.getElementById('cDebtModalBalanceLabel');
+  if (balanceLabelEl) {
+    balanceLabelEl.innerText = currentTotalDebt > 0
+      ? 'Số tiền còn nợ'
+      : currentTotalDebt < 0
+        ? 'Số tiền còn dư'
+        : 'Đã hết nợ';
+  }
+  totalEl.innerText = Math.abs(currentTotalDebt).toLocaleString('vi-VN');
+  totalEl.className = `text-[18px] font-extrabold ${currentTotalDebt > 0 ? 'text-danger' : currentTotalDebt < 0 ? 'text-success' : 'text-gray-700'}`;
 
   const displayHistory = visibleHistory.map(h => ({ ...h }));
   let displayRunningDebt = currentTotalDebt;
@@ -235,6 +243,12 @@ openCustomerDebtModal = function(maKh) {
   displayHistory.slice().reverse().forEach(h => {
     const isThu = h.soTien < 0;
     const sign = isThu ? '' : '+';
+    const runningDebt = Number(h.currentDebt || 0);
+    const runningBalanceText = runningDebt > 0
+      ? `Nợ ${Math.abs(runningDebt).toLocaleString('vi-VN')}`
+      : runningDebt < 0
+        ? `Dư ${Math.abs(runningDebt).toLocaleString('vi-VN')}`
+        : 'Đã hết nợ';
     const badgeColor = isThu ? 'text-success bg-green-50' : 'text-danger bg-red-50';
     const iconClass = isThu ? 'ph-fill ph-arrow-down-left' : 'ph-fill ph-push-pin';
     const orderId = String(h.orderId || (String(h.loaiGd || '').match(/DG\d+|DT\d+/)?.[0] || ''));
@@ -249,7 +263,7 @@ openCustomerDebtModal = function(maKh) {
       </div>
       <div class="text-right">
         <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${h.soTien.toLocaleString('vi-VN')}</p>
-        <p class="text-[10px] text-gray-400 mt-0.5">Nợ ${Number(h.currentDebt || 0).toLocaleString('vi-VN')}</p>
+        <p class="text-[10px] text-gray-400 mt-0.5">${runningBalanceText}</p>
       </div>
     </div>`;
   });

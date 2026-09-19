@@ -188,7 +188,7 @@
                             </div>
                         </div>
                         <div class="pointer-events-none text-right">
-                            <p class="font-extrabold text-[15px] ${c.debt >= 0 ? 'text-danger' : 'text-success'}">${c.debt.toLocaleString('vi-VN')}</p>
+                            <p class="font-extrabold text-[15px] ${c.debt > 0 ? 'text-danger' : c.debt < 0 ? 'text-success' : 'text-gray-700'}">${Math.abs(c.debt).toLocaleString('vi-VN')}</p>
                         </div>
                     </div>`;
             });
