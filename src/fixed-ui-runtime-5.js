@@ -119,9 +119,11 @@
 
             const activeTabId = getActiveTabId();
             const isUser = currentAuthRole === 'user';
+            const lineCount = Object.keys(cart).length;
             const hasLoadedOrder = !!editingOrderId && !!editingOrderSheet;
+            const isCreatingSaleDraft = activeTabId === 'tab-ban-hang' && lineCount > 0 && !hasLoadedOrder;
             const cartShareOrderBtn = document.getElementById('cartShareOrderBtn');
-            if (cartShareOrderBtn) cartShareOrderBtn.classList.toggle('hidden', !hasLoadedOrder);
+            if (cartShareOrderBtn) cartShareOrderBtn.classList.toggle('hidden', !(hasLoadedOrder || isCreatingSaleDraft));
             const isUserDeliveredReadOnly = isUser && (activeTabId === 'tab-da-giao' || editingOrderSheet === 'dongiao');
 
             // User ở Đã giao luôn là read-only: ẩn toàn bộ Xóa/Sửa/Cập nhật/Tạo đơn, kể cả chưa chọn đơn.
@@ -132,7 +134,6 @@
             }
             owner.classList.remove('hidden');
 
-            const lineCount = Object.keys(cart).length;
             const hasItems = lineCount > 0;
             const hasCustomer = !!selectedCustomer.id;
             const isOrderTab = activeTabId === 'tab-da-giao' || activeTabId === 'tab-don-tam';
