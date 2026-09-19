@@ -1,0 +1,61 @@
+/* FIXED STYLE: login-final-polish */
+
+#loginScreen .login-outline-field{
+  border-color:#d1d5db !important;
+  border-width:1.5px !important;
+  border-radius:18px !important;
+  height:60px !important;
+  padding:0 16px !important;
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+
+#loginScreen .login-outline-field:focus-within{
+  border-color:#16a34a !important;
+  box-shadow:0 0 0 3px rgba(22,163,74,.12) !important;
+}
+
+#loginScreen .login-outline-legend{
+  background:#fff !important;
+  padding:0 10px !important;
+  margin-left:14px !important;
+  line-height:18px !important;
+  color:#64748b !important;
+  transform:translateY(-1px);
+}
+
+#loginScreen .login-outline-field:focus-within .login-outline-legend{
+  color:#16a34a !important;
+}
+
+#loginScreen #loginUsername,
+#loginScreen #loginPassword{
+  height:42px !important;
+  bottom:2px !important;
+  padding-left:24px !important;
+  caret-color:#16a34a !important;
+}
+
+#loginScreen #loginPassword{
+  padding-right:54px !important;
+}
+
+#loginScreen #loginPasswordToggle{
+  right:16px !important;
+  top:58% !important;
+  color:#16a34a !important;
+}
+
+#loginScreen form > button[type="submit"]{
+  background:#16a34a !important;
+  border:1px solid #16a34a !important;
+  color:#fff !important;
+}
+
+#loginScreen form > button[type="submit"]:hover{
+  background:#15803d !important;
+  border-color:#15803d !important;
+}
+
+#loginScreen form > button[type="submit"]:focus-visible{
+  box-shadow:0 0 0 3px rgba(22,163,74,.18) !important;
+}
