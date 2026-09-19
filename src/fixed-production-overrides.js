@@ -67,19 +67,32 @@
       return;
     }
     showLoading('Đang đăng nhập...');
+    let info=null;
     try{
-      const info=await backend().login(username,password);
+      info=await backend().login(username,password);
+    }catch(error){
+      console.error('login auth',error);
+      showAlertPopup('Đăng nhập thất bại',error?.message||'Sai tài khoản hoặc mật khẩu.');
+      showLoginScreen();
+      hideLoading();
+      return;
+    }
+
+    try{
       setAuthRole(productionRole(info));
       syncSelfCustomer(info);
       document.getElementById('loginPassword').value='';
       showAppScreen();
-      await refreshFixedSheets();
       showToast('Đăng nhập thành công.','success');
-    }catch(error){
-      console.error('login',error);
-      showAlertPopup('Đăng nhập thất bại',error?.message||'Sai tài khoản hoặc mật khẩu.');
-      showLoginScreen();
-    }finally{hideLoading();}
+      try{
+        await refreshFixedSheets();
+      }catch(error){
+        console.error('post-login refresh',error);
+        showAlertPopup('Đã đăng nhập','Dữ liệu chưa tải đủ. Ứng dụng sẽ tự đồng bộ lại.');
+      }
+    }finally{
+      hideLoading();
+    }
   };
 
   logoutApp=function(){
@@ -204,16 +217,26 @@
     loadUiPreferences();
     const apiInput=document.getElementById('inputScriptUrl');
     if(apiInput){apiInput.value='taphoa://production';apiInput.readOnly=true;}
+
+    let info=null;
     try{
-      const info=await backend().restore();
-      if(!info){showLoginScreen();return;}
-      setAuthRole(productionRole(info));
-      syncSelfCustomer(info);
-      showAppScreen();
+      info=await backend().restore();
+    }catch(error){
+      console.error('restore auth',error);
+    }
+    if(!info){
+      showLoginScreen();
+      return;
+    }
+
+    setAuthRole(productionRole(info));
+    syncSelfCustomer(info);
+    showAppScreen();
+    try{
       await refreshFixedSheets();
     }catch(error){
-      console.error('restore',error);
-      showLoginScreen();
+      console.error('post-restore refresh',error);
+      showAlertPopup('Đã đăng nhập','Dữ liệu chưa tải đủ. Ứng dụng sẽ tự đồng bộ lại.');
     }
   };
 })();
