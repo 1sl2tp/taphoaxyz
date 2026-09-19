@@ -94,6 +94,7 @@
             cart = {};
             editingOrderId = null;
             editingOrderSheet = null;
+            editingOrderInSaleMode = false;
             document.getElementById('cartEditBadge').classList.add('hidden');
             renderProductList();
             renderCartUI();
@@ -149,14 +150,14 @@
             const enabledOutlinePrimaryBtn = 'hover:bg-primaryLight';
             const enabledPrimaryBtn = 'hover:bg-primary/90 shadow-lg shadow-primary/30';
 
-            const isEditingDeliveredOnSale = activeTabId === 'tab-ban-hang'
+            const isEditingDeliveredOnSale = editingOrderInSaleMode
                 && hasSelectedOrder
                 && editingOrderSheet === 'dongiao';
 
             if (isEditingDeliveredOnSale) {
                 owner.innerHTML = `
                     <button ${hasItems ? 'onclick="clearEditingOrderContent()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${hasItems ? enabledNeutralBtn : disabledBtn}">
-                        <i class="ph ph-trash"></i> Xóa hàng
+                        <i class="ph ph-trash"></i> Xóa
                     </button>
                     <button onclick="requestDeleteEditingOrder()" class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${enabledDangerBtn}">
                         <i class="ph ph-trash"></i> Xóa đơn

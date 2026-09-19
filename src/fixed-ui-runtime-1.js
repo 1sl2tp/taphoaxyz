@@ -208,7 +208,7 @@
         let currentThemePreset = localStorage.getItem('APP_THEME_PRESET') || 'current';
         let currentFontChoice = localStorage.getItem('APP_FONT_CHOICE') || 'current';
         let sharpUiEnabled = localStorage.getItem('APP_SHARP_UI') === '1';
-        let cart = {}; let selectedCustomer = { id: "", name: "Chọn khách hàng" }; let editingOrderId = null; let editingOrderSheet = null; let viewingOrderId = null; 
+        let cart = {}; let selectedCustomer = { id: "", name: "Chọn khách hàng" }; let editingOrderId = null; let editingOrderSheet = null; let editingOrderInSaleMode = false; let viewingOrderId = null; 
         let activeDebtCustomerId = null; 
         let currentDebtFilter = 'no'; 
         let customerSelectionContext = 'sale'; 

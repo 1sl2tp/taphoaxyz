@@ -250,6 +250,7 @@
 
             editingOrderId = orderId;
             editingOrderSheet = sheetName;
+            editingOrderInSaleMode = Boolean(switchToSale);
             document.getElementById('cartEditBadge').classList.remove('hidden');
 
             renderProductList();

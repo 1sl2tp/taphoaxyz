@@ -7,6 +7,7 @@
             cart = {};
             editingOrderId = null;
             editingOrderSheet = null;
+            editingOrderInSaleMode = false;
             viewingOrderId = null;
             window.activeViewingSheet = null;
             syncUserSelfCustomer();

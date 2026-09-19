@@ -109,9 +109,13 @@ test('debt surplus is shown as a positive amount with surplus wording instead of
 
 
 test('editing a delivered order on the sales screen uses edit actions instead of draft/sell actions',async()=>{
+  const globals=await read('src/fixed-ui-runtime-1.js');
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(runtime,/const\s+isEditingDeliveredOnSale\s*=\s*activeTabId\s*===\s*['"]tab-ban-hang['"][\s\S]{0,160}editingOrderSheet\s*===\s*['"]dongiao['"]/);
-  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,1200}clearEditingOrderContent\(\)[\s\S]{0,500}Xóa hàng/);
+  const loader=await read('src/fixed-ui-runtime-12.js');
+  assert.match(globals,/let\s+editingOrderInSaleMode\s*=\s*false/);
+  assert.match(loader,/editingOrderInSaleMode\s*=\s*Boolean\(switchToSale\)/);
+  assert.match(runtime,/const\s+isEditingDeliveredOnSale\s*=\s*editingOrderInSaleMode[\s\S]{0,160}editingOrderSheet\s*===\s*['"]dongiao['"]/);
+  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,1200}clearEditingOrderContent\(\)[\s\S]{0,500}> Xóa/);
   assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,1600}requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
   assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,2200}updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
   const block=runtime.match(/if \(isEditingDeliveredOnSale\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
