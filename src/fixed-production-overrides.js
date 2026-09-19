@@ -67,32 +67,19 @@
       return;
     }
     showLoading('Đang đăng nhập...');
-    let info=null;
     try{
-      info=await backend().login(username,password);
-    }catch(error){
-      console.error('login auth',error);
-      showAlertPopup('Đăng nhập thất bại',error?.message||'Sai tài khoản hoặc mật khẩu.');
-      showLoginScreen();
-      hideLoading();
-      return;
-    }
-
-    try{
+      const info=await backend().login(username,password);
       setAuthRole(productionRole(info));
       syncSelfCustomer(info);
       document.getElementById('loginPassword').value='';
       showAppScreen();
+      await refreshFixedSheets();
       showToast('Đăng nhập thành công.','success');
-      try{
-        await refreshFixedSheets();
-      }catch(error){
-        console.error('post-login refresh',error);
-        showAlertPopup('Đã đăng nhập','Dữ liệu chưa tải đủ. Ứng dụng sẽ tự đồng bộ lại.');
-      }
-    }finally{
-      hideLoading();
-    }
+    }catch(error){
+      console.error('login',error);
+      showAlertPopup('Đăng nhập thất bại',error?.message||'Sai tài khoản hoặc mật khẩu.');
+      showLoginScreen();
+    }finally{hideLoading();}
   };
 
   logoutApp=function(){
@@ -217,26 +204,16 @@
     loadUiPreferences();
     const apiInput=document.getElementById('inputScriptUrl');
     if(apiInput){apiInput.value='taphoa://production';apiInput.readOnly=true;}
-
-    let info=null;
     try{
-      info=await backend().restore();
-    }catch(error){
-      console.error('restore auth',error);
-    }
-    if(!info){
-      showLoginScreen();
-      return;
-    }
-
-    setAuthRole(productionRole(info));
-    syncSelfCustomer(info);
-    showAppScreen();
-    try{
+      const info=await backend().restore();
+      if(!info){showLoginScreen();return;}
+      setAuthRole(productionRole(info));
+      syncSelfCustomer(info);
+      showAppScreen();
       await refreshFixedSheets();
     }catch(error){
-      console.error('post-restore refresh',error);
-      showAlertPopup('Đã đăng nhập','Dữ liệu chưa tải đủ. Ứng dụng sẽ tự đồng bộ lại.');
+      console.error('restore',error);
+      showLoginScreen();
     }
   };
 })();

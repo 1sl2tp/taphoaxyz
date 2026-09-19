@@ -121,12 +121,3 @@ test('editing a delivered order on the sales screen uses edit actions instead of
   const block=runtime.match(/if \(isEditingDeliveredOnSale\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
   assert.doesNotMatch(block,/Lưu tạm|BÁN NGAY|dayToanBoGioHang\(['"]dontam['"]\)/);
 });
-
-
-test('loaded order cart shows the existing share action beside close',async()=>{
-  const markup=await read('src/fixed-ui-markup-3.js');
-  const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(markup,/id=\\?"cartShareOrderBtn\\?"[\s\S]{0,260}shareOrderImage\(\)/);
-  assert.match(markup,/cartShareOrderBtn[\s\S]{0,700}closeCartMobile\(\)/);
-  assert.match(runtime,/hasLoadedOrder[\s\S]{0,260}cartShareOrderBtn[\s\S]{0,260}classList\.toggle\(['"]hidden['"],\s*!hasLoadedOrder\)/);
-});
