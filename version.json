@@ -3,5 +3,5 @@
   "build_id": "source-main",
   "update_policy": "auto-when-safe",
   "published_from": "main-source",
-  "ui_fix": "bag-only-app-icons-v4-publish"
+  "ui_fix": "crisp-bag-icons-v5"
 }
