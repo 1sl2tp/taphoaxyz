@@ -1,0 +1,123 @@
+name: One-shot polished sales app icon v3
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build polished iOS Android sales icons
+        run: |
+          python -m pip install pillow
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageDraw
+          import json
+
+          ROOT=Path('.')
+          ASSETS=ROOT/'src'/'assets'
+          GREEN=(22,163,74)
+          WHITE=(255,255,255)
+
+          def make_icon(size, maskable=False):
+              scale=4
+              S=size*scale
+              im=Image.new('RGB',(S,S),GREEN)
+              d=ImageDraw.Draw(im)
+              k=S/512.0
+              if maskable:
+                  # Keep the complete cart inside Android's central safe zone.
+                  pts=[(145,168),(194,168),(226,316),(343,316),(382,215),(211,215)]
+                  wheel1=(242,371,24)
+                  wheel2=(329,371,24)
+                  width=30
+              else:
+                  # Taller/cleaner than the old wide cart; visually centered.
+                  pts=[(116,150),(180,150),(218,326),(356,326),(399,205),(198,205)]
+                  wheel1=(239,386,27)
+                  wheel2=(337,386,27)
+                  width=34
+              pts=[(int(x*k),int(y*k)) for x,y in pts]
+              width=max(1,int(width*k))
+              d.line(pts,fill=WHITE,width=width,joint='curve')
+              # Round the exposed handle cap.
+              r=width//2
+              hx,hy=pts[0]
+              d.ellipse((hx-r,hy-r,hx+r,hy+r),fill=WHITE)
+              for cx,cy,rr in (wheel1,wheel2):
+                  cx,cy,rr=int(cx*k),int(cy*k),int(rr*k)
+                  d.ellipse((cx-rr,cy-rr,cx+rr,cy+rr),fill=WHITE)
+              return im.resize((size,size),Image.Resampling.LANCZOS)
+
+          make_icon(180).save(ASSETS/'app-icon-180-v3.png',optimize=True)
+          make_icon(192).save(ASSETS/'app-icon-192-v3.png',optimize=True)
+          make_icon(512).save(ASSETS/'app-icon-512-v3.png',optimize=True)
+          make_icon(512,True).save(ASSETS/'app-icon-maskable-512-v3.png',optimize=True)
+
+          (ASSETS/'app-icon.svg').write_text(
+          '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bán Hàng">
+            <rect width="512" height="512" fill="#16a34a"/>
+            <path d="M116 150h64l38 176h138l43-121H198" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="239" cy="386" r="27" fill="#fff"/>
+            <circle cx="337" cy="386" r="27" fill="#fff"/>
+          </svg>
+          ''',encoding='utf-8')
+
+          index_path=ROOT/'index.html'
+          index=index_path.read_text('utf-8')
+          old='<link rel="apple-touch-icon" href="./src/assets/app-icon.svg">'
+          new='<link rel="apple-touch-icon" sizes="180x180" href="./src/assets/app-icon-180-v3.png">'
+          if old in index:
+              index=index.replace(old,new,1)
+          elif new not in index:
+              raise SystemExit('apple-touch-icon anchor not found')
+          index_path.write_text(index,'utf-8')
+
+          manifest_path=ROOT/'manifest.webmanifest'
+          manifest=json.loads(manifest_path.read_text('utf-8'))
+          manifest['icons']=[
+              {'src':'./src/assets/app-icon-192-v3.png','sizes':'192x192','type':'image/png','purpose':'any'},
+              {'src':'./src/assets/app-icon-512-v3.png','sizes':'512x512','type':'image/png','purpose':'any'},
+              {'src':'./src/assets/app-icon-maskable-512-v3.png','sizes':'512x512','type':'image/png','purpose':'maskable'},
+          ]
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n','utf-8')
+
+          test_path=ROOT/'tests'/'pwa-install-contract.test.js'
+          test=test_path.read_text('utf-8')
+          test=test.replace(
+              "assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon.svg' && icon.sizes === 'any' && icon.purpose === 'any'));\n"
+              "  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon.svg' && icon.sizes === 'any' && icon.purpose === 'maskable'));",
+              "assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-192-v3.png' && icon.sizes === '192x192' && icon.purpose === 'any'));\n"
+              "  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'any'));\n"
+              "  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-maskable-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'maskable'));"
+          )
+          test=test.replace(
+              "assert.match(index, /<link\\s+rel=\"apple-touch-icon\"\\s+href=\"\\.\\/src\\/assets\\/app-icon\\.svg\">/);",
+              "assert.match(index, /<link\\s+rel=\"apple-touch-icon\"\\s+sizes=\"180x180\"\\s+href=\"\\.\\/src\\/assets\\/app-icon-180-v3\\.png\">/);"
+          )
+          test_path.write_text(test,'utf-8')
+
+          version_path=ROOT/'version.json'
+          version=json.loads(version_path.read_text('utf-8'))
+          version['ui_fix']='polished-mobile-app-icons-v3'
+          version_path.write_text(json.dumps(version,ensure_ascii=False,indent=2)+'\n','utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/assets/app-icon.svg src/assets/app-icon-180-v3.png src/assets/app-icon-192-v3.png src/assets/app-icon-512-v3.png src/assets/app-icon-maskable-512-v3.png index.html manifest.webmanifest tests/pwa-install-contract.test.js version.json
+          if git diff --cached --quiet; then
+            echo "sales app icon already current"
+            exit 0
+          fi
+          git commit -m "Polish TAPHOA sales mobile icon"
+          git push
