@@ -121,17 +121,3 @@ test('editing a delivered order on the sales screen uses edit actions instead of
   const block=runtime.match(/if \(isEditingDeliveredOnSale\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
   assert.doesNotMatch(block,/Lưu tạm|BÁN NGAY|dayToanBoGioHang\(['"]dontam['"]\)/);
 });
-
-
-test('loaded delivered and pending order carts reuse the existing share image function',async()=>{
-  const markup=await read('src/fixed-ui-markup-3.js');
-  const footer=await read('src/fixed-ui-runtime-5.js');
-  const order=await read('src/fixed-ui-runtime-13.js');
-
-  assert.match(markup,/id=\\?"cartShareOrderBtn\\?"[\s\S]{0,280}shareLoadedOrderImage\(\)/);
-  assert.match(footer,/const\s+hasLoadedOrder\s*=\s*!!editingOrderId\s*&&\s*!!editingOrderSheet/);
-  assert.match(footer,/cartShareOrderBtn[\s\S]{0,220}classList\.toggle\(['"]hidden['"],\s*!hasLoadedOrder\)/);
-  assert.match(order,/function\s+showOrderDetailMobile\s*\(orderId,\s*sheetName,\s*options\s*=\s*\{\}\)/);
-  assert.match(order,/if\s*\(options\.populateOnly\)\s*return/);
-  assert.match(order,/async function\s+shareLoadedOrderImage\s*\(\)[\s\S]{0,240}showOrderDetailMobile\(editingOrderId,\s*editingOrderSheet,\s*\{\s*populateOnly:\s*true\s*\}\)[\s\S]{0,120}shareOrderImage\(\)/);
-});

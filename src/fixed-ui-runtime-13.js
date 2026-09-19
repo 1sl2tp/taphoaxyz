@@ -12,9 +12,11 @@
             loadOrderIntoCart(orderId, sheetName, { switchToSale: true, showSuccessToast: true });
         }
 
-        function showOrderDetailMobile(orderId, sheetName, options = {}) {
+        function showOrderDetailMobile(orderId, sheetName) {
             let modalWrap = document.getElementById('orderDetailModalWrapper');
             if(!modalWrap) return; // Thêm check an toàn
+            
+            modalWrap.classList.remove('hidden');
             document.getElementById('detailModalTitle').innerText = orderId;
             
             let items = appData[sheetName].slice(1).filter(r => String(r[0]).trim() === orderId);
@@ -60,19 +62,11 @@
                 btnEdit.setAttribute('onclick', `editOrder('${orderId}', '${sheetName}')`);
             }
 
-            if (options.populateOnly) return;
-
-            modalWrap.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            modalWrap.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 let bottomSheet = document.getElementById('orderDetailBottomSheet');
                 if(bottomSheet) bottomSheet.classList.remove('translate-y-full');
             }, 10);
-        }
-
-        async function shareLoadedOrderImage() {
-            if (!editingOrderId || !editingOrderSheet) return;
-            showOrderDetailMobile(editingOrderId, editingOrderSheet, { populateOnly: true });
-            await shareOrderImage();
         }
 
         function closeOrderMobile() {
