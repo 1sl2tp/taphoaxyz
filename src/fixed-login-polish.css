@@ -40,9 +40,20 @@
 }
 
 #loginScreen #loginPasswordToggle{
+  top:0 !important;
+  bottom:0 !important;
   right:16px !important;
-  top:58% !important;
+  transform:none !important;
+  margin:auto 0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
   color:#16a34a !important;
+}
+
+#loginScreen #loginPasswordToggle i{
+  display:block !important;
+  line-height:1 !important;
 }
 
 #loginScreen form > button[type="submit"]{
