@@ -287,7 +287,8 @@ test('login screen matches the outlined welcome layout',async()=>{
   assert.match(markup,/login-outline-legend[^>]*>Tài khoản<\/legend>/);
   assert.match(markup,/login-outline-legend[^>]*>Mật khẩu<\/legend>/);
   assert.match(markup,/id=\\\"loginPasswordToggle\\\"/);
-  assert.match(markup,/bg-\[#171717\][^"]*Đăng nhập/);
+  assert.ok(markup.includes('bg-[#171717] text-white font-bold text-[15px]'));
+  assert.ok(markup.includes('>Đăng nhập</button>'));
   assert.doesNotMatch(markup,/placeholder=\\\"|Đăng nhập để tiếp tục bán hàng|ph-storefront/);
   assert.match(markup,/autocomplete=\\\"off\\\"/);
   assert.match(markup,/autocomplete=\\\"new-password\\\"/);
