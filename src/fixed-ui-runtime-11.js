@@ -68,10 +68,10 @@
 
                 orderHtml += `
                     <div onclick="clickOrder('${k}', 'dongiao')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-success/50 cursor-pointer transition flex justify-between items-center mb-3">
-                        <div class="pointer-events-none flex items-center gap-3">
+                        <div class="pointer-events-none flex items-center gap-3 min-w-0">
                             <div style="width: 36px; height: 36px;" class="rounded-full bg-green-50 text-success font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
-                            <div>
-                                <p class="font-bold text-[14px] text-gray-600"><span class="text-success font-extrabold">${k}</span> - ${o.tenKh}</p>
+                            <div class="min-w-0">
+                                <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh} - <span class="text-success font-extrabold">${k}</span></p>
                                 <p class="text-[11px] text-gray-400 mt-0.5">${o.countSp} mã - ${o.tongSl} SP | ${shortTime}</p>
                             </div>
                         </div>

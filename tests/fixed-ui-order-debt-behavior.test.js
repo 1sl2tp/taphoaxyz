@@ -261,3 +261,18 @@ test('switching away from an order preview clears the preview unless edit mode i
   const sw=sw0>=0&&sw1>sw0?runtime.slice(sw0,sw1):'';
   assert.match(sw,/clearOrderPreviewOnTabSwitch\(tabId\)/);
 });
+
+
+test('order list cards put customer name before order code and stay two-line',async()=>{
+  const pending=await read('src/fixed-ui-runtime-10.js');
+  const delivered=await read('src/fixed-ui-runtime-11.js');
+
+  assert.match(pending,/\$\{o\.tenKh\} - <span[^>]*>\$\{k\}<\/span>/);
+  assert.match(delivered,/\$\{o\.tenKh\} - <span[^>]*>\$\{k\}<\/span>/);
+
+  assert.match(pending,/\$\{o\.countSp\} mã - \$\{o\.tongSl\} SP \| \$\{shortTime\}/);
+  assert.match(delivered,/\$\{o\.countSp\} mã - \$\{o\.tongSl\} SP \| \$\{shortTime\}/);
+
+  assert.match(pending,/text-\[14px\][^"]*truncate/);
+  assert.match(delivered,/text-\[14px\][^"]*truncate/);
+});
