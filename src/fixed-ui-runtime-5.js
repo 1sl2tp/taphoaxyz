@@ -122,6 +122,26 @@
             showToast('Đã chuyển về Bán hàng để tiếp tục sửa đơn ' + editingOrderId, 'success');
         }
 
+        function cancelEditingOrder() {
+            if (!editingOrderId || !editingOrderSheet) return;
+
+            const orderId = editingOrderId;
+            const sheetName = editingOrderSheet;
+            const targetTabId = sheetName === 'dongiao' ? 'tab-da-giao' : 'tab-don-tam';
+
+            editingOrderInSaleMode = false;
+            loadOrderIntoCart(orderId, sheetName, { switchToSale: false, showSuccessToast: false });
+
+            const targetTabBtn = document.querySelector(`.tab-btn[onclick*="${targetTabId}"]`);
+            if (targetTabBtn) switchTab(targetTabId, targetTabBtn);
+
+            renderProductList();
+            renderCartUI();
+            renderCartFooterActions();
+            setTimeout(() => openCartMobile(), 320);
+            showToast('Đã hủy sửa đơn ' + orderId, 'success');
+        }
+
         function renderCartFooterActions() {
             const owner = document.getElementById('cartFooterActions');
             if (!owner) return;
@@ -179,9 +199,12 @@
                 return;
             }
 
-            // Đã giao: sửa trực tiếp trong Giỏ, không cần bước "Sửa" trung gian.
+            // Đã giao: chỉ sửa tại Bán hàng; Hủy bỏ thay đổi và quay lại xem đơn gốc.
             if (isDeliveredOrderCart) {
                 owner.innerHTML = `
+                    <button onclick="cancelEditingOrder()" class="px-3 py-3 rounded-xl border border-gray-200 text-gray-500 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap hover:bg-gray-50">
+                        <i class="ph ph-x"></i> Hủy
+                    </button>
                     <button ${hasItems ? 'onclick="clearEditingOrderContent()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${hasItems ? enabledNeutralBtn : disabledBtn}">
                         <i class="ph ph-trash"></i> Xóa
                     </button>
@@ -194,9 +217,12 @@
                 return;
             }
 
-            // Đơn tạm: tách dữ liệu đang nhập khỏi bản ghi đơn đã lưu; đổi khách không đổi nguồn DRAFT(orderId).
+            // Đơn tạm: chỉ sửa tại Bán hàng; Hủy bỏ thay đổi và quay lại xem đơn gốc.
             if (isPendingOrderCart) {
                 owner.innerHTML = `
+                    <button onclick="cancelEditingOrder()" class="px-3 py-3 rounded-xl border border-gray-200 text-gray-500 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap hover:bg-gray-50">
+                        <i class="ph ph-x"></i> Hủy
+                    </button>
                     <button ${hasItems ? 'onclick="clearEditingOrderContent()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${hasItems ? enabledNeutralBtn : disabledBtn}">
                         <i class="ph ph-trash"></i> Xóa
                     </button>
