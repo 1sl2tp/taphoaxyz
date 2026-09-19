@@ -1,11 +1,14 @@
 /* FIXED STYLE: login-final-polish */
 
 #loginScreen .login-outline-field{
+  position:relative !important;
   border-color:#d1d5db !important;
   border-width:1.5px !important;
   border-radius:18px !important;
-  height:60px !important;
-  padding:0 16px !important;
+  height:56px !important;
+  padding:0 !important;
+  overflow:visible !important;
+  background:#fff !important;
   transition:border-color .18s ease, box-shadow .18s ease;
 }
 
@@ -15,12 +18,20 @@
 }
 
 #loginScreen .login-outline-legend{
+  position:absolute !important;
+  top:-11px !important;
+  left:24px !important;
+  z-index:2 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  height:20px !important;
   background:#fff !important;
-  padding:0 10px !important;
-  margin-left:14px !important;
-  line-height:18px !important;
+  padding:0 9px !important;
+  margin:0 !important;
+  line-height:20px !important;
   color:#64748b !important;
-  transform:translateY(-1px);
+  transform:none !important;
+  pointer-events:none !important;
 }
 
 #loginScreen .login-outline-field:focus-within .login-outline-legend{
@@ -29,22 +40,36 @@
 
 #loginScreen #loginUsername,
 #loginScreen #loginPassword{
-  height:42px !important;
-  bottom:2px !important;
+  position:absolute !important;
+  left:0 !important;
+  top:0 !important;
+  bottom:0 !important;
+  width:100% !important;
+  height:100% !important;
+  padding-top:9px !important;
+  padding-bottom:0 !important;
   padding-left:24px !important;
+  padding-right:24px !important;
+  border:0 !important;
+  background:transparent !important;
+  line-height:22px !important;
   caret-color:#16a34a !important;
+  outline:none !important;
 }
 
 #loginScreen #loginPassword{
-  padding-right:54px !important;
+  padding-right:58px !important;
 }
 
 #loginScreen #loginPasswordToggle{
-  top:0 !important;
-  bottom:0 !important;
+  position:absolute !important;
+  top:50% !important;
   right:16px !important;
-  transform:none !important;
-  margin:auto 0 !important;
+  bottom:auto !important;
+  transform:translateY(-50%) !important;
+  margin:0 !important;
+  width:34px !important;
+  height:34px !important;
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
