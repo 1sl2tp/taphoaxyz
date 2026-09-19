@@ -53,6 +53,36 @@
             setTimeout(() => document.getElementById('cartBottomSheet').classList.remove('translate-y-full'), 10);
         }
         function closeCartMobile() {
+            // Khi đang sửa, nút X trên mobile chính là Hủy sửa.
+            if (editingOrderInSaleMode && editingOrderId && editingOrderSheet) {
+                cancelEditingOrder();
+                return;
+            }
+
+            // Đóng một preview thì bỏ luôn đơn preview; không giữ "đơn gần nhất" trong Giỏ.
+            if (editingOrderId && editingOrderSheet && !editingOrderInSaleMode) {
+                cart = {};
+                editingOrderId = null;
+                editingOrderSheet = null;
+                viewingOrderId = null;
+                window.activeViewingSheet = null;
+
+                const badge = document.getElementById('cartEditBadge');
+                if (badge) badge.classList.add('hidden');
+
+                if (currentAuthRole === 'user' && typeof syncUserSelfCustomer === 'function') {
+                    syncUserSelfCustomer();
+                } else {
+                    selectedCustomer = { id: "", name: "Chọn khách" };
+                    const customerDisplay = document.getElementById('selectedCustomerDisplay');
+                    if (customerDisplay) customerDisplay.innerText = "Chọn khách";
+                }
+
+                renderProductList();
+                renderCartUI();
+                renderCartFooterActions();
+            }
+
             if(window.innerWidth >= 768 && document.body.classList.contains('pc-mode')) return;
             document.getElementById('cartBottomSheet').classList.add('translate-y-full');
             setTimeout(() => document.getElementById('cartModalWrapper').classList.add('pointer-events-none', 'opacity-0'), 300);

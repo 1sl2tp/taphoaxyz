@@ -129,8 +129,27 @@
             const sheetName = editingOrderSheet;
             const targetTabId = sheetName === 'dongiao' ? 'tab-da-giao' : 'tab-don-tam';
 
+            // Hủy = thoát hẳn phiên sửa. Không nạp lại đơn vào Giỏ.
+            cart = {};
+            editingOrderId = null;
+            editingOrderSheet = null;
             editingOrderInSaleMode = false;
-            loadOrderIntoCart(orderId, sheetName, { switchToSale: false, showSuccessToast: false });
+            viewingOrderId = null;
+            window.activeViewingSheet = null;
+
+            const badge = document.getElementById('cartEditBadge');
+            if (badge) {
+                badge.innerText = 'Đang sửa đơn';
+                badge.classList.add('hidden');
+            }
+
+            if (currentAuthRole === 'user' && typeof syncUserSelfCustomer === 'function') {
+                syncUserSelfCustomer();
+            } else {
+                selectedCustomer = { id: "", name: "Chọn khách" };
+                const customerDisplay = document.getElementById('selectedCustomerDisplay');
+                if (customerDisplay) customerDisplay.innerText = "Chọn khách";
+            }
 
             const targetTabBtn = document.querySelector(`.tab-btn[onclick*="${targetTabId}"]`);
             if (targetTabBtn) switchTab(targetTabId, targetTabBtn);
@@ -138,7 +157,15 @@
             renderProductList();
             renderCartUI();
             renderCartFooterActions();
-            setTimeout(() => openCartMobile(), 320);
+
+            // Mobile: đóng sheet. PC: cột Giỏ vẫn là workspace nhưng đã sạch, không còn đơn vừa sửa.
+            const cartSheet = document.getElementById('cartBottomSheet');
+            const cartWrap = document.getElementById('cartModalWrapper');
+            if (cartSheet) cartSheet.classList.add('translate-y-full');
+            if (cartWrap) {
+                setTimeout(() => cartWrap.classList.add('pointer-events-none', 'opacity-0'), 300);
+            }
+
             showToast('Đã hủy sửa đơn ' + orderId, 'success');
         }
 

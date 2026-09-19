@@ -199,26 +199,32 @@ test('new sale cart shows delete, order, sell',async()=>{
   assert.match(block,/> Bán/);
   assert.doesNotMatch(block,/Xóa đơn|Cập nhật đơn|Duyệt|Lưu tạm|Đã giao/);
 });
-test('editing a loaded order has cancel that restores the source order and returns to its source tab',async()=>{
+test('cancel edit clears loaded order state and returns to the source tab',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   const c0=runtime.indexOf('function cancelEditingOrder() {');
   const c1=runtime.indexOf('function renderCartFooterActions()',c0);
   const cancel=c0>=0&&c1>c0?runtime.slice(c0,c1):'';
-  assert.match(cancel,/loadOrderIntoCart\(orderId, sheetName, \{ switchToSale: false, showSuccessToast: false \}\)/);
-  assert.match(cancel,/sheetName === ['"]dongiao['"] \? ['"]tab-da-giao['"] : ['"]tab-don-tam['"]/);
-  assert.match(cancel,/switchTab\(targetTabId, targetTabBtn\)/);
+  assert.match(cancel,/cart\s*=\s*\{\}/);
+  assert.match(cancel,/editingOrderId\s*=\s*null/);
+  assert.match(cancel,/editingOrderSheet\s*=\s*null/);
   assert.match(cancel,/editingOrderInSaleMode\s*=\s*false/);
-  assert.match(cancel,/openCartMobile\(\)/);
+  assert.match(cancel,/viewingOrderId\s*=\s*null/);
+  assert.match(cancel,/switchTab\(targetTabId, targetTabBtn\)/);
+  assert.doesNotMatch(cancel,/loadOrderIntoCart\(/);
+  assert.doesNotMatch(cancel,/openCartMobile\(/);
+});
 
-  const d0=runtime.indexOf('if (isDeliveredOrderCart) {');
-  const d1=runtime.indexOf('// Đơn tạm',d0);
-  const delivered=d0>=0&&d1>d0?runtime.slice(d0,d1):'';
-  assert.match(delivered,/cancelEditingOrder\(\)[\s\S]{0,300}Hủy/);
 
-  const p0=runtime.indexOf('if (isPendingOrderCart) {');
-  const p1=runtime.indexOf('// Ở tab đơn',p0);
-  const pending=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
-  assert.match(pending,/cancelEditingOrder\(\)[\s\S]{0,300}Hủy/);
+test('closing cart cancels edit or clears preview instead of preserving the last opened order',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-6.js');
+  const c0=runtime.indexOf('function closeCartMobile() {');
+  const c1=runtime.indexOf('function openCustomerModal',c0);
+  const close=c0>=0&&c1>c0?runtime.slice(c0,c1):'';
+  assert.match(close,/editingOrderInSaleMode[\s\S]{0,180}cancelEditingOrder\(\)/);
+  assert.match(close,/editingOrderId[\s\S]{0,500}cart\s*=\s*\{\}/);
+  assert.match(close,/editingOrderId\s*=\s*null/);
+  assert.match(close,/editingOrderSheet\s*=\s*null/);
+  assert.match(close,/viewingOrderId\s*=\s*null/);
 });
 
 
