@@ -278,22 +278,27 @@ test('order list cards put customer name before order code and stay two-line',as
 });
 
 
-test('login screen uses compact floating labels and password visibility toggle',async()=>{
+test('login screen uses clean fieldset labels and suppresses credential suggestions',async()=>{
   const markup=await read('src/fixed-ui-markup-1.js');
   const runtime=await read('src/fixed-ui-runtime-4.js');
+  const css=await read('src/fixed-ui-source-4.css');
 
-  assert.match(markup,/text-\[28px\][^"]*text-gray-950\\\">Đăng nhập/);
-  assert.doesNotMatch(markup,/Đăng nhập để tiếp tục bán hàng/);
-  assert.doesNotMatch(markup,/ph-storefront/);
-  assert.ok(markup.includes('absolute -top-2 left-5 z-10 bg-white px-2 text-[12px] font-medium text-gray-500\\\" for=\\\"loginUsername\\\">Tài khoản'));
-  assert.ok(markup.includes('absolute -top-2 left-5 z-10 bg-white px-2 text-[12px] font-medium text-gray-500\\\" for=\\\"loginPassword\\\">Mật khẩu'));
+  assert.match(markup,/Chào mừng trở lại/);
+  assert.doesNotMatch(markup,/Đăng nhập để tiếp tục bán hàng|ph-storefront/);
+  assert.match(markup,/form autocomplete=\\\"off\\\"/);
+  assert.match(markup,/fieldset class=\\\"relative h-14 rounded-\[22px\]/);
+  assert.match(markup,/legend class=\\\"ml-1 px-2[^>]*>Tài khoản<\/legend>/);
+  assert.match(markup,/legend class=\\\"ml-1 px-2[^>]*>Mật khẩu<\/legend>/);
+  assert.match(markup,/id=\\\"loginUsername\\\"[^>]*autocomplete=\\\"off\\\"|autocomplete=\\\"off\\\"[^>]*id=\\\"loginUsername\\\"/);
+  assert.match(markup,/autocomplete=\\\"new-password\\\"/);
   assert.match(markup,/id=\\\"loginPasswordToggle\\\"/);
   assert.match(markup,/toggleLoginPasswordVisibility\(\)/);
-  assert.match(markup,/h-14 rounded-\[22px\]/);
+  assert.doesNotMatch(markup,/placeholder=\\\"/);
 
   assert.match(runtime,/function setLoginPasswordVisibility\(visible\)/);
-  assert.match(runtime,/input\.type = isVisible \? 'text' : 'password'/);
-  assert.match(runtime,/ph-eye-slash/);
   assert.match(runtime,/function toggleLoginPasswordVisibility\(\)/);
   assert.match(runtime,/setLoginPasswordVisibility\(false\)/);
+
+  assert.match(css,/#loginScreen input:-webkit-autofill/);
+  assert.match(css,/-webkit-box-shadow:\s*0 0 0 1000px #ffffff inset/);
 });

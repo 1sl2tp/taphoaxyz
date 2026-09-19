@@ -339,3 +339,16 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 .summary-compact-table :is(th,td):nth-child(5){
   color:#16a34a !important;
 }
+
+
+/* LOGIN AUTOFILL */
+#loginScreen input:-webkit-autofill,
+#loginScreen input:-webkit-autofill:hover,
+#loginScreen input:-webkit-autofill:focus,
+#loginScreen input:-webkit-autofill:active {
+  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  caret-color: #111827;
+  transition: background-color 9999s ease-out 0s;
+}
