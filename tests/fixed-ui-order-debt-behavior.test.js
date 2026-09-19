@@ -211,7 +211,7 @@ test('editing a loaded order has cancel that restores the source order and retur
   assert.match(cancel,/openCartMobile\(\)/);
 
   const d0=runtime.indexOf('if (isDeliveredOrderCart) {');
-  const d1=runtime.indexOf('// Đơn tạm:',d0);
+  const d1=runtime.indexOf('// Đơn tạm',d0);
   const delivered=d0>=0&&d1>d0?runtime.slice(d0,d1):'';
   assert.match(delivered,/cancelEditingOrder\(\)[\s\S]{0,300}Hủy/);
 
