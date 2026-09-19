@@ -1,3 +1,27 @@
+        function setLoginPasswordVisibility(visible) {
+            const input = document.getElementById('loginPassword');
+            const button = document.getElementById('loginPasswordToggle');
+            if (!input) return;
+
+            const isVisible = Boolean(visible);
+            input.type = isVisible ? 'text' : 'password';
+
+            const icon = button?.querySelector('i');
+            if (icon) icon.className = isVisible ? 'ph-bold ph-eye-slash text-[18px]' : 'ph-bold ph-eye text-[18px]';
+
+            const label = isVisible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu';
+            if (button) {
+                button.setAttribute('aria-label', label);
+                button.setAttribute('title', label);
+            }
+        }
+
+        function toggleLoginPasswordVisibility() {
+            const input = document.getElementById('loginPassword');
+            if (!input) return;
+            setLoginPasswordVisibility(input.type === 'password');
+        }
+
         function showLoginScreen() {
             const login = document.getElementById('loginScreen');
             const app = document.getElementById('appContainer');
@@ -6,7 +30,8 @@
                 login.classList.remove('hidden');
                 login.classList.add('flex');
             }
-            document.getElementById('loginPassword')?.focus({ preventScroll: true });
+            setLoginPasswordVisibility(false);
+            document.getElementById('loginUsername')?.focus({ preventScroll: true });
         }
 
         function showAppScreen() {

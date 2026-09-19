@@ -276,3 +276,24 @@ test('order list cards put customer name before order code and stay two-line',as
   assert.match(pending,/text-\[14px\][^"]*truncate/);
   assert.match(delivered,/text-\[14px\][^"]*truncate/);
 });
+
+
+test('login screen uses compact floating labels and password visibility toggle',async()=>{
+  const markup=await read('src/fixed-ui-markup-1.js');
+  const runtime=await read('src/fixed-ui-runtime-4.js');
+
+  assert.match(markup,/text-\[28px\][^"]*text-gray-950\\\">Đăng nhập/);
+  assert.doesNotMatch(markup,/Đăng nhập để tiếp tục bán hàng/);
+  assert.doesNotMatch(markup,/ph-storefront/);
+  assert.match(markup,/absolute -top-2 left-5[^"]*for=\\\"loginUsername\\\">Tài khoản/);
+  assert.match(markup,/absolute -top-2 left-5[^"]*for=\\\"loginPassword\\\">Mật khẩu/);
+  assert.match(markup,/id=\\\"loginPasswordToggle\\\"/);
+  assert.match(markup,/toggleLoginPasswordVisibility\(\)/);
+  assert.match(markup,/h-14 rounded-\[22px\]/);
+
+  assert.match(runtime,/function setLoginPasswordVisibility\(visible\)/);
+  assert.match(runtime,/input\.type = isVisible \? 'text' : 'password'/);
+  assert.match(runtime,/ph-eye-slash/);
+  assert.match(runtime,/function toggleLoginPasswordVisibility\(\)/);
+  assert.match(runtime,/setLoginPasswordVisibility\(false\)/);
+});
