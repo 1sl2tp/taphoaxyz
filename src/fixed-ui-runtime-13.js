@@ -12,11 +12,13 @@
             loadOrderIntoCart(orderId, sheetName, { switchToSale: true, showSuccessToast: true });
         }
 
-        function populateOrderDetailContent(orderId, sheetName) {
+        function showOrderDetailMobile(orderId, sheetName, options = {}) {
+            let modalWrap = document.getElementById('orderDetailModalWrapper');
+            if(!modalWrap) return; // Thêm check an toàn
             document.getElementById('detailModalTitle').innerText = orderId;
-
+            
             let items = appData[sheetName].slice(1).filter(r => String(r[0]).trim() === orderId);
-            if(items.length === 0) return false;
+            if(items.length === 0) return;
 
             let maKh = items[0][1]; let timeStr = items[0][6] || '';
             let spDict = {}; appData.sanpham.slice(1).forEach(sp => { spDict[sp[0]] = sp[1]; });
@@ -57,13 +59,8 @@
                 btnEdit.style.display = 'flex';
                 btnEdit.setAttribute('onclick', `editOrder('${orderId}', '${sheetName}')`);
             }
-            return true;
-        }
 
-        function showOrderDetailMobile(orderId, sheetName) {
-            let modalWrap = document.getElementById('orderDetailModalWrapper');
-            if(!modalWrap) return;
-            if (!populateOrderDetailContent(orderId, sheetName)) return;
+            if (options.populateOnly) return;
 
             modalWrap.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
             setTimeout(() => {
@@ -74,7 +71,7 @@
 
         async function shareLoadedOrderImage() {
             if (!editingOrderId || !editingOrderSheet) return;
-            if (!populateOrderDetailContent(editingOrderId, editingOrderSheet)) return;
+            showOrderDetailMobile(editingOrderId, editingOrderSheet, { populateOnly: true });
             await shareOrderImage();
         }
 

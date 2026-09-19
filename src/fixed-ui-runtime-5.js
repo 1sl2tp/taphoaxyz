@@ -121,9 +121,7 @@
             const isUser = currentAuthRole === 'user';
             const hasLoadedOrder = !!editingOrderId && !!editingOrderSheet;
             const cartShareOrderBtn = document.getElementById('cartShareOrderBtn');
-            if (cartShareOrderBtn) {
-                cartShareOrderBtn.classList.toggle('hidden', !hasLoadedOrder);
-            }
+            if (cartShareOrderBtn) cartShareOrderBtn.classList.toggle('hidden', !hasLoadedOrder);
             const isUserDeliveredReadOnly = isUser && (activeTabId === 'tab-da-giao' || editingOrderSheet === 'dongiao');
 
             // User ở Đã giao luôn là read-only: ẩn toàn bộ Xóa/Sửa/Cập nhật/Tạo đơn, kể cả chưa chọn đơn.
