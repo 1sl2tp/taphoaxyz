@@ -295,3 +295,35 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 .summary-compact-table :is(th,td):nth-child(5){
   color:#16a34a !important;
 }
+
+
+/* FIXED STYLE: mobile-settings-panel-visibility */
+
+/* iOS/Safari: keep Settings as a real flex child of #mainArea.
+   Without explicit min-height/flex-basis the tab can collapse to zero height,
+   leaving the global status bar immediately below the nav. */
+.content-body,
+#mainArea{
+  min-height:0 !important;
+}
+#tab-cai-dat.active{
+  display:flex !important;
+  flex-direction:column !important;
+  flex:1 1 0% !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+#tab-cai-dat > header{
+  display:flex !important;
+  flex:0 0 auto !important;
+}
+#settingsMain{
+  display:block !important;
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+}
+#btnLogoutApp{
+  display:flex !important;
+}
