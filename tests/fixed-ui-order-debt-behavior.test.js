@@ -201,3 +201,26 @@ test('new sale cart exposes clear, save-draft, and save-delivered',async()=>{
 });
 
 
+
+
+test('editing a loaded order has cancel that restores the source order and returns to its source tab',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-5.js');
+  const c0=runtime.indexOf('function cancelEditingOrder() {');
+  const c1=runtime.indexOf('function renderCartFooterActions()',c0);
+  const cancel=c0>=0&&c1>c0?runtime.slice(c0,c1):'';
+  assert.match(cancel,/loadOrderIntoCart\(orderId, sheetName, \{ switchToSale: false, showSuccessToast: false \}\)/);
+  assert.match(cancel,/sheetName === ['"]dongiao['"] \? ['"]tab-da-giao['"] : ['"]tab-don-tam['"]/);
+  assert.match(cancel,/switchTab\(targetTabId, targetTabBtn\)/);
+  assert.match(cancel,/editingOrderInSaleMode\s*=\s*false/);
+  assert.match(cancel,/openCartMobile\(\)/);
+
+  const d0=runtime.indexOf('if (isDeliveredOrderCart) {');
+  const d1=runtime.indexOf('// Đơn tạm:',d0);
+  const delivered=d0>=0&&d1>d0?runtime.slice(d0,d1):'';
+  assert.match(delivered,/cancelEditingOrder\(\)[\s\S]{0,300}Hủy/);
+
+  const p0=runtime.indexOf('if (isPendingOrderCart) {');
+  const p1=runtime.indexOf('// Ở tab đơn',p0);
+  const pending=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
+  assert.match(pending,/cancelEditingOrder\(\)[\s\S]{0,300}Hủy/);
+});
