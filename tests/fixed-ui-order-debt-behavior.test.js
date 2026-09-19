@@ -285,8 +285,8 @@ test('login screen uses compact floating labels and password visibility toggle',
   assert.match(markup,/text-\[28px\][^"]*text-gray-950\\\">Đăng nhập/);
   assert.doesNotMatch(markup,/Đăng nhập để tiếp tục bán hàng/);
   assert.doesNotMatch(markup,/ph-storefront/);
-  assert.match(markup,/absolute -top-2 left-5[^"]*for=\\\"loginUsername\\\">Tài khoản/);
-  assert.match(markup,/absolute -top-2 left-5[^"]*for=\\\"loginPassword\\\">Mật khẩu/);
+  assert.ok(markup.includes('absolute -top-2 left-5 z-10 bg-white px-2 text-[12px] font-medium text-gray-500\\\" for=\\\"loginUsername\\\">Tài khoản'));
+  assert.ok(markup.includes('absolute -top-2 left-5 z-10 bg-white px-2 text-[12px] font-medium text-gray-500\\\" for=\\\"loginPassword\\\">Mật khẩu'));
   assert.match(markup,/id=\\\"loginPasswordToggle\\\"/);
   assert.match(markup,/toggleLoginPasswordVisibility\(\)/);
   assert.match(markup,/h-14 rounded-\[22px\]/);
