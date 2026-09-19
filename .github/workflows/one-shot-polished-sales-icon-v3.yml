@@ -1,4 +1,4 @@
-name: One-shot polished sales app icon v3
+name: One-shot TAPHOA bag icon v4
 on:
   push:
     branches:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Build polished iOS Android sales icons
+      - name: Build bag-only iOS Android and favicon icons
         run: |
           python -m pip install pillow
           python - <<'PY'
@@ -36,88 +36,105 @@ jobs:
               d=ImageDraw.Draw(im)
               k=S/512.0
               if maskable:
-                  # Keep the complete cart inside Android's central safe zone.
-                  pts=[(145,168),(194,168),(226,316),(343,316),(382,215),(211,215)]
-                  wheel1=(242,371,24)
-                  wheel2=(329,371,24)
-                  width=30
+                  body=(148,190,364,388)
+                  handle=(190,102,322,254)
+                  handle_w=26
+                  hole_r=14
               else:
-                  # Taller/cleaner than the old wide cart; visually centered.
-                  pts=[(116,150),(180,150),(218,326),(356,326),(399,205),(198,205)]
-                  wheel1=(239,386,27)
-                  wheel2=(337,386,27)
-                  width=34
+                  body=(120,168,392,414)
+                  handle=(170,78,342,270)
+                  handle_w=32
+                  hole_r=17
+
+              pts=[
+                  (body[0]+18,body[1]),
+                  (body[2]-18,body[1]),
+                  (body[2],body[3]-34),
+                  (body[2]-18,body[3]),
+                  (body[0]+18,body[3]),
+                  (body[0],body[3]-34),
+              ]
               pts=[(int(x*k),int(y*k)) for x,y in pts]
-              width=max(1,int(width*k))
-              d.line(pts,fill=WHITE,width=width,joint='curve')
-              # Round the exposed handle cap.
-              r=width//2
-              hx,hy=pts[0]
-              d.ellipse((hx-r,hy-r,hx+r,hy+r),fill=WHITE)
-              for cx,cy,rr in (wheel1,wheel2):
-                  cx,cy,rr=int(cx*k),int(cy*k),int(rr*k)
-                  d.ellipse((cx-rr,cy-rr,cx+rr,cy+rr),fill=WHITE)
+              d.polygon(pts,fill=WHITE)
+
+              hb=tuple(int(v*k) for v in handle)
+              w=max(1,int(handle_w*k))
+              d.arc(hb,start=180,end=360,fill=WHITE,width=w)
+              xL=int(handle[0]*k); xR=int(handle[2]*k)
+              ymid=int(((handle[1]+handle[3])/2)*k)
+              ytop=int(body[1]*k)
+              d.line((xL,ymid,xL,ytop+int(16*k)),fill=WHITE,width=w)
+              d.line((xR,ymid,xR,ytop+int(16*k)),fill=WHITE,width=w)
+
+              rr=int(hole_r*k)
+              for x in (xL,xR):
+                  y=int((body[1]+20)*k)
+                  d.ellipse((x-rr,y-rr,x+rr,y+rr),fill=GREEN)
+
               return im.resize((size,size),Image.Resampling.LANCZOS)
 
-          make_icon(180).save(ASSETS/'app-icon-180-v3.png',optimize=True)
-          make_icon(192).save(ASSETS/'app-icon-192-v3.png',optimize=True)
-          make_icon(512).save(ASSETS/'app-icon-512-v3.png',optimize=True)
-          make_icon(512,True).save(ASSETS/'app-icon-maskable-512-v3.png',optimize=True)
+          make_icon(180).save(ASSETS/'app-icon-180-bag-v4.png',optimize=True)
+          make_icon(192).save(ASSETS/'app-icon-192-bag-v4.png',optimize=True)
+          make_icon(512).save(ASSETS/'app-icon-512-bag-v4.png',optimize=True)
+          make_icon(512,True).save(ASSETS/'app-icon-maskable-512-bag-v4.png',optimize=True)
 
           (ASSETS/'app-icon.svg').write_text(
           '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bán Hàng">
             <rect width="512" height="512" fill="#16a34a"/>
-            <path d="M116 150h64l38 176h138l43-121H198" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="239" cy="386" r="27" fill="#fff"/>
-            <circle cx="337" cy="386" r="27" fill="#fff"/>
+            <path d="M138 168h236l18 212c2 20-14 34-34 34H154c-20 0-36-14-34-34z" fill="#fff"/>
+            <path d="M170 176v-12c0-55 38-94 86-94s86 39 86 94v12" fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round"/>
+            <circle cx="170" cy="188" r="17" fill="#16a34a"/>
+            <circle cx="342" cy="188" r="17" fill="#16a34a"/>
+          </svg>
+          ''',encoding='utf-8')
+
+          # Favicon is intentionally its own compact drawing for 16–32px display.
+          (ASSETS/'favicon.svg').write_text(
+          '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Bán Hàng">
+            <rect width="64" height="64" rx="14" fill="#16a34a"/>
+            <path d="M17 25h30l3 23c.4 4-2.6 7-6.8 7H20.8c-4.2 0-7.2-3-6.8-7z" fill="#fff"/>
+            <path d="M22 27v-4c0-7 4.6-12 10-12s10 5 10 12v4" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="22" cy="27" r="2.3" fill="#16a34a"/>
+            <circle cx="42" cy="27" r="2.3" fill="#16a34a"/>
           </svg>
           ''',encoding='utf-8')
 
           index_path=ROOT/'index.html'
           index=index_path.read_text('utf-8')
-          old='<link rel="apple-touch-icon" href="./src/assets/app-icon.svg">'
-          new='<link rel="apple-touch-icon" sizes="180x180" href="./src/assets/app-icon-180-v3.png">'
-          if old in index:
-              index=index.replace(old,new,1)
-          elif new not in index:
-              raise SystemExit('apple-touch-icon anchor not found')
+          index=index.replace(
+              './src/assets/app-icon-180-v3.png',
+              './src/assets/app-icon-180-bag-v4.png'
+          )
           index_path.write_text(index,'utf-8')
 
           manifest_path=ROOT/'manifest.webmanifest'
           manifest=json.loads(manifest_path.read_text('utf-8'))
           manifest['icons']=[
-              {'src':'./src/assets/app-icon-192-v3.png','sizes':'192x192','type':'image/png','purpose':'any'},
-              {'src':'./src/assets/app-icon-512-v3.png','sizes':'512x512','type':'image/png','purpose':'any'},
-              {'src':'./src/assets/app-icon-maskable-512-v3.png','sizes':'512x512','type':'image/png','purpose':'maskable'},
+              {'src':'./src/assets/app-icon-192-bag-v4.png','sizes':'192x192','type':'image/png','purpose':'any'},
+              {'src':'./src/assets/app-icon-512-bag-v4.png','sizes':'512x512','type':'image/png','purpose':'any'},
+              {'src':'./src/assets/app-icon-maskable-512-bag-v4.png','sizes':'512x512','type':'image/png','purpose':'maskable'},
           ]
           manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n','utf-8')
 
           test_path=ROOT/'tests'/'pwa-install-contract.test.js'
           test=test_path.read_text('utf-8')
-          test=test.replace(
-              "assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon.svg' && icon.sizes === 'any' && icon.purpose === 'any'));\n"
-              "  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon.svg' && icon.sizes === 'any' && icon.purpose === 'maskable'));",
-              "assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-192-v3.png' && icon.sizes === '192x192' && icon.purpose === 'any'));\n"
-              "  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'any'));\n"
-              "  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-maskable-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'maskable'));"
-          )
-          test=test.replace(
-              "assert.match(index, /<link\\s+rel=\"apple-touch-icon\"\\s+href=\"\\.\\/src\\/assets\\/app-icon\\.svg\">/);",
-              "assert.match(index, /<link\\s+rel=\"apple-touch-icon\"\\s+sizes=\"180x180\"\\s+href=\"\\.\\/src\\/assets\\/app-icon-180-v3\\.png\">/);"
-          )
+          test=test.replace('app-icon-192-v3.png','app-icon-192-bag-v4.png')
+          test=test.replace('app-icon-512-v3.png','app-icon-512-bag-v4.png')
+          test=test.replace('app-icon-maskable-512-v3.png','app-icon-maskable-512-bag-v4.png')
+          test=test.replace('app-icon-180-v3.png','app-icon-180-bag-v4.png')
           test_path.write_text(test,'utf-8')
 
           version_path=ROOT/'version.json'
           version=json.loads(version_path.read_text('utf-8'))
-          version['ui_fix']='polished-mobile-app-icons-v3'
+          version['ui_fix']='bag-only-app-icons-v4'
           version_path.write_text(json.dumps(version,ensure_ascii=False,indent=2)+'\n','utf-8')
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/assets/app-icon.svg src/assets/app-icon-180-v3.png src/assets/app-icon-192-v3.png src/assets/app-icon-512-v3.png src/assets/app-icon-maskable-512-v3.png index.html manifest.webmanifest tests/pwa-install-contract.test.js version.json
+          git add src/assets/app-icon.svg src/assets/favicon.svg src/assets/app-icon-180-bag-v4.png src/assets/app-icon-192-bag-v4.png src/assets/app-icon-512-bag-v4.png src/assets/app-icon-maskable-512-bag-v4.png index.html manifest.webmanifest tests/pwa-install-contract.test.js version.json
           if git diff --cached --quiet; then
-            echo "sales app icon already current"
+            echo "bag icon already current"
             exit 0
           fi
-          git commit -m "Polish TAPHOA sales mobile icon"
+          git commit -m "Use bag-only TAPHOA app icon"
           git push
