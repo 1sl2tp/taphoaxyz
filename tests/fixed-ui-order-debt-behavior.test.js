@@ -163,7 +163,9 @@ test('new sale cart exposes clear, save-draft, and save-delivered',async()=>{
 
 test('choosing another customer does not clear loaded order identity',async()=>{
   const runtime=await read('src/fixed-ui-runtime-6.js');
-  const block=runtime.match(/function selectCustomer\(id, name\) \{([\s\S]*?)\n\s*\}/)?.[1]||'';
+  const start=runtime.indexOf('function selectCustomer(id, name) {');
+  const end=runtime.indexOf('// ==========================================',start);
+  const block=start>=0&&end>start?runtime.slice(start,end):'';
   assert.match(block,/selectedCustomer\s*=\s*\{ id, name \}/);
   assert.match(block,/renderCartFooterActions\(\)/);
   assert.doesNotMatch(block,/editingOrderId\s*=|editingOrderSheet\s*=|resetSaleSession\(\)/);
