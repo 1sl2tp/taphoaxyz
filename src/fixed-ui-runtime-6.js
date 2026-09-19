@@ -1,5 +1,9 @@
         function renderCartUI() {
-            const isDeliveredReadOnlyPreview = currentAuthRole === 'user' && editingOrderSheet === 'dongiao';
+            const activeTabId = getActiveTabId();
+            const isOrderPreview = !!editingOrderId && !!editingOrderSheet
+                && (activeTabId === 'tab-da-giao' || activeTabId === 'tab-don-tam' || activeTabId === 'tab-cong-no')
+                && !editingOrderInSaleMode;
+            const isDeliveredReadOnlyPreview = (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') || isOrderPreview;
             let totalQty = 0; let totalPrice = 0; let index = 1; let html = '';
             const cartEntries = Object.entries(cart).sort(([, a], [, b]) =>
                 (Number(b.__lastTouched) || 0) - (Number(a.__lastTouched) || 0)
@@ -206,10 +210,31 @@
                 return;
             }
 
+            const previousCustomerId = String(selectedCustomer?.id || '');
+            const nextCustomerId = String(id || '');
+            const isDifferentCustomer = !!previousCustomerId && previousCustomerId !== nextCustomerId;
+
+            if (isDifferentCustomer) {
+                cart = {};
+                editingOrderId = null;
+                editingOrderSheet = null;
+                editingOrderInSaleMode = false;
+                viewingOrderId = null;
+                window.activeViewingSheet = null;
+                const badge = document.getElementById('cartEditBadge');
+                if (badge) badge.classList.add('hidden');
+            }
+
             selectedCustomer = { id, name };
             document.getElementById('selectedCustomerDisplay').innerText = name;
+            renderProductList();
+            renderCartUI();
             renderCartFooterActions();
             closeCustomerModal();
+
+            if (isDifferentCustomer) {
+                showToast('Đã đổi khách và xóa dữ liệu nhập cũ.', 'success');
+            }
         }
 
         // ==========================================

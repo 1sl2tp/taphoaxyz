@@ -251,7 +251,11 @@
             editingOrderId = orderId;
             editingOrderSheet = sheetName;
             editingOrderInSaleMode = Boolean(switchToSale);
-            document.getElementById('cartEditBadge').classList.remove('hidden');
+            const cartEditBadge = document.getElementById('cartEditBadge');
+            if (cartEditBadge) {
+                cartEditBadge.innerText = switchToSale ? 'Đang sửa đơn' : 'Đang xem đơn';
+                cartEditBadge.classList.remove('hidden');
+            }
 
             renderProductList();
             renderCartUI();

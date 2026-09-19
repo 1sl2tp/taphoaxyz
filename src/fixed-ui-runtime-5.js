@@ -108,8 +108,17 @@
 
         function goToBanHangForEditing() {
             if (!editingOrderId || !editingOrderSheet) return;
+            editingOrderInSaleMode = true;
+            const badge = document.getElementById('cartEditBadge');
+            if (badge) {
+                badge.innerText = 'Đang sửa đơn';
+                badge.classList.remove('hidden');
+            }
             const tabBanHangBtn = document.querySelector('.tab-btn[onclick*="tab-ban-hang"]');
             if (tabBanHangBtn) switchTab('tab-ban-hang', tabBanHangBtn);
+            renderProductList();
+            renderCartUI();
+            renderCartFooterActions();
             showToast('Đã chuyển về Bán hàng để tiếp tục sửa đơn ' + editingOrderId, 'success');
         }
 
@@ -157,6 +166,18 @@
             const isDeliveredOrderCart = hasSelectedOrder && editingOrderSheet === 'dongiao';
             const isPendingOrderCart = hasSelectedOrder && editingOrderSheet === 'dontam';
             const canPromoteDraft = !isUser && isPendingOrderCart && hasItems && hasCustomer;
+
+            const isOrderPreview = hasSelectedOrder && (isOrderTab || isDebtOrderPreview);
+            if (isOrderPreview) {
+                owner.innerHTML = `
+                    <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
+                        <i class="ph ph-trash"></i> Xóa đơn
+                    </button>
+                    <button ${canSwitchToSale ? 'onclick="goToBanHangForEditing()"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canSwitchToSale ? enabledPrimaryBtn : disabledBtn}">
+                        <i class="ph ph-pencil-simple"></i> Sửa
+                    </button>`;
+                return;
+            }
 
             // Đã giao: sửa trực tiếp trong Giỏ, không cần bước "Sửa" trung gian.
             if (isDeliveredOrderCart) {

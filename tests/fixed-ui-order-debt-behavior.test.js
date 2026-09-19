@@ -108,27 +108,45 @@ test('debt surplus is shown as a positive amount with surplus wording instead of
 });
 
 
-test('delivered order cart uses delete-content, delete-order, update without a separate edit step',async()=>{
+test('order opened from delivered or pending tab is preview-only until switching to sales',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(runtime,/const\s+isDeliveredOrderCart\s*=\s*hasSelectedOrder\s*&&\s*editingOrderSheet\s*===\s*['"]dongiao['"]/);
-  const block=runtime.match(/if \(isDeliveredOrderCart\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
-  assert.match(block,/clearEditingOrderContent\(\)[\s\S]{0,500}> Xóa/);
-  assert.match(block,/requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
-  assert.match(block,/updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
-  assert.doesNotMatch(block,/> Sửa|goToBanHangForEditing\(\)|Lưu tạm|BÁN NGAY/);
+  assert.match(runtime,/const\s+isOrderPreview\s*=\s*hasSelectedOrder[\s\S]{0,180}\(isOrderTab \|\| isDebtOrderPreview\)/);
+  const preview=runtime.match(/if \(isOrderPreview\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
+  assert.match(preview,/requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
+  assert.match(preview,/goToBanHangForEditing\(\)[\s\S]{0,500}> Sửa/);
+  assert.doesNotMatch(preview,/Cập nhật|Lưu đã giao|clearEditingOrderContent\(\)/);
 });
 
 
-test('pending order cart separates clear-content, delete-order, update, and save-delivered',async()=>{
+test('switching an opened order to sales enables its source-specific edit actions',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(runtime,/const\s+isPendingOrderCart\s*=\s*hasSelectedOrder\s*&&\s*editingOrderSheet\s*===\s*['"]dontam['"]/);
-  assert.match(runtime,/const\s+canPromoteDraft\s*=\s*!isUser[\s\S]{0,160}isPendingOrderCart[\s\S]{0,160}hasItems[\s\S]{0,160}hasCustomer/);
-  const block=runtime.match(/if \(isPendingOrderCart\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
-  assert.match(block,/clearEditingOrderContent\(\)[\s\S]{0,500}> Xóa/);
-  assert.match(block,/requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
-  assert.match(block,/updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
-  assert.match(block,/dayToanBoGioHang\(\\?'dongiao\\?'\)[\s\S]{0,700}Lưu đã giao/);
-  assert.doesNotMatch(block,/> Sửa|goToBanHangForEditing\(\)|Lưu tạm|BÁN NGAY/);
+  const go=runtime.match(/function goToBanHangForEditing\(\) \{([\s\S]*?)\n\s*\}/)?.[1]||'';
+  assert.match(go,/editingOrderInSaleMode\s*=\s*true/);
+  assert.match(go,/switchTab\(['"]tab-ban-hang['"]/);
+  assert.match(runtime,/if \(isDeliveredOrderCart\)[\s\S]{0,1800}Xóa đơn[\s\S]{0,1000}Cập nhật/);
+  assert.match(runtime,/if \(isPendingOrderCart\)[\s\S]{0,2200}Xóa đơn[\s\S]{0,1000}Cập nhật[\s\S]{0,1200}Lưu đã giao/);
+});
+
+
+test('order-tab cart quantity is readonly until edit mode in sales',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-6.js');
+  assert.match(runtime,/const\s+isOrderPreview\s*=\s*!!editingOrderId[\s\S]{0,260}tab-da-giao[\s\S]{0,260}tab-don-tam[\s\S]{0,260}!editingOrderInSaleMode/);
+  assert.match(runtime,/isDeliveredReadOnlyPreview[\s\S]{0,1000}cart-qty-readonly/);
+});
+
+
+test('choosing a different customer clears old input and loaded-order identity',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-6.js');
+  const start=runtime.indexOf('function selectCustomer(id, name) {');
+  const end=runtime.indexOf('// ==========================================',start);
+  const block=start>=0&&end>start?runtime.slice(start,end):'';
+  assert.match(block,/isDifferentCustomer/);
+  assert.match(block,/cart\s*=\s*\{\}/);
+  assert.match(block,/editingOrderId\s*=\s*null/);
+  assert.match(block,/editingOrderSheet\s*=\s*null/);
+  assert.match(block,/editingOrderInSaleMode\s*=\s*false/);
+  assert.match(block,/renderProductList\(\)/);
+  assert.match(block,/renderCartUI\(\)/);
 });
 
 
@@ -161,12 +179,3 @@ test('new sale cart exposes clear, save-draft, and save-delivered',async()=>{
 });
 
 
-test('choosing another customer does not clear loaded order identity',async()=>{
-  const runtime=await read('src/fixed-ui-runtime-6.js');
-  const start=runtime.indexOf('function selectCustomer(id, name) {');
-  const end=runtime.indexOf('// ==========================================',start);
-  const block=start>=0&&end>start?runtime.slice(start,end):'';
-  assert.match(block,/selectedCustomer\s*=\s*\{ id, name \}/);
-  assert.match(block,/renderCartFooterActions\(\)/);
-  assert.doesNotMatch(block,/editingOrderId\s*=|editingOrderSheet\s*=|resetSaleSession\(\)/);
-});
