@@ -231,8 +231,8 @@
                 renderCartFooterActions();
                 return;
             }
-            selectedCustomer = { id: "", name: "Chọn khách hàng" };
-            document.getElementById('selectedCustomerDisplay').innerText = "Chọn khách hàng";
+            selectedCustomer = { id: "", name: "Chọn khách" };
+            document.getElementById('selectedCustomerDisplay').innerText = "Chọn khách";
             renderCartFooterActions();
         }
 
