@@ -287,8 +287,8 @@ test('login screen matches the outlined welcome layout',async()=>{
 
   assert.match(login,/Chào mừng trở lại/);
   assert.match(login,/login-outline-field/);
-  assert.match(login,/login-outline-legend[^>]*>Tài khoản<\/legend>/);
-  assert.match(login,/login-outline-legend[^>]*>Mật khẩu<\/legend>/);
+  assert.match(login,/login-outline-legend[^>]*for=\\\"loginUsername\\\"[^>]*>Tài khoản<\/label>/);
+  assert.match(login,/login-outline-legend[^>]*for=\\\"loginPassword\\\"[^>]*>Mật khẩu<\/label>/);
   assert.match(login,/id=\\\"loginPasswordToggle\\\"/);
   assert.ok(login.includes('bg-[#171717] text-white font-bold text-[15px]'));
   assert.ok(login.includes('>Đăng nhập</button>'));
