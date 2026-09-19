@@ -54,7 +54,7 @@
         }
         function closeCartMobile() {
             // Khi đang sửa trên mobile, nút X chỉ đóng sheet Giỏ để người dùng sửa sản phẩm ở Bán hàng.
-            // Hủy sửa phải dùng nút Hủy rõ nghĩa ở footer, tránh bấm X nhầm làm quay lại Đã giao/Đơn tạm.
+            // editingOrderInSaleMode: không gọi cancelEditingOrder(); Hủy sửa phải dùng nút Hủy ở footer.
 
             // Đóng một preview thì bỏ luôn đơn preview; không giữ "đơn gần nhất" trong Giỏ.
             if (editingOrderId && editingOrderSheet && !editingOrderInSaleMode) {
