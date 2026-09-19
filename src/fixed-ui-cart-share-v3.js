@@ -22,8 +22,34 @@
       .replace(/&/g,'&amp;')
       .replace(/</g,'&lt;')
       .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
+      .replace(/\"/g,'&quot;')
       .replace(/'/g,'&#39;');
+  }
+
+  function isShareCancel(error){
+    const name=String(error?.name||'');
+    const message=String(error?.message||error||'');
+    return /abort|cancel|canceled|cancelled/i.test(name+' '+message);
+  }
+
+  function hideShareLoading(){
+    if(typeof hideLoading==='function') hideLoading();
+  }
+
+  async function shareOrDownloadPng(blob,fileName,title,text){
+    const file=new File([blob],fileName,{type:'image/png'});
+    const canNativeShare=!!(navigator.share && navigator.canShare && navigator.canShare({files:[file]}));
+    hideShareLoading();
+    if(canNativeShare){
+      await navigator.share({files:[file],title,text});
+      return;
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=fileName;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
   function getOrderMeta(){
@@ -84,7 +110,7 @@
     capture.style.width='720px';
     capture.style.background='#fff';
     capture.style.color='#1f2937';
-    capture.style.fontFamily='"Be Vietnam Pro",sans-serif';
+    capture.style.fontFamily='\"Be Vietnam Pro\",sans-serif';
     capture.style.boxSizing='border-box';
     const metaTitle=meta.isCreatingSaleDraft
       ? 'Đơn đang tạo'
@@ -121,6 +147,109 @@
     return {host,capture,totalQty,totalPrice,meta};
   }
 
+  function prepareDetailClone(source){
+    const sourceWidth=Math.ceil(source.getBoundingClientRect().width);
+    const width=Math.min(760,Math.max(360,sourceWidth));
+    const clone=source.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.width=width+'px';
+    clone.style.height='auto';
+    clone.style.maxHeight='none';
+    clone.style.minHeight='0';
+    clone.style.overflow='visible';
+    clone.style.flex='none';
+
+    const cloneItems=clone.querySelector('#detailModalItems');
+    if(cloneItems){
+      cloneItems.removeAttribute('id');
+      cloneItems.style.height='auto';
+      cloneItems.style.maxHeight='none';
+      cloneItems.style.minHeight='0';
+      cloneItems.style.overflow='visible';
+      cloneItems.style.flex='none';
+    }
+
+    clone.querySelectorAll('.order-detail-compact-grid').forEach(row=>{
+      row.style.minHeight='34px';
+      row.style.height='auto';
+      row.style.overflow='visible';
+      row.style.alignItems='center';
+    });
+
+    clone.querySelectorAll('.order-name').forEach(name=>{
+      name.style.overflow='visible';
+      name.style.textOverflow='clip';
+      name.style.whiteSpace='normal';
+      name.style.lineHeight='1.35';
+      name.style.paddingTop='2px';
+      name.style.paddingBottom='2px';
+    });
+
+    const host=document.createElement('div');
+    host.setAttribute('aria-hidden','true');
+    host.style.position='fixed';
+    host.style.left='-100000px';
+    host.style.top='0';
+    host.style.width=width+'px';
+    host.style.height='auto';
+    host.style.overflow='visible';
+    host.style.background='#ffffff';
+    host.style.pointerEvents='none';
+    host.style.zIndex='-1';
+    host.appendChild(clone);
+    document.body.appendChild(host);
+    return {host,clone,width};
+  }
+
+  async function canvasToPngBlob(target,width,height,errorMessage){
+    const canvas=await html2canvas(target,{
+      scale:2,
+      useCORS:true,
+      backgroundColor:'#ffffff',
+      width,
+      height,
+      windowWidth:width,
+      windowHeight:height,
+      scrollX:0,
+      scrollY:0
+    });
+    return new Promise((resolve,reject)=>{
+      canvas.toBlob(result=>result?resolve(result):reject(new Error(errorMessage)),'image/png');
+    });
+  }
+
+  async function shareDetailOrderImageV3(){
+    const source=document.getElementById('orderDetailContentToShare');
+    if(!source){
+      if(originalShareOrderImage) return originalShareOrderImage();
+      return;
+    }
+
+    let built=null;
+    try{
+      if(typeof showLoading==='function') showLoading('Đang tạo ảnh...');
+      if(!window.html2canvas) throw new Error('Chưa tải thư viện tạo ảnh.');
+
+      built=prepareDetailClone(source);
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
+      const height=Math.ceil(built.clone.scrollHeight)+4;
+      const blob=await canvasToPngBlob(built.clone,built.width,height,'Không tạo được ảnh đơn hàng.');
+      const rawOrderId=(typeof editingOrderId!=='undefined' && editingOrderId)
+        || document.getElementById('detailModalTitle')?.textContent?.trim()
+        || '';
+      const safeId=String(rawOrderId).replace(/[^a-zA-Z0-9_-]+/g,'_');
+      const fileName=(safeId?'donhang_'+safeId:'donhang')+'.png';
+      await shareOrDownloadPng(blob,fileName,'Đơn hàng','Chi tiết đơn hàng');
+    }catch(error){
+      if(isShareCancel(error)) return;
+      if(typeof showAlertPopup==='function') showAlertPopup('Lỗi tạo ảnh',error?.message||String(error));
+    }finally{
+      built?.host?.remove();
+      hideShareLoading();
+    }
+  }
+
   async function shareCartOrderImageV3(){
     const entries=currentCartEntries();
     if(!entries.length){
@@ -130,7 +259,7 @@
 
     let built=null;
     try{
-      if(typeof showLoading==='function') showLoading('Đang tạo ảnh gửi Zalo...');
+      if(typeof showLoading==='function') showLoading('Đang tạo ảnh...');
       if(!window.html2canvas) throw new Error('Chưa tải thư viện tạo ảnh.');
 
       built=buildCapture(entries);
@@ -138,42 +267,19 @@
 
       const width=Math.ceil(built.capture.scrollWidth);
       const height=Math.ceil(built.capture.scrollHeight)+2;
-      const canvas=await html2canvas(built.capture,{
-        scale:2,
-        useCORS:true,
-        backgroundColor:'#ffffff',
-        width,
-        height,
-        windowWidth:width,
-        windowHeight:height,
-        scrollX:0,
-        scrollY:0
-      });
-      const blob=await new Promise((resolve,reject)=>{
-        canvas.toBlob(result=>result?resolve(result):reject(new Error('Không tạo được ảnh giỏ hàng.')),'image/png');
-      });
+      const blob=await canvasToPngBlob(built.capture,width,height,'Không tạo được ảnh giỏ hàng.');
 
       const safeId=String(built.meta.orderId||'').replace(/[^a-zA-Z0-9_-]+/g,'_');
       const fileName=(safeId ? 'donhang_'+safeId : 'don_dang_tao')+'.png';
-      const file=new File([blob],fileName,{type:'image/png'});
       const shareTitle=built.meta.isCreatingSaleDraft ? 'Đơn đang tạo' : 'Đơn hàng';
       const shareText=built.meta.isCreatingSaleDraft ? 'Chi tiết đơn đang tạo' : 'Chi tiết đơn hàng';
-
-      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:shareTitle,text:shareText});
-      }else{
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url;
-        a.download=fileName;
-        a.click();
-        setTimeout(()=>URL.revokeObjectURL(url),1000);
-      }
+      await shareOrDownloadPng(blob,fileName,shareTitle,shareText);
     }catch(error){
+      if(isShareCancel(error)) return;
       if(typeof showAlertPopup==='function') showAlertPopup('Lỗi tạo ảnh',error?.message||String(error));
     }finally{
       built?.host?.remove();
-      if(typeof hideLoading==='function') hideLoading();
+      hideShareLoading();
     }
   }
 
@@ -181,7 +287,7 @@
 
   window.shareOrderImage=function(...args){
     if(isCartOpen() && currentCartEntries().length) return shareCartOrderImageV3();
-    if(originalShareOrderImage) return originalShareOrderImage.apply(this,args);
+    return shareDetailOrderImageV3.apply(this,args);
   };
 
   const cartShareBtn=document.getElementById('cartShareOrderBtn');
