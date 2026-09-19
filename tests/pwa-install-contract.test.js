@@ -11,9 +11,9 @@ test('PWA is branded Bán Hàng and uses separate favicon and app icons', () => 
   assert.equal(manifest.display, 'standalone');
   assert.equal(manifest.start_url, './');
   assert.equal(manifest.scope, './');
-  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-192-v3.png' && icon.sizes === '192x192' && icon.purpose === 'any'));
-  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'any'));
-  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-maskable-512-v3.png' && icon.sizes === '512x512' && icon.purpose === 'maskable'));
+  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-192-bag-v4.png' && icon.sizes === '192x192' && icon.purpose === 'any'));
+  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-512-bag-v4.png' && icon.sizes === '512x512' && icon.purpose === 'any'));
+  assert.ok(manifest.icons.some(icon => icon.src === './src/assets/app-icon-maskable-512-bag-v4.png' && icon.sizes === '512x512' && icon.purpose === 'maskable'));
   assert.ok(!manifest.icons.some(icon => String(icon.src || '').includes('logo.jpg')));
   assert.ok(!manifest.icons.some(icon => String(icon.src || '').includes('favicon.svg')));
 
