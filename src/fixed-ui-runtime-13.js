@@ -12,15 +12,11 @@
             loadOrderIntoCart(orderId, sheetName, { switchToSale: true, showSuccessToast: true });
         }
 
-        function showOrderDetailMobile(orderId, sheetName) {
-            let modalWrap = document.getElementById('orderDetailModalWrapper');
-            if(!modalWrap) return; // Thêm check an toàn
-            
-            modalWrap.classList.remove('hidden');
+        function populateOrderDetailContent(orderId, sheetName) {
             document.getElementById('detailModalTitle').innerText = orderId;
-            
+
             let items = appData[sheetName].slice(1).filter(r => String(r[0]).trim() === orderId);
-            if(items.length === 0) return;
+            if(items.length === 0) return false;
 
             let maKh = items[0][1]; let timeStr = items[0][6] || '';
             let spDict = {}; appData.sanpham.slice(1).forEach(sp => { spDict[sp[0]] = sp[1]; });
@@ -61,12 +57,25 @@
                 btnEdit.style.display = 'flex';
                 btnEdit.setAttribute('onclick', `editOrder('${orderId}', '${sheetName}')`);
             }
+            return true;
+        }
 
-            modalWrap.classList.remove('opacity-0', 'pointer-events-none');
+        function showOrderDetailMobile(orderId, sheetName) {
+            let modalWrap = document.getElementById('orderDetailModalWrapper');
+            if(!modalWrap) return;
+            if (!populateOrderDetailContent(orderId, sheetName)) return;
+
+            modalWrap.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 let bottomSheet = document.getElementById('orderDetailBottomSheet');
                 if(bottomSheet) bottomSheet.classList.remove('translate-y-full');
             }, 10);
+        }
+
+        async function shareLoadedOrderImage() {
+            if (!editingOrderId || !editingOrderSheet) return;
+            if (!populateOrderDetailContent(editingOrderId, editingOrderSheet)) return;
+            await shareOrderImage();
         }
 
         function closeOrderMobile() {

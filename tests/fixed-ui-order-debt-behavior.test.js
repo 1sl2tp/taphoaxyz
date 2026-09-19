@@ -121,3 +121,20 @@ test('editing a delivered order on the sales screen uses edit actions instead of
   const block=runtime.match(/if \(isEditingDeliveredOnSale\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
   assert.doesNotMatch(block,/Lưu tạm|BÁN NGAY|dayToanBoGioHang\(['"]dontam['"]\)/);
 });
+
+
+test('loaded delivered and pending order carts expose the existing share action',async()=>{
+  const markup=await read('src/fixed-ui-markup-3.js');
+  const footer=await read('src/fixed-ui-runtime-5.js');
+  const order=await read('src/fixed-ui-runtime-13.js');
+
+  assert.match(markup,/id=\\?"cartShareOrderBtn\\?"[\s\S]{0,280}shareLoadedOrderImage\(\)/);
+  assert.match(markup,/cartShareOrderBtn[\s\S]{0,720}closeCartMobile\(\)/);
+
+  assert.match(footer,/const\s+hasLoadedOrder\s*=\s*!!editingOrderId\s*&&\s*!!editingOrderSheet/);
+  assert.match(footer,/cartShareOrderBtn[\s\S]{0,260}classList\.toggle\(['"]hidden['"],\s*!hasLoadedOrder\)/);
+
+  assert.match(order,/function\s+populateOrderDetailContent\s*\(orderId,\s*sheetName\)/);
+  assert.match(order,/async function\s+shareLoadedOrderImage\s*\(\)[\s\S]{0,300}editingOrderId[\s\S]{0,300}editingOrderSheet[\s\S]{0,300}shareOrderImage\(\)/);
+  assert.match(order,/function\s+clickOrder\s*\(orderId,\s*sheetName\)[\s\S]{0,320}loadOrderIntoCart\(orderId,\s*sheetName/);
+});
