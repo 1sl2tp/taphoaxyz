@@ -1,33 +1,43 @@
-        function clearUserDeliveredPreviewForEditableTab(tabId) {
-            const enteringEditableArea = tabId === 'tab-ban-hang' || tabId === 'tab-don-tam';
-            if (currentAuthRole !== 'user' || !enteringEditableArea || editingOrderSheet !== 'dongiao') return;
+        function clearOrderPreviewOnTabSwitch(tabId) {
+            if (!editingOrderId || !editingOrderSheet || editingOrderInSaleMode) return;
 
-            // User chỉ được xem Đã giao. Khi rời vùng xem để quay lại vùng có thể thao tác,
-            // phải bỏ toàn bộ state của đơn đã giao để không khóa Lưu tạm và không thể sửa nhầm Đã giao.
+            const activeTabId = document.querySelector('.tab-content.active')?.id || '';
+            const previewTabs = new Set(['tab-da-giao', 'tab-don-tam', 'tab-cong-no']);
+            const isLeavingPreviewTab = previewTabs.has(activeTabId) && tabId !== activeTabId;
+            if (!isLeavingPreviewTab) return;
+
+            // Preview chỉ thuộc tab đang xem. Chuyển tab mà không qua "Sửa" thì Giỏ phải trắng.
             cart = {};
             editingOrderId = null;
             editingOrderSheet = null;
             editingOrderInSaleMode = false;
             viewingOrderId = null;
             window.activeViewingSheet = null;
-            syncUserSelfCustomer();
 
             const badge = document.getElementById('cartEditBadge');
             if (badge) badge.classList.add('hidden');
+
+            if (currentAuthRole === 'user' && typeof syncUserSelfCustomer === 'function') {
+                syncUserSelfCustomer();
+            } else {
+                selectedCustomer = { id: "", name: "Chọn khách" };
+                const customerDisplay = document.getElementById('selectedCustomerDisplay');
+                if (customerDisplay) customerDisplay.innerText = "Chọn khách";
+            }
 
             renderProductList();
             renderCartUI();
         }
 
         function switchTab(tabId, element) {
-            clearUserDeliveredPreviewForEditableTab(tabId);
-
             if (tabId === 'tab-da-giao' && !hasPermission('canViewDelivered')) {
                 return denyPermission('User không được xem Đã giao.');
             }
             if (tabId === 'tab-cong-no' && !hasPermission('canViewDebt')) {
                 return denyPermission('Công nợ chỉ dành cho Owner.');
             }
+
+            clearOrderPreviewOnTabSwitch(tabId);
             document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('text-primary', 'border-primary'); btn.classList.add('text-gray-400', 'border-transparent'); });
             element.classList.remove('text-gray-400', 'border-transparent'); element.classList.add('text-primary', 'border-primary');
 

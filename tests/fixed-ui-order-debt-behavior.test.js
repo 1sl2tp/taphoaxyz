@@ -238,3 +238,26 @@ test('delete-order UI uses only common delete wording',async()=>{
   assert.match(block,/Đã xóa đơn/);
   assert.doesNotMatch(block,/Hoàn|hoàn/);
 });
+
+
+test('switching away from an order preview clears the preview unless edit mode is active',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-2.js');
+  const s0=runtime.indexOf('function clearOrderPreviewOnTabSwitch(tabId) {');
+  const s1=runtime.indexOf('function switchTab(tabId, element) {',s0);
+  const clear=s0>=0&&s1>s0?runtime.slice(s0,s1):'';
+  assert.match(clear,/!editingOrderId \|\| !editingOrderSheet \|\| editingOrderInSaleMode/);
+  assert.match(clear,/tab-da-giao/);
+  assert.match(clear,/tab-don-tam/);
+  assert.match(clear,/tab-cong-no/);
+  assert.match(clear,/tabId !== activeTabId/);
+  assert.match(clear,/cart\s*=\s*\{\}/);
+  assert.match(clear,/editingOrderId\s*=\s*null/);
+  assert.match(clear,/editingOrderSheet\s*=\s*null/);
+  assert.match(clear,/viewingOrderId\s*=\s*null/);
+  assert.match(clear,/selectedCustomer\s*=\s*\{ id: "", name: "Chọn khách" \}/);
+
+  const sw0=runtime.indexOf('function switchTab(tabId, element) {');
+  const sw1=runtime.indexOf('function resolveAutoMode()',sw0);
+  const sw=sw0>=0&&sw1>sw0?runtime.slice(sw0,sw1):'';
+  assert.match(sw,/clearOrderPreviewOnTabSwitch\(tabId\)/);
+});
