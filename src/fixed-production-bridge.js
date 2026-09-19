@@ -2,6 +2,7 @@ import {createAuthService} from './core/auth.js';
 import {createApi} from './core/api.js';
 import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
+import {CONFIG} from './core/config.js';
 
 const auth=createAuthService();
 const business=createApi({clientProvider:auth.getClient});
@@ -51,6 +52,14 @@ function mapProductRows(state=appState.get()){
   ];
 }
 
+function customerAvatarUrl(value){
+  const raw=text(value).trim();
+  if(!raw)return '';
+  if(/^https?:\/\//i.test(raw))return raw;
+  const path=raw.split('/').filter(Boolean).map(part=>encodeURIComponent(part)).join('/');
+  return `${CONFIG.supabaseUrl}/storage/v1/object/public/v21-avatars/${path}`;
+}
+
 function mapCustomerRows(state=appState.get()){
   return [
     ['Mã KH','Tên khách','Username','','Vai trò','Avatar'],
@@ -60,7 +69,7 @@ function mapCustomerRows(state=appState.get()){
       text(first(c,['username','user_name','login'],'')),
       '',
       text(first(c,['role'],'user')),
-      text(first(c,['avatar','avatar_url','avatar_path'],''))
+      customerAvatarUrl(first(c,['avatar','avatar_url','avatar_path'],''))
     ])
   ];
 }

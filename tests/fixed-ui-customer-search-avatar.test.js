@@ -27,6 +27,12 @@ test('customer selector has realtime accent-insensitive search shared by sales a
 test('customer avatar flows from v21 account data through frontend rows into selector UI', () => {
   assert.match(bridge, /avatar_path|avatar_url|avatar/,
     'customer sheet rows must carry an avatar field');
+  assert.match(bridge, /function customerAvatarUrl\s*\(/,
+    'storage avatar paths must be resolved into browser-safe URLs');
+  assert.match(bridge, /storage\/v1\/object\/public\/v21-avatars/,
+    'customer avatar resolver must use the shared public avatar bucket');
+  assert.match(bridge, /CONFIG\.supabaseUrl/,
+    'customer avatar URL must come from the shared Supabase configuration');
   assert.match(runtime6, /customer-avatar/,
     'customer rows must render an avatar or fallback');
   assert.match(runtime6, /kh\[5\]/,
