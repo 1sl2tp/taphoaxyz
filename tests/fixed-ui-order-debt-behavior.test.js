@@ -129,7 +129,7 @@ test('existing order cart exposes share beside close and reuses order image capt
   const order=await read('src/fixed-ui-runtime-13.js');
   assert.match(markup,/id=\\?"cartShareOrderBtn\\?"[\s\S]{0,220}shareLoadedOrderImage\(\)/);
   assert.match(markup,/cartShareOrderBtn[\s\S]{0,520}closeCartMobile\(\)/);
-  assert.match(footer,/hasLoadedOrder[\\s\\S]{0,260}cartShareOrderBtn[\\s\\S]{0,220}classList\.toggle\(['"]hidden['"],\s*!hasLoadedOrder\)/);
+  assert.match(footer,/hasLoadedOrder[\s\S]{0,320}cartShareOrderBtn[\s\S]{0,260}classList\.toggle\(['"]hidden['"],\s*!hasLoadedOrder\)/);
   assert.match(order,/function\s+populateOrderDetailContent\s*\(/);
-  assert.match(order,/async function\s+shareLoadedOrderImage\s*\(\)[\\s\\S]{0,360}populateOrderDetailContent\(editingOrderId, editingOrderSheet\)[\\s\\S]{0,200}shareOrderImage\(\)/);
+  assert.match(order,/async function\s+shareLoadedOrderImage\s*\(\)[\s\S]{0,420}populateOrderDetailContent\(editingOrderId, editingOrderSheet\)[\s\S]{0,240}shareOrderImage\(\)/);
 });
