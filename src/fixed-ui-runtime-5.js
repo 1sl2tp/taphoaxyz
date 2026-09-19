@@ -154,16 +154,17 @@
             const enabledOutlinePrimaryBtn = 'hover:bg-primaryLight';
             const enabledPrimaryBtn = 'hover:bg-primary/90 shadow-lg shadow-primary/30';
 
-            const isEditingDeliveredOnSale = editingOrderInSaleMode
-                && hasSelectedOrder
-                && editingOrderSheet === 'dongiao';
+            const isDeliveredOrderCart = hasSelectedOrder && editingOrderSheet === 'dongiao';
+            const isPendingOrderCart = hasSelectedOrder && editingOrderSheet === 'dontam';
+            const canPromoteDraft = !isUser && isPendingOrderCart && hasItems && hasCustomer;
 
-            if (isEditingDeliveredOnSale) {
+            // Đã giao: sửa trực tiếp trong Giỏ, không cần bước "Sửa" trung gian.
+            if (isDeliveredOrderCart) {
                 owner.innerHTML = `
                     <button ${hasItems ? 'onclick="clearEditingOrderContent()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${hasItems ? enabledNeutralBtn : disabledBtn}">
                         <i class="ph ph-trash"></i> Xóa
                     </button>
-                    <button onclick="requestDeleteEditingOrder()" class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${enabledDangerBtn}">
+                    <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
                         <i class="ph ph-trash"></i> Xóa đơn
                     </button>
                     <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledPrimaryBtn : disabledBtn}">
@@ -172,17 +173,25 @@
                 return;
             }
 
-            if (isOrderTab || isDebtOrderPreview) {
+            // Đơn tạm: Xóa đơn tạm, cập nhật tại chỗ, hoặc duyệt thẳng sang Đã giao.
+            if (isPendingOrderCart) {
                 owner.innerHTML = `
                     <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
-                        <i class="ph ph-trash"></i> Xóa đơn
+                        <i class="ph ph-trash"></i> Xóa
                     </button>
-                    <button ${canSwitchToSale ? 'onclick="goToBanHangForEditing()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-orange-300 text-orange-500 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canSwitchToSale ? 'hover:bg-orange-50' : disabledBtn}">
-                        <i class="ph ph-pencil-simple"></i> Sửa
+                    <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledOutlinePrimaryBtn : disabledBtn}">
+                        <i class="ph ph-floppy-disk"></i> Cập nhật
                     </button>
-                    <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledPrimaryBtn : disabledBtn}">
-                        <i class="ph-fill ph-check-circle"></i> Cập nhật
-                    </button>`;
+                    ${!isUser ? `
+                    <button ${canPromoteDraft ? 'onclick="dayToanBoGioHang(\'dongiao\')"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
+                        <i class="ph-fill ph-check-circle"></i> Đã giao
+                    </button>` : ''}`;
+                return;
+            }
+
+            // Ở tab đơn nhưng chưa nạp đúng một đơn thì không hiện hành động bán hàng mặc định.
+            if (isOrderTab || isDebtOrderPreview) {
+                owner.innerHTML = '';
                 return;
             }
 

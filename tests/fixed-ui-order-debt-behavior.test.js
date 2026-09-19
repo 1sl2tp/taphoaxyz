@@ -108,18 +108,26 @@ test('debt surplus is shown as a positive amount with surplus wording instead of
 });
 
 
-test('editing a delivered order on the sales screen uses edit actions instead of draft/sell actions',async()=>{
-  const globals=await read('src/fixed-ui-runtime-1.js');
+test('delivered order cart uses delete-content, delete-order, update without a separate edit step',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  const loader=await read('src/fixed-ui-runtime-12.js');
-  assert.match(globals,/let\s+editingOrderInSaleMode\s*=\s*false/);
-  assert.match(loader,/editingOrderInSaleMode\s*=\s*Boolean\(switchToSale\)/);
-  assert.match(runtime,/const\s+isEditingDeliveredOnSale\s*=\s*editingOrderInSaleMode[\s\S]{0,160}editingOrderSheet\s*===\s*['"]dongiao['"]/);
-  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,1200}clearEditingOrderContent\(\)[\s\S]{0,500}> Xóa/);
-  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,1600}requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
-  assert.match(runtime,/isEditingDeliveredOnSale[\s\S]{0,2200}updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
-  const block=runtime.match(/if \(isEditingDeliveredOnSale\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
-  assert.doesNotMatch(block,/Lưu tạm|BÁN NGAY|dayToanBoGioHang\(['"]dontam['"]\)/);
+  assert.match(runtime,/const\s+isDeliveredOrderCart\s*=\s*hasSelectedOrder\s*&&\s*editingOrderSheet\s*===\s*['"]dongiao['"]/);
+  const block=runtime.match(/if \(isDeliveredOrderCart\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
+  assert.match(block,/clearEditingOrderContent\(\)[\s\S]{0,500}> Xóa/);
+  assert.match(block,/requestDeleteEditingOrder\(\)[\s\S]{0,500}Xóa đơn/);
+  assert.match(block,/updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
+  assert.doesNotMatch(block,/> Sửa|goToBanHangForEditing\(\)|Lưu tạm|BÁN NGAY/);
+});
+
+
+test('pending order cart uses delete, update, promote-to-delivered',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-5.js');
+  assert.match(runtime,/const\s+isPendingOrderCart\s*=\s*hasSelectedOrder\s*&&\s*editingOrderSheet\s*===\s*['"]dontam['"]/);
+  assert.match(runtime,/const\s+canPromoteDraft\s*=\s*!isUser[\s\S]{0,160}isPendingOrderCart[\s\S]{0,160}hasItems[\s\S]{0,160}hasCustomer/);
+  const block=runtime.match(/if \(isPendingOrderCart\) \{([\s\S]*?)\n\s*return;\n\s*\}/)?.[1]||'';
+  assert.match(block,/requestDeleteEditingOrder\(\)[\s\S]{0,500}> Xóa/);
+  assert.match(block,/updateExistingOrder\(\)[\s\S]{0,500}Cập nhật/);
+  assert.match(block,/dayToanBoGioHang\(\\?'dongiao\\?'\)[\s\S]{0,700}Đã giao/);
+  assert.doesNotMatch(block,/> Sửa|goToBanHangForEditing\(\)|Lưu tạm|BÁN NGAY/);
 });
 
 
