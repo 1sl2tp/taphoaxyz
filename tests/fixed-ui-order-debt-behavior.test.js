@@ -111,37 +111,34 @@ test('debt surplus is shown as a positive amount with surplus wording instead of
 test('order preview actions are minimal by source state',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   const p0=runtime.indexOf('if (isOrderPreview) {');
-  const p1=runtime.indexOf('// Đã giao:',p0);
+  const p1=runtime.indexOf('// Đã giao',p0);
   const preview=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
-  assert.match(preview,/Xóa đơn/);
+  assert.match(preview,/> Xóa/);
   assert.match(preview,/> Sửa/);
-  assert.match(preview,/isPendingOrderCart[\s\S]{0,700}Đã giao/);
-  assert.doesNotMatch(preview,/Xóa hàng|Lưu tạm|> Lưu</);
+  assert.match(preview,/isPendingOrderCart[\s\S]{0,700}Duyệt/);
+  assert.doesNotMatch(preview,/Xóa đơn|Cập nhật đơn|Đặt|Bán/);
 });
 
 
-test('editing delivered order shows cancel, clear-items, save only',async()=>{
+test('editing delivered order shows cancel and update-order only',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   const d0=runtime.indexOf('if (isDeliveredOrderCart) {');
-  const d1=runtime.indexOf('// Đơn tạm:',d0);
+  const d1=runtime.indexOf('// Đơn tạm',d0);
   const block=d0>=0&&d1>d0?runtime.slice(d0,d1):'';
   assert.match(block,/Hủy/);
-  assert.match(block,/Xóa hàng/);
-  assert.match(block,/> Lưu/);
-  assert.doesNotMatch(block,/Xóa đơn|Lưu tạm|Đã giao/);
+  assert.match(block,/Cập nhật đơn/);
+  assert.doesNotMatch(block,/Xóa hàng|Xóa đơn|Duyệt|Đặt|Bán/);
 });
 
 
-test('editing pending order shows cancel, clear-items, save-draft, delivered',async()=>{
+test('editing pending order shows cancel and update-order only',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   const p0=runtime.indexOf('if (isPendingOrderCart) {');
   const p1=runtime.indexOf('// Ở tab đơn',p0);
   const block=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
   assert.match(block,/Hủy/);
-  assert.match(block,/Xóa hàng/);
-  assert.match(block,/Lưu tạm/);
-  assert.match(block,/Đã giao/);
-  assert.doesNotMatch(block,/Xóa đơn|Cập nhật|Lưu đã giao/);
+  assert.match(block,/Cập nhật đơn/);
+  assert.doesNotMatch(block,/Xóa hàng|Xóa đơn|Duyệt|Đặt|Bán/);
 });
 
 
@@ -192,20 +189,16 @@ test('cart share builds image from current cart values instead of stale detail D
 });
 
 
-test('new sale cart shows clear-items, save-draft, delivered',async()=>{
+test('new sale cart shows delete, order, sell',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   const n0=runtime.lastIndexOf('owner.innerHTML = \`');
   const block=n0>=0?runtime.slice(n0):'';
   assert.match(block,/clearCart\(\)/);
-  assert.match(block,/Xóa hàng/);
-  assert.match(block,/Lưu tạm/);
-  assert.match(block,/Đã giao/);
-  assert.doesNotMatch(block,/Xóa đơn|Cập nhật|Lưu đã giao/);
+  assert.match(block,/> Xóa/);
+  assert.match(block,/> Đặt/);
+  assert.match(block,/> Bán/);
+  assert.doesNotMatch(block,/Xóa đơn|Cập nhật đơn|Duyệt|Lưu tạm|Đã giao/);
 });
-
-
-
-
 test('editing a loaded order has cancel that restores the source order and returns to its source tab',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   const c0=runtime.indexOf('function cancelEditingOrder() {');
