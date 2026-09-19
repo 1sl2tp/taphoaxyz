@@ -168,16 +168,16 @@
   requestDeleteOrder=function(sheetName,orderId){
     if(currentAuthRole==='user'&&sheetName==='dongiao')return denyPermission('User không được xóa đơn đã giao.');
     const backendId=backendOrderIdFor(sheetName,orderId);
-    const title=sheetName==='dongiao'?'Hoàn đơn đã giao':'Xóa đơn hàng';
-    const desc=sheetName==='dongiao'?`Bạn có chắc chắn muốn hoàn đơn ${orderId} không?`:`Bạn có chắc chắn muốn xóa đơn ${orderId} không?`;
-    showConfirmModal(title,desc,sheetName==='dongiao'?'Hoàn đơn':'Xóa đơn','bg-danger',async()=>{
-      closeOrderMobile();showLoading(sheetName==='dongiao'?'Đang hoàn đơn...':'Đang xóa đơn...');
+    const title='Xóa đơn';
+    const desc=`Bạn có chắc chắn muốn xóa đơn ${orderId} không?`;
+    showConfirmModal(title,desc,'Xóa đơn','bg-danger',async()=>{
+      closeOrderMobile();showLoading('Đang xóa đơn...');
       try{
-        if(sheetName==='dongiao')await backend().reverseOrder(backendId,'Hoàn đơn');
+        if(sheetName==='dongiao')await backend().reverseOrder(backendId,'Xóa đơn');
         else await backend().deletePending(backendId);
         await refreshFixedSheets(['dontam','dongiao','thuchi']);
         if(orderId===editingOrderId||sheetName==='dontam')resetSaleSession();
-        showToast(sheetName==='dongiao'?'Đã hoàn đơn '+orderId:'Đã xóa đơn '+orderId,'success');
+        showToast('Đã xóa đơn '+orderId,'success');
       }catch(error){showAlertPopup('Lỗi',error?.message||'Không thể xử lý đơn.');}
       finally{hideLoading();}
     });

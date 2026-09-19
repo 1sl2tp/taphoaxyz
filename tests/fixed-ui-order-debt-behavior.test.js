@@ -108,41 +108,40 @@ test('debt surplus is shown as a positive amount with surplus wording instead of
 });
 
 
-test('order opened from delivered or pending tab is preview-only until switching to sales',async()=>{
+test('order preview actions are minimal by source state',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(runtime,/const\s+isOrderPreview\s*=\s*hasSelectedOrder\s*&&\s*\(isOrderTab \|\| isDebtOrderPreview\)/);
   const p0=runtime.indexOf('if (isOrderPreview) {');
   const p1=runtime.indexOf('// Đã giao:',p0);
   const preview=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
-  assert.match(preview,/requestDeleteEditingOrder\(\)/);
   assert.match(preview,/Xóa đơn/);
-  assert.match(preview,/goToBanHangForEditing\(\)/);
   assert.match(preview,/> Sửa/);
-  assert.doesNotMatch(preview,/Cập nhật|Lưu đã giao|clearEditingOrderContent\(\)/);
+  assert.match(preview,/isPendingOrderCart[\s\S]{0,700}Đã giao/);
+  assert.doesNotMatch(preview,/Xóa hàng|Lưu tạm|> Lưu</);
 });
 
 
-test('switching an opened order to sales enables its source-specific edit actions',async()=>{
+test('editing delivered order shows cancel, clear-items, save only',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  const g0=runtime.indexOf('function goToBanHangForEditing() {');
-  const g1=runtime.indexOf('function renderCartFooterActions()',g0);
-  const go=g0>=0&&g1>g0?runtime.slice(g0,g1):'';
-  assert.match(go,/editingOrderInSaleMode\s*=\s*true/);
-  assert.match(go,/switchTab\(['"]tab-ban-hang['"]/);
-  assert.match(go,/renderCartUI\(\)/);
   const d0=runtime.indexOf('if (isDeliveredOrderCart) {');
   const d1=runtime.indexOf('// Đơn tạm:',d0);
-  const delivered=d0>=0&&d1>d0?runtime.slice(d0,d1):'';
-  assert.match(delivered,/clearEditingOrderContent\(\)/);
-  assert.match(delivered,/Xóa đơn/);
-  assert.match(delivered,/Cập nhật/);
+  const block=d0>=0&&d1>d0?runtime.slice(d0,d1):'';
+  assert.match(block,/Hủy/);
+  assert.match(block,/Xóa hàng/);
+  assert.match(block,/> Lưu/);
+  assert.doesNotMatch(block,/Xóa đơn|Lưu tạm|Đã giao/);
+});
+
+
+test('editing pending order shows cancel, clear-items, save-draft, delivered',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-5.js');
   const p0=runtime.indexOf('if (isPendingOrderCart) {');
   const p1=runtime.indexOf('// Ở tab đơn',p0);
-  const pending=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
-  assert.match(pending,/clearEditingOrderContent\(\)/);
-  assert.match(pending,/Xóa đơn/);
-  assert.match(pending,/Cập nhật/);
-  assert.match(pending,/Lưu đã giao/);
+  const block=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
+  assert.match(block,/Hủy/);
+  assert.match(block,/Xóa hàng/);
+  assert.match(block,/Lưu tạm/);
+  assert.match(block,/Đã giao/);
+  assert.doesNotMatch(block,/Xóa đơn|Cập nhật|Lưu đã giao/);
 });
 
 
@@ -193,11 +192,15 @@ test('cart share builds image from current cart values instead of stale detail D
 });
 
 
-test('new sale cart exposes clear, save-draft, and save-delivered',async()=>{
+test('new sale cart shows clear-items, save-draft, delivered',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
-  assert.match(runtime,/clearCart\(\)[\s\S]{0,700}> Xóa/);
-  assert.match(runtime,/dayToanBoGioHang\(\\?'dontam\\?'\)[\s\S]{0,700}Lưu tạm/);
-  assert.match(runtime,/dayToanBoGioHang\(\\?'dongiao\\?'\)[\s\S]{0,700}Lưu đã giao/);
+  const n0=runtime.lastIndexOf('owner.innerHTML = \`');
+  const block=n0>=0?runtime.slice(n0):'';
+  assert.match(block,/clearCart\(\)/);
+  assert.match(block,/Xóa hàng/);
+  assert.match(block,/Lưu tạm/);
+  assert.match(block,/Đã giao/);
+  assert.doesNotMatch(block,/Xóa đơn|Cập nhật|Lưu đã giao/);
 });
 
 
@@ -223,4 +226,16 @@ test('editing a loaded order has cancel that restores the source order and retur
   const p1=runtime.indexOf('// Ở tab đơn',p0);
   const pending=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
   assert.match(pending,/cancelEditingOrder\(\)[\s\S]{0,300}Hủy/);
+});
+
+
+test('delete-order UI uses only common delete wording',async()=>{
+  const source=await read('src/fixed-production-overrides.js');
+  const s0=source.indexOf('requestDeleteOrder=function');
+  const s1=source.indexOf('const fixedOpenCustomerDebtModal',s0);
+  const block=s0>=0&&s1>s0?source.slice(s0,s1):'';
+  assert.match(block,/Xóa đơn/);
+  assert.match(block,/Đang xóa đơn/);
+  assert.match(block,/Đã xóa đơn/);
+  assert.doesNotMatch(block,/Hoàn|hoàn/);
 });

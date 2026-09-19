@@ -193,9 +193,13 @@
                     <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
                         <i class="ph ph-trash"></i> Xóa đơn
                     </button>
-                    <button ${canSwitchToSale ? 'onclick="goToBanHangForEditing()"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canSwitchToSale ? enabledPrimaryBtn : disabledBtn}">
+                    <button ${canSwitchToSale ? 'onclick="goToBanHangForEditing()"' : 'disabled'} class="flex-1 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canSwitchToSale ? enabledOutlinePrimaryBtn : disabledBtn}">
                         <i class="ph ph-pencil-simple"></i> Sửa
-                    </button>`;
+                    </button>
+                    ${!isUser && isPendingOrderCart ? `
+                    <button ${canPromoteDraft ? 'onclick="dayToanBoGioHang(\'dongiao\')"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
+                        <i class="ph-fill ph-check-circle"></i> Đã giao
+                    </button>` : ''}`;
                 return;
             }
 
@@ -206,13 +210,10 @@
                         <i class="ph ph-x"></i> Hủy
                     </button>
                     <button ${hasItems ? 'onclick="clearEditingOrderContent()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${hasItems ? enabledNeutralBtn : disabledBtn}">
-                        <i class="ph ph-trash"></i> Xóa
-                    </button>
-                    <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
-                        <i class="ph ph-trash"></i> Xóa đơn
+                        <i class="ph ph-trash"></i> Xóa hàng
                     </button>
                     <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledPrimaryBtn : disabledBtn}">
-                        <i class="ph-fill ph-check-circle"></i> Cập nhật
+                        <i class="ph-fill ph-check-circle"></i> Lưu
                     </button>`;
                 return;
             }
@@ -224,17 +225,14 @@
                         <i class="ph ph-x"></i> Hủy
                     </button>
                     <button ${hasItems ? 'onclick="clearEditingOrderContent()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${hasItems ? enabledNeutralBtn : disabledBtn}">
-                        <i class="ph ph-trash"></i> Xóa
-                    </button>
-                    <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
-                        <i class="ph ph-trash"></i> Xóa đơn
+                        <i class="ph ph-trash"></i> Xóa hàng
                     </button>
                     <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledOutlinePrimaryBtn : disabledBtn}">
-                        <i class="ph ph-floppy-disk"></i> Cập nhật
+                        <i class="ph ph-floppy-disk"></i> Lưu tạm
                     </button>
                     ${!isUser ? `
                     <button ${canPromoteDraft ? 'onclick="dayToanBoGioHang(\'dongiao\')"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
-                        <i class="ph-fill ph-check-circle"></i> Lưu đã giao
+                        <i class="ph-fill ph-check-circle"></i> Đã giao
                     </button>` : ''}`;
                 return;
             }
@@ -247,14 +245,14 @@
 
             owner.innerHTML = `
                 <button ${canDeleteCart ? 'onclick="clearCart()"' : 'disabled'} class="px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 ${canDeleteCart ? enabledNeutralBtn : disabledBtn}">
-                    <i class="ph ph-trash"></i> Xóa
+                    <i class="ph ph-trash"></i> Xóa hàng
                 </button>
                 <button ${canSaveDraft ? 'onclick="dayToanBoGioHang(\'dontam\')"' : 'disabled'} class="flex-1 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 ${canSaveDraft ? enabledOutlinePrimaryBtn : disabledBtn}">
                     <i class="ph ph-floppy-disk"></i> Lưu tạm
                 </button>
                 ${!isUser ? `
                 <button ${canSellNow ? 'onclick="dayToanBoGioHang(\'dongiao\')"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 ${canSellNow ? enabledPrimaryBtn : disabledBtn}">
-                    <i class="ph-fill ph-check-circle"></i> Lưu đã giao
+                    <i class="ph-fill ph-check-circle"></i> Đã giao
                 </button>` : ''}`;
         }
 
