@@ -86,7 +86,7 @@ test('image picker keeps own sell price, pack size and retail price visible whil
   assert.match(media,/ownProductPriceSummary/);
   assert.match(media,/saleLabel=qc>1\?'Thùng':'Bán'/);
   assert.match(media,/retailVnd=saleVnd\/qc/);
-  assert.match(media,/>Mình</);
+  assert.match(media,/>MÌNH</);
   assert.match(media,/· QC/);
 });
 
@@ -107,7 +107,7 @@ test('selected supermarket image persists market price and nested pack snapshot'
   assert.match(snapshot,/'marketRetailPriceVnd'/);
   assert.match(orderFix,/limit v_limit/);
   assert.match(media,/productImageSelectedMarketSummary/);
-  assert.match(media,/>Họ</);
+  assert.match(media,/>HỌ</);
   assert.match(media,/selectedMarketStructure/);
   assert.match(media,/total\/q2/);
 });
@@ -133,7 +133,23 @@ test('selected market item can be manually interpreted as carton or retail',asyn
   assert.match(media,/marketCompareState/);
   assert.match(media,/marketSelectedPriceVnd/);
   assert.match(media,/productImageSelectedThumb/);
-  assert.match(media,/>Họ</);
+  assert.match(media,/>HỌ</);
   assert.match(business,/taphoa_set_product_media_compare/);
   assert.match(bridge,/setProductMediaCompare/);
+});
+
+
+test('saved market comparison rows align and preserve source link',async()=>{
+  const [media,css]=await Promise.all([
+    read('src/fixed-ui-product-media.js'),
+    read('src/fixed-ui-product-media.css')
+  ]);
+  assert.match(media,/product-image-compare-row/);
+  assert.match(media,/product-image-compare-label">MÌNH/);
+  assert.match(media,/product-image-compare-label">HỌ/);
+  assert.match(media,/Mở sản phẩm siêu thị gốc/);
+  assert.match(media,/target="_blank"/);
+  assert.match(media,/imageSourceUrl/);
+  assert.match(css,/grid-template-columns:34px 42px 64px 82px 62px 78px 28px/);
+  assert.match(css,/font-variant-numeric:tabular-nums/);
 });
