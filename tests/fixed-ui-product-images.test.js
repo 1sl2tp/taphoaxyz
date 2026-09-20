@@ -330,9 +330,8 @@ test('professional product detail layout keeps identity source and packaging hie
   assert.match(media,/product-market-detail-market-name/);
   assert.match(media,/product-market-detail-source-row/);
   assert.match(media,/product-market-detail-source-link-chip/);
-  assert.match(media,/Đóng gói/);
-  assert.match(media,/Số lượng/);
-  assert.match(media,/Bên trong/);
+  assert.match(media,/product-market-pack-list/);
+  assert.match(media,/product-market-pack-item/);
   assert.match(media,/max-w-\[600px\]/);
   assert.match(css,/\.product-market-detail-copy/);
   assert.match(css,/\.product-market-detail-own-name/);
