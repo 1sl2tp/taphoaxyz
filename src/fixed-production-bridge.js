@@ -255,6 +255,11 @@ async function setProductMedia(productCode,canonicalProductId){
   await refresh(['products']);
   return result;
 }
+async function setProductMediaCompare(productCode,kind,unitsPerCarton=null){
+  const result=await business.setProductMediaCompare(productCode,kind,unitsPerCarton);
+  await refresh(['products']);
+  return result;
+}
 async function clearProductMedia(productCode){
   const result=await business.clearProductMedia(productCode);
   await refresh(['products']);
@@ -267,7 +272,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
-  productMediaCandidates,setProductMedia,clearProductMedia,
+  productMediaCandidates,setProductMedia,setProductMediaCompare,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
 });
