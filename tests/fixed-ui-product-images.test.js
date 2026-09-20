@@ -209,7 +209,8 @@ test('retail supermarket price stays in retail cell and both QC values are edita
   assert.match(migration,/taphoa_set_product_media_own_qc/);
   assert.match(media,/data-own-qc-input/);
   assert.match(media,/data-market-qc-input/);
-  assert.match(media,/const priceText=carton\|\|'—'/);
+  assert.match(media,/const mainPrice=compare\.kind==='carton'/);
+  assert.match(media,/const priceText=mainPrice>0\?formatComparePrice\(mainPrice\):'—'/);
   assert.match(media,/product\?\.ownCompareUnitsPerCarton/);
   assert.match(media,/setProductMediaOwnQc/);
   assert.match(business,/taphoa_set_product_media_own_qc/);
