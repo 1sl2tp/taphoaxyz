@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=retail-qc-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=retail-qc-20260920/);
-  assert.match(sw,/taphoa-runtime-v6/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=retail-carton-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=retail-carton-20260920/);
+  assert.match(sw,/taphoa-runtime-v7/);
 });
 
 
@@ -209,9 +209,18 @@ test('retail supermarket price stays in retail cell and both QC values are edita
   assert.match(migration,/taphoa_set_product_media_own_qc/);
   assert.match(media,/data-own-qc-input/);
   assert.match(media,/data-market-qc-input/);
-  assert.match(media,/const priceText=compare\.kind==='carton'\?\(carton\|\|'—'\):'—'/);
+  assert.match(media,/const priceText=carton\|\|'—'/);
   assert.match(media,/product\?\.ownCompareUnitsPerCarton/);
   assert.match(media,/setProductMediaOwnQc/);
   assert.match(business,/taphoa_set_product_media_own_qc/);
   assert.match(bridge,/setProductMediaOwnQc/);
+});
+
+
+test('retail competitor auto-converts to carton using own QC when competitor QC is unset',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/const ownQc=Number\(product\?\.ownCompareUnitsPerCarton\)\|\|Number\(product\?\.quyCach/);
+  assert.match(media,/const qc=overrideQc>0\?overrideQc:\(rawQc>0\?rawQc:ownQc\)/);
+  assert.match(media,/const carton=kind==='carton'\?price:\(retail>0&&qc>0\?retail\*qc:0\)/);
+  assert.match(media,/const priceText=carton\|\|'—'/);
 });
