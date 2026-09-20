@@ -151,7 +151,7 @@ test('saved market comparison rows align and preserve source link',async()=>{
   assert.match(media,/Mở sản phẩm siêu thị gốc/);
   assert.match(media,/target="_blank"/);
   assert.match(media,/imageSourceUrl/);
-  assert.match(css,/grid-template-columns:36px 44px 64px 84px 64px 80px 28px/);
+  assert.match(css,/grid-template-columns:36px 44px 72px 84px 64px 80px 28px/);
   assert.match(css,/#productImageOwnPriceSummary,[\s\S]*#productImageSelectedMarketSummary\{display:contents;\}/);
   assert.match(css,/font-variant-numeric:tabular-nums/);
 });
