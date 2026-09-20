@@ -144,22 +144,24 @@ test('saved market comparison rows align and preserve source link',async()=>{
     read('src/fixed-ui-product-media.js'),
     read('src/fixed-ui-product-media.css')
   ]);
-  assert.match(media,/product-image-compare-row/);
+  assert.match(media,/productImageCompareTable/);
+  assert.match(media,/product-image-compare-source-own/);
   assert.match(media,/product-image-compare-label">MÌNH/);
   assert.match(media,/product-image-compare-label">HỌ/);
   assert.match(media,/Mở sản phẩm siêu thị gốc/);
   assert.match(media,/target="_blank"/);
   assert.match(media,/imageSourceUrl/);
-  assert.match(css,/grid-template-columns:34px 42px 64px 82px 62px 78px 28px/);
+  assert.match(css,/grid-template-columns:36px 44px 64px 84px 64px 80px 28px/);
+  assert.match(css,/#productImageOwnPriceSummary,[\s\S]*#productImageSelectedMarketSummary\{display:contents;\}/);
   assert.match(css,/font-variant-numeric:tabular-nums/);
 });
 
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=compare-grid-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=compare-grid-20260920/);
-  assert.match(sw,/taphoa-runtime-v3/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=compare-grid-v2-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=compare-grid-v2-20260920/);
+  assert.match(sw,/taphoa-runtime-v4/);
 });
 
 
