@@ -3,5 +3,5 @@
   "build_id": "source-main",
   "update_policy": "auto-when-safe",
   "published_from": "main-source",
-  "ui_fix": "product-media-shared-compare-grid"
+  "ui_fix": "product-media-search-coverage"
 }
