@@ -1,0 +1,27 @@
+/* Product image display + supermarket image picker. */
+.product-thumb{
+  width:48px;
+  height:48px;
+  border-radius:10px;
+  object-fit:contain;
+  padding:2px;
+  background:#fff;
+  border:1px solid #e5e7eb;
+}
+.product-image-manager-body{grid-template-columns:300px minmax(0,1fr);}
+.product-image-candidate-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.product-image-candidate-thumb{
+  width:100%;
+  aspect-ratio:1/1;
+  min-height:0;
+}
+@media (max-width:767px){
+  .product-image-manager{height:92vh !important;border-radius:20px !important;}
+  .product-image-manager-body{grid-template-columns:42% minmax(0,58%);}
+  .product-image-candidate-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+  .product-image-candidate-card{padding:6px !important;}
+}

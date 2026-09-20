@@ -247,7 +247,7 @@
             document.getElementById('productList').innerHTML = filtered.map(r => {
                 let maSp = r[0]; let tenSp = r[1]; let giaBan = Number(r[3]) || 0; let giaLe = Number(r[7]) || 0; let qty = cart[maSp] ? cart[maSp].qty : 0;
                 const imageHtml = productViewMode === 'image'
-                    ? `<img src="${getProductImageSrc(r)}" alt="" class="product-thumb shrink-0" loading="lazy">`
+                    ? `<img src="${getProductImageSrc(r)}" alt="${escapeProductEditorValue(tenSp)}" class="product-thumb shrink-0" loading="lazy" decoding="async">`
                     : '';
                 return `
                 <div class="product-card bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 flex justify-between items-center transition-colors">
