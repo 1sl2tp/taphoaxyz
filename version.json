@@ -3,5 +3,5 @@
   "build_id": "source-main",
   "update_policy": "auto-when-safe",
   "published_from": "main-source",
-  "ui_fix": "product-media-compare-fit"
+  "ui_fix": "market-source-filters"
 }
