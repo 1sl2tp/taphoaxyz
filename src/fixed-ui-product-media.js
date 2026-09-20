@@ -181,10 +181,23 @@
     await loadCandidates(activeProductName);
   }
 
+  function formatCandidatePrice(value){
+    const amount=Number(value)||0;
+    return amount>0?amount.toLocaleString('vi-VN',{maximumFractionDigits:0}):'';
+  }
+
   function candidateMeta(row){
-    const price=Number(row?.current_price)||0;
-    const priceText=price>0?price.toLocaleString('vi-VN'):'';
-    return [row?.source,row?.packaging,priceText].filter(Boolean).join(' · ');
+    return [row?.packaging,row?.pack_quantity&&Number(row.pack_quantity)>1?`QC ${row.pack_quantity}`:null].filter(Boolean).join(' · ');
+  }
+
+  function candidatePriceHtml(row){
+    const carton=formatCandidatePrice(row?.carton_price);
+    const retail=formatCandidatePrice(row?.retail_price);
+    if(!carton&&!retail)return '<div class="mt-1 text-[10px] text-gray-400">Chưa có giá</div>';
+    return `<div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+      ${carton?`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">Thùng</span><span>${carton}</span></span>`:''}
+      ${retail?`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${retail}</span></span>`:''}
+    </div>`;
   }
 
   function sourceHost(value){
@@ -204,14 +217,17 @@
       }
       list.innerHTML=`<div class="product-image-candidate-grid">${candidates.map(row=>{
         const id=String(row?.id||''),name=String(row?.name||''),image=String(row?.image_url||'');
-        const meta=candidateMeta(row),host=sourceHost(row?.image_source_url);
+        const meta=candidateMeta(row),host=sourceHost(row?.image_source_url),prices=candidatePriceHtml(row);
         return `<button type="button" data-candidate-id="${esc(id)}" class="product-image-candidate-card text-left rounded-xl border border-gray-100 bg-white p-2 hover:border-primary/40 transition">
           <div class="product-image-candidate-thumb rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
             <img src="${esc(image)}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">
           </div>
           <div class="mt-2 text-[11px] font-bold text-gray-900 line-clamp-2 min-h-[30px]">${esc(name)}</div>
-          ${row?.source?`<span class="mt-1 inline-flex rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-600">${esc(row.source)}</span>`:''}
-          ${meta?`<div class="mt-1 text-[9px] text-gray-500 truncate">${esc(meta)}</div>`:''}
+          ${prices}
+          <div class="mt-1.5 flex items-center gap-1.5 min-w-0">
+            ${row?.source?`<span class="inline-flex rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-600 shrink-0">${esc(row.source)}</span>`:''}
+            ${meta?`<span class="text-[9px] text-gray-500 truncate">${esc(meta)}</span>`:''}
+          </div>
           ${host?`<div class="mt-0.5 text-[9px] text-gray-400 truncate">${esc(host)}</div>`:''}
         </button>`;
       }).join('')}</div>`;
