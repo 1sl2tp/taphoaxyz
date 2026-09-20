@@ -100,6 +100,7 @@
                   <div class="text-[11px] text-gray-400">Đang chọn cho</div>
                   <div class="text-[13px] font-bold text-gray-900 truncate" id="productImageSelectedName">Chọn một sản phẩm</div>
                   <div class="hidden mt-1.5 flex flex-wrap items-center gap-1.5" id="productImageOwnPriceSummary"></div>
+                  <div class="hidden mt-1 flex flex-wrap items-center gap-1.5" id="productImageSelectedMarketSummary"></div>
                 </div>
                 <button class="hidden h-8 px-3 rounded-lg border border-red-100 text-danger text-[11px] font-bold" id="productImageClearButton" type="button">Bỏ ảnh</button>
               </div>
@@ -194,6 +195,46 @@
     summary.classList.toggle('hidden',!html);
   }
 
+  function selectedMarketStructure(product){
+    const q2=Number(product?.marketPackQty2)||0;
+    const q3=Number(product?.marketPackQty3)||0;
+    const label2=String(product?.marketPackLabel2||'').trim();
+    const label3=String(product?.marketPackLabel3||'').trim();
+    const total=Number(product?.marketUnitsPerCarton)||0;
+    if(q2>1&&q3>1&&label2&&label3){
+      const perMiddle=total>0&&q2>0?total/q2:0;
+      if(perMiddle>0&&Math.abs(perMiddle-Math.round(perMiddle))<0.0001){
+        return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} × ${Math.round(perMiddle).toLocaleString('vi-VN')} ${label3.toLowerCase()} = ${total.toLocaleString('vi-VN',{maximumFractionDigits:2})}`;
+      }
+      return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} · ${q3.toLocaleString('vi-VN')} ${label3.toLowerCase()}`;
+    }
+    return '';
+  }
+
+  function selectedMarketSummary(product){
+    if(!productImage(product))return '';
+    const source=String(product?.marketSource||'').trim();
+    const carton=formatCandidatePrice(product?.marketCartonPriceVnd);
+    const retail=formatCandidatePrice(product?.marketRetailPriceVnd);
+    const qc=Number(product?.marketUnitsPerCarton)||0;
+    const structure=selectedMarketStructure(product);
+    const parts=[];
+    if(source)parts.push(`<span class="inline-flex rounded-lg bg-gray-900 px-2 py-1 text-[9px] font-bold text-white">${esc(source)}</span>`);
+    if(carton)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">Thùng</span><span>${carton}</span></span>`);
+    if(qc>1)parts.push(`<span class="inline-flex rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600">QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`);
+    if(retail)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${retail}</span></span>`);
+    if(structure)parts.push(`<span class="text-[9px] text-gray-400">${esc(structure)}</span>`);
+    return parts.length?`<span class="text-[9px] font-bold uppercase tracking-wide text-gray-400 mr-0.5">Đã chọn</span>${parts.join('')}`:'';
+  }
+
+  function renderSelectedMarketSummary(product){
+    const summary=document.getElementById('productImageSelectedMarketSummary');
+    if(!summary)return;
+    const html=selectedMarketSummary(product);
+    summary.innerHTML=html;
+    summary.classList.toggle('hidden',!html);
+  }
+
   async function selectProduct(code){
     const p=stateProducts().find(row=>productCode(row)===String(code));
     if(!p)return;
@@ -202,6 +243,7 @@
     const selected=document.getElementById('productImageSelectedName');
     if(selected)selected.textContent=activeProductName;
     renderOwnPriceSummary(p);
+    renderSelectedMarketSummary(p);
     const search=document.getElementById('productImageCandidateSearch');
     if(search){search.disabled=false;search.value=activeProductName;}
     const clear=document.getElementById('productImageClearButton');
@@ -215,14 +257,29 @@
     return amount>0?amount.toLocaleString('vi-VN',{maximumFractionDigits:0}):'';
   }
 
+  function candidatePackStructure(row){
+    const q2=Number(row?.pack_qty2)||0;
+    const q3=Number(row?.pack_qty3)||0;
+    const total=Number(row?.units_per_carton)||0;
+    const label2=String(row?.pack_label2||'').trim();
+    const label3=String(row?.pack_label3||'').trim();
+    if(q2>1&&q3>1&&label2&&label3){
+      const perMiddle=total>0&&q2>0?total/q2:0;
+      if(perMiddle>0&&Math.abs(perMiddle-Math.round(perMiddle))<0.0001){
+        return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} × ${Math.round(perMiddle).toLocaleString('vi-VN')} ${label3.toLowerCase()} = ${total.toLocaleString('vi-VN',{maximumFractionDigits:2})}`;
+      }
+    }
+    return '';
+  }
+
   function candidateMeta(row){
-    return [row?.packaging].filter(Boolean).join(' · ');
+    return [candidatePackStructure(row),row?.packaging].filter(Boolean).join(' · ');
   }
 
   function candidatePriceHtml(row){
     const carton=formatCandidatePrice(row?.carton_price);
     const retail=formatCandidatePrice(row?.retail_price);
-    const qc=Number(row?.pack_quantity)||0;
+    const qc=Number(row?.units_per_carton)||0;
     if(!carton&&!retail)return '<div class="mt-1 text-[10px] text-gray-400">Chưa có giá</div>';
     return `<div class="mt-1.5 flex flex-wrap items-center gap-1.5">
       ${carton?`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">Thùng</span><span>${carton}</span>${qc>1?`<span class="font-semibold opacity-65">· QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`:''}</span>`:''}
@@ -276,6 +333,7 @@
       if(window.SheetDB?.read)await SheetDB.read('sanpham');
       renderProducts(document.getElementById('productImageProductSearch')?.value||'');
       const fresh=stateProducts().find(row=>productCode(row)===activeProductCode);
+      renderSelectedMarketSummary(fresh);
       document.getElementById('productImageClearButton')?.classList.toggle('hidden',!productImage(fresh));
       if(typeof showToast==='function')showToast('Đã chọn ảnh sản phẩm.','success');
     }catch(error){
@@ -293,6 +351,7 @@
       await prod()?.clearProductMedia?.(activeProductCode);
       if(window.SheetDB?.read)await SheetDB.read('sanpham');
       document.getElementById('productImageClearButton')?.classList.add('hidden');
+      renderSelectedMarketSummary(null);
       renderProducts(document.getElementById('productImageProductSearch')?.value||'');
       if(typeof showToast==='function')showToast('Đã bỏ ảnh sản phẩm.','success');
     }catch(error){
@@ -321,6 +380,7 @@
     const selected=document.getElementById('productImageSelectedName');
     if(selected)selected.textContent='Chọn một sản phẩm';
     renderOwnPriceSummary(null);
+    renderSelectedMarketSummary(null);
     document.getElementById('productImageClearButton')?.classList.add('hidden');
     const candidates=document.getElementById('productImageCandidateList');
     if(candidates)candidates.innerHTML='<div class="h-full flex items-center justify-center text-center text-gray-400 text-[12px] px-6">Chọn sản phẩm bên trái để tìm ảnh phù hợp.</div>';
