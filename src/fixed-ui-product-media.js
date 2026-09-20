@@ -225,60 +225,84 @@
   function productMarketDetailPackRows(product,compare){
     const rows=[];
     const seen=new Set();
-    const add=(level,qty,detail='')=>{
+    const add=(level,detail='')=>{
       const cleanLevel=String(level||'').trim();
-      const cleanQty=String(qty??'').trim();
       const cleanDetail=String(detail||'').trim();
-      if(!cleanLevel)return;
-      const key=[norm(cleanLevel),cleanQty,norm(cleanDetail)].join('|');
+      if(!cleanLevel||!cleanDetail)return;
+      const key=[norm(cleanLevel),norm(cleanDetail)].join('|');
       if(seen.has(key))return;
       seen.add(key);
-      rows.push({level:cleanLevel,qty:cleanQty||'—',detail:cleanDetail||'—'});
+      rows.push({level:cleanLevel,detail:cleanDetail});
     };
+    const rawKind=String(product?.marketPackKind||'').toLowerCase();
     const q2=Number(product?.marketPackQty2)||0;
     const q3=Number(product?.marketPackQty3)||0;
     const label2=String(product?.marketPackLabel2||'').trim();
     const label3=String(product?.marketPackLabel3||'').trim();
-    const qc=Number(compare?.qc)||Number(product?.marketUnitsPerCarton)||0;
+    const compareQc=Number(compare?.qc)||0;
+    const sourceQc=Number(product?.marketUnitsPerCarton)||0;
     const packaging=marketPackagingValue(product);
     const descriptor=marketPackageDescriptor(product);
+    const descriptorMatch=descriptor.match(/^(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly|tuýp)\b\s*(.*)$/i);
+    const descriptorUnit=descriptorMatch?marketPackageLabel({marketPackaging:descriptorMatch[1]}):'';
     const packageMeasure=marketPackMeasure(packaging);
+    const nameMeasure=marketPackMeasure(marketProductNameValue(product));
     const descriptorMeasure=marketPackMeasure(descriptor);
-    const leafLabel=label3||label2||marketPackageLabel(product);
+    const leafMeasure=packageMeasure||nameMeasure||descriptorMeasure;
+    const genericUnit=marketPackageLabel(product);
 
-    if(qc>1){
-      add('Thùng','1',`${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${String(leafLabel||'đơn vị').toLowerCase()}`);
+    const selectedUnit=rawKind==='carton'
+      ? 'Thùng'
+      : (rawKind==='middle'
+          ? (descriptorUnit&&norm(descriptorUnit)!=='thung'?descriptorUnit:genericUnit)
+          : (label3||genericUnit||label2||'Đơn vị'));
+
+    if(rawKind!=='carton'&&compareQc>1){
+      add('Thùng',`${compareQc.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${String(selectedUnit).toLowerCase()}`);
     }
 
-    if(descriptor){
-      const parsed=descriptor.match(/^(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)\b\s*(.*)$/i);
-      if(parsed&&norm(parsed[1])!=='thung'){
-        add(marketPackageLabel({marketPackaging:parsed[1]}),'1',String(parsed[2]||descriptorMeasure||'').trim());
+    if(rawKind==='carton'){
+      if(q2>0&&label2&&q3>0&&label3){
+        add('Thùng',`${q2.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label2.toLowerCase()}`);
+        const perMiddle=q2>0?q3/q2:0;
+        if(perMiddle>0){
+          add(label2,`${perMiddle.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`);
+        }
+        if(leafMeasure)add(label3,leafMeasure);
+      }else if(q3>0&&label3){
+        add('Thùng',`${q3.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`);
+        if(leafMeasure)add(label3,leafMeasure);
+      }else if(q2>0&&label2){
+        add('Thùng',`${q2.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label2.toLowerCase()}`);
+        if(leafMeasure)add(label2,leafMeasure);
+      }else if(sourceQc>1){
+        const leafUnit=label3||label2||genericUnit||'Đơn vị';
+        add('Thùng',`${sourceQc.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${String(leafUnit).toLowerCase()}`);
+        if(leafMeasure)add(leafUnit,leafMeasure);
       }
-    }
-
-    if(q2>0&&label2){
-      let detail='';
+    }else if(rawKind==='middle'){
       if(q3>0&&label3){
-        const perMiddle=qc>0&&q2>0&&Math.abs(q3-qc)<0.0001?qc/q2:q3;
-        if(perMiddle>0)detail=`${perMiddle.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`;
-      }else if(packageMeasure){
-        detail=packageMeasure;
+        let childCount=q3;
+        if(q2>1&&q3>=q2){
+          const ratio=q3/q2;
+          if(ratio>0)childCount=ratio;
+        }
+        add(selectedUnit,`${childCount.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`);
+        if(leafMeasure)add(label3,leafMeasure);
+      }else if(q2>0&&label2){
+        add(selectedUnit,`${q2.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label2.toLowerCase()}`);
+        if(leafMeasure)add(label2,leafMeasure);
+      }else if(leafMeasure){
+        add(selectedUnit,leafMeasure);
       }
-      add(label2,q2.toLocaleString('vi-VN',{maximumFractionDigits:2}),detail);
-    }
-
-    if(q3>0&&label3){
-      add(label3,q3.toLocaleString('vi-VN',{maximumFractionDigits:2}),packageMeasure||descriptorMeasure);
-    }else if(!q2&&descriptor){
-      const parsed=descriptor.match(/^(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)\b\s*(.*)$/i);
-      if(parsed&&norm(parsed[1])!=='thung'){
-        add(marketPackageLabel({marketPackaging:parsed[1]}),'1',String(parsed[2]||packageMeasure||'').trim());
-      }
+    }else{
+      const leafUnit=label3||genericUnit||label2||selectedUnit;
+      if(leafMeasure)add(leafUnit,leafMeasure);
+      else if(packaging&&norm(packaging)!==norm(leafUnit))add(leafUnit,packaging);
     }
 
     if(!rows.length&&packaging){
-      add(marketPackageLabel(product),'1',packaging);
+      add(genericUnit||selectedUnit,packaging);
     }
     return rows;
   }
@@ -287,13 +311,7 @@
     const rows=productMarketDetailPackRows(product,compare);
     if(!rows.length)return '';
     return `<div class="product-market-pack-list">
-      ${rows.map(row=>{
-        const rawQty=row.qty&&row.qty!=='—'?String(row.qty).trim():'';
-        const qty=rawQty==='1'?'':rawQty;
-        const detail=row.detail&&row.detail!=='—'?row.detail:'';
-        const suffix=[qty,detail].filter(Boolean).join(' · ');
-        return `<div class="product-market-pack-item"><strong>${esc(row.level)}</strong>${suffix?`<span>${esc(suffix)}</span>`:''}</div>`;
-      }).join('')}
+      ${rows.map(row=>`<div class="product-market-pack-item"><strong>${esc(row.level)}</strong><span>${esc(row.detail)}</span></div>`).join('')}
     </div>`;
   }
 
