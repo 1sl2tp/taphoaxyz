@@ -20,8 +20,8 @@ test('sales product cards show retail price only when available',async()=>{
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-source-4\.css\?v=sales-market-search-20260920/);
-  assert.match(index,/fixed-ui-runtime-4\.js\?v=sales-market-search-20260920/);
-  assert.match(sw,/taphoa-runtime-v21/);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-default-results-20260920/);
+  assert.match(sw,/taphoa-runtime-v22/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
@@ -101,4 +101,18 @@ test('sales search toggles between own products and supermarket quick results',a
   assert.match(migration,/l\.source in \('GO!','WinMart','Bách Hóa XANH'\)/);
   assert.match(index,/fixed-ui-markup-1\.js\?v=sales-market-search-20260920/);
   assert.match(index,/fixed-ui-runtime-1\.js\?v=sales-market-search-20260920/);
+});
+
+
+test('supermarket quick search loads default results when query is empty',async()=>{
+  const [runtime,migration]=await Promise.all([
+    read('src/fixed-ui-runtime-4.js'),
+    read('supabase/migrations/20260921002000_taphoa_market_search_default_results.sql')
+  ]);
+  assert.doesNotMatch(runtime,/Nhập tên sản phẩm để tìm giá siêu thị/);
+  assert.match(runtime,/Đang tải sản phẩm siêu thị/);
+  assert.match(runtime,/marketSearch\?\.\(query, 80\)/);
+  assert.match(migration,/v_query_norm=''/);
+  assert.match(migration,/l\.updated_at/);
+  assert.match(migration,/case when v_query_norm='' then l\.updated_at end desc/);
 });
