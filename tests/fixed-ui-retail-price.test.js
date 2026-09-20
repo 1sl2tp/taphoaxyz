@@ -13,7 +13,8 @@ test('sales product cards show retail price only when available',async()=>{
   assert.match(bridge,/\['giaLe','retail_price'\]/);
   assert.match(runtime,/let giaLe = Number\(r\[7\]\) \|\| 0/);
   assert.match(runtime,/giaLe > 0 \?/);
-  assert.match(runtime,/>Lẻ \$\{giaLe\.toLocaleString/);
+  assert.match(runtime,/>\$\{giaLe\.toLocaleString/);
+  assert.doesNotMatch(runtime,/>Lẻ \$\{giaLe\.toLocaleString/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
