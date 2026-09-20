@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=search-coverage-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=search-coverage-20260920/);
-  assert.match(sw,/taphoa-runtime-v5/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=retail-qc-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=retail-qc-20260920/);
+  assert.match(sw,/taphoa-runtime-v6/);
 });
 
 
@@ -193,4 +193,25 @@ test('image picker exposes enough matching supermarket results to complete mappi
   assert.match(media,/150\+/);
   assert.match(media,/kết quả/);
   assert.match(business,/Math\.min\(200/);
+});
+
+
+test('retail supermarket price stays in retail cell and both QC values are editable',async()=>{
+  const [migration,media,business,bridge]=await Promise.all([
+    read('supabase/migrations/20260920224000_taphoa_product_media_retail_qc_overrides.sql'),
+    read('src/fixed-ui-product-media.js'),
+    read('src/core/business.js'),
+    read('src/fixed-production-bridge.js')
+  ]);
+  assert.match(migration,/market_selected_price_vnd=market_retail_price_vnd/);
+  assert.match(migration,/market_compare_units_per_carton=v_qc/);
+  assert.match(migration,/own_compare_units_per_carton/);
+  assert.match(migration,/taphoa_set_product_media_own_qc/);
+  assert.match(media,/data-own-qc-input/);
+  assert.match(media,/data-market-qc-input/);
+  assert.match(media,/const priceText=compare\.kind==='carton'\?\(carton\|\|'—'\):'—'/);
+  assert.match(media,/product\?\.ownCompareUnitsPerCarton/);
+  assert.match(media,/setProductMediaOwnQc/);
+  assert.match(business,/taphoa_set_product_media_own_qc/);
+  assert.match(bridge,/setProductMediaOwnQc/);
 });
