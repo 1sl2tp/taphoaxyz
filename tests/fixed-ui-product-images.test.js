@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=package-label-detail-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=package-label-detail-20260920/);
-  assert.match(sw,/taphoa-runtime-v12/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=directional-compare-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=directional-compare-20260920/);
+  assert.match(sw,/taphoa-runtime-v13/);
 });
 
 
