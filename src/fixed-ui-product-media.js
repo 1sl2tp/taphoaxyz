@@ -299,7 +299,7 @@
     wrapper.id='productMarketDetailWrapper';
     wrapper.className='absolute inset-0 z-[195] hidden items-center justify-center bg-gray-900/45 backdrop-blur-sm p-3';
     wrapper.innerHTML=`
-      <section class="product-market-detail-modal bg-white w-full max-w-[560px] max-h-[86vh] rounded-[22px] shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="productMarketDetailTitle">
+      <section class="product-market-detail-modal bg-white w-full max-w-[600px] max-h-[86vh] rounded-[22px] shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="productMarketDetailTitle">
         <header class="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 shrink-0">
           <div>
             <h2 class="text-[16px] font-extrabold text-gray-900" id="productMarketDetailTitle">So sánh sản phẩm</h2>
@@ -392,19 +392,15 @@
       <div class="product-market-detail-hero">
         <div class="product-market-detail-image"><img src="${esc(productImage(product))}" alt="${esc(ownName)}"></div>
         <div class="product-market-detail-copy">
-          <div class="product-market-detail-identity">
-            <span class="product-market-detail-label">Mình</span>
-            <div class="product-market-detail-value"><strong>${esc(ownName)}</strong></div>
-          </div>
-          <div class="product-market-detail-identity">
-            <span class="product-market-detail-label">Họ</span>
-            <div class="product-market-detail-value">
-              <strong>${esc(marketName)}</strong>
-              ${source?`<span class="product-market-detail-source-chip">${esc(source)}</span>`:''}
-            </div>
+          <div class="product-market-detail-own-name">${esc(ownName)}</div>
+          <div class="product-market-detail-market-line">
+            <div class="product-market-detail-market-name">${esc(marketName)}</div>
+            ${source?(safeLink
+              ? `<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>${esc(source)}</span><i class="ph-bold ph-arrow-square-out"></i></a>`
+              : `<span class="product-market-detail-source-link-chip is-static"><span>${esc(source)}</span></span>`)
+              :(safeLink?`<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>Mở</span><i class="ph-bold ph-arrow-square-out"></i></a>`:'')}
           </div>
           ${packTable}
-          ${safeLink?`<a class="product-market-detail-inline-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm</span></a>`:''}
         </div>
       </div>
       <div class="product-market-detail-table">
