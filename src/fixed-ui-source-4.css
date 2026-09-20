@@ -395,3 +395,27 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-full{display:none;}
   body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-mobile{display:inline;}
 }
+
+
+/* FIXED STYLE: sales-supermarket-search-toggle */
+#salesSearchModeToggle.is-market{
+  color:#16a34a !important;
+  background:#f0fdf4 !important;
+}
+.market-quick-card{
+  min-height:68px;
+}
+.market-quick-thumb img{
+  display:block;
+}
+@media (max-width:480px){
+  body[data-resolved-mode="mobile"] .market-quick-card{
+    min-height:64px;
+    padding-top:8px !important;
+    padding-bottom:8px !important;
+  }
+  body[data-resolved-mode="mobile"] .market-quick-thumb{
+    width:46px !important;
+    height:46px !important;
+  }
+}

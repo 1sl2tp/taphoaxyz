@@ -21,7 +21,7 @@ test('production bridge carries image URL into the existing row image slot',asyn
   const business=await read('src/core/business.js');
   assert.match(bridge,/\['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn','Ảnh','Quy cách','Giá lẻ'\]/);
   assert.match(bridge,/\['imageUrl','image_url','image'\]/);
-  assert.match(bridge,/productMediaCandidates,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia/);
+  assert.match(bridge,/productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia/);
   assert.match(business,/taphoa_product_media_candidates/);
   assert.match(business,/taphoa_set_product_media/);
   assert.match(business,/taphoa_clear_product_media/);
@@ -161,7 +161,7 @@ test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-product-media\.css\?v=pack-hierarchy-20260920/);
   assert.match(index,/fixed-ui-product-media\.js\?v=pack-hierarchy-20260920/);
-  assert.match(sw,/taphoa-runtime-v20/);
+  assert.match(sw,/taphoa-runtime-v21/);
 });
 
 
