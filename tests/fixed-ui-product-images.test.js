@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=market-detail-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=market-detail-20260920/);
-  assert.match(sw,/taphoa-runtime-v10/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=market-pack-rules-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=market-pack-rules-20260920/);
+  assert.match(sw,/taphoa-runtime-v11/);
 });
 
 
@@ -209,7 +209,8 @@ test('retail supermarket price stays in retail cell and both QC values are edita
   assert.match(migration,/taphoa_set_product_media_own_qc/);
   assert.match(media,/data-own-qc-input/);
   assert.match(media,/data-market-qc-input/);
-  assert.match(media,/const priceText=carton\|\|'—'/);
+  assert.match(media,/const mainPrice=compare\.kind==='carton'/);
+  assert.match(media,/const priceText=mainPrice>0\?formatComparePrice\(mainPrice\):'—'/);
   assert.match(media,/product\?\.ownCompareUnitsPerCarton/);
   assert.match(media,/setProductMediaOwnQc/);
   assert.match(business,/taphoa_set_product_media_own_qc/);
@@ -217,12 +218,21 @@ test('retail supermarket price stays in retail cell and both QC values are edita
 });
 
 
-test('retail competitor auto-converts to carton using own QC when competitor QC is unset',async()=>{
-  const media=await read('src/fixed-ui-product-media.js');
-  assert.match(media,/const ownQc=Number\(product\?\.ownCompareUnitsPerCarton\)\|\|Number\(product\?\.quyCach/);
-  assert.match(media,/const qc=overrideQc>0\?overrideQc:\(rawQc>0\?rawQc:ownQc\)/);
-  assert.match(media,/const carton=kind==='carton'\?price:\(retail>0&&qc>0\?retail\*qc:0\)/);
-  assert.match(media,/const priceText=carton\|\|'—'/);
+test('unit breakdown is limited to lốc vỉ milk while ordinary boxes keep source package price',async()=>{
+  const [media,migration]=await Promise.all([
+    read('src/fixed-ui-product-media.js'),
+    read('supabase/migrations/20260920233000_taphoa_product_media_source_pack_price.sql')
+  ]);
+  assert.match(media,/function marketAllowsUnitBreakdown/);
+  assert.match(media,/packageHead==='loc'\|\|packageHead==='vi'/);
+  assert.match(media,/marketSourcePriceVnd/);
+  assert.match(media,/!allowsBreakdown&&sourcePrice>0\?sourcePrice/);
+  assert.match(media,/rawKind!=='carton'&&!allowsBreakdown/);
+  assert.match(media,/marketPackageLabel\(row\)/);
+  assert.match(migration,/market_source_price_vnd/);
+  assert.match(migration,/taphoa_market_allows_unit_breakdown/);
+  assert.match(migration,/split_part\(packaging_norm,' ',1\) in \('loc','vi'\)/);
+  assert.match(migration,/market_selected_price_vnd := new\.market_source_price_vnd/);
 });
 
 
@@ -253,4 +263,10 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(media,/marketPackQty3/);
   assert.match(css,/\.product-market-detail-table/);
   assert.match(css,/\.product-market-detail-hero/);
+  assert.match(css,/grid-template-columns:160px minmax\(0,1fr\)/);
+  assert.match(css,/width:160px/);
+  assert.match(css,/grid-template-columns:120px minmax\(0,1fr\)/);
+  assert.match(media,/marketPackagingValue/);
+  assert.match(media,/marketPackQty2/);
+  assert.match(media,/marketPackQty3/);
 });

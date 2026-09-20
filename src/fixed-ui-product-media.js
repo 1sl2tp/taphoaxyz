@@ -171,6 +171,38 @@
     return Array.isArray(prod()?.getState?.()?.products)?prod().getState().products:[];
   }
 
+  function marketPackagingValue(item){
+    return String(item?.marketPackaging??item?.packaging??'').trim();
+  }
+
+  function marketProductNameValue(item){
+    return String(item?.marketProductName??item?.name??'').trim();
+  }
+
+  function normalizedWords(value){
+    return norm(value).replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/).filter(Boolean);
+  }
+
+  function marketAllowsUnitBreakdown(item){
+    const packagingWords=normalizedWords(marketPackagingValue(item));
+    const packageHead=packagingWords[0]||'';
+    const isLocOrVi=packageHead==='loc'||packageHead==='vi';
+    const nameWords=normalizedWords(marketProductNameValue(item));
+    const milkWords=new Set(['sua','milk','vinamilk','nutifood','milo','ensure','pediasure','yomost','probi']);
+    const isMilk=nameWords.some(word=>milkWords.has(word));
+    return isLocOrVi||isMilk;
+  }
+
+  function marketPackageLabel(item){
+    const words=normalizedWords(marketPackagingValue(item));
+    const head=words[0]||normalizedWords(item?.pack_unit||item?.marketPackUnit||'')[0]||'';
+    const labels={
+      thung:'Thùng',loc:'Lốc',vi:'Vỉ',hop:'Hộp',chai:'Chai',lon:'Lon',
+      goi:'Gói',hu:'Hũ',tui:'Túi',bich:'Bịch',khay:'Khay',ly:'Ly'
+    };
+    return labels[head]||'Lẻ';
+  }
+
   function ensureProductMarketDetailModal(){
     let wrapper=document.getElementById('productMarketDetailWrapper');
     if(wrapper)return wrapper;
@@ -206,30 +238,45 @@
   }
 
   function productMarketDetailStructure(product,compare){
+    const packaging=marketPackagingValue(product);
     const q2=Number(product?.marketPackQty2)||0;
     const q3=Number(product?.marketPackQty3)||0;
     const label2=String(product?.marketPackLabel2||'').trim();
     const label3=String(product?.marketPackLabel3||'').trim();
-    const total=Number(compare?.qc)||Number(product?.marketUnitsPerCarton)||0;
-    if(q2>1&&q3>1&&label2&&label3){
-      const perMiddle=total>0&&q2>0?total/q2:0;
-      if(perMiddle>0&&Math.abs(perMiddle-Math.round(perMiddle))<0.0001){
-        return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} × ${Math.round(perMiddle).toLocaleString('vi-VN')} ${label3.toLowerCase()} = ${total.toLocaleString('vi-VN',{maximumFractionDigits:2})}`;
+    const total=Number(product?.marketUnitsPerCarton)||0;
+    const parts=[];
+    if(packaging)parts.push(packaging);
+    if(q2>0&&label2){
+      let child=`${q2.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label2.toLowerCase()}`;
+      if(q3>0&&label3){
+        const perMiddle=total>0&&Math.abs(q3-total)<0.0001&&q2>0?total/q2:0;
+        if(perMiddle>0&&Math.abs(perMiddle-Math.round(perMiddle))<0.0001){
+          child+=` × ${Math.round(perMiddle).toLocaleString('vi-VN')} ${label3.toLowerCase()} = ${total.toLocaleString('vi-VN',{maximumFractionDigits:2})}`;
+        }else{
+          child+=` × ${q3.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`;
+        }
       }
-      return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} · ${q3.toLocaleString('vi-VN')} ${label3.toLowerCase()}`;
+      if(!parts.some(part=>norm(part).includes(norm(child))))parts.push(child);
+    }else if(q3>0&&label3){
+      parts.push(`${q3.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`);
     }
-    return String(product?.marketPackaging||'').trim();
+    return parts.join(' · ');
   }
 
-  function productMarketDetailRow(label,state,source=''){
-    const kind=state?.kind==='carton'?'Thùng':'Lẻ';
-    const carton=Number(state?.carton)>0?formatComparePrice(state.carton):'—';
-    const retail=Number(state?.retail)>0?formatComparePrice(state.retail):'—';
-    const qc=Number(state?.qc)>0?Number(state.qc).toLocaleString('vi-VN',{maximumFractionDigits:2}):'—';
+  function productMarketDetailRow(label,state,source='',kindLabel=''){
+    const kind=kindLabel||(state?.kind==='carton'?'Thùng':'Lẻ');
+    const mainValue=state?.kind==='carton'
+      ? Number(state?.carton)||0
+      : (state?.allowsBreakdown&&Number(state?.carton)>0?Number(state.carton):Number(state?.price)||0);
+    const mainPrice=mainValue>0?formatComparePrice(mainValue):'—';
+    const retailValue=state?.kind==='carton'||state?.allowsBreakdown?Number(state?.retail)||0:0;
+    const retail=retailValue>0?formatComparePrice(retailValue):'—';
+    const showQc=state?.kind==='carton'||state?.allowsBreakdown;
+    const qc=showQc&&Number(state?.qc)>0?Number(state.qc).toLocaleString('vi-VN',{maximumFractionDigits:2}):'—';
     return `<div class="product-market-detail-row">
       <div class="product-market-detail-side">${esc(label)}${source?`<span>${esc(source)}</span>`:''}</div>
-      <div>${kind}</div>
-      <div class="product-market-detail-number">${carton}</div>
+      <div>${esc(kind)}</div>
+      <div class="product-market-detail-number">${mainPrice}</div>
       <div class="product-market-detail-number">${qc}</div>
       <div class="product-market-detail-number">${retail}</div>
     </div>`;
@@ -266,7 +313,7 @@
       <div class="product-market-detail-table">
         <div class="product-market-detail-head"><span></span><span>Loại</span><span>Giá</span><span>QC</span><span>Lẻ</span></div>
         ${productMarketDetailRow('MÌNH',own)}
-        ${productMarketDetailRow('HỌ',market,source)}
+        ${productMarketDetailRow('HỌ',market,source,market.kind==='carton'?'Thùng':(market.allowsBreakdown?'Lẻ':marketPackageLabel(product)))}
       </div>
       ${structure?`<div class="product-market-detail-structure"><span>Quy cách</span><strong>${esc(structure)}</strong></div>`:''}
       ${safeLink?`<a class="product-market-detail-source-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm siêu thị gốc</span></a>`:''}
@@ -388,16 +435,24 @@
     const overrideKind=String(product?.marketCompareKind||'').toLowerCase();
     const kind=overrideKind==='carton'||overrideKind==='retail'?overrideKind:(rawKind==='carton'?'carton':'retail');
     const selected=Number(product?.marketSelectedPriceVnd)||0;
+    const sourcePrice=Number(product?.marketSourcePriceVnd)||0;
     const rawCarton=Number(product?.marketCartonPriceVnd)||0;
     const rawRetail=Number(product?.marketRetailPriceVnd)||0;
     const rawQc=Number(product?.marketUnitsPerCarton)||0;
     const overrideQc=Number(product?.marketCompareUnitsPerCarton)||0;
     const ownQc=Number(product?.ownCompareUnitsPerCarton)||Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
     const qc=overrideQc>0?overrideQc:(rawQc>0?rawQc:ownQc);
-    const price=selected>0?selected:(kind==='carton'?rawCarton:rawRetail);
-    const retail=kind==='carton'?(qc>0?price/qc:0):(selected>0?selected:(rawRetail>0?rawRetail:price));
-    const carton=kind==='carton'?price:(retail>0&&qc>0?retail*qc:0);
-    return {kind,qc,price,carton,retail,overrideKind};
+    const allowsBreakdown=marketAllowsUnitBreakdown(product);
+    const price=kind==='carton'
+      ? (selected>0?selected:rawCarton)
+      : (!allowsBreakdown&&sourcePrice>0?sourcePrice:(selected>0?selected:(rawRetail>0?rawRetail:sourcePrice)));
+    const retail=kind==='carton'
+      ? (qc>0?price/qc:0)
+      : (allowsBreakdown?price:0);
+    const carton=kind==='carton'
+      ? price
+      : (allowsBreakdown&&retail>0&&qc>0?retail*qc:0);
+    return {kind,qc,price,carton,retail,overrideKind,allowsBreakdown,sourcePrice};
   }
 
   function selectedMarketSummary(product){
@@ -409,8 +464,11 @@
     const carton=formatComparePrice(compare.carton);
     const retail=formatComparePrice(compare.retail);
     const qcValue=compare.qc>0?String(compare.qc).replace(/\.0+$/,''):'';
-    const priceText=carton||'—';
-    const retailText=retail?formatComparePrice(compare.retail):'—';
+    const mainPrice=compare.kind==='carton'
+      ? compare.carton
+      : (compare.allowsBreakdown&&compare.carton>0?compare.carton:compare.price);
+    const priceText=mainPrice>0?formatComparePrice(mainPrice):'—';
+    const retailText=retail||'—';
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
     return `<span class="product-image-compare-label">HỌ</span>
       ${source?`<button aria-label="Tìm sản phẩm liên quan từ tên siêu thị đã lưu" class="product-image-compare-source" data-market-related-search title="Tìm sản phẩm liên quan" type="button">${esc(source)}</button>`:`<span class="product-image-compare-source">—</span>`}
@@ -540,23 +598,35 @@
     const total=Number(row?.units_per_carton)||0;
     const label2=String(row?.pack_label2||'').trim();
     const label3=String(row?.pack_label3||'').trim();
-    if(q2>1&&q3>1&&label2&&label3){
-      const perMiddle=total>0&&q2>0?total/q2:0;
-      if(perMiddle>0&&Math.abs(perMiddle-Math.round(perMiddle))<0.0001){
-        return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} × ${Math.round(perMiddle).toLocaleString('vi-VN')} ${label3.toLowerCase()} = ${total.toLocaleString('vi-VN',{maximumFractionDigits:2})}`;
+    if(q2>0&&label2){
+      let child=`${q2.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label2.toLowerCase()}`;
+      if(q3>0&&label3){
+        const perMiddle=total>0&&Math.abs(q3-total)<0.0001&&q2>0?total/q2:0;
+        child+=perMiddle>0&&Math.abs(perMiddle-Math.round(perMiddle))<0.0001
+          ?` × ${Math.round(perMiddle).toLocaleString('vi-VN')} ${label3.toLowerCase()} = ${total.toLocaleString('vi-VN',{maximumFractionDigits:2})}`
+          :` × ${q3.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`;
       }
+      return child;
     }
-    return '';
+    return q3>0&&label3?`${q3.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`:'';
   }
 
   function candidateMeta(row){
-    return [candidatePackStructure(row),row?.packaging].filter(Boolean).join(' · ');
+    return [row?.packaging,candidatePackStructure(row)].filter(Boolean).join(' · ');
   }
 
   function candidatePriceHtml(row){
     const carton=formatCandidatePrice(row?.carton_price);
     const retail=formatCandidatePrice(row?.retail_price);
+    const sourcePrice=formatCandidatePrice(row?.current_price);
     const qc=Number(row?.units_per_carton)||0;
+    const rawKind=String(row?.pack_kind||'').toLowerCase();
+    const allowsBreakdown=marketAllowsUnitBreakdown(row);
+    if(rawKind!=='carton'&&!allowsBreakdown){
+      const packagePrice=sourcePrice||retail;
+      if(!packagePrice)return '<div class="mt-1 text-[10px] text-gray-400">Chưa có giá</div>';
+      return `<div class="mt-1.5 flex flex-wrap items-center gap-1.5"><span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">${esc(marketPackageLabel(row))}</span><span>${packagePrice}</span></span></div>`;
+    }
     if(!carton&&!retail)return '<div class="mt-1 text-[10px] text-gray-400">Chưa có giá</div>';
     return `<div class="mt-1.5 flex flex-wrap items-center gap-1.5">
       ${carton?`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">Thùng</span><span>${carton}</span>${qc>1?`<span class="font-semibold opacity-65">· QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`:''}</span>`:''}
