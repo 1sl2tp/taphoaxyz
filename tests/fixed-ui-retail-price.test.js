@@ -19,9 +19,9 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-source-4\.css\?v=market-source-filter-20260920/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=responsive-source-labels-20260921/);
   assert.match(index,/fixed-ui-runtime-4\.js\?v=market-source-filter-20260920/);
-  assert.match(sw,/taphoa-runtime-v26/);
+  assert.match(sw,/taphoa-runtime-v27/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
@@ -51,7 +51,7 @@ test('sales cards only surface a lower selected supermarket carton price',async(
 });
 
 
-test('mobile source filters use short labels without changing source values',async()=>{
+test('narrow viewport source filters use short labels without changing source values',async()=>{
   const [runtime,css]=await Promise.all([
     read('src/fixed-ui-runtime-4.js'),
     read('src/fixed-ui-source-4.css')
@@ -64,7 +64,7 @@ test('mobile source filters use short labels without changing source values',asy
   assert.match(runtime,/source-tag-label-full/);
   assert.match(runtime,/source-tag-label-mobile/);
   assert.match(runtime,/filterSource\('\$\{src\}'\)/);
-  assert.match(css,/mobile-source-filter-abbreviations/);
+  assert.match(css,/responsive-source-filter-labels/);
   assert.match(css,/source-tag-label-full\{display:none/);
   assert.match(css,/source-tag-label-mobile\{display:inline/);
 });
@@ -157,4 +157,13 @@ test('supermarket mode shows source filters and sends selected source to RPC',as
   assert.match(migration,/taphoa_market_search\([\s\S]*p_source text/);
   assert.match(migration,/v_source='' or l\.source=v_source/);
   assert.match(index,/fixed-production-bridge\.js\?v=market-source-filter-20260920/);
+});
+
+
+test('responsive source labels depend on viewport width rather than resolved mobile mode',async()=>{
+  const css=await read('src/fixed-ui-source-4.css');
+  assert.match(css,/@media \(max-width:620px\)/);
+  assert.match(css,/#sourceTagsContainer \.source-tag-label-full\{display:none;\}/);
+  assert.match(css,/#sourceTagsContainer \.source-tag-label-mobile\{display:inline;\}/);
+  assert.doesNotMatch(css,/body\[data-resolved-mode="mobile"\] #sourceTagsContainer/);
 });
