@@ -99,6 +99,7 @@
                 <div class="min-w-0">
                   <div class="text-[11px] text-gray-400">Đang chọn cho</div>
                   <div class="text-[13px] font-bold text-gray-900 truncate" id="productImageSelectedName">Chọn một sản phẩm</div>
+                  <div class="hidden mt-1.5 flex flex-wrap items-center gap-1.5" id="productImageOwnPriceSummary"></div>
                 </div>
                 <button class="hidden h-8 px-3 rounded-lg border border-red-100 text-danger text-[11px] font-bold" id="productImageClearButton" type="button">Bỏ ảnh</button>
               </div>
@@ -166,6 +167,33 @@
     }).join('');
   }
 
+  function ownPriceValue(value,isVnd=false){
+    const amount=Number(value)||0;
+    if(amount<=0)return 0;
+    return isVnd?amount:amount*1000;
+  }
+
+  function ownProductPriceSummary(product){
+    const saleVnd=ownPriceValue(product?.sale_price_vnd,true)||ownPriceValue(product?.gia??product?.price??product?.unit_price);
+    const qc=Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
+    let retailVnd=ownPriceValue(product?.retail_price_vnd,true)||ownPriceValue(product?.giaLe??product?.retail_price);
+    if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
+    const saleLabel=qc>1?'Thùng':'Bán';
+    const parts=[];
+    if(saleVnd>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">${saleLabel}</span><span>${formatCandidatePrice(saleVnd)}</span></span>`);
+    if(qc>1)parts.push(`<span class="inline-flex rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600">QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`);
+    if(retailVnd>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${formatCandidatePrice(retailVnd)}</span></span>`);
+    return parts.length?`<span class="text-[9px] font-bold uppercase tracking-wide text-gray-400 mr-0.5">Mình</span>${parts.join('')}`:'';
+  }
+
+  function renderOwnPriceSummary(product){
+    const summary=document.getElementById('productImageOwnPriceSummary');
+    if(!summary)return;
+    const html=ownProductPriceSummary(product);
+    summary.innerHTML=html;
+    summary.classList.toggle('hidden',!html);
+  }
+
   async function selectProduct(code){
     const p=stateProducts().find(row=>productCode(row)===String(code));
     if(!p)return;
@@ -173,6 +201,7 @@
     activeProductName=productName(p);
     const selected=document.getElementById('productImageSelectedName');
     if(selected)selected.textContent=activeProductName;
+    renderOwnPriceSummary(p);
     const search=document.getElementById('productImageCandidateSearch');
     if(search){search.disabled=false;search.value=activeProductName;}
     const clear=document.getElementById('productImageClearButton');
@@ -187,15 +216,16 @@
   }
 
   function candidateMeta(row){
-    return [row?.packaging,row?.pack_quantity&&Number(row.pack_quantity)>1?`QC ${row.pack_quantity}`:null].filter(Boolean).join(' · ');
+    return [row?.packaging].filter(Boolean).join(' · ');
   }
 
   function candidatePriceHtml(row){
     const carton=formatCandidatePrice(row?.carton_price);
     const retail=formatCandidatePrice(row?.retail_price);
+    const qc=Number(row?.pack_quantity)||0;
     if(!carton&&!retail)return '<div class="mt-1 text-[10px] text-gray-400">Chưa có giá</div>';
     return `<div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-      ${carton?`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">Thùng</span><span>${carton}</span></span>`:''}
+      ${carton?`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">Thùng</span><span>${carton}</span>${qc>1?`<span class="font-semibold opacity-65">· QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`:''}</span>`:''}
       ${retail?`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${retail}</span></span>`:''}
     </div>`;
   }
@@ -290,6 +320,7 @@
     if(candidateSearch){candidateSearch.value='';candidateSearch.disabled=true;}
     const selected=document.getElementById('productImageSelectedName');
     if(selected)selected.textContent='Chọn một sản phẩm';
+    renderOwnPriceSummary(null);
     document.getElementById('productImageClearButton')?.classList.add('hidden');
     const candidates=document.getElementById('productImageCandidateList');
     if(candidates)candidates.innerHTML='<div class="h-full flex items-center justify-center text-center text-gray-400 text-[12px] px-6">Chọn sản phẩm bên trái để tìm ảnh phù hợp.</div>';
