@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=compare-grid-v2-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=compare-grid-v2-20260920/);
-  assert.match(sw,/taphoa-runtime-v4/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=search-coverage-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=search-coverage-20260920/);
+  assert.match(sw,/taphoa-runtime-v5/);
 });
 
 
@@ -178,4 +178,19 @@ test('saved supermarket name drives related search for abbreviated internal name
   assert.match(media,/loadCandidates\(relatedQuery\)/);
   assert.match(media,/Mở sản phẩm siêu thị gốc/);
   assert.match(css,/button\.product-image-compare-source/);
+});
+
+
+test('image picker exposes enough matching supermarket results to complete mapping',async()=>{
+  const [migration,media,business]=await Promise.all([
+    read('supabase/migrations/20260920221500_taphoa_product_media_search_coverage.sql'),
+    read('src/fixed-ui-product-media.js'),
+    read('src/core/business.js')
+  ]);
+  assert.match(migration,/p_limit integer default 150/);
+  assert.match(migration,/coalesce\(p_limit,150\),200/);
+  assert.match(media,/productMediaCandidates\?\.\(String\(query\|\|''\),150\)/);
+  assert.match(media,/150\+/);
+  assert.match(media,/kết quả/);
+  assert.match(business,/Math\.min\(200/);
 });
