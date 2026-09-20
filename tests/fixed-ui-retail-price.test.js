@@ -19,9 +19,9 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-source-4\.css\?v=source-label-market-colors-20260920/);
-  assert.match(index,/fixed-ui-runtime-4\.js\?v=source-label-market-colors-20260920/);
-  assert.match(sw,/taphoa-runtime-v25/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=market-source-filter-20260920/);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-source-filter-20260920/);
+  assert.match(sw,/taphoa-runtime-v26/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
@@ -87,12 +87,12 @@ test('sales search toggles between own products and supermarket quick results',a
   assert.match(runtime4,/function toggleProductSearchMode/);
   assert.match(runtime4,/ph-fill ph-storefront/);
   assert.match(runtime4,/Tìm sản phẩm siêu thị/);
-  assert.match(runtime4,/sources\.classList\.toggle\('hidden', marketMode\)/);
+  assert.match(runtime4,/if \(marketMode\) renderMarketSourceTags\(\)/);
   assert.match(runtime4,/window\.TAPHOA_PRODUCTION\?\.marketSearch/);
   assert.match(runtime4,/market-quick-card/);
   assert.match(runtime4,/current_price/);
   assert.doesNotMatch(runtime4,/market-quick-card[\s\S]{0,900}updateCart\(/);
-  assert.match(business,/marketSearch:\(query,limit=80\)=>gateway\.rpc\('taphoa_market_search'/);
+  assert.match(business,/marketSearch:\(query,limit=80,source=''\)=>gateway\.rpc\('taphoa_market_search'/);
   assert.match(bridge,/async function marketSearch/);
   assert.match(bridge,/productMediaCandidates,marketSearch,setProductMedia/);
   assert.match(css,/sales-supermarket-search-toggle/);
@@ -100,7 +100,7 @@ test('sales search toggles between own products and supermarket quick results',a
   assert.match(migration,/taphoa_role',''\) not in \('admin','customer'\)/);
   assert.match(migration,/l\.source in \('GO!','WinMart','Bách Hóa XANH'\)/);
   assert.match(index,/fixed-ui-markup-1\.js\?v=sales-market-search-20260920/);
-  assert.match(index,/fixed-ui-runtime-1\.js\?v=sales-market-search-20260920/);
+  assert.match(index,/fixed-ui-runtime-1\.js\?v=market-source-filter-20260920/);
 });
 
 
@@ -111,7 +111,7 @@ test('supermarket quick search loads default results when query is empty',async(
   ]);
   assert.doesNotMatch(runtime,/Nhập tên sản phẩm để tìm giá siêu thị/);
   assert.match(runtime,/Đang tải sản phẩm siêu thị/);
-  assert.match(runtime,/marketSearch\?\.\(query, 80\)/);
+  assert.match(runtime,/marketSearch\?\.\(query, 80, marketSource\)/);
   assert.match(migration,/v_query_norm=''/);
   assert.match(migration,/l\.updated_at/);
   assert.match(migration,/case when v_query_norm='' then l\.updated_at end desc/);
@@ -131,4 +131,30 @@ test('supermarket quick prices use source brand colors',async()=>{
   assert.match(css,/\.market-quick-price\.market-source-winmart\{color:#d71920;\}/);
   assert.match(css,/\.market-quick-price\.market-source-bhx\{color:#087a40;\}/);
   assert.match(css,/\.market-quick-price\.market-source-go\{color:#e85d04;\}/);
+});
+
+
+test('supermarket mode shows source filters and sends selected source to RPC',async()=>{
+  const [runtime1,runtime4,business,bridge,css,migration,index]=await Promise.all([
+    read('src/fixed-ui-runtime-1.js'),
+    read('src/fixed-ui-runtime-4.js'),
+    read('src/core/business.js'),
+    read('src/fixed-production-bridge.js'),
+    read('src/fixed-ui-source-4.css'),
+    read('supabase/migrations/20260921003500_taphoa_market_search_source_filter.sql'),
+    read('index.html')
+  ]);
+  assert.match(runtime1,/let currentMarketSourceFilter = 'Tất cả'/);
+  assert.match(runtime4,/function renderMarketSourceTags/);
+  assert.match(runtime4,/\['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH'\]/);
+  assert.match(runtime4,/function filterMarketSource/);
+  assert.match(runtime4,/currentMarketSourceFilter = src/);
+  assert.match(runtime4,/const marketSource = currentMarketSourceFilter === 'Tất cả' \? '' : currentMarketSourceFilter/);
+  assert.match(runtime4,/marketSearch\?\.\(query, 80, marketSource\)/);
+  assert.match(business,/p_source:String\(source\|\|''\)/);
+  assert.match(bridge,/async function marketSearch\(query,limit=80,source=''\)/);
+  assert.match(css,/market-source-filter-chip/);
+  assert.match(migration,/taphoa_market_search\([\s\S]*p_source text/);
+  assert.match(migration,/v_source='' or l\.source=v_source/);
+  assert.match(index,/fixed-production-bridge\.js\?v=market-source-filter-20260920/);
 });

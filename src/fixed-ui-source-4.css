@@ -387,7 +387,8 @@ body[data-force-pc="1"] #orderTimeCustomCard{
     gap:5px !important;
     overflow-x:auto;
   }
-  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-filter-chip{
+  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-filter-chip,
+  body[data-resolved-mode="mobile"] #sourceTagsContainer .market-source-filter-chip{
     padding-left:9px !important;
     padding-right:9px !important;
     font-size:11px !important;

@@ -200,6 +200,7 @@
         }
 
         let currentFilter = 'Tất cả';
+        let currentMarketSourceFilter = 'Tất cả';
         let productSearchMode = 'own';
         let productSearchIndex = [];
         let productSearchIndexSource = null;
