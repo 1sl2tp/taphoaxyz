@@ -19,8 +19,8 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-source-4\.css\?v=source-chip-font12-20260921/);
-  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-no-flicker-20260921/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=vnm-source-20260921/);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=vnm-source-20260921/);
   assert.match(sw,/taphoa-runtime-v30/);
 });
 
