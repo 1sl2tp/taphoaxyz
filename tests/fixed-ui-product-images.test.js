@@ -153,3 +153,11 @@ test('saved market comparison rows align and preserve source link',async()=>{
   assert.match(css,/grid-template-columns:34px 42px 64px 82px 62px 78px 28px/);
   assert.match(css,/font-variant-numeric:tabular-nums/);
 });
+
+
+test('product media comparison assets bypass stale PWA cache',async()=>{
+  const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
+  assert.match(index,/fixed-ui-product-media\.css\?v=compare-grid-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=compare-grid-20260920/);
+  assert.match(sw,/taphoa-runtime-v3/);
+});
