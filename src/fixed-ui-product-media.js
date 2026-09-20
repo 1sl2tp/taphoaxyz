@@ -194,13 +194,25 @@
   }
 
   function marketPackageLabel(item){
-    const words=normalizedWords(marketPackagingValue(item));
-    const head=words[0]||normalizedWords(item?.pack_unit||item?.marketPackUnit||'')[0]||'';
     const labels={
       thung:'Thùng',loc:'Lốc',vi:'Vỉ',hop:'Hộp',chai:'Chai',lon:'Lon',
       goi:'Gói',hu:'Hũ',tui:'Túi',bich:'Bịch',khay:'Khay',ly:'Ly'
     };
-    return labels[head]||'Lẻ';
+    const packagingWords=normalizedWords(marketPackagingValue(item));
+    const unitWords=normalizedWords(item?.pack_unit||item?.marketPackUnit||'');
+    const nameWords=normalizedWords(marketProductNameValue(item));
+    const key=[...packagingWords,...unitWords,...nameWords].find(word=>labels[word]);
+    return labels[key]||'Lẻ';
+  }
+
+  function marketPackageDescriptor(item){
+    const packaging=marketPackagingValue(item);
+    const name=marketProductNameValue(item);
+    const pattern=/(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)\s+\d+(?:[.,]\d+)?\s*(?:kg|g|ml|l)?/ig;
+    let match,last='';
+    while((match=pattern.exec(name)))last=String(match[0]||'').trim();
+    if(!last)return '';
+    return packaging&&norm(packaging).includes(norm(last))?'':last;
   }
 
   function ensureProductMarketDetailModal(){
@@ -245,7 +257,9 @@
     const label3=String(product?.marketPackLabel3||'').trim();
     const total=Number(product?.marketUnitsPerCarton)||0;
     const parts=[];
-    if(packaging)parts.push(packaging);
+    const descriptor=marketPackageDescriptor(product);
+    if(descriptor)parts.push(descriptor);
+    if(packaging&&!parts.some(part=>norm(part).includes(norm(packaging))))parts.push(packaging);
     if(q2>0&&label2){
       let child=`${q2.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label2.toLowerCase()}`;
       if(q3>0&&label3){
@@ -612,7 +626,8 @@
   }
 
   function candidateMeta(row){
-    return [row?.packaging,candidatePackStructure(row)].filter(Boolean).join(' · ');
+    const parts=[marketPackageDescriptor(row),row?.packaging,candidatePackStructure(row)].filter(Boolean);
+    return parts.filter((part,index)=>parts.findIndex(other=>norm(other)===norm(part))===index).join(' · ');
   }
 
   function candidatePriceHtml(row){
