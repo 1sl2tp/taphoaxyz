@@ -161,3 +161,19 @@ test('product media comparison assets bypass stale PWA cache',async()=>{
   assert.match(index,/fixed-ui-product-media\.js\?v=compare-grid-20260920/);
   assert.match(sw,/taphoa-runtime-v3/);
 });
+
+
+test('saved supermarket name drives related search for abbreviated internal names',async()=>{
+  const [media,css]=await Promise.all([
+    read('src/fixed-ui-product-media.js'),
+    read('src/fixed-ui-product-media.css')
+  ]);
+  assert.match(media,/relatedMarketQuery/);
+  assert.match(media,/marketProductName/);
+  assert.match(media,/data-market-related-search/);
+  assert.match(media,/searchRelatedMarket/);
+  assert.match(media,/productImage\(p\).*marketProductName/);
+  assert.match(media,/loadCandidates\(relatedQuery\)/);
+  assert.match(media,/Mở sản phẩm siêu thị gốc/);
+  assert.match(css,/button\.product-image-compare-source/);
+});
