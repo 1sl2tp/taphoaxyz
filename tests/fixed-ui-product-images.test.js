@@ -62,5 +62,19 @@ test('image picker searches the full supermarket link catalog',async()=>{
   assert.match(accentFix,/'source',x\.source/);
   assert.match(media,/row\?\.source/);
   assert.match(media,/row\?\.packaging/);
-  assert.match(media,/current_price/);
+  assert.match(media,/candidatePriceHtml/);
+});
+
+test('image picker shows carton and retail prices and sorts cheapest first',async()=>{
+  const [migration,media]=await Promise.all([
+    read('supabase/migrations/20260920200000_taphoa_product_media_price_details.sql'),
+    read('src/fixed-ui-product-media.js')
+  ]);
+  assert.match(migration,/'carton_price',x\.carton_price/);
+  assert.match(migration,/'retail_price',x\.retail_price/);
+  assert.match(migration,/order by x\.rank_order,x\.sort_price nulls last/);
+  assert.match(migration,/c\.pack_kind='carton'/);
+  assert.match(media,/Thùng/);
+  assert.match(media,/Lẻ/);
+  assert.match(media,/candidatePriceHtml/);
 });
