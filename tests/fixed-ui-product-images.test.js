@@ -291,10 +291,12 @@ test('packaging hierarchy table shows carton middle pack and leaf detail',async(
   const media=await read('src/fixed-ui-product-media.js');
   assert.match(media,/function productMarketDetailPackRows/);
   assert.match(media,/function productMarketDetailPackTable/);
-  assert.match(media,/add\('Thùng','1'/);
-  assert.match(media,/const perMiddle=qc>0&&q2>0&&Math\.abs\(q3-qc\)<0\.0001\?qc\/q2:q3/);
-  assert.match(media,/add\(label2,q2\.toLocaleString/);
-  assert.match(media,/add\(label3,q3\.toLocaleString/);
+  assert.match(media,/const selectedUnit=rawKind==='carton'/);
+  assert.match(media,/if\(rawKind!=='carton'&&compareQc>1\)/);
+  assert.match(media,/add\('Thùng',\`\$\{compareQc\.toLocaleString/);
+  assert.match(media,/const perMiddle=q2>0\?q3\/q2:0/);
+  assert.match(media,/add\(label2,\`\$\{perMiddle\.toLocaleString/);
+  assert.match(media,/if\(leafMeasure\)add\(label3,leafMeasure\)/);
   assert.match(media,/product-market-pack-list/);
   assert.match(media,/product-market-pack-item/);
 });
@@ -371,9 +373,23 @@ test('product detail keeps long market name full width and packaging compact',as
 });
 
 
-test('packaging chips suppress quantity one but keep meaningful counts',async()=>{
+test('packaging hierarchy renders parent to child without redundant quantity one',async()=>{
   const media=await read('src/fixed-ui-product-media.js');
-  assert.match(media,/const rawQty=row\.qty&&row\.qty!=='—'\?String\(row\.qty\)\.trim\(\):''/);
-  assert.match(media,/const qty=rawQty==='1'\?'':rawQty/);
-  assert.match(media,/const suffix=\[qty,detail\]\.filter\(Boolean\)\.join\(' · '\)/);
+  assert.match(media,/rows\.push\(\{level:cleanLevel,detail:cleanDetail\}\)/);
+  assert.match(media,/product-market-pack-item/);
+  assert.match(media,/\<strong\>\$\{esc\(row\.level\)\}\<\/strong\>\<span\>\$\{esc\(row\.detail\)\}/);
+  assert.doesNotMatch(media,/rawQty==='1'/);
+});
+
+
+
+test('pack hierarchy distinguishes carton middle leaf and measure',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/rawKind==='carton'/);
+  assert.match(media,/rawKind==='middle'/);
+  assert.match(media,/label3\|\|genericUnit\|\|label2/);
+  assert.match(media,/marketPackMeasure\(marketProductNameValue\(product\)\)/);
+  assert.match(media,/add\('Thùng'/);
+  assert.match(media,/add\(selectedUnit/);
+  assert.match(media,/add\(leafUnit,leafMeasure\)/);
 });
