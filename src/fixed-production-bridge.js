@@ -250,6 +250,7 @@ async function batchOrders(action,ids){const result=await business.batchOrders(a
 async function debtTransaction(customerId,type,amount,note=''){const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;}
 async function orderDetail(id){return business.orderDetail(id);}
 async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}
+async function marketSearch(query,limit=80){return business.marketSearch(query,limit);}
 async function setProductMedia(productCode,canonicalProductId){
   const result=await business.setProductMedia(productCode,canonicalProductId);
   await refresh(['products']);
@@ -277,7 +278,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
-  productMediaCandidates,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
+  productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
 });
