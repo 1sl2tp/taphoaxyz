@@ -402,7 +402,7 @@
             ${source?(safeLink
               ? `<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>${esc(source)}</span><i class="ph-bold ph-arrow-square-out"></i></a>`
               : `<span class="product-market-detail-source-link-chip is-static"><span>${esc(source)}</span></span>`)
-              : `<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>Mở sản phẩm</span><i class="ph-bold ph-arrow-square-out"></i></a>`}
+              : `<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>Nguồn</span><i class="ph-bold ph-arrow-square-out"></i></a>`}
           </div>`:''}
           ${packTable}
         </div>
