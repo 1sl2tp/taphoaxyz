@@ -28,7 +28,7 @@
 
 .product-image-compare-table{
   display:grid;
-  grid-template-columns:36px 44px 64px 84px 64px 80px 28px;
+  grid-template-columns:36px 44px 72px 84px 64px 80px 28px;
   grid-auto-rows:28px;
   gap:5px;
   align-items:center;
