@@ -4,6 +4,11 @@
   "scripts": {
     "build": "node scripts/build-current.mjs",
     "build:production": "node scripts/build-current.mjs",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "playwright test",
+    "test:ui": "npm test && npm run build:production && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
   }
 }
