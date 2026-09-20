@@ -107,7 +107,7 @@ test('selected supermarket image persists market price and nested pack snapshot'
   assert.match(snapshot,/'marketRetailPriceVnd'/);
   assert.match(orderFix,/limit v_limit/);
   assert.match(media,/productImageSelectedMarketSummary/);
-  assert.match(media,/>Đã chọn</);
+  assert.match(media,/>Họ</);
   assert.match(media,/selectedMarketStructure/);
   assert.match(media,/total\/q2/);
 });
