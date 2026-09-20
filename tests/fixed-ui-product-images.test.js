@@ -111,3 +111,29 @@ test('selected supermarket image persists market price and nested pack snapshot'
   assert.match(media,/selectedMarketStructure/);
   assert.match(media,/total\/q2/);
 });
+
+
+test('selected market item can be manually interpreted as carton or retail',async()=>{
+  const [overrideMigration,optionalQcMigration,backfill,media,business,bridge]=await Promise.all([
+    read('supabase/migrations/20260920210000_taphoa_product_media_compare_override.sql'),
+    read('supabase/migrations/20260920211000_taphoa_product_media_compare_qc_optional.sql'),
+    read('supabase/migrations/20260920212000_taphoa_product_media_backfill_snapshot.sql'),
+    read('src/fixed-ui-product-media.js'),
+    read('src/core/business.js'),
+    read('src/fixed-production-bridge.js')
+  ]);
+  assert.match(overrideMigration,/market_selected_price_vnd/);
+  assert.match(overrideMigration,/market_compare_kind/);
+  assert.match(overrideMigration,/market_compare_units_per_carton/);
+  assert.match(overrideMigration,/taphoa_set_product_media_compare/);
+  assert.match(optionalQcMigration,/v_kind='carton' and v_selected is not null and coalesce\(v_qc,0\)>0/);
+  assert.match(backfill,/canonical_product_id like 'link:%'/);
+  assert.match(media,/data-market-kind-select/);
+  assert.match(media,/data-market-qc-input/);
+  assert.match(media,/marketCompareState/);
+  assert.match(media,/marketSelectedPriceVnd/);
+  assert.match(media,/productImageSelectedThumb/);
+  assert.match(media,/>Họ</);
+  assert.match(business,/taphoa_set_product_media_compare/);
+  assert.match(bridge,/setProductMediaCompare/);
+});
