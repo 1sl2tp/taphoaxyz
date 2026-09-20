@@ -288,7 +288,8 @@
     if(!rows.length)return '';
     return `<div class="product-market-pack-list">
       ${rows.map(row=>{
-        const qty=row.qty&&row.qty!=='—'?row.qty:'';
+        const rawQty=row.qty&&row.qty!=='—'?String(row.qty).trim():'';
+        const qty=rawQty==='1'?'':rawQty;
         const detail=row.detail&&row.detail!=='—'?row.detail:'';
         const suffix=[qty,detail].filter(Boolean).join(' · ');
         return `<div class="product-market-pack-item"><strong>${esc(row.level)}</strong>${suffix?`<span>${esc(suffix)}</span>`:''}</div>`;

@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=balanced-compact-detail-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=balanced-compact-detail-20260920/);
-  assert.match(sw,/taphoa-runtime-v17/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=pack-qty-one-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=pack-qty-one-20260920/);
+  assert.match(sw,/taphoa-runtime-v18/);
 });
 
 
@@ -368,4 +368,12 @@ test('product detail keeps long market name full width and packaging compact',as
   assert.match(css,/\.product-market-detail-source-row/);
   assert.match(css,/grid-template-columns:184px minmax\(0,1fr\)/);
   assert.match(css,/\.product-market-pack-list\{[\s\S]*display:flex/);
+});
+
+
+test('packaging chips suppress quantity one but keep meaningful counts',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/const rawQty=row\.qty&&row\.qty!=='—'\?String\(row\.qty\)\.trim\(\):''/);
+  assert.match(media,/const qty=rawQty==='1'\?'':rawQty/);
+  assert.match(media,/const suffix=\[qty,detail\]\.filter\(Boolean\)\.join\(' · '\)/);
 });
