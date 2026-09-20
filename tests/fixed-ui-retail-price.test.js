@@ -19,9 +19,9 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-source-4\.css\?v=responsive-source-labels-20260921/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=source-chip-font12-20260921/);
   assert.match(index,/fixed-ui-runtime-4\.js\?v=product-infinite-scroll-20260921/);
-  assert.match(sw,/taphoa-runtime-v28/);
+  assert.match(sw,/taphoa-runtime-v29/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
@@ -195,4 +195,12 @@ test('product lists use 60-item progressive rendering and infinite scroll',async
   assert.match(migration,/p_offset integer/);
   assert.match(migration,/offset v_offset/);
   assert.match(migration,/limit v_limit/);
+});
+
+
+test('narrow source chips keep original 12px font size',async()=>{
+  const css=await read('src/fixed-ui-source-4.css');
+  assert.match(css,/@media \(max-width:620px\)/);
+  assert.match(css,/#sourceTagsContainer \.source-filter-chip,[\s\S]*font-size:12px !important/);
+  assert.doesNotMatch(css,/font-size:11px !important/);
 });
