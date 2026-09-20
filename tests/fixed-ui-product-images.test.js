@@ -269,15 +269,15 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(media,/productMarketDetailRow\('HỌ'/);
   assert.match(media,/productMarketDetailPackTable/);
   assert.match(media,/product-market-pack-table/);
-  assert.match(media,/product-market-detail-inline-link/);
-  assert.match(media,/Mở sản phẩm/);
+  assert.match(media,/product-market-detail-source-link-chip/);
+  assert.match(media,/title="Mở sản phẩm siêu thị"/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
   assert.match(css,/\.product-market-detail-table/);
   assert.match(css,/\.product-market-detail-hero/);
   assert.match(css,/\.product-market-pack-table/);
   assert.match(css,/\.product-market-pack-row/);
-  assert.match(css,/\.product-market-detail-inline-link/);
+  assert.match(css,/\.product-market-detail-source-link-chip/);
   assert.match(css,/grid-template-columns:168px minmax\(0,1fr\)/);
   assert.match(css,/width:168px/);
   assert.match(css,/grid-template-columns:112px minmax\(0,1fr\)/);
