@@ -299,7 +299,7 @@
     wrapper.id='productMarketDetailWrapper';
     wrapper.className='absolute inset-0 z-[195] hidden items-center justify-center bg-gray-900/45 backdrop-blur-sm p-3';
     wrapper.innerHTML=`
-      <section class="product-market-detail-modal bg-white w-full max-w-[520px] max-h-[86vh] rounded-[22px] shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="productMarketDetailTitle">
+      <section class="product-market-detail-modal bg-white w-full max-w-[560px] max-h-[86vh] rounded-[22px] shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="productMarketDetailTitle">
         <header class="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 shrink-0">
           <div>
             <h2 class="text-[16px] font-extrabold text-gray-900" id="productMarketDetailTitle">So sánh sản phẩm</h2>
