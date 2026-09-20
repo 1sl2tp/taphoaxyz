@@ -227,12 +227,27 @@
             });
         }
 
+        function getMobileSourceLabel(src) {
+            const raw = String(src || '').trim();
+            if (raw === '#') return '#';
+            const key = normalizeSearchText(raw);
+            const labels = {
+                'tat ca': 'Tất cả',
+                'hang thuong': 'H. thường',
+                'thuoc la': 'T. lá',
+                'sua': 'Sữa',
+                'hang u': 'H. U'
+            };
+            return labels[key] || raw;
+        }
+
         function renderSourceTags() {
             if(!appData.sanpham || appData.sanpham.length <= 1) return;
             let rows = appData.sanpham.slice(1); let sources = new Set(); rows.forEach(r => { if(r[4]) sources.add(r[4].trim()); });
             let html = ['Tất cả', ...Array.from(sources)].map(src => {
                 let activeClass = (src === currentFilter) ? 'bg-primary text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:bg-gray-50';
-                return `<button onclick="filterSource('${src}')" class="allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap shrink-0 transition ${activeClass}">${src}</button>`;
+                const mobileLabel = getMobileSourceLabel(src);
+                return `<button onclick="filterSource('${src}')" class="source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}"><span class="source-tag-label-full">${src}</span><span class="source-tag-label-mobile">${mobileLabel}</span></button>`;
             }).join('');
             document.getElementById('sourceTagsContainer').innerHTML = html;
         }
