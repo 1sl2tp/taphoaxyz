@@ -30,7 +30,7 @@ type SourceRow={source_key:string;name:string;sort_order:number;active:boolean;m
 type ProductRow={
   product_code:string;source_key:string;source_row:number;product_name:string;input_price_vnd:number|null;
   input_price_basis:"carton";expected_profit_percent:null;applied_profit_vnd:number;sale_price_vnd:number|null;
-  carton_price_vnd:number|null;retail_price_vnd:null;units_per_carton:null;retail_unit:string;
+  carton_price_vnd:number|null;retail_price_vnd:number|null;units_per_carton:number|null;retail_unit:string;
   stock_status:"available"|"no_price";stock_label:string;is_active:boolean;raw_row:unknown[];sheet_updated_at:string|null;
 };
 type SheetState={product_code:string;source_key:string;sheet_row:number;sheet_hash:string};
@@ -54,12 +54,12 @@ function json(body:unknown,status=200){return new Response(JSON.stringify(body),
 function quotedSheet(name:string){return `'${name.replace(/'/g,"''")}'`;}
 function isEligibleTab(meta:SheetMeta){return !meta.hidden&&!SYSTEM_TABS.has(meta.title)&&!meta.title.startsWith("__")&&meta.sheetId!==MASAN_SHEET_ID;}
 function productMarker(code:string){return `P:${clean(code).toUpperCase()}`;}
-function canonicalText(code:string,name:string,input:number|null,sale:number|null){return `${code.toUpperCase().trim()}|${name.trim()}|${input??""}|${sale??""}`;}
+function canonicalText(code:string,name:string,input:number|null,sale:number|null,units:number|null,retail:number|null){return `${code.toUpperCase().trim()}|${name.trim()}|${input??""}|${sale??""}|${units??""}|${retail??""}`;}
 async function sha256(text:string){
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(text));
   return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
-async function rowHash(product:ProductRow){return sha256(canonicalText(product.product_code,product.product_name,product.input_price_vnd,product.sale_price_vnd));}
+async function rowHash(product:ProductRow){return sha256(canonicalText(product.product_code,product.product_name,product.input_price_vnd,product.sale_price_vnd,product.units_per_carton,product.retail_price_vnd));}
 
 async function googleToken(){
   if(!googleJwt){
@@ -184,15 +184,25 @@ async function ensureTrackingColumns(meta:SheetMeta){
   return rows;
 }
 
-function mapManagerRow(sourceKey:string,row:unknown[],rowNo:number,modifiedTime:string|null):ProductRow|null{
+type RetailLayout={unitsIndex:number;retailIndex:number};
+function normalizeHeader(v:unknown){return clean(v).toLocaleLowerCase("vi-VN").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/\s+/g," ").trim();}
+function managerRetailLayout(header:unknown[]):RetailLayout{
+  const normalized=(header||[]).map(normalizeHeader);
+  return {unitsIndex:normalized.indexOf("quy cach"),retailIndex:normalized.indexOf("gia le")};
+}
+function mapManagerRow(sourceKey:string,row:unknown[],rowNo:number,modifiedTime:string|null,layout:RetailLayout):ProductRow|null{
   const code=clean(row?.[0]).toUpperCase();const name=clean(row?.[1]);
   if(!code||!name)return null;
   const inputSheet=num(row?.[2]);const saleSheet=num(row?.[3]);
+  const unitsSheet=layout.unitsIndex>=0?num(row?.[layout.unitsIndex]):null;
+  const retailSheet=layout.retailIndex>=0?num(row?.[layout.retailIndex]):null;
   const input=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;
   const sale=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
+  const units=unitsSheet!==null&&unitsSheet>0?unitsSheet:null;
+  const retail=retailSheet!==null&&retailSheet>0?Math.round(retailSheet*1000):null;
   return {product_code:code,source_key:sourceKey,source_row:rowNo,product_name:name,input_price_vnd:input,input_price_basis:"carton",
     expected_profit_percent:null,applied_profit_vnd:input!==null&&sale!==null?Math.max(0,sale-input):0,sale_price_vnd:sale,carton_price_vnd:sale,
-    retail_price_vnd:null,units_per_carton:null,retail_unit:"",stock_status:sale!==null?"available":"no_price",stock_label:sale!==null?"":"Chưa có giá",
+    retail_price_vnd:retail,units_per_carton:units,retail_unit:retail!==null?"lẻ":"",stock_status:sale!==null?"available":"no_price",stock_label:sale!==null?"":"Chưa có giá",
     is_active:true,raw_row:[...row.slice(0,4)],sheet_updated_at:modifiedTime};
 }
 function parseCode(code:string){const m=clean(code).toUpperCase().match(/^(.*?)(\d+)$/);return m?{prefix:m[1],n:Number(m[2])}:null;}
@@ -306,8 +316,9 @@ async function inboundScan(caches:Map<number,TabCache>,modifiedTime:string){
   const liveSourceKeys=new Set<string>();
   for(const cache of caches.values()){
     const codes:string[]=[];liveSourceKeys.add(cache.source.source_key);
+    const retailLayout=managerRetailLayout(cache.rows[0]||[]);
     for(let i=1;i<cache.rows.length;i++){
-      const product=mapManagerRow(cache.source.source_key,cache.rows[i]||[],i+1,modifiedTime);if(!product)continue;
+      const product=mapManagerRow(cache.source.source_key,cache.rows[i]||[],i+1,modifiedTime,retailLayout);if(!product)continue;
       totalRows++;codes.push(product.product_code);const hash=await rowHash(product);const previous=stateMap.get(product.product_code);
       const rowMoved=!!previous&&previous.sheet_row!==product.source_row;const sourceMoved=!!previous&&previous.source_key!==product.source_key;const hashChanged=!previous||previous.sheet_hash!==hash;
       if(hashChanged||rowMoved||sourceMoved)changed.push(product);
