@@ -17,6 +17,12 @@ test('sales product cards show retail price only when available',async()=>{
   assert.doesNotMatch(runtime,/>Lẻ \$\{giaLe\.toLocaleString/);
 });
 
+test('retail price cache bust is wired into production shell',async()=>{
+  const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=retail-number-only-20260920/);
+  assert.match(sw,/taphoa-runtime-v2/);
+});
+
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
   const sync=await read('supabase/functions/taphoa-sheet-sync/index.ts');
   assert.match(sync,/managerRetailLayout/);
