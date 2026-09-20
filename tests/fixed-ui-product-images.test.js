@@ -137,3 +137,19 @@ test('selected market item can be manually interpreted as carton or retail',asyn
   assert.match(business,/taphoa_set_product_media_compare/);
   assert.match(bridge,/setProductMediaCompare/);
 });
+
+
+test('saved market comparison rows align and preserve source link',async()=>{
+  const [media,css]=await Promise.all([
+    read('src/fixed-ui-product-media.js'),
+    read('src/fixed-ui-product-media.css')
+  ]);
+  assert.match(media,/product-image-compare-row/);
+  assert.match(media,/product-image-compare-label">MÌNH/);
+  assert.match(media,/product-image-compare-label">HỌ/);
+  assert.match(media,/Mở sản phẩm siêu thị gốc/);
+  assert.match(media,/target="_blank"/);
+  assert.match(media,/imageSourceUrl/);
+  assert.match(css,/grid-template-columns:34px 42px 64px 82px 62px 78px 28px/);
+  assert.match(css,/font-variant-numeric:tabular-nums/);
+});
