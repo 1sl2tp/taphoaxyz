@@ -250,7 +250,7 @@ async function batchOrders(action,ids){const result=await business.batchOrders(a
 async function debtTransaction(customerId,type,amount,note=''){const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;}
 async function orderDetail(id){return business.orderDetail(id);}
 async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}
-async function marketSearch(query,limit=80){return business.marketSearch(query,limit);}
+async function marketSearch(query,limit=80,source=''){return business.marketSearch(query,limit,source);}
 async function setProductMedia(productCode,canonicalProductId){
   const result=await business.setProductMedia(productCode,canonicalProductId);
   await refresh(['products']);
