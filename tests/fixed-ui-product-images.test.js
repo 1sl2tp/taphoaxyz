@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=single-flow-detail-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=single-flow-detail-20260920/);
-  assert.match(sw,/taphoa-runtime-v16/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=balanced-compact-detail-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=balanced-compact-detail-20260920/);
+  assert.match(sw,/taphoa-runtime-v17/);
 });
 
 
@@ -268,19 +268,19 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(media,/productMarketDetailRow\('MÌNH'/);
   assert.match(media,/productMarketDetailRow\('HỌ'/);
   assert.match(media,/productMarketDetailPackTable/);
-  assert.match(media,/product-market-pack-table/);
+  assert.match(media,/product-market-pack-list/);
   assert.match(media,/product-market-detail-source-link-chip/);
   assert.match(media,/title="Mở sản phẩm siêu thị"/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
   assert.match(css,/\.product-market-detail-table/);
   assert.match(css,/\.product-market-detail-hero/);
-  assert.match(css,/\.product-market-pack-table/);
-  assert.match(css,/\.product-market-pack-row/);
+  assert.match(css,/\.product-market-pack-list/);
+  assert.match(css,/\.product-market-pack-item/);
   assert.match(css,/\.product-market-detail-source-link-chip/);
-  assert.match(css,/grid-template-columns:168px minmax\(0,1fr\)/);
-  assert.match(css,/width:168px/);
-  assert.match(css,/grid-template-columns:112px minmax\(0,1fr\)/);
+  assert.match(css,/grid-template-columns:184px minmax\(0,1fr\)/);
+  assert.match(css,/width:184px/);
+  assert.match(css,/grid-template-columns:124px minmax\(0,1fr\)/);
   assert.match(media,/marketPackagingValue/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
@@ -295,9 +295,8 @@ test('packaging hierarchy table shows carton middle pack and leaf detail',async(
   assert.match(media,/const perMiddle=qc>0&&q2>0&&Math\.abs\(q3-qc\)<0\.0001\?qc\/q2:q3/);
   assert.match(media,/add\(label2,q2\.toLocaleString/);
   assert.match(media,/add\(label3,q3\.toLocaleString/);
-  assert.match(media,/Đóng gói/);
-  assert.match(media,/Số lượng/);
-  assert.match(media,/Bên trong/);
+  assert.match(media,/product-market-pack-list/);
+  assert.match(media,/product-market-pack-item/);
 });
 
 test('GO product links append the internal source product id only for browser opening',async()=>{
@@ -328,17 +327,18 @@ test('professional product detail layout keeps identity source and packaging hie
   ]);
   assert.match(media,/product-market-detail-copy/);
   assert.match(media,/product-market-detail-own-name/);
-  assert.match(media,/product-market-detail-market-line/);
+  assert.match(media,/product-market-detail-market-name/);
+  assert.match(media,/product-market-detail-source-row/);
   assert.match(media,/product-market-detail-source-link-chip/);
-  assert.match(media,/Đóng gói/);
-  assert.match(media,/Số lượng/);
-  assert.match(media,/Bên trong/);
+  assert.match(media,/product-market-pack-list/);
+  assert.match(media,/product-market-pack-item/);
   assert.match(media,/max-w-\[600px\]/);
   assert.match(css,/\.product-market-detail-copy/);
   assert.match(css,/\.product-market-detail-own-name/);
   assert.match(css,/\.product-market-detail-source-link-chip/);
-  assert.match(css,/grid-template-columns:82px 72px minmax\(0,1fr\)/);
-  assert.match(css,/font-size:11px/);
+  assert.match(css,/\.product-market-pack-list/);
+  assert.match(css,/\.product-market-pack-item/);
+  assert.match(css,/font-size:10\.5px/);
 });
 
 
@@ -346,9 +346,26 @@ test('single-flow product hero removes redundant owner and market labels',async(
   const media=await read('src/fixed-ui-product-media.js');
   assert.match(media,/product-market-detail-own-name/);
   assert.match(media,/product-market-detail-market-name/);
+  assert.match(media,/product-market-detail-source-row/);
   assert.match(media,/product-market-detail-source-link-chip/);
   assert.doesNotMatch(media,/product-market-detail-label">Mình/);
   assert.doesNotMatch(media,/product-market-detail-label">Họ/);
   assert.doesNotMatch(media,/>Mở sản phẩm<\/span>/);
   assert.match(media,/title="Mở sản phẩm siêu thị"/);
+});
+
+
+test('product detail keeps long market name full width and packaging compact',async()=>{
+  const [media,css]=await Promise.all([
+    read('src/fixed-ui-product-media.js'),
+    read('src/fixed-ui-product-media.css')
+  ]);
+  assert.match(media,/product-market-detail-market-name/);
+  assert.match(media,/product-market-detail-source-row/);
+  assert.match(media,/product-market-pack-list/);
+  assert.match(media,/product-market-pack-item/);
+  assert.match(css,/\.product-market-detail-market-name\{[\s\S]*width:100%/);
+  assert.match(css,/\.product-market-detail-source-row/);
+  assert.match(css,/grid-template-columns:184px minmax\(0,1fr\)/);
+  assert.match(css,/\.product-market-pack-list\{[\s\S]*display:flex/);
 });

@@ -20,7 +20,7 @@ test('sales product cards show retail price only when available',async()=>{
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-runtime-4\.js\?v=market-pack-rules-20260920/);
-  assert.match(sw,/taphoa-runtime-v16/);
+  assert.match(sw,/taphoa-runtime-v17/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{

@@ -286,9 +286,13 @@
   function productMarketDetailPackTable(product,compare){
     const rows=productMarketDetailPackRows(product,compare);
     if(!rows.length)return '';
-    return `<div class="product-market-pack-table">
-      <div class="product-market-pack-head"><span>Đóng gói</span><span>Số lượng</span><span>Bên trong</span></div>
-      ${rows.map(row=>`<div class="product-market-pack-row"><span>${esc(row.level)}</span><strong>${esc(row.qty)}</strong><span>${esc(row.detail)}</span></div>`).join('')}
+    return `<div class="product-market-pack-list">
+      ${rows.map(row=>{
+        const qty=row.qty&&row.qty!=='—'?row.qty:'';
+        const detail=row.detail&&row.detail!=='—'?row.detail:'';
+        const suffix=[qty,detail].filter(Boolean).join(' · ');
+        return `<div class="product-market-pack-item"><strong>${esc(row.level)}</strong>${suffix?`<span>${esc(suffix)}</span>`:''}</div>`;
+      }).join('')}
     </div>`;
   }
 
@@ -393,13 +397,13 @@
         <div class="product-market-detail-image"><img src="${esc(productImage(product))}" alt="${esc(ownName)}"></div>
         <div class="product-market-detail-copy">
           <div class="product-market-detail-own-name">${esc(ownName)}</div>
-          <div class="product-market-detail-market-line">
-            <div class="product-market-detail-market-name">${esc(marketName)}</div>
+          <div class="product-market-detail-market-name">${esc(marketName)}</div>
+          ${source||safeLink?`<div class="product-market-detail-source-row">
             ${source?(safeLink
               ? `<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>${esc(source)}</span><i class="ph-bold ph-arrow-square-out"></i></a>`
               : `<span class="product-market-detail-source-link-chip is-static"><span>${esc(source)}</span></span>`)
-              :(safeLink?`<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>Mở</span><i class="ph-bold ph-arrow-square-out"></i></a>`:'')}
-          </div>
+              : `<a class="product-market-detail-source-link-chip" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer" title="Mở sản phẩm siêu thị"><span>Nguồn</span><i class="ph-bold ph-arrow-square-out"></i></a>`}
+          </div>`:''}
           ${packTable}
         </div>
       </div>
