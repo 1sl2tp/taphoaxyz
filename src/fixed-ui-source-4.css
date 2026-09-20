@@ -384,12 +384,12 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 #sourceTagsContainer .source-tag-label-mobile{display:none;}
 @media (max-width:480px){
   body[data-resolved-mode="mobile"] #sourceTagsContainer{
-    gap:6px !important;
+    gap:5px !important;
     overflow-x:auto;
   }
   body[data-resolved-mode="mobile"] #sourceTagsContainer .source-filter-chip{
-    padding-left:10px !important;
-    padding-right:10px !important;
+    padding-left:9px !important;
+    padding-right:9px !important;
     font-size:11px !important;
   }
   body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-full{display:none;}
@@ -408,6 +408,10 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 .market-quick-thumb img{
   display:block;
 }
+.market-quick-price.market-source-winmart{color:#d71920;}
+.market-quick-price.market-source-bhx{color:#087a40;}
+.market-quick-price.market-source-go{color:#e85d04;}
+.market-quick-price.market-source-other{color:#334155;}
 @media (max-width:480px){
   body[data-resolved-mode="mobile"] .market-quick-card{
     min-height:64px;
