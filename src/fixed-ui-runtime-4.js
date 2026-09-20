@@ -272,10 +272,14 @@
                 const marketCartonPrice = getSelectedMarketCartonPriceForSale(maSp);
                 const marketIsLower = marketCartonPrice > 0 && giaBan > 0 && marketCartonPrice < giaBan;
                 const salePriceHtml = marketIsLower
-                    ? `<span class="text-[13px] font-bold text-gray-400 line-through decoration-1 tabular-nums">${giaBan.toLocaleString('vi-VN')}</span><span class="text-[13px] font-bold text-gray-900 tabular-nums">${marketCartonPrice.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`
+                    ? `<span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span><span class="text-[12px] font-normal text-gray-800 line-through decoration-1 tabular-nums">${marketCartonPrice.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`
                     : `<span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span>`;
+                const selectedImage = String(r?.[5] || '').trim();
+                const imageTag = `<img src="${getProductImageSrc(r)}" alt="${escapeProductEditorValue(tenSp)}" class="product-thumb shrink-0" loading="lazy" decoding="async">`;
                 const imageHtml = productViewMode === 'image'
-                    ? `<img src="${getProductImageSrc(r)}" alt="${escapeProductEditorValue(tenSp)}" class="product-thumb shrink-0" loading="lazy" decoding="async">`
+                    ? (/^https?:\/\//i.test(selectedImage)
+                        ? `<button type="button" class="product-thumb-button shrink-0" data-product-code="${escapeProductEditorValue(maSp)}" aria-label="Xem chi tiết so sánh ${escapeProductEditorValue(tenSp)}" onclick="openProductMarketDetail(this.dataset.productCode)">${imageTag}</button>`
+                        : imageTag)
                     : '';
                 return `
                 <div class="product-card bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 flex justify-between items-center transition-colors">

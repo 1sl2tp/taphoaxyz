@@ -1,7 +1,7 @@
 'use strict';
 
 const CACHE_PREFIX='taphoa-runtime-';
-const CACHE_NAME='taphoa-runtime-v9';
+const CACHE_NAME='taphoa-runtime-v10';
 
 self.addEventListener('install',event=>{
   event.waitUntil(self.skipWaiting());

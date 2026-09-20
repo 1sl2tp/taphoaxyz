@@ -19,8 +19,8 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-lower-carton-20260920/);
-  assert.match(sw,/taphoa-runtime-v9/);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-detail-20260920/);
+  assert.match(sw,/taphoa-runtime-v10/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
@@ -43,7 +43,8 @@ test('sales cards only surface a lower selected supermarket carton price',async(
   assert.match(runtime,/marketSelectedPriceVnd/);
   assert.match(runtime,/marketCartonPriceVnd/);
   assert.match(runtime,/marketCartonPrice < giaBan/);
-  assert.match(runtime,/line-through/);
-  assert.match(runtime,/text-gray-900 tabular-nums/);
+  assert.match(runtime,/text-primary tabular-nums/);
+  assert.match(runtime,/font-normal text-gray-800 line-through/);
+  assert.doesNotMatch(runtime,/text-gray-400 line-through/);
   assert.doesNotMatch(runtime,/marketRetailPriceVnd.*getSelectedMarketCartonPriceForSale/s);
 });
