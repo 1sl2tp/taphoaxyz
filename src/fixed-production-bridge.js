@@ -47,7 +47,7 @@ function mapProductRows(state=appState.get()){
       text(first(p,['von','cost','unit_cost'],'')),
       text(first(p,['gia','price','unit_price'],0)),
       sourceDisplayName(p,state),
-      '',
+      text(first(p,['imageUrl','image_url','image'],'')),
       text(first(p,['quyCach','quyDoiThung','units_per_carton'],'')),
       text(first(p,['giaLe','retail_price'],'')),
     ])
@@ -249,6 +249,17 @@ async function deletePending(id){const result=await business.deletePending(id);a
 async function batchOrders(action,ids){const result=await business.batchOrders(action,ids);await refresh(['orders','debt']);return result;}
 async function debtTransaction(customerId,type,amount,note=''){const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;}
 async function orderDetail(id){return business.orderDetail(id);}
+async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}
+async function setProductMedia(productCode,canonicalProductId){
+  const result=await business.setProductMedia(productCode,canonicalProductId);
+  await refresh(['products']);
+  return result;
+}
+async function clearProductMedia(productCode){
+  const result=await business.clearProductMedia(productCode);
+  await refresh(['products']);
+  return result;
+}
 
 window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('taphoa sync',error)));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
@@ -256,6 +267,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
   saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
+  productMediaCandidates,setProductMedia,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
 });
