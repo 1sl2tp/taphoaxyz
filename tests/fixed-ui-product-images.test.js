@@ -58,7 +58,7 @@ test('image picker searches the full supermarket link catalog',async()=>{
   assert.match(migration,/v_candidate_id like 'link:%'/);
   assert.match(media,/row\?\.source/);
   assert.match(media,/row\?\.packaging/);
-  assert.match(media,/current_price/);
+  assert.match(media,/candidatePriceHtml/);
 });
 
 test('image picker shows carton and retail prices and sorts cheapest first',async()=>{
