@@ -200,9 +200,12 @@
         }
 
         let currentFilter = 'Tất cả';
+        let productSearchMode = 'own';
         let productSearchIndex = [];
         let productSearchIndexSource = null;
         let productSearchRenderFrame = 0;
+        let marketSearchTimer = 0;
+        let marketSearchRequestSeq = 0;
         let currentUiMode = localStorage.getItem('APP_UI_MODE_PREF') || 'auto';
         let productViewMode = localStorage.getItem('APP_PRODUCT_VIEW') || 'default';
         let currentThemePreset = localStorage.getItem('APP_THEME_PRESET') || 'current';
