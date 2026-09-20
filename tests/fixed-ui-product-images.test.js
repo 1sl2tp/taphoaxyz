@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=professional-detail-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=professional-detail-20260920/);
-  assert.match(sw,/taphoa-runtime-v15/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=single-flow-detail-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=single-flow-detail-20260920/);
+  assert.match(sw,/taphoa-runtime-v16/);
 });
 
 
@@ -269,18 +269,18 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(media,/productMarketDetailRow\('HỌ'/);
   assert.match(media,/productMarketDetailPackTable/);
   assert.match(media,/product-market-pack-table/);
-  assert.match(media,/product-market-detail-inline-link/);
-  assert.match(media,/Mở sản phẩm/);
+  assert.match(media,/product-market-detail-source-link-chip/);
+  assert.match(media,/title="Mở sản phẩm siêu thị"/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
   assert.match(css,/\.product-market-detail-table/);
   assert.match(css,/\.product-market-detail-hero/);
   assert.match(css,/\.product-market-pack-table/);
   assert.match(css,/\.product-market-pack-row/);
-  assert.match(css,/\.product-market-detail-inline-link/);
-  assert.match(css,/grid-template-columns:140px minmax\(0,1fr\)/);
-  assert.match(css,/width:140px/);
-  assert.match(css,/grid-template-columns:102px minmax\(0,1fr\)/);
+  assert.match(css,/\.product-market-detail-source-link-chip/);
+  assert.match(css,/grid-template-columns:168px minmax\(0,1fr\)/);
+  assert.match(css,/width:168px/);
+  assert.match(css,/grid-template-columns:112px minmax\(0,1fr\)/);
   assert.match(media,/marketPackagingValue/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
@@ -327,14 +327,28 @@ test('professional product detail layout keeps identity source and packaging hie
     read('src/fixed-ui-product-media.css')
   ]);
   assert.match(media,/product-market-detail-copy/);
-  assert.match(media,/product-market-detail-identity/);
-  assert.match(media,/product-market-detail-source-chip/);
+  assert.match(media,/product-market-detail-own-name/);
+  assert.match(media,/product-market-detail-market-line/);
+  assert.match(media,/product-market-detail-source-link-chip/);
   assert.match(media,/Đóng gói/);
   assert.match(media,/Số lượng/);
   assert.match(media,/Bên trong/);
-  assert.match(media,/max-w-\[560px\]/);
+  assert.match(media,/max-w-\[600px\]/);
   assert.match(css,/\.product-market-detail-copy/);
-  assert.match(css,/\.product-market-detail-source-chip/);
-  assert.match(css,/grid-template-columns:74px 62px minmax\(0,1fr\)/);
-  assert.match(css,/font-size:10\.5px/);
+  assert.match(css,/\.product-market-detail-own-name/);
+  assert.match(css,/\.product-market-detail-source-link-chip/);
+  assert.match(css,/grid-template-columns:82px 72px minmax\(0,1fr\)/);
+  assert.match(css,/font-size:11px/);
+});
+
+
+test('single-flow product hero removes redundant owner and market labels',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/product-market-detail-own-name/);
+  assert.match(media,/product-market-detail-market-name/);
+  assert.match(media,/product-market-detail-source-link-chip/);
+  assert.doesNotMatch(media,/product-market-detail-label">Mình/);
+  assert.doesNotMatch(media,/product-market-detail-label">Họ/);
+  assert.doesNotMatch(media,/>Mở sản phẩm<\/span>/);
+  assert.match(media,/title="Mở sản phẩm siêu thị"/);
 });
