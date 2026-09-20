@@ -135,3 +135,12 @@
   }
   .product-image-compare-structure{margin-left:108px;}
 }
+
+button.product-image-compare-source{
+  border:0;
+  padding:0 4px;
+  cursor:pointer;
+}
+button.product-image-compare-source:hover{
+  background:#1f2937;
+}
