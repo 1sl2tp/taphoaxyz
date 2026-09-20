@@ -233,8 +233,49 @@ button.product-image-compare-source:hover{
   font-weight:700;
   color:#6b7280;
 }
+.product-market-detail-name-market{row-gap:4px;}
+.product-market-detail-inline-meta{
+  grid-column:2;
+  display:flex;
+  align-items:flex-start;
+  gap:6px;
+  min-width:0;
+  margin-top:1px;
+  color:#64748b;
+}
+.product-market-detail-inline-meta>span{
+  flex:0 0 auto;
+  font-size:8px;
+  line-height:1.35;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  color:#94a3b8;
+}
+.product-market-detail-inline-meta>strong{
+  min-width:0;
+  font-size:9px;
+  line-height:1.35;
+  font-weight:650;
+  color:#64748b;
+  overflow-wrap:anywhere;
+}
+.product-market-detail-inline-link{
+  grid-column:2;
+  width:max-content;
+  max-width:100%;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  color:#64748b;
+  font-size:9px;
+  line-height:1.3;
+  font-weight:700;
+  text-decoration:none;
+}
+.product-market-detail-inline-link:hover{color:#16a34a;}
 .product-market-detail-table{
-  margin-top:16px;
+  margin-top:12px;
   border:1px solid #e5e7eb;
   border-radius:14px;
   overflow:hidden;
@@ -242,7 +283,7 @@ button.product-image-compare-source:hover{
 .product-market-detail-head,
 .product-market-detail-row{
   display:grid;
-  grid-template-columns:56px 58px minmax(78px,1fr) 48px minmax(70px,1fr);
+  grid-template-columns:50px 68px minmax(78px,1fr) 48px minmax(70px,1fr);
   gap:6px;
   align-items:center;
   min-height:36px;
@@ -311,7 +352,7 @@ button.product-image-compare-source:hover{
   .product-market-detail-image{width:120px;height:120px;border-radius:14px;}
   .product-market-detail-head,
   .product-market-detail-row{
-    grid-template-columns:44px 46px minmax(62px,1fr) 38px minmax(58px,1fr);
+    grid-template-columns:40px 58px minmax(62px,1fr) 38px minmax(58px,1fr);
     gap:4px;
     padding:0 7px;
   }
