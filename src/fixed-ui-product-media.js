@@ -171,6 +171,110 @@
     return Array.isArray(prod()?.getState?.()?.products)?prod().getState().products:[];
   }
 
+  function ensureProductMarketDetailModal(){
+    let wrapper=document.getElementById('productMarketDetailWrapper');
+    if(wrapper)return wrapper;
+    wrapper=document.createElement('div');
+    wrapper.id='productMarketDetailWrapper';
+    wrapper.className='absolute inset-0 z-[195] hidden items-center justify-center bg-gray-900/45 backdrop-blur-sm p-3';
+    wrapper.innerHTML=`
+      <section class="product-market-detail-modal bg-white w-full max-w-[520px] max-h-[86vh] rounded-[22px] shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="productMarketDetailTitle">
+        <header class="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 shrink-0">
+          <div>
+            <h2 class="text-[16px] font-extrabold text-gray-900" id="productMarketDetailTitle">So sánh sản phẩm</h2>
+            <p class="text-[10px] text-gray-400 mt-0.5">Chi tiết từ sản phẩm siêu thị đã chọn</p>
+          </div>
+          <button aria-label="Đóng chi tiết sản phẩm" class="allow-fast-click w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-500" data-market-detail-close type="button"><i class="ph-bold ph-x"></i></button>
+        </header>
+        <div class="product-market-detail-body flex-1 min-h-0 overflow-y-auto p-4" id="productMarketDetailBody"></div>
+      </section>`;
+    document.getElementById('appContainer')?.appendChild(wrapper);
+    wrapper.querySelector('[data-market-detail-close]')?.addEventListener('click',closeProductMarketDetail);
+    wrapper.addEventListener('click',event=>{if(event.target===wrapper)closeProductMarketDetail();});
+    return wrapper;
+  }
+
+  function productMarketDetailOwnState(product){
+    const saleVnd=ownPriceValue(product?.sale_price_vnd,true)||ownPriceValue(product?.gia??product?.price??product?.unit_price);
+    const sourceQc=Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
+    const overrideQc=Number(product?.ownCompareUnitsPerCarton)||0;
+    const qc=overrideQc>0?overrideQc:sourceQc;
+    let retailVnd=ownPriceValue(product?.retail_price_vnd,true)||ownPriceValue(product?.giaLe??product?.retail_price);
+    if(overrideQc>0&&saleVnd>0)retailVnd=saleVnd/overrideQc;
+    else if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
+    return {kind:qc>1?'carton':'retail',qc,carton:saleVnd,retail:retailVnd};
+  }
+
+  function productMarketDetailStructure(product,compare){
+    const q2=Number(product?.marketPackQty2)||0;
+    const q3=Number(product?.marketPackQty3)||0;
+    const label2=String(product?.marketPackLabel2||'').trim();
+    const label3=String(product?.marketPackLabel3||'').trim();
+    const total=Number(compare?.qc)||Number(product?.marketUnitsPerCarton)||0;
+    if(q2>1&&q3>1&&label2&&label3){
+      const perMiddle=total>0&&q2>0?total/q2:0;
+      if(perMiddle>0&&Math.abs(perMiddle-Math.round(perMiddle))<0.0001){
+        return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} × ${Math.round(perMiddle).toLocaleString('vi-VN')} ${label3.toLowerCase()} = ${total.toLocaleString('vi-VN',{maximumFractionDigits:2})}`;
+      }
+      return `${q2.toLocaleString('vi-VN')} ${label2.toLowerCase()} · ${q3.toLocaleString('vi-VN')} ${label3.toLowerCase()}`;
+    }
+    return String(product?.marketPackaging||'').trim();
+  }
+
+  function productMarketDetailRow(label,state,source=''){
+    const kind=state?.kind==='carton'?'Thùng':'Lẻ';
+    const carton=Number(state?.carton)>0?formatComparePrice(state.carton):'—';
+    const retail=Number(state?.retail)>0?formatComparePrice(state.retail):'—';
+    const qc=Number(state?.qc)>0?Number(state.qc).toLocaleString('vi-VN',{maximumFractionDigits:2}):'—';
+    return `<div class="product-market-detail-row">
+      <div class="product-market-detail-side">${esc(label)}${source?`<span>${esc(source)}</span>`:''}</div>
+      <div>${kind}</div>
+      <div class="product-market-detail-number">${carton}</div>
+      <div class="product-market-detail-number">${qc}</div>
+      <div class="product-market-detail-number">${retail}</div>
+    </div>`;
+  }
+
+  function closeProductMarketDetail(){
+    const wrapper=document.getElementById('productMarketDetailWrapper');
+    wrapper?.classList.add('hidden');
+    wrapper?.classList.remove('flex');
+  }
+
+  window.openProductMarketDetail=function(code){
+    const product=stateProducts().find(row=>productCode(row)===String(code||''));
+    if(!product||!productImage(product))return;
+    const wrapper=ensureProductMarketDetailModal();
+    const body=wrapper.querySelector('#productMarketDetailBody');
+    if(!body)return;
+    const own=productMarketDetailOwnState(product);
+    const market=marketCompareState(product);
+    const ownName=productName(product);
+    const marketName=String(product?.marketProductName||'').trim()||'Chưa có tên siêu thị';
+    const source=String(product?.marketSource||'').trim();
+    const sourceUrl=String(product?.imageSourceUrl||product?.image_source_url||'').trim();
+    const structure=productMarketDetailStructure(product,market);
+    const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
+    body.innerHTML=`
+      <div class="product-market-detail-hero">
+        <div class="product-market-detail-image"><img src="${esc(productImage(product))}" alt="${esc(ownName)}"></div>
+        <div class="product-market-detail-names">
+          <div class="product-market-detail-name"><span>MÌNH</span><strong>${esc(ownName)}</strong></div>
+          <div class="product-market-detail-name"><span>HỌ</span><strong>${esc(marketName)}</strong>${source?`<small>${esc(source)}</small>`:''}</div>
+        </div>
+      </div>
+      <div class="product-market-detail-table">
+        <div class="product-market-detail-head"><span></span><span>Loại</span><span>Giá</span><span>QC</span><span>Lẻ</span></div>
+        ${productMarketDetailRow('MÌNH',own)}
+        ${productMarketDetailRow('HỌ',market,source)}
+      </div>
+      ${structure?`<div class="product-market-detail-structure"><span>Quy cách</span><strong>${esc(structure)}</strong></div>`:''}
+      ${safeLink?`<a class="product-market-detail-source-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm siêu thị gốc</span></a>`:''}
+    `;
+    wrapper.classList.remove('hidden');
+    wrapper.classList.add('flex');
+  };
+
   function renderProducts(query=''){
     const list=document.getElementById('productImageProductList');
     if(!list)return;
