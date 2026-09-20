@@ -237,7 +237,11 @@
             if (input) {
                 input.placeholder = marketMode ? 'Tìm sản phẩm siêu thị...' : 'Tìm tên, mã sản phẩm...';
             }
-            if (sources) sources.classList.toggle('hidden', marketMode);
+            if (sources) {
+                sources.classList.remove('hidden');
+                if (marketMode) renderMarketSourceTags();
+                else renderSourceTags();
+            }
         }
 
         function toggleProductSearchMode() {
@@ -275,7 +279,8 @@
 
             list.innerHTML = `<div class="py-10 text-center text-gray-400 text-sm"><i class="ph-bold ph-spinner animate-spin mr-1"></i>${query ? 'Đang tìm siêu thị...' : 'Đang tải sản phẩm siêu thị...'}</div>`;
             try {
-                const rows = await window.TAPHOA_PRODUCTION?.marketSearch?.(query, 80);
+                const marketSource = currentMarketSourceFilter === 'Tất cả' ? '' : currentMarketSourceFilter;
+                const rows = await window.TAPHOA_PRODUCTION?.marketSearch?.(query, 80, marketSource);
                 if (requestSeq !== marketSearchRequestSeq || productSearchMode !== 'market') return;
                 const results = Array.isArray(rows) ? rows : [];
                 if (!results.length) {
@@ -316,6 +321,25 @@
                 productSearchRenderFrame = 0;
                 renderProductList();
             });
+        }
+
+        function renderMarketSourceTags() {
+            const container = document.getElementById('sourceTagsContainer');
+            if (!container) return;
+            const sources = ['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH'];
+            container.innerHTML = sources.map(src => {
+                const activeClass = src === currentMarketSourceFilter
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'border border-gray-200 text-gray-600 hover:bg-gray-50';
+                return `<button onclick="filterMarketSource('${src}')" class="market-source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}">${src}</button>`;
+            }).join('');
+        }
+
+        function filterMarketSource(src) {
+            currentMarketSourceFilter = src;
+            renderMarketSourceTags();
+            clearTimeout(marketSearchTimer);
+            marketSearchTimer = setTimeout(() => renderMarketSearchResults(), 0);
         }
 
         function getMobileSourceLabel(src) {
