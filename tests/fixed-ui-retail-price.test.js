@@ -20,8 +20,8 @@ test('sales product cards show retail price only when available',async()=>{
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-source-4\.css\?v=source-chip-font12-20260921/);
-  assert.match(index,/fixed-ui-runtime-4\.js\?v=product-infinite-scroll-20260921/);
-  assert.match(sw,/taphoa-runtime-v29/);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-no-flicker-20260921/);
+  assert.match(sw,/taphoa-runtime-v30/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
@@ -203,4 +203,16 @@ test('narrow source chips keep original 12px font size',async()=>{
   assert.match(css,/@media \(max-width:620px\)/);
   assert.match(css,/#sourceTagsContainer \.source-filter-chip,[\s\S]*font-size:12px !important/);
   assert.doesNotMatch(css,/font-size:11px !important/);
+});
+
+
+test('market list ignores unrelated renderProductList calls when query and source are unchanged',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-4.js');
+  assert.match(runtime,/const desiredKey = \[normalizeSearchText\(query\), marketSource\]\.join\('\|'\)/);
+  assert.match(runtime,/const hasStableMarketView = marketSearchKey === desiredKey/);
+  assert.match(runtime,/marketSearchLoading/);
+  assert.match(runtime,/marketSearchOffset > 0/);
+  assert.match(runtime,/marketSearchHasMore === false/);
+  assert.match(runtime,/querySelector\('\.market-quick-card'\)/);
+  assert.match(runtime,/if \(hasStableMarketView\) return/);
 });
