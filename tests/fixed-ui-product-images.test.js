@@ -89,3 +89,25 @@ test('image picker keeps own sell price, pack size and retail price visible whil
   assert.match(media,/>Mình</);
   assert.match(media,/· QC/);
 });
+
+
+test('selected supermarket image persists market price and nested pack snapshot',async()=>{
+  const [snapshot,orderFix,media]=await Promise.all([
+    read('supabase/migrations/20260920202000_taphoa_product_media_market_snapshot.sql'),
+    read('supabase/migrations/20260920203000_taphoa_product_media_candidate_order_fix.sql'),
+    read('src/fixed-ui-product-media.js')
+  ]);
+  assert.match(snapshot,/market_carton_price_vnd/);
+  assert.match(snapshot,/market_retail_price_vnd/);
+  assert.match(snapshot,/market_units_per_carton/);
+  assert.match(snapshot,/market_pack_qty2/);
+  assert.match(snapshot,/market_pack_qty3/);
+  assert.match(snapshot,/h\.qty2\*h\.qty3/);
+  assert.match(snapshot,/'marketCartonPriceVnd'/);
+  assert.match(snapshot,/'marketRetailPriceVnd'/);
+  assert.match(orderFix,/limit v_limit/);
+  assert.match(media,/productImageSelectedMarketSummary/);
+  assert.match(media,/>Đã chọn</);
+  assert.match(media,/selectedMarketStructure/);
+  assert.match(media,/total\/q2/);
+});
