@@ -501,6 +501,20 @@
             updateProductSearchModeUi();
             ensureProductInfiniteScroll();
             if (productSearchMode === 'market') {
+                const input = document.getElementById('searchProductInput');
+                const query = String(input?.value || '').trim();
+                const marketSource = currentMarketSourceFilter === 'Tất cả' ? '' : currentMarketSourceFilter;
+                const desiredKey = [normalizeSearchText(query), marketSource].join('|');
+                const list = document.getElementById('productList');
+                const hasStableMarketView = marketSearchKey === desiredKey && (
+                    marketSearchLoading
+                    || marketSearchOffset > 0
+                    || marketSearchHasMore === false
+                    || Boolean(list?.querySelector('.market-quick-card'))
+                );
+
+                if (hasStableMarketView) return;
+
                 clearTimeout(marketSearchTimer);
                 marketSearchTimer = setTimeout(() => renderMarketSearchResults(false), 0);
                 return;
