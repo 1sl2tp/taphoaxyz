@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=retail-carton-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=retail-carton-20260920/);
-  assert.match(sw,/taphoa-runtime-v7/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=round-500-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=round-500-20260920/);
+  assert.match(sw,/taphoa-runtime-v8/);
 });
 
 
@@ -223,4 +223,13 @@ test('retail competitor auto-converts to carton using own QC when competitor QC 
   assert.match(media,/const qc=overrideQc>0\?overrideQc:\(rawQc>0\?rawQc:ownQc\)/);
   assert.match(media,/const carton=kind==='carton'\?price:\(retail>0&&qc>0\?retail\*qc:0\)/);
   assert.match(media,/const priceText=carton\|\|'—'/);
+});
+
+
+test('comparison price display rounds to nearest 500 VND without mutating source data',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/function roundComparePrice/);
+  assert.match(media,/Math\.round\(amount\/500\)\*500/);
+  assert.match(media,/formatComparePrice/);
+  assert.match(media,/formatCandidatePrice/);
 });
