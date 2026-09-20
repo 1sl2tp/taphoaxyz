@@ -380,21 +380,21 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 }
 
 
-/* FIXED STYLE: mobile-source-filter-abbreviations */
+/* FIXED STYLE: responsive-source-filter-labels */
 #sourceTagsContainer .source-tag-label-mobile{display:none;}
-@media (max-width:480px){
-  body[data-resolved-mode="mobile"] #sourceTagsContainer{
+@media (max-width:620px){
+  #sourceTagsContainer{
     gap:5px !important;
     overflow-x:auto;
   }
-  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-filter-chip,
-  body[data-resolved-mode="mobile"] #sourceTagsContainer .market-source-filter-chip{
+  #sourceTagsContainer .source-filter-chip,
+  #sourceTagsContainer .market-source-filter-chip{
     padding-left:9px !important;
     padding-right:9px !important;
     font-size:11px !important;
   }
-  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-full{display:none;}
-  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-mobile{display:inline;}
+  #sourceTagsContainer .source-tag-label-full{display:none;}
+  #sourceTagsContainer .source-tag-label-mobile{display:inline;}
 }
 
 
