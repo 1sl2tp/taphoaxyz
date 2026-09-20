@@ -118,7 +118,7 @@ $$;
 
 create or replace function public.taphoa_market_search(
   p_query text,
-  p_limit integer
+  p_limit integer default 80
 )
 returns jsonb
 language sql
