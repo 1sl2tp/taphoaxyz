@@ -183,7 +183,7 @@
 
   function candidateMeta(row){
     const price=Number(row?.current_price)||0;
-    const priceText=price>0?price.toLocaleString('vi-VN')+'đ':'';
+    const priceText=price>0?price.toLocaleString('vi-VN'):'';
     return [row?.source,row?.packaging,priceText].filter(Boolean).join(' · ');
   }
 
