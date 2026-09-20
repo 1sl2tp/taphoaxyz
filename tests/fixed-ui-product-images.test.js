@@ -408,3 +408,12 @@ test('comparison row fits without clipping the rightmost retail column',async()=
   assert.match(css,/gap:4px/);
   assert.match(css,/max-width:100%/);
 });
+
+
+test('VNM participates in supermarket image candidates and quick search',async()=>{
+  const migration=await read('supabase/migrations/20260921011000_taphoa_vnm_market_source.sql');
+  assert.match(migration,/VNM/);
+  assert.match(migration,/taphoa_product_media_candidates/);
+  assert.match(migration,/taphoa_market_search/);
+  assert.match(migration,/l\.source in \('GO!','WinMart','Bách Hóa XANH','VNM'\)/);
+});

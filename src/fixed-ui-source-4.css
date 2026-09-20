@@ -412,6 +412,7 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 .market-quick-price.market-source-winmart{color:#d71920;}
 .market-quick-price.market-source-bhx{color:#087a40;}
 .market-quick-price.market-source-go{color:#e85d04;}
+.market-quick-price.market-source-vnm{color:#2563eb;}
 .market-quick-price.market-source-other{color:#334155;}
 @media (max-width:480px){
   body[data-resolved-mode="mobile"] .market-quick-card{

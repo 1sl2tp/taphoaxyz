@@ -19,8 +19,8 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-source-4\.css\?v=source-chip-font12-20260921/);
-  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-no-flicker-20260921/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=vnm-source-20260921/);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=vnm-source-20260921/);
   assert.match(sw,/taphoa-runtime-v30/);
 });
 
@@ -127,10 +127,12 @@ test('supermarket quick prices use source brand colors',async()=>{
   assert.match(runtime,/market-source-winmart/);
   assert.match(runtime,/market-source-bhx/);
   assert.match(runtime,/market-source-go/);
+  assert.match(runtime,/market-source-vnm/);
   assert.match(runtime,/market-quick-price \$\{sourceClass\}/);
   assert.match(css,/\.market-quick-price\.market-source-winmart\{color:#d71920;\}/);
   assert.match(css,/\.market-quick-price\.market-source-bhx\{color:#087a40;\}/);
   assert.match(css,/\.market-quick-price\.market-source-go\{color:#e85d04;\}/);
+  assert.match(css,/\.market-quick-price\.market-source-vnm\{color:#2563eb;\}/);
 });
 
 
@@ -146,7 +148,7 @@ test('supermarket mode shows source filters and sends selected source to RPC',as
   ]);
   assert.match(runtime1,/let currentMarketSourceFilter = 'Tất cả'/);
   assert.match(runtime4,/function renderMarketSourceTags/);
-  assert.match(runtime4,/\['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH'\]/);
+  assert.match(runtime4,/\['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH', 'VNM'\]/);
   assert.match(runtime4,/function filterMarketSource/);
   assert.match(runtime4,/currentMarketSourceFilter = src/);
   assert.match(runtime4,/const marketSource = currentMarketSourceFilter === 'Tất cả' \? '' : currentMarketSourceFilter/);
