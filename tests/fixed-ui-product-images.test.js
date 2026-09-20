@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=round-500-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=round-500-20260920/);
-  assert.match(sw,/taphoa-runtime-v9/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=market-detail-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=market-detail-20260920/);
+  assert.match(sw,/taphoa-runtime-v10/);
 });
 
 
@@ -232,4 +232,25 @@ test('comparison price display rounds to nearest 500 VND without mutating source
   assert.match(media,/Math\.round\(amount\/500\)\*500/);
   assert.match(media,/formatComparePrice/);
   assert.match(media,/formatCandidatePrice/);
+});
+
+
+test('sales product image opens the saved market comparison detail',async()=>{
+  const [runtime,media,css]=await Promise.all([
+    read('src/fixed-ui-runtime-4.js'),
+    read('src/fixed-ui-product-media.js'),
+    read('src/fixed-ui-product-media.css')
+  ]);
+  assert.match(runtime,/openProductMarketDetail\(this\.dataset\.productCode\)/);
+  assert.match(runtime,/product-thumb-button/);
+  assert.match(media,/productMarketDetailWrapper/);
+  assert.match(media,/window\.openProductMarketDetail/);
+  assert.match(media,/marketProductName/);
+  assert.match(media,/productMarketDetailRow\('MÌNH'/);
+  assert.match(media,/productMarketDetailRow\('HỌ'/);
+  assert.match(media,/Quy cách/);
+  assert.match(media,/marketPackQty2/);
+  assert.match(media,/marketPackQty3/);
+  assert.match(css,/\.product-market-detail-table/);
+  assert.match(css,/\.product-market-detail-hero/);
 });
