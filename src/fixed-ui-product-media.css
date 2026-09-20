@@ -193,13 +193,13 @@ button.product-image-compare-source:hover{
 .product-market-detail-modal{font-variant-numeric:tabular-nums;}
 .product-market-detail-hero{
   display:grid;
-  grid-template-columns:112px minmax(0,1fr);
-  gap:14px;
+  grid-template-columns:160px minmax(0,1fr);
+  gap:16px;
   align-items:center;
 }
 .product-market-detail-image{
-  width:112px;
-  height:112px;
+  width:160px;
+  height:160px;
   border:1px solid #e5e7eb;
   border-radius:16px;
   background:#fff;
@@ -307,8 +307,8 @@ button.product-image-compare-source:hover{
 .product-market-detail-source-link:hover{border-color:#bbf7d0;color:#16a34a;}
 @media (max-width:520px){
   .product-market-detail-modal{max-height:90vh !important;border-radius:18px !important;}
-  .product-market-detail-hero{grid-template-columns:86px minmax(0,1fr);gap:10px;}
-  .product-market-detail-image{width:86px;height:86px;border-radius:13px;}
+  .product-market-detail-hero{grid-template-columns:120px minmax(0,1fr);gap:12px;}
+  .product-market-detail-image{width:120px;height:120px;border-radius:14px;}
   .product-market-detail-head,
   .product-market-detail-row{
     grid-template-columns:44px 46px minmax(62px,1fr) 38px minmax(58px,1fr);
