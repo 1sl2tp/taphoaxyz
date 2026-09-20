@@ -78,3 +78,14 @@ test('image picker shows carton and retail prices and sorts cheapest first',asyn
   assert.match(media,/Lẻ/);
   assert.match(media,/candidatePriceHtml/);
 });
+
+
+test('image picker keeps own sell price, pack size and retail price visible while comparing',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/productImageOwnPriceSummary/);
+  assert.match(media,/ownProductPriceSummary/);
+  assert.match(media,/saleLabel=qc>1\?'Thùng':'Bán'/);
+  assert.match(media,/retailVnd=saleVnd\/qc/);
+  assert.match(media,/>Mình</);
+  assert.match(media,/· QC/);
+});
