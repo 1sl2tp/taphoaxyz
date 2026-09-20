@@ -288,10 +288,11 @@
     const rawRetail=Number(product?.marketRetailPriceVnd)||0;
     const rawQc=Number(product?.marketUnitsPerCarton)||0;
     const overrideQc=Number(product?.marketCompareUnitsPerCarton)||0;
-    const qc=overrideQc>0?overrideQc:rawQc;
+    const ownQc=Number(product?.ownCompareUnitsPerCarton)||Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
+    const qc=overrideQc>0?overrideQc:(rawQc>0?rawQc:ownQc);
     const price=selected>0?selected:(kind==='carton'?rawCarton:rawRetail);
-    const carton=kind==='carton'?price:0;
     const retail=kind==='carton'?(qc>0?price/qc:0):(selected>0?selected:(rawRetail>0?rawRetail:price));
+    const carton=kind==='carton'?price:(retail>0&&qc>0?retail*qc:0);
     return {kind,qc,price,carton,retail,overrideKind};
   }
 
@@ -304,7 +305,7 @@
     const carton=formatCandidatePrice(compare.carton);
     const retail=formatCandidatePrice(compare.retail);
     const qcValue=compare.qc>0?String(compare.qc).replace(/\.0+$/,''):'';
-    const priceText=compare.kind==='carton'?(carton||'—'):'—';
+    const priceText=carton||'—';
     const retailText=retail?formatCandidatePrice(compare.retail):'—';
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
     return `<span class="product-image-compare-label">HỌ</span>
