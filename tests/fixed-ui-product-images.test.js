@@ -151,7 +151,7 @@ test('saved market comparison rows align and preserve source link',async()=>{
   assert.match(media,/Mở sản phẩm siêu thị gốc/);
   assert.match(media,/target="_blank"/);
   assert.match(media,/imageSourceUrl/);
-  assert.match(css,/grid-template-columns:36px 44px 72px 84px 64px 80px 28px/);
+  assert.match(css,/grid-template-columns:36px 42px 72px 78px 58px 76px 26px/);
   assert.match(css,/#productImageOwnPriceSummary,[\s\S]*#productImageSelectedMarketSummary\{display:contents;\}/);
   assert.match(css,/font-variant-numeric:tabular-nums/);
 });
@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=kind-width-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=kind-width-20260920/);
-  assert.match(sw,/taphoa-runtime-v24/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=compare-fit-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=compare-fit-20260920/);
+  assert.match(sw,/taphoa-runtime-v25/);
 });
 
 
@@ -397,6 +397,14 @@ test('pack hierarchy distinguishes carton middle leaf and measure',async()=>{
 
 test('supermarket price type selector has enough width for Lẻ',async()=>{
   const css=await read('src/fixed-ui-product-media.css');
-  assert.match(css,/grid-template-columns:36px 44px 72px 84px 64px 80px 28px/);
+  assert.match(css,/grid-template-columns:36px 42px 72px 78px 58px 76px 26px/);
   assert.match(css,/\.product-image-compare-kind-edit select\{[\s\S]*width:100%/);
+});
+
+
+test('comparison row fits without clipping the rightmost retail column',async()=>{
+  const css=await read('src/fixed-ui-product-media.css');
+  assert.match(css,/grid-template-columns:36px 42px 72px 78px 58px 76px 26px/);
+  assert.match(css,/gap:4px/);
+  assert.match(css,/max-width:100%/);
 });
