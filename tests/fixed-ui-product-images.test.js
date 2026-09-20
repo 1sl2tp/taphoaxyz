@@ -267,14 +267,16 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(media,/marketProductName/);
   assert.match(media,/productMarketDetailRow\('MÌNH'/);
   assert.match(media,/productMarketDetailRow\('HỌ'/);
-  assert.match(media,/product-market-detail-inline-meta/);
+  assert.match(media,/productMarketDetailPackTable/);
+  assert.match(media,/product-market-pack-table/);
   assert.match(media,/product-market-detail-inline-link/);
   assert.match(media,/Mở sản phẩm/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
   assert.match(css,/\.product-market-detail-table/);
   assert.match(css,/\.product-market-detail-hero/);
-  assert.match(css,/\.product-market-detail-inline-meta/);
+  assert.match(css,/\.product-market-pack-table/);
+  assert.match(css,/\.product-market-pack-row/);
   assert.match(css,/\.product-market-detail-inline-link/);
   assert.match(css,/grid-template-columns:160px minmax\(0,1fr\)/);
   assert.match(css,/width:160px/);
@@ -284,6 +286,28 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(media,/marketPackQty3/);
 });
 
+
+test('packaging hierarchy table shows carton middle pack and leaf detail',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/function productMarketDetailPackRows/);
+  assert.match(media,/function productMarketDetailPackTable/);
+  assert.match(media,/add\('Thùng','1'/);
+  assert.match(media,/const perMiddle=qc>0&&q2>0&&Math\.abs\(q3-qc\)<0\.0001\?qc\/q2:q3/);
+  assert.match(media,/add\(label2,q2\.toLocaleString/);
+  assert.match(media,/add\(label3,q3\.toLocaleString/);
+  assert.match(media,/Cấp/);
+  assert.match(media,/Chi tiết/);
+});
+
+test('GO product links append the internal source product id only for browser opening',async()=>{
+  const migration=await read('supabase/migrations/20260920235500_taphoa_go_open_url.sql');
+  assert.match(migration,/taphoa_market_open_url/);
+  assert.match(migration,/getlink_source_product_identity/);
+  assert.match(migration,/source_product_id/);
+  assert.match(migration,/p_url\|\|'-i\.'/);
+  assert.match(migration,/taphoa_normalize_product_media_source_url_trg/);
+  assert.match(migration,/update public\.taphoa_product_media/);
+});
 
 test('package label detail reads box type and size from supermarket product name',async()=>{
   const media=await read('src/fixed-ui-product-media.js');
