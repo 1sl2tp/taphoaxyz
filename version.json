@@ -3,5 +3,5 @@
   "build_id": "source-main",
   "update_policy": "auto-when-safe",
   "published_from": "main-source",
-  "ui_fix": "sales-card-lower-market-carton"
+  "ui_fix": "product-card-market-detail"
 }
