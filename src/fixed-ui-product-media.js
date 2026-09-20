@@ -99,7 +99,7 @@
                 <div class="min-w-0">
                   <div class="text-[11px] text-gray-400">Đang chọn cho</div>
                   <div class="text-[13px] font-bold text-gray-900 truncate" id="productImageSelectedName">Chọn một sản phẩm</div>
-                  <div class="hidden mt-1.5 flex flex-wrap items-center gap-1.5" id="productImageOwnPriceSummary"></div>
+                  <div class="hidden mt-1.5 space-y-1" id="productImageOwnPriceSummary"></div>
                 </div>
                 <button class="hidden h-8 px-3 rounded-lg border border-red-100 text-danger text-[11px] font-bold" id="productImageClearButton" type="button">Bỏ ảnh</button>
               </div>
@@ -183,13 +183,28 @@
     if(saleVnd>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">${saleLabel}</span><span>${formatCandidatePrice(saleVnd)}</span></span>`);
     if(qc>1)parts.push(`<span class="inline-flex rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600">QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`);
     if(retailVnd>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${formatCandidatePrice(retailVnd)}</span></span>`);
-    return parts.length?`<span class="text-[9px] font-bold uppercase tracking-wide text-gray-400 mr-0.5">Mình</span>${parts.join('')}`:'';
+    return parts.length?`<div class="flex flex-wrap items-center gap-1.5"><span class="w-7 shrink-0 text-[9px] font-bold uppercase tracking-wide text-gray-400">Mình</span>${parts.join('')}</div>`:'';
+  }
+
+  function marketProductPriceSummary(product){
+    const source=String(product?.marketSource||'').trim();
+    const name=String(product?.marketName||'').trim();
+    const kind=String(product?.marketPackKind||'').trim().toLowerCase();
+    const qc=Number(product?.marketPackQuantity)||0;
+    const carton=Number(product?.marketCartonPriceVnd)||0;
+    const retail=Number(product?.marketRetailPriceVnd)||0;
+    const parts=[];
+    if(kind==='carton'&&carton>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-[10px] font-extrabold text-amber-700"><span class="font-semibold opacity-70">Thùng</span><span>${formatCandidatePrice(carton)}</span></span>`);
+    if(kind==='carton'&&qc>1)parts.push(`<span class="inline-flex rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600">QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`);
+    if(retail>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${formatCandidatePrice(retail)}</span></span>`);
+    if(!parts.length)return '';
+    return `<div class="flex flex-wrap items-center gap-1.5" title="${esc(name)}"><span class="w-7 shrink-0 text-[9px] font-bold uppercase tracking-wide text-gray-400">Họ</span>${source?`<span class="inline-flex rounded-lg bg-gray-900 px-2 py-1 text-[9px] font-bold text-white">${esc(source)}</span>`:''}${parts.join('')}</div>`;
   }
 
   function renderOwnPriceSummary(product){
     const summary=document.getElementById('productImageOwnPriceSummary');
     if(!summary)return;
-    const html=ownProductPriceSummary(product);
+    const html=ownProductPriceSummary(product)+marketProductPriceSummary(product);
     summary.innerHTML=html;
     summary.classList.toggle('hidden',!html);
   }
@@ -245,13 +260,18 @@
         list.innerHTML='<div class="py-10 text-center text-gray-400 text-[12px]">Không thấy ảnh phù hợp. Bạn có thể đổi từ khóa tìm kiếm.</div>';
         return;
       }
+      const selectedProduct=stateProducts().find(row=>productCode(row)===activeProductCode);
+      const selectedMarketUrl=String(selectedProduct?.marketLinkUrl||'').trim();
       list.innerHTML=`<div class="product-image-candidate-grid">${candidates.map(row=>{
         const id=String(row?.id||''),name=String(row?.name||''),image=String(row?.image_url||'');
+        const candidateUrl=String(row?.image_source_url||'').trim();
+        const chosen=selectedMarketUrl&&candidateUrl===selectedMarketUrl;
         const meta=candidateMeta(row),host=sourceHost(row?.image_source_url),prices=candidatePriceHtml(row);
-        return `<button type="button" data-candidate-id="${esc(id)}" class="product-image-candidate-card text-left rounded-xl border border-gray-100 bg-white p-2 hover:border-primary/40 transition">
+        return `<button type="button" data-candidate-id="${esc(id)}" class="product-image-candidate-card relative text-left rounded-xl border ${chosen?'border-primary bg-primaryLight':'border-gray-100 bg-white'} p-2 hover:border-primary/40 transition">
           <div class="product-image-candidate-thumb rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
             <img src="${esc(image)}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">
           </div>
+          ${chosen?'<span class="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shadow-sm">✓</span>':''}
           <div class="mt-2 text-[11px] font-bold text-gray-900 line-clamp-2 min-h-[30px]">${esc(name)}</div>
           ${prices}
           <div class="mt-1.5 flex items-center gap-1.5 min-w-0">
@@ -277,7 +297,9 @@
       renderProducts(document.getElementById('productImageProductSearch')?.value||'');
       const fresh=stateProducts().find(row=>productCode(row)===activeProductCode);
       document.getElementById('productImageClearButton')?.classList.toggle('hidden',!productImage(fresh));
-      if(typeof showToast==='function')showToast('Đã chọn ảnh sản phẩm.','success');
+      renderOwnPriceSummary(fresh);
+      await loadCandidates(document.getElementById('productImageCandidateSearch')?.value||activeProductName);
+      if(typeof showToast==='function')showToast('Đã gắn ảnh và giá đối chiếu.','success');
     }catch(error){
       console.error('set product image',error);
       if(typeof showToast==='function')showToast(error?.message||'Không lưu được ảnh.','warning');
@@ -293,7 +315,10 @@
       await prod()?.clearProductMedia?.(activeProductCode);
       if(window.SheetDB?.read)await SheetDB.read('sanpham');
       document.getElementById('productImageClearButton')?.classList.add('hidden');
+      const fresh=stateProducts().find(row=>productCode(row)===activeProductCode);
+      renderOwnPriceSummary(fresh);
       renderProducts(document.getElementById('productImageProductSearch')?.value||'');
+      await loadCandidates(document.getElementById('productImageCandidateSearch')?.value||activeProductName);
       if(typeof showToast==='function')showToast('Đã bỏ ảnh sản phẩm.','success');
     }catch(error){
       console.error('clear product image',error);
