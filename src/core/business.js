@@ -50,6 +50,9 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
     setProductMediaCompare:(productCode,kind,unitsPerCarton=null)=>gateway.rpc('taphoa_set_product_media_compare',{
       p_product_code:String(productCode||''),p_kind:String(kind||''),p_units_per_carton:unitsPerCarton===null?null:num(unitsPerCarton)
     }),
+    setProductMediaOwnQc:(productCode,unitsPerCarton)=>gateway.rpc('taphoa_set_product_media_own_qc',{
+      p_product_code:String(productCode||''),p_units_per_carton:num(unitsPerCarton)
+    }),
     clearProductMedia:productCode=>gateway.rpc('taphoa_clear_product_media',{
       p_product_code:String(productCode||'')
     })

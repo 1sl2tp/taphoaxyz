@@ -6,6 +6,7 @@
   let activeProductName='';
   let candidateTimer=null;
   let compareTimer=null;
+  let ownQcTimer=null;
 
   const prod=()=>window.TAPHOA_PRODUCTION;
   const esc=value=>String(value??'')
@@ -141,6 +142,14 @@
       candidateTimer=setTimeout(()=>loadCandidates(event.target.value),220);
     });
     wrapper.querySelector('#productImageClearButton')?.addEventListener('click',clearSelectedImage);
+    wrapper.querySelector('#productImageOwnPriceSummary')?.addEventListener('change',event=>{
+      const input=event.target.closest('[data-own-qc-input]');
+      if(input)scheduleOwnQcSave(input.value);
+    });
+    wrapper.querySelector('#productImageOwnPriceSummary')?.addEventListener('input',event=>{
+      const input=event.target.closest('[data-own-qc-input]');
+      if(input)scheduleOwnQcSave(input.value);
+    });
     wrapper.querySelector('#productImageSelectedMarketSummary')?.addEventListener('click',event=>{
       const related=event.target.closest('[data-market-related-search]');
       if(related){event.preventDefault();searchRelatedMarket();}
@@ -198,16 +207,20 @@
 
   function ownProductPriceSummary(product){
     const saleVnd=ownPriceValue(product?.sale_price_vnd,true)||ownPriceValue(product?.gia??product?.price??product?.unit_price);
-    const qc=Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
+    const sourceQc=Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
+    const overrideQc=Number(product?.ownCompareUnitsPerCarton)||0;
+    const qc=overrideQc>0?overrideQc:sourceQc;
     let retailVnd=ownPriceValue(product?.retail_price_vnd,true)||ownPriceValue(product?.giaLe??product?.retail_price);
-    if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
+    if(overrideQc>0&&saleVnd>0)retailVnd=saleVnd/overrideQc;
+    else if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
     if(saleVnd<=0&&!retailVnd)return '';
     const saleLabel=qc>1?'Thùng':'Bán';
+    const qcValue=qc>0?String(qc).replace(/\.0+$/,''):'';
     return `<span class="product-image-compare-label">MÌNH</span>
       <span class="product-image-compare-source product-image-compare-source-own">—</span>
       <span class="product-image-compare-kind">${saleLabel}</span>
       <span class="product-image-compare-price product-image-compare-price-own">${saleVnd>0?formatCandidatePrice(saleVnd):'—'}</span>
-      <span class="product-image-compare-qc">${qc>1?`QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}`:'—'}</span>
+      <label class="product-image-compare-qc product-image-compare-qc-edit"><span>QC</span><input aria-label="Quy cách của mình" data-own-qc-input inputmode="decimal" min="0" placeholder="?" step="any" type="number" value="${esc(qcValue)}"></label>
       <span class="product-image-compare-retail">${retailVnd>0?`<span>Lẻ</span> ${formatCandidatePrice(retailVnd)}`:'—'}</span>
       <span class="product-image-compare-link"></span>`;
   }
@@ -275,10 +288,10 @@
     const rawRetail=Number(product?.marketRetailPriceVnd)||0;
     const rawQc=Number(product?.marketUnitsPerCarton)||0;
     const overrideQc=Number(product?.marketCompareUnitsPerCarton)||0;
-    const qc=kind==='carton'?(overrideQc>0?overrideQc:rawQc):0;
+    const qc=overrideQc>0?overrideQc:rawQc;
     const price=selected>0?selected:(kind==='carton'?rawCarton:rawRetail);
     const carton=kind==='carton'?price:0;
-    const retail=kind==='carton'?(qc>0?price/qc:0):(overrideKind==='retail'&&selected>0?selected:(rawRetail>0?rawRetail:price));
+    const retail=kind==='carton'?(qc>0?price/qc:0):(selected>0?selected:(rawRetail>0?rawRetail:price));
     return {kind,qc,price,carton,retail,overrideKind};
   }
 
@@ -291,7 +304,7 @@
     const carton=formatCandidatePrice(compare.carton);
     const retail=formatCandidatePrice(compare.retail);
     const qcValue=compare.qc>0?String(compare.qc).replace(/\.0+$/,''):'';
-    const priceText=compare.kind==='carton'?(carton||'—'):(retail||'—');
+    const priceText=compare.kind==='carton'?(carton||'—'):'—';
     const retailText=retail?formatCandidatePrice(compare.retail):'—';
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
     return `<span class="product-image-compare-label">HỌ</span>
@@ -303,10 +316,8 @@
         </select>
       </label>
       <span class="product-image-compare-price">${priceText}</span>
-      ${compare.kind==='carton'
-        ?`<label class="product-image-compare-qc product-image-compare-qc-edit"><span>QC</span><input aria-label="Quy cách của siêu thị" data-market-qc-input inputmode="decimal" min="0" placeholder="?" step="any" type="number" value="${esc(qcValue)}"></label>`
-        :`<span class="product-image-compare-qc">—</span>`}
-      <span class="product-image-compare-retail">${compare.kind==='carton'?(`<span>Lẻ</span> ${retailText}`):(`<span>Lẻ</span> ${priceText}`)}</span>
+      <label class="product-image-compare-qc product-image-compare-qc-edit"><span>QC</span><input aria-label="Quy cách của siêu thị" data-market-qc-input inputmode="decimal" min="0" placeholder="?" step="any" type="number" value="${esc(qcValue)}"></label>
+      <span class="product-image-compare-retail"><span>Lẻ</span> ${retailText}</span>
       <span class="product-image-compare-link">${safeLink?`<a aria-label="Mở sản phẩm siêu thị gốc" href="${esc(safeLink)}" rel="noopener noreferrer" target="_blank" title="Mở link gốc"><i class="ph-bold ph-arrow-square-out"></i></a>`:''}</span>
       ${structure&&compare.kind==='carton'?`<div class="product-image-compare-structure">${esc(structure)}</div>`:''}`;
   }
@@ -352,21 +363,37 @@
   function saveMarketCompareKind(kind){
     const current=stateProducts().find(row=>productCode(row)===activeProductCode);
     if(!current)return;
-    if(kind==='retail'){
-      clearTimeout(compareTimer);
-      persistMarketCompare('retail',null);
-      return;
-    }
     const detected=Number(current?.marketCompareUnitsPerCarton)||Number(current?.marketUnitsPerCarton)||0;
     clearTimeout(compareTimer);
-    persistMarketCompare('carton',detected>0?detected:null);
+    persistMarketCompare(kind,detected>0?detected:null);
   }
 
   function scheduleMarketQcSave(value){
     const qc=Number(value)||0;
     clearTimeout(compareTimer);
     if(qc<=0)return;
-    compareTimer=setTimeout(()=>persistMarketCompare('carton',qc),350);
+    const current=stateProducts().find(row=>productCode(row)===activeProductCode);
+    const kind=String(current?.marketCompareKind||'').toLowerCase()==='carton'?'carton':'retail';
+    compareTimer=setTimeout(()=>persistMarketCompare(kind,qc),350);
+  }
+
+  async function persistOwnQc(qc){
+    if(!activeProductCode||qc<=0)return;
+    try{
+      await prod()?.setProductMediaOwnQc?.(activeProductCode,qc);
+      const fresh=stateProducts().find(row=>productCode(row)===activeProductCode);
+      renderOwnPriceSummary(fresh);
+    }catch(error){
+      console.error('set own compare qc',error);
+      if(typeof showToast==='function')showToast(error?.message||'Không lưu được quy cách của mình.','warning');
+    }
+  }
+
+  function scheduleOwnQcSave(value){
+    const qc=Number(value)||0;
+    clearTimeout(ownQcTimer);
+    if(qc<=0)return;
+    ownQcTimer=setTimeout(()=>persistOwnQc(qc),350);
   }
 
   async function selectProduct(code){
