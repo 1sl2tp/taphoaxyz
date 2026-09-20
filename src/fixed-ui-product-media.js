@@ -287,7 +287,7 @@
     const rows=productMarketDetailPackRows(product,compare);
     if(!rows.length)return '';
     return `<div class="product-market-pack-table">
-      <div class="product-market-pack-head"><span>Cấp</span><span>SL</span><span>Chi tiết</span></div>
+      <div class="product-market-pack-head"><span>Đóng gói</span><span>Số lượng</span><span>Bên trong</span></div>
       ${rows.map(row=>`<div class="product-market-pack-row"><span>${esc(row.level)}</span><strong>${esc(row.qty)}</strong><span>${esc(row.detail)}</span></div>`).join('')}
     </div>`;
   }
@@ -391,15 +391,20 @@
     body.innerHTML=`
       <div class="product-market-detail-hero">
         <div class="product-market-detail-image"><img src="${esc(productImage(product))}" alt="${esc(ownName)}"></div>
-        <div class="product-market-detail-names">
-          <div class="product-market-detail-name"><span>MÌNH</span><strong>${esc(ownName)}</strong></div>
-          <div class="product-market-detail-name product-market-detail-name-market">
-            <span>HỌ</span>
-            <strong>${esc(marketName)}</strong>
-            ${source?`<small>${esc(source)}</small>`:''}
-            ${packTable}
-            ${safeLink?`<a class="product-market-detail-inline-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm</span></a>`:''}
+        <div class="product-market-detail-copy">
+          <div class="product-market-detail-identity">
+            <span class="product-market-detail-label">Mình</span>
+            <div class="product-market-detail-value"><strong>${esc(ownName)}</strong></div>
           </div>
+          <div class="product-market-detail-identity">
+            <span class="product-market-detail-label">Họ</span>
+            <div class="product-market-detail-value">
+              <strong>${esc(marketName)}</strong>
+              ${source?`<span class="product-market-detail-source-chip">${esc(source)}</span>`:''}
+            </div>
+          </div>
+          ${packTable}
+          ${safeLink?`<a class="product-market-detail-inline-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm</span></a>`:''}
         </div>
       </div>
       <div class="product-market-detail-table">
