@@ -369,3 +369,11 @@ test('product detail keeps long market name full width and packaging compact',as
   assert.match(css,/grid-template-columns:184px minmax\(0,1fr\)/);
   assert.match(css,/\.product-market-pack-list\{[\s\S]*display:flex/);
 });
+
+
+test('packaging chips suppress quantity one but keep meaningful counts',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/const rawQty=row\.qty&&row\.qty!=='—'\?String\(row\.qty\)\.trim\(\):''/);
+  assert.match(media,/const qty=rawQty==='1'\?'':rawQty/);
+  assert.match(media,/const suffix=\[qty,detail\]\.filter\(Boolean\)\.join\(' · '\)/);
+});
