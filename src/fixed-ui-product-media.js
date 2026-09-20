@@ -139,6 +139,10 @@
       candidateTimer=setTimeout(()=>loadCandidates(event.target.value),220);
     });
     wrapper.querySelector('#productImageClearButton')?.addEventListener('click',clearSelectedImage);
+    wrapper.querySelector('#productImageSelectedMarketSummary')?.addEventListener('click',event=>{
+      const related=event.target.closest('[data-market-related-search]');
+      if(related){event.preventDefault();searchRelatedMarket();}
+    });
     wrapper.querySelector('#productImageSelectedMarketSummary')?.addEventListener('change',event=>{
       const select=event.target.closest('[data-market-kind-select]');
       if(select)saveMarketCompareKind(select.value);
@@ -233,6 +237,35 @@
     return '';
   }
 
+  function relatedMarketQuery(product){
+    const saved=String(product?.marketProductName||'').trim();
+    if(!saved)return productName(product);
+    const stop=new Set([
+      'sua','bia','dau','nuoc','mi','banh','keo','hat','nem','bot','ngot',
+      'dac','nanh','gao','nguyen','chat','vi','thit','goi','thung','loc','vi',
+      'chai','lon','hop','bich','tui','khay','combo','lit','ml','kg','g'
+    ]);
+    const tokens=norm(saved)
+      .replace(/[^a-z0-9\s-]/g,' ')
+      .replace(/-/g,' ')
+      .split(/\s+/)
+      .filter(Boolean)
+      .filter(token=>!stop.has(token))
+      .filter(token=>!/^\d+(?:[.,]\d+)?$/.test(token))
+      .filter(token=>!/^\d+(?:[.,]\d+)?(?:ml|g|kg|l)$/.test(token));
+    const related=tokens.slice(0,3).join(' ').trim();
+    return related||saved;
+  }
+
+  function searchRelatedMarket(){
+    const current=stateProducts().find(row=>productCode(row)===activeProductCode);
+    if(!current)return;
+    const query=relatedMarketQuery(current);
+    const search=document.getElementById('productImageCandidateSearch');
+    if(search){search.disabled=false;search.value=query;}
+    loadCandidates(query);
+  }
+
   function marketCompareState(product){
     const rawKind=String(product?.marketPackKind||'').toLowerCase();
     const overrideKind=String(product?.marketCompareKind||'').toLowerCase();
@@ -263,7 +296,7 @@
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
     return `<div class="product-image-compare-row">
       <span class="product-image-compare-label">HỌ</span>
-      <span class="product-image-compare-source">${source?esc(source):'—'}</span>
+      ${source?`<button aria-label="Tìm sản phẩm liên quan từ tên siêu thị đã lưu" class="product-image-compare-source" data-market-related-search title="Tìm sản phẩm liên quan" type="button">${esc(source)}</button>`:`<span class="product-image-compare-source">—</span>`}
       <label class="product-image-compare-kind product-image-compare-kind-edit">
         <select aria-label="Loại giá của siêu thị" data-market-kind-select>
           <option value="carton" ${compare.kind==='carton'?'selected':''}>Thùng</option>
@@ -348,11 +381,12 @@
     renderOwnPriceSummary(p);
     renderSelectedMarketSummary(p);
     const search=document.getElementById('productImageCandidateSearch');
-    if(search){search.disabled=false;search.value=activeProductName;}
+    const relatedQuery=productImage(p)&&String(p?.marketProductName||'').trim()?relatedMarketQuery(p):activeProductName;
+    if(search){search.disabled=false;search.value=relatedQuery;}
     const clear=document.getElementById('productImageClearButton');
     if(clear)clear.classList.toggle('hidden',!productImage(p));
     renderProducts(document.getElementById('productImageProductSearch')?.value||'');
-    await loadCandidates(activeProductName);
+    await loadCandidates(relatedQuery);
   }
 
   function formatCandidatePrice(value){
