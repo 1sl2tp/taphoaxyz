@@ -239,6 +239,29 @@
 
         function filterSource(src) { currentFilter = src; renderSourceTags(); renderProductList(); }
 
+        function getSelectedMarketCartonPriceForSale(productCode) {
+            const products = window.TAPHOA_PRODUCTION?.getState?.()?.products;
+            if (!Array.isArray(products)) return 0;
+            const product = products.find(item => String(item?.id || item?.maSP || item?.product_code || '') === String(productCode));
+            if (!product) return 0;
+            const selectedImage = String(product?.imageUrl || product?.image_url || product?.image || '').trim();
+            if (!selectedImage) return 0;
+
+            const rawKind = String(product?.marketPackKind || '').toLowerCase();
+            const overrideKind = String(product?.marketCompareKind || '').toLowerCase();
+            const kind = (overrideKind === 'carton' || overrideKind === 'retail')
+                ? overrideKind
+                : (rawKind === 'carton' ? 'carton' : 'retail');
+            if (kind !== 'carton') return 0;
+
+            const selectedVnd = Number(product?.marketSelectedPriceVnd) || 0;
+            const rawCartonVnd = Number(product?.marketCartonPriceVnd) || 0;
+            const cartonVnd = selectedVnd > 0 ? selectedVnd : rawCartonVnd;
+            if (cartonVnd <= 0) return 0;
+
+            return Math.round(cartonVnd / 500) * 500 / 1000;
+        }
+
         function renderProductList() {
             if(!appData.sanpham || appData.sanpham.length <= 1) return;
             const query = document.getElementById('searchProductInput')?.value || '';
@@ -246,6 +269,11 @@
             if (filtered.length === 0) { document.getElementById('productList').innerHTML = `<div class="py-10 text-center text-gray-400 text-sm">Không tìm thấy sản phẩm.</div>`; return; }
             document.getElementById('productList').innerHTML = filtered.map(r => {
                 let maSp = r[0]; let tenSp = r[1]; let giaBan = Number(r[3]) || 0; let giaLe = Number(r[7]) || 0; let qty = cart[maSp] ? cart[maSp].qty : 0;
+                const marketCartonPrice = getSelectedMarketCartonPriceForSale(maSp);
+                const marketIsLower = marketCartonPrice > 0 && giaBan > 0 && marketCartonPrice < giaBan;
+                const salePriceHtml = marketIsLower
+                    ? `<span class="text-[13px] font-bold text-gray-400 line-through decoration-1 tabular-nums">${giaBan.toLocaleString('vi-VN')}</span><span class="text-[13px] font-bold text-gray-900 tabular-nums">${marketCartonPrice.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`
+                    : `<span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span>`;
                 const imageHtml = productViewMode === 'image'
                     ? `<img src="${getProductImageSrc(r)}" alt="${escapeProductEditorValue(tenSp)}" class="product-thumb shrink-0" loading="lazy" decoding="async">`
                     : '';
@@ -256,7 +284,7 @@
                         <div class="min-w-0 flex-1">
                             <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
                             <div class="mt-1 flex items-baseline gap-2 min-w-0">
-                                <span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span>
+                                ${salePriceHtml}
                                 ${giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
                             </div>
                         </div>
