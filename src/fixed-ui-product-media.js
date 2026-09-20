@@ -277,20 +277,15 @@
     return parts.join(' · ');
   }
 
-  function productMarketDetailRow(label,state,source='',kindLabel=''){
-    const kind=kindLabel||(state?.kind==='carton'?'Thùng':'Lẻ');
-    const mainValue=state?.kind==='carton'
-      ? Number(state?.carton)||0
-      : (state?.allowsBreakdown&&Number(state?.carton)>0?Number(state.carton):Number(state?.price)||0);
-    const mainPrice=mainValue>0?formatComparePrice(mainValue):'—';
-    const retailValue=state?.kind==='carton'||state?.allowsBreakdown?Number(state?.retail)||0:0;
-    const retail=retailValue>0?formatComparePrice(retailValue):'—';
-    const showQc=state?.kind==='carton'||state?.allowsBreakdown;
-    const qc=showQc&&Number(state?.qc)>0?Number(state.qc).toLocaleString('vi-VN',{maximumFractionDigits:2}):'—';
+  function productMarketDetailRow(label,state){
+    const kind=state?.kind==='carton'?'Thùng':'Lẻ';
+    const carton=Number(state?.carton)>0?formatComparePrice(state.carton):'—';
+    const retail=Number(state?.retail)>0?formatComparePrice(state.retail):'—';
+    const qc=Number(state?.qc)>0?Number(state.qc).toLocaleString('vi-VN',{maximumFractionDigits:2}):'—';
     return `<div class="product-market-detail-row">
-      <div class="product-market-detail-side">${esc(label)}${source?`<span>${esc(source)}</span>`:''}</div>
-      <div>${esc(kind)}</div>
-      <div class="product-market-detail-number">${mainPrice}</div>
+      <div class="product-market-detail-side">${esc(label)}</div>
+      <div>${kind}</div>
+      <div class="product-market-detail-number">${carton}</div>
       <div class="product-market-detail-number">${qc}</div>
       <div class="product-market-detail-number">${retail}</div>
     </div>`;
@@ -321,16 +316,20 @@
         <div class="product-market-detail-image"><img src="${esc(productImage(product))}" alt="${esc(ownName)}"></div>
         <div class="product-market-detail-names">
           <div class="product-market-detail-name"><span>MÌNH</span><strong>${esc(ownName)}</strong></div>
-          <div class="product-market-detail-name"><span>HỌ</span><strong>${esc(marketName)}</strong>${source?`<small>${esc(source)}</small>`:''}</div>
+          <div class="product-market-detail-name product-market-detail-name-market">
+            <span>HỌ</span>
+            <strong>${esc(marketName)}</strong>
+            ${source?`<small>${esc(source)}</small>`:''}
+            ${structure?`<div class="product-market-detail-inline-meta"><span>Quy cách</span><strong>${esc(structure)}</strong></div>`:''}
+            ${safeLink?`<a class="product-market-detail-inline-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm</span></a>`:''}
+          </div>
         </div>
       </div>
       <div class="product-market-detail-table">
-        <div class="product-market-detail-head"><span></span><span>Loại</span><span>Giá</span><span>QC</span><span>Lẻ</span></div>
+        <div class="product-market-detail-head"><span></span><span>Phân loại</span><span>Giá</span><span>QC</span><span>Lẻ</span></div>
         ${productMarketDetailRow('MÌNH',own)}
-        ${productMarketDetailRow('HỌ',market,source,market.kind==='carton'?'Thùng':(market.allowsBreakdown?'Lẻ':marketPackageLabel(product)))}
+        ${productMarketDetailRow('HỌ',market)}
       </div>
-      ${structure?`<div class="product-market-detail-structure"><span>Quy cách</span><strong>${esc(structure)}</strong></div>`:''}
-      ${safeLink?`<a class="product-market-detail-source-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm siêu thị gốc</span></a>`:''}
     `;
     wrapper.classList.remove('hidden');
     wrapper.classList.add('flex');
@@ -458,14 +457,14 @@
     const qc=overrideQc>0?overrideQc:(rawQc>0?rawQc:ownQc);
     const allowsBreakdown=marketAllowsUnitBreakdown(product);
     const price=kind==='carton'
-      ? (selected>0?selected:rawCarton)
-      : (!allowsBreakdown&&sourcePrice>0?sourcePrice:(selected>0?selected:(rawRetail>0?rawRetail:sourcePrice)));
-    const retail=kind==='carton'
-      ? (qc>0?price/qc:0)
-      : (allowsBreakdown?price:0);
+      ? (selected>0?selected:(rawCarton>0?rawCarton:sourcePrice))
+      : (selected>0?selected:(sourcePrice>0?sourcePrice:rawRetail));
     const carton=kind==='carton'
       ? price
-      : (allowsBreakdown&&retail>0&&qc>0?retail*qc:0);
+      : (price>0&&qc>0?price*qc:0);
+    const retail=kind==='carton'
+      ? (price>0&&qc>0?price/qc:0)
+      : price;
     return {kind,qc,price,carton,retail,overrideKind,allowsBreakdown,sourcePrice};
   }
 
@@ -478,10 +477,7 @@
     const carton=formatComparePrice(compare.carton);
     const retail=formatComparePrice(compare.retail);
     const qcValue=compare.qc>0?String(compare.qc).replace(/\.0+$/,''):'';
-    const mainPrice=compare.kind==='carton'
-      ? compare.carton
-      : (compare.allowsBreakdown&&compare.carton>0?compare.carton:compare.price);
-    const priceText=mainPrice>0?formatComparePrice(mainPrice):'—';
+    const priceText=carton||'—';
     const retailText=retail||'—';
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
     return `<span class="product-image-compare-label">HỌ</span>

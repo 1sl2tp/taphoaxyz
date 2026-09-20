@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=package-label-detail-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=package-label-detail-20260920/);
-  assert.match(sw,/taphoa-runtime-v12/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=directional-compare-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=directional-compare-20260920/);
+  assert.match(sw,/taphoa-runtime-v13/);
 });
 
 
@@ -209,8 +209,9 @@ test('retail supermarket price stays in retail cell and both QC values are edita
   assert.match(migration,/taphoa_set_product_media_own_qc/);
   assert.match(media,/data-own-qc-input/);
   assert.match(media,/data-market-qc-input/);
-  assert.match(media,/const mainPrice=compare\.kind==='carton'/);
-  assert.match(media,/const priceText=mainPrice>0\?formatComparePrice\(mainPrice\):'—'/);
+  assert.match(media,/const carton=formatComparePrice\(compare\.carton\)/);
+  assert.match(media,/const retail=formatComparePrice\(compare\.retail\)/);
+  assert.match(media,/const priceText=carton\|\|'—'/);
   assert.match(media,/product\?\.ownCompareUnitsPerCarton/);
   assert.match(media,/setProductMediaOwnQc/);
   assert.match(business,/taphoa_set_product_media_own_qc/);
@@ -226,7 +227,6 @@ test('unit breakdown is limited to lốc vỉ milk while ordinary boxes keep sou
   assert.match(media,/function marketAllowsUnitBreakdown/);
   assert.match(media,/packageHead==='loc'\|\|packageHead==='vi'/);
   assert.match(media,/marketSourcePriceVnd/);
-  assert.match(media,/!allowsBreakdown&&sourcePrice>0\?sourcePrice/);
   assert.match(media,/rawKind!=='carton'&&!allowsBreakdown/);
   assert.match(media,/marketPackageLabel\(row\)/);
   assert.match(migration,/market_source_price_vnd/);
@@ -235,6 +235,15 @@ test('unit breakdown is limited to lốc vỉ milk while ordinary boxes keep sou
   assert.match(migration,/market_selected_price_vnd := new\.market_source_price_vnd/);
 });
 
+
+test('selected market kind controls directional carton and retail conversion',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/const carton=kind==='carton'[\s\S]*price>0&&qc>0\?price\*qc:0/);
+  assert.match(media,/const retail=kind==='carton'[\s\S]*price>0&&qc>0\?price\/qc:0[\s\S]*: price/);
+  assert.match(media,/const priceText=carton\|\|'—'/);
+  assert.match(media,/const retailText=retail\|\|'—'/);
+  assert.match(media,/productMarketDetailRow\('HỌ',market\)/);
+});
 
 test('comparison price display rounds to nearest 500 VND without mutating source data',async()=>{
   const media=await read('src/fixed-ui-product-media.js');
@@ -258,11 +267,15 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(media,/marketProductName/);
   assert.match(media,/productMarketDetailRow\('MÌNH'/);
   assert.match(media,/productMarketDetailRow\('HỌ'/);
-  assert.match(media,/Quy cách/);
+  assert.match(media,/product-market-detail-inline-meta/);
+  assert.match(media,/product-market-detail-inline-link/);
+  assert.match(media,/Mở sản phẩm/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
   assert.match(css,/\.product-market-detail-table/);
   assert.match(css,/\.product-market-detail-hero/);
+  assert.match(css,/\.product-market-detail-inline-meta/);
+  assert.match(css,/\.product-market-detail-inline-link/);
   assert.match(css,/grid-template-columns:160px minmax\(0,1fr\)/);
   assert.match(css,/width:160px/);
   assert.match(css,/grid-template-columns:120px minmax\(0,1fr\)/);
