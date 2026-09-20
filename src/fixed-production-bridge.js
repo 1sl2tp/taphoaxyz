@@ -40,14 +40,16 @@ function sourceDisplayName(product,state=appState.get()){
 
 function mapProductRows(state=appState.get()){
   return [
-    ['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn','Ảnh'],
+    ['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn','Ảnh','Quy cách','Giá lẻ'],
     ...(state.products||[]).map(p=>[
       text(first(p,['id','maSP','product_id'])),
       text(first(p,['ten','name','product_name'])),
       text(first(p,['von','cost','unit_cost'],'')),
       text(first(p,['gia','price','unit_price'],0)),
       sourceDisplayName(p,state),
-      ''
+      '',
+      text(first(p,['quyCach','quyDoiThung','units_per_carton'],'')),
+      text(first(p,['giaLe','retail_price'],'')),
     ])
   ];
 }
