@@ -86,7 +86,7 @@ test('image picker keeps own sell price, pack size and retail price visible whil
   assert.match(media,/ownProductPriceSummary/);
   assert.match(media,/saleLabel=qc>1\?'Thùng':'Bán'/);
   assert.match(media,/retailVnd=saleVnd\/qc/);
-  assert.match(media,/>Mình</);
+  assert.match(media,/>MÌNH</);
   assert.match(media,/· QC/);
 });
 
@@ -107,7 +107,7 @@ test('selected supermarket image persists market price and nested pack snapshot'
   assert.match(snapshot,/'marketRetailPriceVnd'/);
   assert.match(orderFix,/limit v_limit/);
   assert.match(media,/productImageSelectedMarketSummary/);
-  assert.match(media,/>Họ</);
+  assert.match(media,/>HỌ</);
   assert.match(media,/selectedMarketStructure/);
   assert.match(media,/total\/q2/);
 });
@@ -133,7 +133,7 @@ test('selected market item can be manually interpreted as carton or retail',asyn
   assert.match(media,/marketCompareState/);
   assert.match(media,/marketSelectedPriceVnd/);
   assert.match(media,/productImageSelectedThumb/);
-  assert.match(media,/>Họ</);
+  assert.match(media,/>HỌ</);
   assert.match(business,/taphoa_set_product_media_compare/);
   assert.match(bridge,/setProductMediaCompare/);
 });
