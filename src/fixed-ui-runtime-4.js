@@ -265,12 +265,7 @@
             const query = String(input?.value || '').trim();
             const requestSeq = ++marketSearchRequestSeq;
 
-            if (!query) {
-                list.innerHTML = '<div class="py-10 text-center text-gray-400 text-sm">Nhập tên sản phẩm để tìm giá siêu thị.</div>';
-                return;
-            }
-
-            list.innerHTML = '<div class="py-10 text-center text-gray-400 text-sm"><i class="ph-bold ph-spinner animate-spin mr-1"></i>Đang tìm siêu thị...</div>';
+            list.innerHTML = `<div class="py-10 text-center text-gray-400 text-sm"><i class="ph-bold ph-spinner animate-spin mr-1"></i>${query ? 'Đang tìm siêu thị...' : 'Đang tải sản phẩm siêu thị...'}</div>`;
             try {
                 const rows = await window.TAPHOA_PRODUCTION?.marketSearch?.(query, 80);
                 if (requestSeq !== marketSearchRequestSeq || productSearchMode !== 'market') return;
