@@ -212,6 +212,7 @@
   }
 
   function selectedMarketStructure(product){
+    if(String(product?.marketCompareKind||'').trim()||Number(product?.marketCompareUnitsPerCarton)>0)return '';
     const q2=Number(product?.marketPackQty2)||0;
     const q3=Number(product?.marketPackQty3)||0;
     const label2=String(product?.marketPackLabel2||'').trim();
