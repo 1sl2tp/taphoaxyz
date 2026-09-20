@@ -208,11 +208,88 @@
   function marketPackageDescriptor(item){
     const packaging=marketPackagingValue(item);
     const name=marketProductNameValue(item);
-    const pattern=/(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)\s+\d+(?:[.,]\d+)?\s*(?:kg|g|ml|l)?/ig;
+    const direct=/(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)\s+\d+(?:[.,]\d+)?\s*(?:kg|g|ml|l)?/ig;
+    const sized=/(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)(?:\s+[A-Za-zÀ-ỹ]+){0,2}\s+\d+(?:[.,]\d+)?\s*(?:kg|g|ml|l)/ig;
     let match,last='';
-    while((match=pattern.exec(name)))last=String(match[0]||'').trim();
+    while((match=sized.exec(name)))last=String(match[0]||'').trim();
+    if(!last)while((match=direct.exec(name)))last=String(match[0]||'').trim();
     if(!last)return '';
     return packaging&&norm(packaging).includes(norm(last))?'':last;
+  }
+
+  function marketPackMeasure(value){
+    const matches=String(value||'').match(/\d+(?:[.,]\d+)?\s*(?:kg|g|ml|l)\b/ig)||[];
+    return String(matches[matches.length-1]||'').trim();
+  }
+
+  function productMarketDetailPackRows(product,compare){
+    const rows=[];
+    const seen=new Set();
+    const add=(level,qty,detail='')=>{
+      const cleanLevel=String(level||'').trim();
+      const cleanQty=String(qty??'').trim();
+      const cleanDetail=String(detail||'').trim();
+      if(!cleanLevel)return;
+      const key=[norm(cleanLevel),cleanQty,norm(cleanDetail)].join('|');
+      if(seen.has(key))return;
+      seen.add(key);
+      rows.push({level:cleanLevel,qty:cleanQty||'—',detail:cleanDetail||'—'});
+    };
+    const q2=Number(product?.marketPackQty2)||0;
+    const q3=Number(product?.marketPackQty3)||0;
+    const label2=String(product?.marketPackLabel2||'').trim();
+    const label3=String(product?.marketPackLabel3||'').trim();
+    const qc=Number(compare?.qc)||Number(product?.marketUnitsPerCarton)||0;
+    const packaging=marketPackagingValue(product);
+    const descriptor=marketPackageDescriptor(product);
+    const packageMeasure=marketPackMeasure(packaging);
+    const descriptorMeasure=marketPackMeasure(descriptor);
+    const leafLabel=label3||label2||marketPackageLabel(product);
+
+    if(qc>1){
+      add('Thùng','1',`${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${String(leafLabel||'đơn vị').toLowerCase()}`);
+    }
+
+    if(descriptor){
+      const parsed=descriptor.match(/^(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)\b\s*(.*)$/i);
+      if(parsed&&norm(parsed[1])!=='thung'){
+        add(marketPackageLabel({marketPackaging:parsed[1]}),'1',String(parsed[2]||descriptorMeasure||'').trim());
+      }
+    }
+
+    if(q2>0&&label2){
+      let detail='';
+      if(q3>0&&label3){
+        const perMiddle=qc>0&&q2>0&&Math.abs(q3-qc)<0.0001?qc/q2:q3;
+        if(perMiddle>0)detail=`${perMiddle.toLocaleString('vi-VN',{maximumFractionDigits:2})} ${label3.toLowerCase()}`;
+      }else if(packageMeasure){
+        detail=packageMeasure;
+      }
+      add(label2,q2.toLocaleString('vi-VN',{maximumFractionDigits:2}),detail);
+    }
+
+    if(q3>0&&label3){
+      add(label3,q3.toLocaleString('vi-VN',{maximumFractionDigits:2}),packageMeasure||descriptorMeasure);
+    }else if(!q2&&descriptor){
+      const parsed=descriptor.match(/^(thùng|lốc|vỉ|hộp|chai|lon|gói|hũ|túi|bịch|khay|ly)\b\s*(.*)$/i);
+      if(parsed&&norm(parsed[1])!=='thung'){
+        add(marketPackageLabel({marketPackaging:parsed[1]}),'1',String(parsed[2]||packageMeasure||'').trim());
+      }
+    }
+
+    if(!rows.length&&packaging){
+      add(marketPackageLabel(product),'1',packaging);
+    }
+    return rows;
+  }
+
+  function productMarketDetailPackTable(product,compare){
+    const rows=productMarketDetailPackRows(product,compare);
+    if(!rows.length)return '';
+    return `<div class="product-market-pack-table">
+      <div class="product-market-pack-head"><span>Cấp</span><span>SL</span><span>Chi tiết</span></div>
+      ${rows.map(row=>`<div class="product-market-pack-row"><span>${esc(row.level)}</span><strong>${esc(row.qty)}</strong><span>${esc(row.detail)}</span></div>`).join('')}
+    </div>`;
   }
 
   function ensureProductMarketDetailModal(){
@@ -309,7 +386,7 @@
     const marketName=String(product?.marketProductName||'').trim()||'Chưa có tên siêu thị';
     const source=String(product?.marketSource||'').trim();
     const sourceUrl=String(product?.imageSourceUrl||product?.image_source_url||'').trim();
-    const structure=productMarketDetailStructure(product,market);
+    const packTable=productMarketDetailPackTable(product,market);
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
     body.innerHTML=`
       <div class="product-market-detail-hero">
@@ -320,7 +397,7 @@
             <span>HỌ</span>
             <strong>${esc(marketName)}</strong>
             ${source?`<small>${esc(source)}</small>`:''}
-            ${structure?`<div class="product-market-detail-inline-meta"><span>Quy cách</span><strong>${esc(structure)}</strong></div>`:''}
+            ${packTable}
             ${safeLink?`<a class="product-market-detail-inline-link" href="${esc(safeLink)}" target="_blank" rel="noopener noreferrer"><i class="ph-bold ph-arrow-square-out"></i><span>Mở sản phẩm</span></a>`:''}
           </div>
         </div>
