@@ -219,7 +219,94 @@
                 .map(entry => entry.row);
         }
 
+        function updateProductSearchModeUi() {
+            const marketMode = productSearchMode === 'market';
+            const toggle = document.getElementById('salesSearchModeToggle');
+            const icon = toggle?.querySelector('i');
+            const input = document.getElementById('searchProductInput');
+            const sources = document.getElementById('sourceTagsContainer');
+
+            if (toggle) {
+                toggle.classList.toggle('is-market', marketMode);
+                toggle.setAttribute('aria-label', marketMode ? 'Chuyển về tìm hàng của mình' : 'Chuyển sang tìm siêu thị');
+                toggle.setAttribute('title', marketMode ? 'Tìm siêu thị' : 'Tìm hàng của mình');
+            }
+            if (icon) {
+                icon.className = marketMode ? 'ph-fill ph-storefront text-[17px]' : 'ph ph-magnifying-glass text-[17px]';
+            }
+            if (input) {
+                input.placeholder = marketMode ? 'Tìm sản phẩm siêu thị...' : 'Tìm tên, mã sản phẩm...';
+            }
+            if (sources) sources.classList.toggle('hidden', marketMode);
+        }
+
+        function toggleProductSearchMode() {
+            productSearchMode = productSearchMode === 'market' ? 'own' : 'market';
+            marketSearchRequestSeq += 1;
+            clearTimeout(marketSearchTimer);
+            updateProductSearchModeUi();
+            renderProductList();
+            const input = document.getElementById('searchProductInput');
+            if (input) requestAnimationFrame(() => input.focus());
+        }
+
+        function formatMarketQuickPrice(value) {
+            const amount = Number(value) || 0;
+            if (amount <= 0) return '';
+            return (amount / 1000)
+                .toLocaleString('vi-VN', { maximumFractionDigits: 2 })
+                .replace(',', '.');
+        }
+
+        async function renderMarketSearchResults() {
+            const list = document.getElementById('productList');
+            const input = document.getElementById('searchProductInput');
+            if (!list || productSearchMode !== 'market') return;
+            const query = String(input?.value || '').trim();
+            const requestSeq = ++marketSearchRequestSeq;
+
+            if (!query) {
+                list.innerHTML = '<div class="py-10 text-center text-gray-400 text-sm">Nhập tên sản phẩm để tìm giá siêu thị.</div>';
+                return;
+            }
+
+            list.innerHTML = '<div class="py-10 text-center text-gray-400 text-sm"><i class="ph-bold ph-spinner animate-spin mr-1"></i>Đang tìm siêu thị...</div>';
+            try {
+                const rows = await window.TAPHOA_PRODUCTION?.marketSearch?.(query, 80);
+                if (requestSeq !== marketSearchRequestSeq || productSearchMode !== 'market') return;
+                const results = Array.isArray(rows) ? rows : [];
+                if (!results.length) {
+                    list.innerHTML = '<div class="py-10 text-center text-gray-400 text-sm">Không tìm thấy sản phẩm siêu thị.</div>';
+                    return;
+                }
+                list.innerHTML = results.map(row => {
+                    const name = String(row?.name || '');
+                    const image = String(row?.image_url || '');
+                    const price = formatMarketQuickPrice(row?.current_price);
+                    return `
+                    <div class="market-quick-card bg-white rounded-[16px] px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-3">
+                        <span class="market-quick-thumb w-12 h-12 rounded-xl border border-gray-100 bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center">
+                            ${image ? `<img src="${escapeProductEditorValue(image)}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">` : '<i class="ph ph-image text-gray-300 text-lg"></i>'}
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-[13px] leading-[1.35] font-bold text-gray-900 line-clamp-2">${escapeProductEditorValue(name)}</span>
+                            <span class="block mt-1 text-[15px] leading-none font-extrabold text-primary tabular-nums">${price || '—'}</span>
+                        </span>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                if (requestSeq !== marketSearchRequestSeq || productSearchMode !== 'market') return;
+                console.error('market quick search', error);
+                list.innerHTML = '<div class="py-10 text-center text-danger text-sm">Không tải được giá siêu thị.</div>';
+            }
+        }
+
         function scheduleProductSearchRender() {
+            if (productSearchMode === 'market') {
+                clearTimeout(marketSearchTimer);
+                marketSearchTimer = setTimeout(() => renderMarketSearchResults(), 180);
+                return;
+            }
             if (productSearchRenderFrame) cancelAnimationFrame(productSearchRenderFrame);
             productSearchRenderFrame = requestAnimationFrame(() => {
                 productSearchRenderFrame = 0;
@@ -278,6 +365,12 @@
         }
 
         function renderProductList() {
+            updateProductSearchModeUi();
+            if (productSearchMode === 'market') {
+                clearTimeout(marketSearchTimer);
+                marketSearchTimer = setTimeout(() => renderMarketSearchResults(), 0);
+                return;
+            }
             if(!appData.sanpham || appData.sanpham.length <= 1) return;
             const query = document.getElementById('searchProductInput')?.value || '';
             const filtered = getFilteredProductsFromSearchIndex(query);
