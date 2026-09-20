@@ -195,12 +195,17 @@
     const qc=Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
     let retailVnd=ownPriceValue(product?.retail_price_vnd,true)||ownPriceValue(product?.giaLe??product?.retail_price);
     if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
+    if(saleVnd<=0&&!retailVnd)return '';
     const saleLabel=qc>1?'Thùng':'Bán';
-    const parts=[];
-    if(saleVnd>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary"><span class="font-semibold opacity-70">${saleLabel}</span><span>${formatCandidatePrice(saleVnd)}</span></span>`);
-    if(qc>1)parts.push(`<span class="inline-flex rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600">QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`);
-    if(retailVnd>0)parts.push(`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${formatCandidatePrice(retailVnd)}</span></span>`);
-    return parts.length?`<span class="text-[9px] font-bold uppercase tracking-wide text-gray-400 mr-0.5">Mình</span>${parts.join('')}`:'';
+    return `<div class="product-image-compare-row">
+      <span class="product-image-compare-label">MÌNH</span>
+      <span class="product-image-compare-source"></span>
+      <span class="product-image-compare-kind">${saleLabel}</span>
+      <span class="product-image-compare-price product-image-compare-price-own">${saleVnd>0?formatCandidatePrice(saleVnd):'—'}</span>
+      <span class="product-image-compare-qc">${qc>1?`QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}`:'—'}</span>
+      <span class="product-image-compare-retail">${retailVnd>0?`<span>Lẻ</span> ${formatCandidatePrice(retailVnd)}`:'—'}</span>
+      <span class="product-image-compare-link"></span>
+    </div>`;
   }
 
   function renderOwnPriceSummary(product){
@@ -247,25 +252,33 @@
   function selectedMarketSummary(product){
     if(!productImage(product))return '';
     const source=String(product?.marketSource||'').trim();
+    const sourceUrl=String(product?.imageSourceUrl||product?.image_source_url||'').trim();
     const compare=marketCompareState(product);
     const structure=selectedMarketStructure(product);
     const carton=formatCandidatePrice(compare.carton);
     const retail=formatCandidatePrice(compare.retail);
     const qcValue=compare.qc>0?String(compare.qc).replace(/\.0+$/,''):'';
-    return `<span class="text-[9px] font-bold uppercase tracking-wide text-gray-400 mr-0.5">Họ</span>
-      ${source?`<span class="inline-flex rounded-lg bg-gray-900 px-2 py-1 text-[9px] font-bold text-white">${esc(source)}</span>`:''}
-      <label class="inline-flex h-7 items-center rounded-lg border border-gray-200 bg-white px-1.5">
-        <select aria-label="Loại giá của siêu thị" class="bg-transparent text-[10px] font-bold text-gray-700 outline-none" data-market-kind-select>
+    const priceText=compare.kind==='carton'?(carton||'—'):(retail||'—');
+    const retailText=retail?formatCandidatePrice(compare.retail):'—';
+    const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
+    return `<div class="product-image-compare-row">
+      <span class="product-image-compare-label">HỌ</span>
+      <span class="product-image-compare-source">${source?esc(source):'—'}</span>
+      <label class="product-image-compare-kind product-image-compare-kind-edit">
+        <select aria-label="Loại giá của siêu thị" data-market-kind-select>
           <option value="carton" ${compare.kind==='carton'?'selected':''}>Thùng</option>
           <option value="retail" ${compare.kind==='retail'?'selected':''}>Lẻ</option>
         </select>
       </label>
-      ${compare.kind==='carton'&&carton?`<span class="inline-flex rounded-lg bg-primaryLight px-2 py-1 text-[10px] font-extrabold text-primary">${carton}</span>`:''}
-      ${compare.kind==='carton'?`<label class="inline-flex h-7 items-center gap-1 rounded-lg bg-gray-100 px-2 text-[10px] font-bold text-gray-600"><span>QC</span><input aria-label="Quy cách của siêu thị" class="w-10 bg-transparent text-right font-extrabold outline-none" data-market-qc-input inputmode="decimal" min="0" placeholder="?" step="any" type="number" value="${esc(qcValue)}"></label>`:''}
-      ${retail?`<span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-extrabold text-gray-700"><span class="font-semibold text-gray-400">Lẻ</span><span>${retail}</span></span>`:''}
-      ${structure&&compare.kind==='carton'?`<span class="text-[9px] text-gray-400">${esc(structure)}</span>`:''}`;
+      <span class="product-image-compare-price">${priceText}</span>
+      ${compare.kind==='carton'
+        ?`<label class="product-image-compare-qc product-image-compare-qc-edit"><span>QC</span><input aria-label="Quy cách của siêu thị" data-market-qc-input inputmode="decimal" min="0" placeholder="?" step="any" type="number" value="${esc(qcValue)}"></label>`
+        :`<span class="product-image-compare-qc">—</span>`}
+      <span class="product-image-compare-retail">${compare.kind==='carton'?(`<span>Lẻ</span> ${retailText}`):(`<span>Lẻ</span> ${priceText}`)}</span>
+      <span class="product-image-compare-link">${safeLink?`<a aria-label="Mở sản phẩm siêu thị gốc" href="${esc(safeLink)}" rel="noopener noreferrer" target="_blank" title="Mở link gốc"><i class="ph-bold ph-arrow-square-out"></i></a>`:''}</span>
+    </div>
+    ${structure&&compare.kind==='carton'?`<div class="product-image-compare-structure">${esc(structure)}</div>`:''}`;
   }
-
   function renderSelectedThumb(product){
     const wrap=document.getElementById('productImageSelectedThumbWrap');
     const img=document.getElementById('productImageSelectedThumb');
