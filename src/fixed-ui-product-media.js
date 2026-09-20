@@ -104,8 +104,10 @@
                   <div class="min-w-0">
                     <div class="text-[11px] text-gray-400">Đang chọn cho</div>
                     <div class="text-[13px] font-bold text-gray-900 truncate" id="productImageSelectedName">Chọn một sản phẩm</div>
-                    <div class="hidden mt-1.5 flex flex-wrap items-center gap-1.5" id="productImageOwnPriceSummary"></div>
-                    <div class="hidden mt-1 flex flex-wrap items-center gap-1.5" id="productImageSelectedMarketSummary"></div>
+                    <div class="product-image-compare-table mt-1.5" id="productImageCompareTable">
+                      <div class="hidden" id="productImageOwnPriceSummary"></div>
+                      <div class="hidden" id="productImageSelectedMarketSummary"></div>
+                    </div>
                   </div>
                 </div>
                 <button class="hidden h-8 px-3 rounded-lg border border-red-100 text-danger text-[11px] font-bold shrink-0" id="productImageClearButton" type="button">Bỏ ảnh</button>
@@ -201,15 +203,13 @@
     if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
     if(saleVnd<=0&&!retailVnd)return '';
     const saleLabel=qc>1?'Thùng':'Bán';
-    return `<div class="product-image-compare-row">
-      <span class="product-image-compare-label">MÌNH</span>
-      <span class="product-image-compare-source"></span>
+    return `<span class="product-image-compare-label">MÌNH</span>
+      <span class="product-image-compare-source product-image-compare-source-own">—</span>
       <span class="product-image-compare-kind">${saleLabel}</span>
       <span class="product-image-compare-price product-image-compare-price-own">${saleVnd>0?formatCandidatePrice(saleVnd):'—'}</span>
       <span class="product-image-compare-qc">${qc>1?`QC ${qc.toLocaleString('vi-VN',{maximumFractionDigits:2})}`:'—'}</span>
       <span class="product-image-compare-retail">${retailVnd>0?`<span>Lẻ</span> ${formatCandidatePrice(retailVnd)}`:'—'}</span>
-      <span class="product-image-compare-link"></span>
-    </div>`;
+      <span class="product-image-compare-link"></span>`;
   }
 
   function renderOwnPriceSummary(product){
@@ -294,8 +294,7 @@
     const priceText=compare.kind==='carton'?(carton||'—'):(retail||'—');
     const retailText=retail?formatCandidatePrice(compare.retail):'—';
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
-    return `<div class="product-image-compare-row">
-      <span class="product-image-compare-label">HỌ</span>
+    return `<span class="product-image-compare-label">HỌ</span>
       ${source?`<button aria-label="Tìm sản phẩm liên quan từ tên siêu thị đã lưu" class="product-image-compare-source" data-market-related-search title="Tìm sản phẩm liên quan" type="button">${esc(source)}</button>`:`<span class="product-image-compare-source">—</span>`}
       <label class="product-image-compare-kind product-image-compare-kind-edit">
         <select aria-label="Loại giá của siêu thị" data-market-kind-select>
@@ -309,8 +308,7 @@
         :`<span class="product-image-compare-qc">—</span>`}
       <span class="product-image-compare-retail">${compare.kind==='carton'?(`<span>Lẻ</span> ${retailText}`):(`<span>Lẻ</span> ${priceText}`)}</span>
       <span class="product-image-compare-link">${safeLink?`<a aria-label="Mở sản phẩm siêu thị gốc" href="${esc(safeLink)}" rel="noopener noreferrer" target="_blank" title="Mở link gốc"><i class="ph-bold ph-arrow-square-out"></i></a>`:''}</span>
-    </div>
-    ${structure&&compare.kind==='carton'?`<div class="product-image-compare-structure">${esc(structure)}</div>`:''}`;
+      ${structure&&compare.kind==='carton'?`<div class="product-image-compare-structure">${esc(structure)}</div>`:''}`;
   }
   function renderSelectedThumb(product){
     const wrap=document.getElementById('productImageSelectedThumbWrap');
