@@ -21,7 +21,7 @@ test('production bridge carries image URL into the existing row image slot',asyn
   const business=await read('src/core/business.js');
   assert.match(bridge,/\['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn','Ảnh','Quy cách','Giá lẻ'\]/);
   assert.match(bridge,/\['imageUrl','image_url','image'\]/);
-  assert.match(bridge,/productMediaCandidates,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia/);
+  assert.match(bridge,/productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia/);
   assert.match(business,/taphoa_product_media_candidates/);
   assert.match(business,/taphoa_set_product_media/);
   assert.match(business,/taphoa_clear_product_media/);
