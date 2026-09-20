@@ -45,3 +45,18 @@ test('product image mode remains optional and uses compact lazy thumbnails',asyn
   assert.match(index,/fixed-ui-product-media\.css/);
   assert.match(index,/fixed-ui-product-media\.js/);
 });
+
+
+test('image picker searches the full supermarket link catalog',async()=>{
+  const migration=await read('supabase/migrations/20260920192500_taphoa_product_media_full_catalog.sql');
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(migration,/from public\.getlink_links l/);
+  assert.match(migration,/join public\.getlink_link_assets a on a\.link_url=l\.canonical_url/);
+  assert.match(migration,/regexp_split_to_table\(v_query_norm,'\\s\+'\)/);
+  assert.match(migration,/lower\(unaccent\(coalesce\(l\.name,''\)\)\)/);
+  assert.match(migration,/'source',x\.source/);
+  assert.match(migration,/v_candidate_id like 'link:%'/);
+  assert.match(media,/row\?\.source/);
+  assert.match(media,/row\?\.packaging/);
+  assert.match(media,/current_price/);
+});
