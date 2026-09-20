@@ -257,7 +257,7 @@
                             <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
                             <div class="mt-1 flex items-baseline gap-2 min-w-0">
                                 <span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span>
-                                ${giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">Lẻ ${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
+                                ${giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
                             </div>
                         </div>
                     </div>
