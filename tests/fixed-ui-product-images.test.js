@@ -295,8 +295,9 @@ test('packaging hierarchy table shows carton middle pack and leaf detail',async(
   assert.match(media,/const perMiddle=qc>0&&q2>0&&Math\.abs\(q3-qc\)<0\.0001\?qc\/q2:q3/);
   assert.match(media,/add\(label2,q2\.toLocaleString/);
   assert.match(media,/add\(label3,q3\.toLocaleString/);
-  assert.match(media,/Cấp/);
-  assert.match(media,/Chi tiết/);
+  assert.match(media,/Đóng gói/);
+  assert.match(media,/Số lượng/);
+  assert.match(media,/Bên trong/);
 });
 
 test('GO product links append the internal source product id only for browser opening',async()=>{
