@@ -159,9 +159,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=pack-table-go-link-20260920/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=pack-table-go-link-20260920/);
-  assert.match(sw,/taphoa-runtime-v14/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=professional-detail-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=professional-detail-20260920/);
+  assert.match(sw,/taphoa-runtime-v15/);
 });
 
 
@@ -278,9 +278,9 @@ test('sales product image opens the saved market comparison detail',async()=>{
   assert.match(css,/\.product-market-pack-table/);
   assert.match(css,/\.product-market-pack-row/);
   assert.match(css,/\.product-market-detail-inline-link/);
-  assert.match(css,/grid-template-columns:160px minmax\(0,1fr\)/);
-  assert.match(css,/width:160px/);
-  assert.match(css,/grid-template-columns:120px minmax\(0,1fr\)/);
+  assert.match(css,/grid-template-columns:140px minmax\(0,1fr\)/);
+  assert.match(css,/width:140px/);
+  assert.match(css,/grid-template-columns:102px minmax\(0,1fr\)/);
   assert.match(media,/marketPackagingValue/);
   assert.match(media,/marketPackQty2/);
   assert.match(media,/marketPackQty3/);
@@ -295,8 +295,9 @@ test('packaging hierarchy table shows carton middle pack and leaf detail',async(
   assert.match(media,/const perMiddle=qc>0&&q2>0&&Math\.abs\(q3-qc\)<0\.0001\?qc\/q2:q3/);
   assert.match(media,/add\(label2,q2\.toLocaleString/);
   assert.match(media,/add\(label3,q3\.toLocaleString/);
-  assert.match(media,/Cấp/);
-  assert.match(media,/Chi tiết/);
+  assert.match(media,/Đóng gói/);
+  assert.match(media,/Số lượng/);
+  assert.match(media,/Bên trong/);
 });
 
 test('GO product links append the internal source product id only for browser opening',async()=>{
@@ -317,4 +318,23 @@ test('package label detail reads box type and size from supermarket product name
   assert.match(media,/\(thùng\|lốc\|vỉ\|hộp\|chai\|lon\|gói\|hũ\|túi\|bịch\|khay\|ly\)/);
   assert.match(media,/const descriptor=marketPackageDescriptor\(product\)/);
   assert.match(media,/marketPackageDescriptor\(row\)/);
+});
+
+
+test('professional product detail layout keeps identity source and packaging hierarchy balanced',async()=>{
+  const [media,css]=await Promise.all([
+    read('src/fixed-ui-product-media.js'),
+    read('src/fixed-ui-product-media.css')
+  ]);
+  assert.match(media,/product-market-detail-copy/);
+  assert.match(media,/product-market-detail-identity/);
+  assert.match(media,/product-market-detail-source-chip/);
+  assert.match(media,/Đóng gói/);
+  assert.match(media,/Số lượng/);
+  assert.match(media,/Bên trong/);
+  assert.match(media,/max-w-\[560px\]/);
+  assert.match(css,/\.product-market-detail-copy/);
+  assert.match(css,/\.product-market-detail-source-chip/);
+  assert.match(css,/grid-template-columns:74px 62px minmax\(0,1fr\)/);
+  assert.match(css,/font-size:10\.5px/);
 });
