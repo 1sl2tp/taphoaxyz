@@ -255,8 +255,8 @@
   }
 
   window.openProductImageManager=function(){
-    const role=String(window.currentAuthRole||'admin').toLowerCase();
-    if(role==='user'){
+    const role=String(prod()?.getIdentity?.()?.role||'').toLowerCase();
+    if(role!=='admin'&&role!=='owner'){
       if(typeof showToast==='function')showToast('Chỉ Admin được chọn ảnh sản phẩm.','warning');
       return;
     }
