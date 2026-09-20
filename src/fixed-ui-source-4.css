@@ -378,3 +378,20 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   box-shadow: 0 0 0 1000px #ffffff inset !important;
   caret-color: #171717;
 }
+
+
+/* FIXED STYLE: mobile-source-filter-abbreviations */
+#sourceTagsContainer .source-tag-label-mobile{display:none;}
+@media (max-width:480px){
+  body[data-resolved-mode="mobile"] #sourceTagsContainer{
+    gap:6px !important;
+    overflow-x:auto;
+  }
+  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-filter-chip{
+    padding-left:10px !important;
+    padding-right:10px !important;
+    font-size:11px !important;
+  }
+  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-full{display:none;}
+  body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-mobile{display:inline;}
+}
