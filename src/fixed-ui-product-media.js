@@ -431,13 +431,14 @@
     if(!list||!activeProductCode)return;
     list.innerHTML='<div class="py-10 text-center text-gray-400 text-[12px]"><i class="ph-bold ph-spinner animate-spin mr-1"></i>Đang tìm ảnh...</div>';
     try{
-      const rows=await prod()?.productMediaCandidates?.(String(query||''),18);
+      const rows=await prod()?.productMediaCandidates?.(String(query||''),150);
       const candidates=Array.isArray(rows)?rows:[];
       if(!candidates.length){
         list.innerHTML='<div class="py-10 text-center text-gray-400 text-[12px]">Không thấy ảnh phù hợp. Bạn có thể đổi từ khóa tìm kiếm.</div>';
         return;
       }
-      list.innerHTML=`<div class="product-image-candidate-grid">${candidates.map(row=>{
+      const countLabel=candidates.length>=150?'150+':String(candidates.length);
+      list.innerHTML=`<div class="mb-2 flex items-center justify-between gap-2 text-[10px] text-gray-400"><span>${countLabel} kết quả</span><span>Khớp tên trước · giá thấp trước</span></div><div class="product-image-candidate-grid">${candidates.map(row=>{
         const id=String(row?.id||''),name=String(row?.name||''),image=String(row?.image_url||'');
         const meta=candidateMeta(row),host=sourceHost(row?.image_source_url),prices=candidatePriceHtml(row);
         return `<button type="button" data-candidate-id="${esc(id)}" class="product-image-candidate-card text-left rounded-xl border border-gray-100 bg-white p-2 hover:border-primary/40 transition">
