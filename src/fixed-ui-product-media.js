@@ -182,7 +182,9 @@
   }
 
   function candidateMeta(row){
-    return [row?.brand,row?.size_value&&row?.size_unit?`${row.size_value} ${row.size_unit}`:null].filter(Boolean).join(' · ');
+    const price=Number(row?.current_price)||0;
+    const priceText=price>0?price.toLocaleString('vi-VN'):'';
+    return [row?.source,row?.packaging,priceText].filter(Boolean).join(' · ');
   }
 
   function sourceHost(value){
@@ -208,6 +210,7 @@
             <img src="${esc(image)}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">
           </div>
           <div class="mt-2 text-[11px] font-bold text-gray-900 line-clamp-2 min-h-[30px]">${esc(name)}</div>
+          ${row?.source?`<span class="mt-1 inline-flex rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-600">${esc(row.source)}</span>`:''}
           ${meta?`<div class="mt-1 text-[9px] text-gray-500 truncate">${esc(meta)}</div>`:''}
           ${host?`<div class="mt-0.5 text-[9px] text-gray-400 truncate">${esc(host)}</div>`:''}
         </button>`;
