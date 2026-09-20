@@ -19,9 +19,9 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-source-4\.css\?v=sales-market-search-20260920/);
-  assert.match(index,/fixed-ui-runtime-4\.js\?v=market-default-results-20260920/);
-  assert.match(sw,/taphoa-runtime-v22/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=source-label-market-colors-20260920/);
+  assert.match(index,/fixed-ui-runtime-4\.js\?v=source-label-market-colors-20260920/);
+  assert.match(sw,/taphoa-runtime-v23/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
@@ -57,10 +57,10 @@ test('mobile source filters use short labels without changing source values',asy
     read('src/fixed-ui-source-4.css')
   ]);
   assert.match(runtime,/function getMobileSourceLabel/);
-  assert.match(runtime,/'hang thuong': 'H\. thường'/);
-  assert.match(runtime,/'thuoc la': 'T\. lá'/);
+  assert.match(runtime,/'hang thuong': 'Thường'/);
+  assert.match(runtime,/'thuoc la': 'Thuốc lá'/);
   assert.match(runtime,/'sua': 'Sữa'/);
-  assert.match(runtime,/'hang u': 'H\. U'/);
+  assert.match(runtime,/'hang u': 'Hàng U'/);
   assert.match(runtime,/source-tag-label-full/);
   assert.match(runtime,/source-tag-label-mobile/);
   assert.match(runtime,/filterSource\('\$\{src\}'\)/);
@@ -115,4 +115,20 @@ test('supermarket quick search loads default results when query is empty',async(
   assert.match(migration,/v_query_norm=''/);
   assert.match(migration,/l\.updated_at/);
   assert.match(migration,/case when v_query_norm='' then l\.updated_at end desc/);
+});
+
+
+test('supermarket quick prices use source brand colors',async()=>{
+  const [runtime,css]=await Promise.all([
+    read('src/fixed-ui-runtime-4.js'),
+    read('src/fixed-ui-source-4.css')
+  ]);
+  assert.match(runtime,/function getMarketQuickSourceClass/);
+  assert.match(runtime,/market-source-winmart/);
+  assert.match(runtime,/market-source-bhx/);
+  assert.match(runtime,/market-source-go/);
+  assert.match(runtime,/market-quick-price \$\{sourceClass\}/);
+  assert.match(css,/\.market-quick-price\.market-source-winmart\{color:#d71920;\}/);
+  assert.match(css,/\.market-quick-price\.market-source-bhx\{color:#087a40;\}/);
+  assert.match(css,/\.market-quick-price\.market-source-go\{color:#e85d04;\}/);
 });

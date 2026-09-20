@@ -258,6 +258,14 @@
                 .replace(',', '.');
         }
 
+        function getMarketQuickSourceClass(source) {
+            const key = normalizeSearchText(String(source || ''));
+            if (key === 'winmart' || key.includes('winmart')) return 'market-source-winmart';
+            if (key.includes('bach hoa xanh')) return 'market-source-bhx';
+            if (key === 'go' || key.startsWith('go ')) return 'market-source-go';
+            return 'market-source-other';
+        }
+
         async function renderMarketSearchResults() {
             const list = document.getElementById('productList');
             const input = document.getElementById('searchProductInput');
@@ -278,6 +286,7 @@
                     const name = String(row?.name || '');
                     const image = String(row?.image_url || '');
                     const price = formatMarketQuickPrice(row?.current_price);
+                    const sourceClass = getMarketQuickSourceClass(row?.source);
                     return `
                     <div class="market-quick-card bg-white rounded-[16px] px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-3">
                         <span class="market-quick-thumb w-12 h-12 rounded-xl border border-gray-100 bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center">
@@ -285,7 +294,7 @@
                         </span>
                         <span class="min-w-0 flex-1">
                             <span class="block text-[13px] leading-[1.35] font-bold text-gray-900 line-clamp-2">${escapeProductEditorValue(name)}</span>
-                            <span class="block mt-1 text-[15px] leading-none font-extrabold text-primary tabular-nums">${price || '—'}</span>
+                            <span class="market-quick-price ${sourceClass} block mt-1 text-[15px] leading-none font-extrabold tabular-nums">${price || '—'}</span>
                         </span>
                     </div>`;
                 }).join('');
@@ -315,10 +324,10 @@
             const key = normalizeSearchText(raw);
             const labels = {
                 'tat ca': 'Tất cả',
-                'hang thuong': 'H. thường',
-                'thuoc la': 'T. lá',
+                'hang thuong': 'Thường',
+                'thuoc la': 'Thuốc lá',
                 'sua': 'Sữa',
-                'hang u': 'H. U'
+                'hang u': 'Hàng U'
             };
             return labels[key] || raw;
         }
