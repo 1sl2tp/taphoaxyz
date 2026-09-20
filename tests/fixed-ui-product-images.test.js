@@ -161,7 +161,7 @@ test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-product-media\.css\?v=pack-hierarchy-20260920/);
   assert.match(index,/fixed-ui-product-media\.js\?v=pack-hierarchy-20260920/);
-  assert.match(sw,/taphoa-runtime-v22/);
+  assert.match(sw,/taphoa-runtime-v23/);
 });
 
 
