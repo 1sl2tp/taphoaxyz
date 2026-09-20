@@ -219,9 +219,9 @@
     return `<span class="product-image-compare-label">MÌNH</span>
       <span class="product-image-compare-source product-image-compare-source-own">—</span>
       <span class="product-image-compare-kind">${saleLabel}</span>
-      <span class="product-image-compare-price product-image-compare-price-own">${saleVnd>0?formatCandidatePrice(saleVnd):'—'}</span>
+      <span class="product-image-compare-price product-image-compare-price-own">${saleVnd>0?formatComparePrice(saleVnd):'—'}</span>
       <label class="product-image-compare-qc product-image-compare-qc-edit"><span>QC</span><input aria-label="Quy cách của mình" data-own-qc-input inputmode="decimal" min="0" placeholder="?" step="any" type="number" value="${esc(qcValue)}"></label>
-      <span class="product-image-compare-retail">${retailVnd>0?`<span>Lẻ</span> ${formatCandidatePrice(retailVnd)}`:'—'}</span>
+      <span class="product-image-compare-retail">${retailVnd>0?`<span>Lẻ</span> ${formatComparePrice(retailVnd)}`:'—'}</span>
       <span class="product-image-compare-link"></span>`;
   }
 
@@ -302,11 +302,11 @@
     const sourceUrl=String(product?.imageSourceUrl||product?.image_source_url||'').trim();
     const compare=marketCompareState(product);
     const structure=selectedMarketStructure(product);
-    const carton=formatCandidatePrice(compare.carton);
-    const retail=formatCandidatePrice(compare.retail);
+    const carton=formatComparePrice(compare.carton);
+    const retail=formatComparePrice(compare.retail);
     const qcValue=compare.qc>0?String(compare.qc).replace(/\.0+$/,''):'';
     const priceText=carton||'—';
-    const retailText=retail?formatCandidatePrice(compare.retail):'—';
+    const retailText=retail?formatComparePrice(compare.retail):'—';
     const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
     return `<span class="product-image-compare-label">HỌ</span>
       ${source?`<button aria-label="Tìm sản phẩm liên quan từ tên siêu thị đã lưu" class="product-image-compare-source" data-market-related-search title="Tìm sản phẩm liên quan" type="button">${esc(source)}</button>`:`<span class="product-image-compare-source">—</span>`}
@@ -417,6 +417,16 @@
 
   function formatCandidatePrice(value){
     const amount=Number(value)||0;
+    return amount>0?amount.toLocaleString('vi-VN',{maximumFractionDigits:0}):'';
+  }
+
+  function roundComparePrice(value){
+    const amount=Number(value)||0;
+    return amount>0?Math.round(amount/500)*500:0;
+  }
+
+  function formatComparePrice(value){
+    const amount=roundComparePrice(value);
     return amount>0?amount.toLocaleString('vi-VN',{maximumFractionDigits:0}):'';
   }
 
