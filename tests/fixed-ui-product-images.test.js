@@ -89,3 +89,23 @@ test('image picker keeps own sell price, pack size and retail price visible whil
   assert.match(media,/>Mình</);
   assert.match(media,/· QC/);
 });
+
+
+test('selected supermarket image stays linked with normalized market comparison prices',async()=>{
+  const [migration,media]=await Promise.all([
+    read('supabase/migrations/20260920204500_taphoa_link_selected_market_price.sql'),
+    read('src/fixed-ui-product-media.js')
+  ]);
+  assert.match(migration,/selected_link_url text not null default ''/);
+  assert.match(migration,/'marketSource'/);
+  assert.match(migration,/'marketCartonPriceVnd'/);
+  assert.match(migration,/'marketRetailPriceVnd'/);
+  assert.match(migration,/gc\.pack_kind='carton'/);
+  assert.match(migration,/greatest\(/);
+  assert.match(migration,/gh\.qty3/);
+  assert.match(migration,/calc\.pack_price \/ calc\.market_qc/);
+  assert.match(media,/marketProductPriceSummary/);
+  assert.match(media,/>Họ</);
+  assert.match(media,/marketLinkUrl/);
+  assert.match(media,/Đã gắn ảnh và giá đối chiếu/);
+});
