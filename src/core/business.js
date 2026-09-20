@@ -40,6 +40,15 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
     batchOrders:(action,ids)=>gateway.rpc('taphoa_batch_orders',{p_action:String(action||''),p_ids:(ids||[]).map(String),p_command_id:commandId()}),
     debtTransaction:(maKH,type,amount,note='')=>gateway.rpc('taphoa_debt_transaction',{
       p_customer_id:String(maKH||''),p_type:String(type)==='thu_tien'?'collection':'payment',p_amount:num(amount),p_note:String(note||''),p_command_id:commandId()
+    }),
+    productMediaCandidates:(query,limit=12)=>gateway.rpc('taphoa_product_media_candidates',{
+      p_query:String(query||''),p_limit:Math.max(1,Math.min(30,Math.trunc(num(limit)||12)))
+    }),
+    setProductMedia:(productCode,canonicalProductId)=>gateway.rpc('taphoa_set_product_media',{
+      p_product_code:String(productCode||''),p_canonical_product_id:String(canonicalProductId||'')
+    }),
+    clearProductMedia:productCode=>gateway.rpc('taphoa_clear_product_media',{
+      p_product_code:String(productCode||'')
     })
   };
 }
