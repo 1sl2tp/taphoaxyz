@@ -127,10 +127,12 @@ test('supermarket quick prices use source brand colors',async()=>{
   assert.match(runtime,/market-source-winmart/);
   assert.match(runtime,/market-source-bhx/);
   assert.match(runtime,/market-source-go/);
+  assert.match(runtime,/market-source-vnm/);
   assert.match(runtime,/market-quick-price \$\{sourceClass\}/);
   assert.match(css,/\.market-quick-price\.market-source-winmart\{color:#d71920;\}/);
   assert.match(css,/\.market-quick-price\.market-source-bhx\{color:#087a40;\}/);
   assert.match(css,/\.market-quick-price\.market-source-go\{color:#e85d04;\}/);
+  assert.match(css,/\.market-quick-price\.market-source-vnm\{color:#2563eb;\}/);
 });
 
 
@@ -146,7 +148,7 @@ test('supermarket mode shows source filters and sends selected source to RPC',as
   ]);
   assert.match(runtime1,/let currentMarketSourceFilter = 'Tất cả'/);
   assert.match(runtime4,/function renderMarketSourceTags/);
-  assert.match(runtime4,/\['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH'\]/);
+  assert.match(runtime4,/\['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH', 'VNM'\]/);
   assert.match(runtime4,/function filterMarketSource/);
   assert.match(runtime4,/currentMarketSourceFilter = src/);
   assert.match(runtime4,/const marketSource = currentMarketSourceFilter === 'Tất cả' \? '' : currentMarketSourceFilter/);

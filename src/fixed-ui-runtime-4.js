@@ -309,6 +309,7 @@
             if (key === 'winmart' || key.includes('winmart')) return 'market-source-winmart';
             if (key.includes('bach hoa xanh')) return 'market-source-bhx';
             if (key === 'go' || key.startsWith('go ')) return 'market-source-go';
+            if (key === 'vnm' || key.includes('vinamilk')) return 'market-source-vnm';
             return 'market-source-other';
         }
 
@@ -423,7 +424,7 @@
         function renderMarketSourceTags() {
             const container = document.getElementById('sourceTagsContainer');
             if (!container) return;
-            const sources = ['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH'];
+            const sources = ['Tất cả', 'GO!', 'WinMart', 'Bách Hóa XANH', 'VNM'];
             container.innerHTML = sources.map(src => {
                 const activeClass = src === currentMarketSourceFilter
                     ? 'bg-primary text-white shadow-sm'
