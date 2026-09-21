@@ -87,6 +87,18 @@
             }
         }
 
+        function isIosNativeFileShareContext() {
+            const ua = String(navigator.userAgent || '');
+            return /iPad|iPhone|iPod/.test(ua)
+                || (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1);
+        }
+
+        function legacyOrderSharePayload(file) {
+            const files = [file];
+            if (isIosNativeFileShareContext()) return { files };
+            return { files, title: 'Đơn hàng', text: 'Chi tiết đơn hàng' };
+        }
+
         function isNativeShareCancellation(error) {
             const name = String(error?.name || '');
             const message = String(error?.message || error || '');
@@ -174,7 +186,7 @@
 
                 const file = new File([blob], 'donhang.png', { type: 'image/png' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'Đơn hàng', text: 'Chi tiết đơn hàng' });
+                    await navigator.share(legacyOrderSharePayload(file));
                 } else {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -333,7 +345,7 @@
                 const fileName = editingOrderId ? `donhang_${String(editingOrderId).replace(/[^a-zA-Z0-9_-]+/g, '_')}.png` : 'giohang.png';
                 const file = new File([blob], fileName, { type: 'image/png' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'Đơn hàng', text: 'Chi tiết đơn hàng' });
+                    await navigator.share(legacyOrderSharePayload(file));
                 } else {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
