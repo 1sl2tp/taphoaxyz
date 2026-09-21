@@ -160,8 +160,8 @@
                         <div class="pointer-events-none flex items-center gap-3 min-w-0">
                             <div style="width: 36px; height: 36px;" class="rounded-full bg-orange-50 text-orange-500 font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
                             <div class="min-w-0">
-                                <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh} - <span class="text-[#ea580c] font-extrabold">${k}</span></p>
-                                <p class="text-[11px] text-gray-400 mt-0.5">${o.countSp} mã - ${o.tongSl} SP | ${shortTime}</p>
+                                <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh}</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5 truncate"><span class="text-[#ea580c] font-extrabold">${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}</p>
                             </div>
                         </div>
                         <div class="pointer-events-none text-right">
