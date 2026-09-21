@@ -169,8 +169,22 @@
                 });
 
                 const file = new File([blob], 'congno.png', { type: 'image/png' });
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share(debtNativeSharePayload(file));
+                const iosPwaFallback = window.TAPHOA_IOS_SHARE_FALLBACK;
+                if (iosPwaFallback?.shouldUse?.()) {
+                    iosPwaFallback.open([file], { title:'Công nợ' });
+                } else if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share(debtNativeSharePayload(file));
+                    } catch (error) {
+                        const shareCancel = /abort|cancel|canceled|cancelled/i.test(String(error?.name || '') + ' ' + String(error?.message || error || ''));
+                        if (shareCancel && debtIosShareContext()) {
+                            window.TAPHOA_IOS_SHARE_FALLBACK?.open?.([file], { title:'Công nợ' });
+                        } else {
+                            throw error;
+                        }
+                    }
+                } else if (iosPwaFallback) {
+                    iosPwaFallback.open([file], { title:'Công nợ' });
                 } else {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
