@@ -244,13 +244,24 @@ body[data-resolved-mode="mobile"] .product-editor-source-btn{
   overflow:hidden;
   text-overflow:ellipsis;
 }
+.order-rank-dot{
+  border:1px solid rgba(148,163,184,.12);
+}
+.order-rank-dot-pending{
+  background:#fffaf3;
+  color:#d97706;
+}
+.order-rank-dot-delivered{
+  background:#f5faf6;
+  color:#2f855a;
+}
 .order-product-chip-pending{
-  background:#fff3df;
-  color:#ea580c;
+  background:#fff8ef;
+  color:#c96a20;
 }
 .order-product-chip-delivered{
-  background:#edf7ef;
-  color:#166534;
+  background:#f3f8f4;
+  color:#367a4c;
 }
 .order-product-more{
   flex:none;
