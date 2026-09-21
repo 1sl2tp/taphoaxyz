@@ -1,9 +1,9 @@
-/* FIXED STYLE: calm-source-summary */
+/* FIXED STYLE: calm-source-summary-clean-grid */
 
 .order-summary-panel{
-  background:linear-gradient(180deg,#ffffff 0%,#fcfcfd 100%) !important;
-  border-color:#eef0f2 !important;
-  box-shadow:0 1px 3px rgba(15,23,42,.045) !important;
+  background:#ffffff !important;
+  border-color:#edf0f2 !important;
+  box-shadow:0 1px 3px rgba(15,23,42,.04) !important;
 }
 .order-summary-panel > .flex:first-child h3{
   color:#6b7280 !important;
@@ -11,20 +11,23 @@
 }
 .order-summary-panel .summary-panel-icon{
   color:#64748b !important;
-  opacity:.72;
+  opacity:.68;
 }
 
-/* Header dùng đen/xám làm chủ đạo.
-   Chi / Thu / Lãi chỉ còn chấm nhỏ dịu màu để phân biệt nghĩa cột. */
-.order-summary-panel .summary-compact-table thead th{
+/* Header dùng một hệ đen/xám. Chỉ chấm nhỏ giữ nghĩa Chi / Thu / Lãi. */
+#tab-da-giao .order-summary-panel .summary-compact-table thead th,
+#tab-don-tam .order-summary-panel .summary-compact-table thead th{
   color:#6b7280 !important;
   font-weight:650 !important;
+  background:transparent !important;
 }
-.order-summary-panel .summary-compact-table thead th:first-child{
+#tab-da-giao .order-summary-panel .summary-compact-table thead th:first-child,
+#tab-don-tam .order-summary-panel .summary-compact-table thead th:first-child{
   color:#374151 !important;
   font-weight:700 !important;
 }
-.order-summary-panel .summary-compact-table thead th:nth-child(2){
+#tab-da-giao .order-summary-panel .summary-compact-table thead th:nth-child(2),
+#tab-don-tam .order-summary-panel .summary-compact-table thead th:nth-child(2){
   color:#9ca3af !important;
 }
 .order-summary-panel .summary-compact-table thead th:nth-child(3)::before,
@@ -32,70 +35,58 @@
 .order-summary-panel .summary-compact-table thead th:nth-child(5)::before{
   content:"";
   display:inline-block;
-  width:5px;
-  height:5px;
+  width:4px;
+  height:4px;
   margin-right:4px;
   border-radius:999px;
-  vertical-align:1px;
+  vertical-align:2px;
+  opacity:.85;
 }
-.order-summary-panel .summary-compact-table thead th:nth-child(3)::before{background:#c9a0a0;}
-.order-summary-panel .summary-compact-table thead th:nth-child(4)::before{background:#9aa7b8;}
-.order-summary-panel .summary-compact-table thead th:nth-child(5)::before{background:#91aa98;}
+.order-summary-panel .summary-compact-table thead th:nth-child(3)::before{background:#c7a3a3;}
+.order-summary-panel .summary-compact-table thead th:nth-child(4)::before{background:#a3acb8;}
+.order-summary-panel .summary-compact-table thead th:nth-child(5)::before{background:#99ab9e;}
 
-/* Số liệu thân bảng trung tính để mắt không phải đổi màu liên tục. */
-.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td{
+/* Không tô nền từng ô: tránh cảm giác bảng bị chia thành các hộp lệch nhau bởi column-gap. */
+#tab-da-giao .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td,
+#tab-don-tam .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td{
   color:#374151 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  border-bottom:1px solid #f1f3f5 !important;
   font-weight:600 !important;
-  transition:background-color .12s ease;
 }
-.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:nth-child(2){
+#tab-da-giao .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:nth-child(2),
+#tab-don-tam .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:nth-child(2){
   color:#6b7280 !important;
 }
-.order-summary-panel .summary-compact-table .source-summary-link{
+#tab-da-giao .order-summary-panel .summary-compact-table .source-summary-link,
+#tab-don-tam .order-summary-panel .summary-compact-table .source-summary-link{
   color:#1f2937 !important;
   font-weight:700 !important;
 }
 
-/* Các nguồn được phân vùng bằng sắc xám rất nhẹ, không thêm màu mới. */
-.order-summary-panel .summary-compact-table tbody tr:nth-child(odd):not(.summary-total-row) > td{
-  background:#ffffff !important;
-}
-.order-summary-panel .summary-compact-table tbody tr:nth-child(even):not(.summary-total-row) > td{
-  background:#fafbfc !important;
-}
-.order-summary-panel .summary-compact-table tbody tr:nth-child(3n+1):not(.summary-total-row) > td:first-child{
-  box-shadow:inset 2px 0 #d7dce2;
-}
-.order-summary-panel .summary-compact-table tbody tr:nth-child(3n+2):not(.summary-total-row) > td:first-child{
-  box-shadow:inset 2px 0 #e2e5e9;
-}
-.order-summary-panel .summary-compact-table tbody tr:nth-child(3n):not(.summary-total-row) > td:first-child{
-  box-shadow:inset 2px 0 #cfd5dc;
-}
-.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row):hover > td{
-  background:#f7f8fa !important;
-}
-.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:first-child{
-  padding-left:7px !important;
-}
-.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:first-child,
-.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:last-child{
-  background-clip:padding-box;
+/* Khóa màu theme ở thân bảng để Thu/Lãi không tự xanh lại. */
+#tab-da-giao .order-summary-panel .summary-compact-table tbody td:nth-child(3),
+#tab-da-giao .order-summary-panel .summary-compact-table tbody td:nth-child(4),
+#tab-da-giao .order-summary-panel .summary-compact-table tbody td:nth-child(5),
+#tab-don-tam .order-summary-panel .summary-compact-table tbody td:nth-child(3),
+#tab-don-tam .order-summary-panel .summary-compact-table tbody td:nth-child(4),
+#tab-don-tam .order-summary-panel .summary-compact-table tbody td:nth-child(5){
+  color:#374151 !important;
 }
 
-/* Dòng tổng là điểm chốt: chắc hơn bằng đen/xám, không dùng ba màu tài chính. */
-.order-summary-panel .summary-compact-table tbody tr.summary-total-row > td{
+/* TỔNG chỉ dùng đường chốt + chữ đen; không còn các ô nền rời. */
+#tab-da-giao .order-summary-panel .summary-compact-table tbody tr.summary-total-row > td,
+#tab-don-tam .order-summary-panel .summary-compact-table tbody tr.summary-total-row > td{
   color:#111827 !important;
-  background:#f5f6f7 !important;
-  border-top:1px solid #e5e7eb !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  border-top:1.5px solid #d9dde2 !important;
   border-bottom:0 !important;
   font-weight:800 !important;
 }
-.order-summary-panel .summary-compact-table tbody tr.summary-total-row > td:first-child{
-  padding-left:7px !important;
-}
 
-/* Giữ vùng số sạch và đều trên mobile. */
+/* Khoảng dọc đồng nhất, không thêm padding lệch riêng cho cột Nguồn. */
 @media (max-width:620px){
   .order-summary-panel{
     padding:14px !important;
