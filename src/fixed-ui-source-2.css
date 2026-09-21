@@ -210,11 +210,13 @@ body[data-force-pc="1"] #orderDetailContentToShare{
   --app-text:#111827;
   --app-font:"Be Vietnam Pro",sans-serif;
 }
+body,
+body button,
+body input,
+body select,
+body textarea,
 #appContainer,
-#appContainer button,
-#appContainer input,
-#appContainer select,
-#appContainer textarea{font-family:var(--app-font) !important;}
+#appContainer .font-sans{font-family:var(--app-font) !important;}
 #appContainer .bg-primary{background-color:var(--app-primary) !important;}
 #appContainer .text-primary{color:var(--app-primary) !important;}
 #appContainer .border-primary{border-color:var(--app-primary) !important;}
@@ -244,13 +246,25 @@ body[data-force-pc="1"] #orderDetailContentToShare{
 #appContainer{background:var(--app-canvas) !important;color:var(--app-text);}
 #appContainer [class*="bg-[#1e293b]"]{background-color:var(--app-header) !important;}
 #appContainer .bg-white{background-color:var(--app-surface);}
-#appContainer.font-sharp,
-#appContainer.font-sharp *{
+body{
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  text-rendering:geometricPrecision;
+  text-rendering:optimizeLegibility;
+}
+#appContainer.font-sharp,
+#appContainer.font-sharp *{
+  -webkit-font-smoothing:auto;
+  -moz-osx-font-smoothing:auto;
+  text-rendering:optimizeLegibility;
+  font-kerning:normal;
+  font-optical-sizing:auto;
   font-synthesis:none;
 }
+#appContainer.font-sharp .font-normal{font-weight:500 !important;}
+#appContainer.font-sharp .font-medium{font-weight:600 !important;}
+#appContainer.font-sharp .text-gray-400{color:#7b8798 !important;}
+#appContainer.font-sharp .text-gray-500{color:#566276 !important;}
+#appContainer.font-sharp .text-slate-300{color:#c5ced9 !important;}
 .theme-preset-choice{
   display:flex;
   flex-direction:column;
