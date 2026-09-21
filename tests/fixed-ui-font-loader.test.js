@@ -31,5 +31,14 @@ test('selected app font is loaded on demand before fallback',async()=>{
   assert.match(runtime,/TAPHOA_FONT_LOADER\?\.ensure\(choice\)/);
   assert.match(runtime,/geist:\s*'"Geist", "Geist Sans"/);
   assert.match(css,/\.font-choice-geist\{font-family:"Geist","Geist Sans"/);
+  assert.match(css,/body,[\s\S]*body button,[\s\S]*#appContainer \.font-sans\{font-family:var\(--app-font\) !important;\}/);
+  assert.match(css,/#appContainer\.font-sharp \.font-normal\{font-weight:500 !important;\}/);
+  assert.match(css,/#appContainer\.font-sharp \.font-medium\{font-weight:600 !important;\}/);
+  assert.match(css,/#appContainer\.font-sharp \.text-gray-400\{color:#7b8798 !important;\}/);
+  assert.match(markup,/OpenAI Sans · Geist Sans · Be Vietnam Pro/);
+  assert.match(markup,/>Be Vietnam Pro<\/button>/);
+  assert.match(markup,/Làm chữ nhỏ rõ hơn · tăng nhẹ độ đậm và tương phản/);
   assert.match(markup,/Thiếu font trên máy sẽ tự tải; chỉ dùng fallback khi không tải được\./);
+  assert.match(html,/fixed-ui-source-2\.css\?v=global-font-sharp-20260922/);
+  assert.match(html,/fixed-ui-markup-3\.js\?v=global-font-sharp-20260922/);
 });
