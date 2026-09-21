@@ -63,6 +63,18 @@
             }, 300);
         }
 
+        function debtIosShareContext() {
+            const ua = String(navigator.userAgent || '');
+            return /iPad|iPhone|iPod/.test(ua)
+                || (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1);
+        }
+
+        function debtNativeSharePayload(file) {
+            const files = [file];
+            if (debtIosShareContext()) return { files };
+            return { files, title: 'Công nợ', text: 'Bảng đối soát công nợ' };
+        }
+
         async function shareCustomerDebtImage() {
             const source = document.getElementById('customerDebtContentToShare');
             if (!source) return;
@@ -158,7 +170,7 @@
 
                 const file = new File([blob], 'congno.png', { type: 'image/png' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'Công nợ', text: 'Bảng đối soát công nợ' });
+                    await navigator.share(debtNativeSharePayload(file));
                 } else {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -168,7 +180,8 @@
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                 }
             } catch (e) {
-                showAlertPopup("Lỗi tạo ảnh", e.message);
+                const shareCancel = /abort|cancel|canceled|cancelled/i.test(String(e?.name || '') + ' ' + String(e?.message || e || ''));
+                if (!shareCancel) showAlertPopup("Lỗi tạo ảnh", e.message);
             } finally {
                 captureHost?.remove();
                 hideLoading();
