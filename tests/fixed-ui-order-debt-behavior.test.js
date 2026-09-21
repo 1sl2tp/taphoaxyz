@@ -300,6 +300,10 @@ test('order list cards keep customer, order summary and product hint compact',as
   assert.match(delivered,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} sp<\/span>`/);
   assert.doesNotMatch(pending,/note-chip-bullet/);
   assert.doesNotMatch(delivered,/note-chip-bullet/);
+  assert.match(pending,/order-card-title-row[\s\S]{0,220}\$\{o\.tenKh\}[\s\S]{0,220}order-card-total[\s\S]{0,160}\$\{o\.tongThu\.toLocaleString\('vi-VN'\)\}/);
+  assert.match(delivered,/order-card-title-row[\s\S]{0,220}\$\{o\.tenKh\}[\s\S]{0,220}order-card-total[\s\S]{0,160}\$\{o\.tongThu\.toLocaleString\('vi-VN'\)\}/);
+  assert.match(pending,/order-card-meta-row[\s\S]{0,260}\$\{shortTime\}[\s\S]{0,260}profit-only/);
+  assert.match(delivered,/order-card-meta-row[\s\S]{0,260}\$\{shortTime\}[\s\S]{0,260}profit-only/);
 });
 
 
@@ -318,6 +322,13 @@ test('order suggestions keep old card language: separate chips, no note bullet',
   assert.match(css,/\.order-product-more\{/);
   assert.doesNotMatch(pending,/order-product-preview note-chip-row/);
   assert.doesNotMatch(delivered,/order-product-preview note-chip-row/);
+});
+
+test('order card reserves full third row for product chips',async()=>{
+  const css=await read('src/fixed-ui-source-4.css');
+  assert.match(css,/\.order-card-title-row,[\s\S]*\.order-card-meta-row\{/);
+  assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.match(css,/\.order-card-total,[\s\S]*\.profit-only[\s\S]*white-space:nowrap/);
 });
 
 test('order item notes survive product edit cart save reload detail and share',async()=>{
