@@ -283,20 +283,21 @@
             for (let ng in sourceSummary) {
                 let s = sourceSummary[ng]; tSl += s.sl; tChi += s.chi; tThu += s.thu; tLai += s.lai;
                 sumHtml += `
-                    <tr class="border-b border-gray-50 hover:bg-gray-50/50">
-                        <td class="py-3 font-bold text-gray-800"><button type="button" data-source="${escapeProductEditorValue(ng)}" onclick="openSourceDetailFromCell(this, 'dontam')" class="allow-fast-click source-summary-link text-left font-bold text-gray-800">${escapeProductEditorValue(ng)}</button></td>
-                        <td class="py-3 text-right font-bold text-gray-600">${s.sl}</td>
-                        <td class="py-3 text-right font-bold text-gray-500 pr-2">${s.chi.toLocaleString('vi-VN')}</td>
-                        <td class="py-3 text-right font-bold text-primary pr-2">${s.thu.toLocaleString('vi-VN')}</td>
-                        <td class="py-3 text-right font-bold text-primary pr-2">${s.lai.toLocaleString('vi-VN')}</td>
+                    <tr class="summary-source-row">
+                        <td class="summary-source-name py-3 font-bold"><button type="button" data-source="${escapeProductEditorValue(ng)}" onclick="openSourceDetailFromCell(this, 'dontam')" class="allow-fast-click source-summary-link text-left font-bold">${escapeProductEditorValue(ng)}</button></td>
+                        <td class="summary-value-qty py-3 text-right font-semibold">${s.sl}</td>
+                        <td class="summary-value-cost py-3 text-right font-semibold pr-2">${s.chi.toLocaleString('vi-VN')}</td>
+                        <td class="summary-value-revenue py-3 text-right font-semibold pr-2">${s.thu.toLocaleString('vi-VN')}</td>
+                        <td class="summary-value-profit py-3 text-right font-semibold pr-2">${s.lai.toLocaleString('vi-VN')}</td>
                     </tr>`;
             }
             sumHtml += `
-                <tr class="summary-total-row font-extrabold text-gray-800">
-                    <td class="py-3 pl-1">TỔNG</td><td class="py-3 text-right">${tSl}</td>
-                    <td class="py-3 text-right text-gray-500 pr-2">${tChi.toLocaleString('vi-VN')}</td>
-                    <td class="py-3 text-right text-primary pr-2">${tThu.toLocaleString('vi-VN')}</td>
-                    <td class="py-3 text-right text-primary pr-2">${tLai.toLocaleString('vi-VN')}</td>
+                <tr class="summary-total-row">
+                    <td class="py-3 pl-1 font-extrabold">TỔNG</td>
+                    <td class="summary-value-qty py-3 text-right font-extrabold">${tSl}</td>
+                    <td class="summary-value-cost py-3 text-right font-extrabold pr-2">${tChi.toLocaleString('vi-VN')}</td>
+                    <td class="summary-value-revenue py-3 text-right font-extrabold pr-2">${tThu.toLocaleString('vi-VN')}</td>
+                    <td class="summary-value-profit py-3 text-right font-extrabold pr-2">${tLai.toLocaleString('vi-VN')}</td>
                 </tr>`;
             document.getElementById('sourceSummaryTableBody').innerHTML = sumHtml;
 
