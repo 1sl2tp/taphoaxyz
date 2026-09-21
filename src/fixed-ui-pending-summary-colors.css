@@ -1,13 +1,114 @@
-/* FIXED STYLE: pending-summary-finance-colors */
+/* FIXED STYLE: calm-source-summary */
 
-/* Đơn tạm có utility text-primary riêng; khóa màu tài chính theo đúng nghĩa cột,
-   độc lập với màu theme hiện tại. Áp dụng cho header, từng dòng và dòng tổng. */
-#tab-don-tam .summary-compact-table :is(th,td):nth-child(3){
-  color:#ef4444 !important;
+.order-summary-panel{
+  background:linear-gradient(180deg,#ffffff 0%,#fcfcfd 100%) !important;
+  border-color:#eef0f2 !important;
+  box-shadow:0 1px 3px rgba(15,23,42,.045) !important;
 }
-#tab-don-tam .summary-compact-table :is(th,td):nth-child(4){
-  color:#2563eb !important;
+.order-summary-panel > .flex:first-child h3{
+  color:#6b7280 !important;
+  letter-spacing:.045em;
 }
-#tab-don-tam .summary-compact-table :is(th,td):nth-child(5){
-  color:#16a34a !important;
+.order-summary-panel .summary-panel-icon{
+  color:#64748b !important;
+  opacity:.72;
+}
+
+/* Header dùng đen/xám làm chủ đạo.
+   Chi / Thu / Lãi chỉ còn chấm nhỏ dịu màu để phân biệt nghĩa cột. */
+.order-summary-panel .summary-compact-table thead th{
+  color:#6b7280 !important;
+  font-weight:650 !important;
+}
+.order-summary-panel .summary-compact-table thead th:first-child{
+  color:#374151 !important;
+  font-weight:700 !important;
+}
+.order-summary-panel .summary-compact-table thead th:nth-child(2){
+  color:#9ca3af !important;
+}
+.order-summary-panel .summary-compact-table thead th:nth-child(3)::before,
+.order-summary-panel .summary-compact-table thead th:nth-child(4)::before,
+.order-summary-panel .summary-compact-table thead th:nth-child(5)::before{
+  content:"";
+  display:inline-block;
+  width:5px;
+  height:5px;
+  margin-right:4px;
+  border-radius:999px;
+  vertical-align:1px;
+}
+.order-summary-panel .summary-compact-table thead th:nth-child(3)::before{background:#c9a0a0;}
+.order-summary-panel .summary-compact-table thead th:nth-child(4)::before{background:#9aa7b8;}
+.order-summary-panel .summary-compact-table thead th:nth-child(5)::before{background:#91aa98;}
+
+/* Số liệu thân bảng trung tính để mắt không phải đổi màu liên tục. */
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td{
+  color:#374151 !important;
+  font-weight:600 !important;
+  transition:background-color .12s ease;
+}
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:nth-child(2){
+  color:#6b7280 !important;
+}
+.order-summary-panel .summary-compact-table .source-summary-link{
+  color:#1f2937 !important;
+  font-weight:700 !important;
+}
+
+/* Các nguồn được phân vùng bằng sắc xám rất nhẹ, không thêm màu mới. */
+.order-summary-panel .summary-compact-table tbody tr:nth-child(odd):not(.summary-total-row) > td{
+  background:#ffffff !important;
+}
+.order-summary-panel .summary-compact-table tbody tr:nth-child(even):not(.summary-total-row) > td{
+  background:#fafbfc !important;
+}
+.order-summary-panel .summary-compact-table tbody tr:nth-child(3n+1):not(.summary-total-row) > td:first-child{
+  box-shadow:inset 2px 0 #d7dce2;
+}
+.order-summary-panel .summary-compact-table tbody tr:nth-child(3n+2):not(.summary-total-row) > td:first-child{
+  box-shadow:inset 2px 0 #e2e5e9;
+}
+.order-summary-panel .summary-compact-table tbody tr:nth-child(3n):not(.summary-total-row) > td:first-child{
+  box-shadow:inset 2px 0 #cfd5dc;
+}
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row):hover > td{
+  background:#f7f8fa !important;
+}
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:first-child{
+  padding-left:7px !important;
+}
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:first-child,
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:last-child{
+  background-clip:padding-box;
+}
+
+/* Dòng tổng là điểm chốt: chắc hơn bằng đen/xám, không dùng ba màu tài chính. */
+.order-summary-panel .summary-compact-table tbody tr.summary-total-row > td{
+  color:#111827 !important;
+  background:#f5f6f7 !important;
+  border-top:1px solid #e5e7eb !important;
+  border-bottom:0 !important;
+  font-weight:800 !important;
+}
+.order-summary-panel .summary-compact-table tbody tr.summary-total-row > td:first-child{
+  padding-left:7px !important;
+}
+
+/* Giữ vùng số sạch và đều trên mobile. */
+@media (max-width:620px){
+  .order-summary-panel{
+    padding:14px !important;
+  }
+  .order-summary-panel > .flex:first-child{
+    margin-bottom:12px !important;
+  }
+  .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td{
+    padding-top:11px !important;
+    padding-bottom:11px !important;
+  }
+  .order-summary-panel .summary-compact-table tbody tr.summary-total-row > td{
+    padding-top:11px !important;
+    padding-bottom:11px !important;
+  }
 }
