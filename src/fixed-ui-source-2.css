@@ -277,7 +277,7 @@ body[data-force-pc="1"] #orderDetailContentToShare{
   background:linear-gradient(90deg,#1e293b 0 30%,#f3f4f6 30% 70%,#16a34a 70%);
 }
 .font-choice-openai{font-family:"OpenAI Sans","Helvetica Neue",Arial,sans-serif !important;}
-.font-choice-geist{font-family:"Geist Sans",Geist,"Helvetica Neue",Arial,sans-serif !important;}
+.font-choice-geist{font-family:"Geist","Geist Sans","Helvetica Neue",Arial,sans-serif !important;}
 .font-choice-current{font-family:"Be Vietnam Pro",sans-serif !important;}
 
 
