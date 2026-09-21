@@ -2,15 +2,15 @@
             if (!hasPermission('canViewDelivered')) return;
             renderOrderTimeFilterUI('dongiao');
             if (!appData.dongiao || appData.dongiao.length <= 1) {
-                document.getElementById('completedOrderListContainer').innerHTML = '<p class="text-center text-gray-400 mt-4 text-xs">Chưa có đơn đã giao nào</p>';
-                document.getElementById('completedSummaryTableBody').innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-400">Không có dữ liệu</td></tr>';
+                document.getElementById('completedOrderListContainer').innerHTML = orderListEmptyState('Chưa có đơn đã giao nào');
+                document.getElementById('completedSummaryTableBody').innerHTML = orderSummaryEmptyRow();
                 document.getElementById('completedCountBadge').innerText = '0'; return;
             }
 
             let rows = getRowsVisibleForOrderTab('dongiao');
             if (!rows.length) {
-                document.getElementById('completedOrderListContainer').innerHTML = '<p class="text-center text-gray-400 mt-4 text-xs">Không có đơn đã giao trong khoảng thời gian này</p>';
-                document.getElementById('completedSummaryTableBody').innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-400">Không có dữ liệu</td></tr>';
+                document.getElementById('completedOrderListContainer').innerHTML = orderListEmptyState('Không có đơn đã giao trong khoảng thời gian này');
+                document.getElementById('completedSummaryTableBody').innerHTML = orderSummaryEmptyRow();
                 document.getElementById('completedCountBadge').innerText = '0';
                 return;
             }
