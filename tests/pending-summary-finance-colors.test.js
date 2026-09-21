@@ -10,12 +10,11 @@ const css = fs.readdirSync('src')
   .join('\n');
 const index = fs.readFileSync('index.html', 'utf8');
 
-test('order source summaries keep finance meaning without repeated strong colors', () => {
-  assert.match(css, /\.order-summary-panel\s+\.summary-compact-table\s+thead th:nth-child\(3\)::before/);
-  assert.match(css, /\.order-summary-panel\s+\.summary-compact-table\s+thead th:nth-child\(4\)::before/);
-  assert.match(css, /\.order-summary-panel\s+\.summary-compact-table\s+thead th:nth-child\(5\)::before/);
-  assert.match(css, /#tab-don-tam[\s\S]*tbody tr:not\(\.summary-total-row\) > td\{[\s\S]*color:#374151 !important;/);
+test('order source summaries use neutral true-table finance columns', () => {
+  assert.match(css, /#tab-don-tam[\s\S]*tbody td\{[\s\S]*color:#374151 !important;/);
+  assert.match(css, /thead th::before\{[\s\S]*content:none !important;/);
+  assert.match(css, /\.summary-compact-table\{[\s\S]*display:table !important;/);
   assert.match(css, /tbody tr\.summary-total-row > td\{[\s\S]*color:#111827 !important;/);
   assert.doesNotMatch(css, /#tab-don-tam\s+\.summary-compact-table\s+:is\(th,td\):nth-child\(3\)/);
-  assert.match(index, /fixed-ui-pending-summary-colors\.css\?v=clean-summary-grid-20260922/);
+  assert.match(index, /fixed-ui-pending-summary-colors\.css\?v=real-table-summary-20260922/);
 });
