@@ -8,6 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..');
 const markup5 = fs.readFileSync(path.join(root, 'src', 'fixed-ui-markup-5.js'), 'utf8');
 const runtime6 = fs.readFileSync(path.join(root, 'src', 'fixed-ui-runtime-6.js'), 'utf8');
+const runtime11 = fs.readFileSync(path.join(root, 'src', 'fixed-ui-runtime-11.js'), 'utf8');
 const bridge = fs.readFileSync(path.join(root, 'src', 'fixed-production-bridge.js'), 'utf8');
 const migrations = fs.readdirSync(path.join(root, 'supabase', 'migrations'))
   .filter(name => name.endsWith('.sql'))
@@ -37,6 +38,12 @@ test('customer avatar flows from v21 account data through frontend rows into sel
     'customer rows must render an avatar or fallback');
   assert.match(runtime6, /kh\[5\]/,
     'customer avatar must use the appended customer row field without shifting existing role index');
+  assert.match(runtime11, /avatarHtml:\s*customerAvatarMarkup\(kh\)/,
+    'debt list must reuse the exact shared customer avatar renderer');
+  assert.match(runtime11, /\$\{c\.avatarHtml\}/,
+    'debt cards must render the shared avatar instead of a generated color badge');
+  assert.doesNotMatch(runtime11, /bg-orange-500.*bg-red-500.*bg-purple-500/s,
+    'debt cards must not use fake rotating avatar colors');
   assert.match(migrations, /'avatar'\s*,\s*nullif\(a\.avatar_path\s*,\s*''\)/i,
     'customer frontend RPC must expose v21 avatar_path');
   assert.match(migrations, /taphoa_bump_customers_revision_from_v21_accounts[\s\S]*values\s*\(\s*'customers'\s*,\s*1\s*,\s*now\(\)\s*\)[\s\S]*on conflict\s*\(\s*domain\s*\)\s*do update[\s\S]*revision\s*=\s*public\.taphoa_revisions\.revision\s*\+\s*1/i,
