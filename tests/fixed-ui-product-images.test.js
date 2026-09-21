@@ -42,6 +42,10 @@ test('product image mode remains optional and uses compact lazy thumbnails',asyn
   assert.match(mediaCss,/object-fit:contain/);
   assert.match(mediaCss,/padding:1px/);
   assert.match(mediaCss,/border:1px solid #f1f3f5/);
+  assert.match(runtime,/class="market-quick-thumb shrink-0 overflow-hidden flex items-center justify-center"/);
+  assert.match(mediaCss,/\.market-quick-thumb\{[\s\S]*?width:54px;[\s\S]*?height:54px;[\s\S]*?border:1px solid #f1f3f5;[\s\S]*?border-radius:11px;[\s\S]*?padding:1px;/);
+  assert.match(mediaCss,/\.market-quick-thumb img\{[\s\S]*?object-fit:contain;/);
+  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:58px;[\s\S]*?height:58px;/);
   assert.match(mediaJs,/APP_PRODUCT_VIEW/);
   assert.match(mediaJs,/Ảnh sản phẩm/);
   assert.match(mediaJs,/Chọn ảnh từ siêu thị/);
