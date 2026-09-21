@@ -429,7 +429,7 @@
                 const activeClass = src === currentMarketSourceFilter
                     ? 'bg-primary text-white shadow-sm'
                     : 'border border-gray-200 text-gray-600 hover:bg-gray-50';
-                return `<button onclick="filterMarketSource('${src}')" class="market-source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}">${src}</button>`;
+                return `<button onclick="filterMarketSource('${src}')" class="market-source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}">${src}</button>`;
             }).join('');
         }
 
@@ -461,7 +461,7 @@
             let html = ['Tất cả', ...Array.from(sources)].map(src => {
                 let activeClass = (src === currentFilter) ? 'bg-primary text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:bg-gray-50';
                 const mobileLabel = getMobileSourceLabel(src);
-                return `<button onclick="filterSource('${src}')" class="source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}"><span class="source-tag-label-full">${src}</span><span class="source-tag-label-mobile">${mobileLabel}</span></button>`;
+                return `<button onclick="filterSource('${src}')" class="source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}"><span class="source-tag-label-full">${src}</span><span class="source-tag-label-mobile">${mobileLabel}</span></button>`;
             }).join('');
             document.getElementById('sourceTagsContainer').innerHTML = html;
         }
