@@ -207,10 +207,10 @@
                     <div class="source-detail-stt">${index + 1}</div>
                     <div class="source-detail-product-cell min-w-0">
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
+                        ${sourceLineNoteEditorHtml(row)}
                     </div>
                     <div class="source-detail-buyer-cell min-w-0">
                         <div class="source-detail-buyer">${escapeProductEditorValue(row.buyerName)}</div>
-                        ${sourceLineNoteEditorHtml(row)}
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
