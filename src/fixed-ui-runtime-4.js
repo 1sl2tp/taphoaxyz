@@ -25,7 +25,7 @@
         function showLoginScreen() {
             const login = document.getElementById('loginScreen');
             const app = document.getElementById('appContainer');
-            if (app) app.classList.add('hidden');
+            if (app) { app.style.display = 'none'; app.classList.add('hidden'); }
             if (login) {
                 login.classList.remove('hidden');
                 login.classList.add('flex');
@@ -41,7 +41,10 @@
                 login.classList.add('hidden');
                 login.classList.remove('flex');
             }
-            if (app) app.classList.remove('hidden');
+            if (app) {
+                app.style.removeProperty('display');
+                app.classList.remove('hidden');
+            }
             applyRolePermissions();
         }
 
