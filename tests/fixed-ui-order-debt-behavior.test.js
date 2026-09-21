@@ -267,11 +267,13 @@ test('order list cards put customer name before order code and stay two-line',as
   const pending=await read('src/fixed-ui-runtime-10.js');
   const delivered=await read('src/fixed-ui-runtime-11.js');
 
-  assert.match(pending,/\$\{o\.tenKh\} - <span[^>]*>\$\{k\}<\/span>/);
-  assert.match(delivered,/\$\{o\.tenKh\} - <span[^>]*>\$\{k\}<\/span>/);
+  assert.match(pending,/>\$\{o\.tenKh\}<\/p>/);
+  assert.match(delivered,/>\$\{o\.tenKh\}<\/p>/);
+  assert.doesNotMatch(pending,/\$\{o\.tenKh\} - <span/);
+  assert.doesNotMatch(delivered,/\$\{o\.tenKh\} - <span/);
 
-  assert.match(pending,/\$\{o\.countSp\} mã - \$\{o\.tongSl\} SP \| \$\{shortTime\}/);
-  assert.match(delivered,/\$\{o\.countSp\} mã - \$\{o\.tongSl\} SP \| \$\{shortTime\}/);
+  assert.match(pending,/<span[^>]*>\$\{k\}<\/span> · \$\{o\.countSp\} mã · \$\{o\.tongSl\} SP · \$\{shortTime\}/);
+  assert.match(delivered,/<span[^>]*>\$\{k\}<\/span> · \$\{o\.countSp\} mã · \$\{o\.tongSl\} SP · \$\{shortTime\}/);
 
   assert.match(pending,/text-\[14px\][^"]*truncate/);
   assert.match(delivered,/text-\[14px\][^"]*truncate/);
