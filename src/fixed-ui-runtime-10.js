@@ -163,7 +163,7 @@
                             <div style="width: 36px; height: 36px;" class="rounded-full bg-orange-50 text-orange-500 font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
                             <div class="min-w-0">
                                 <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh}</p>
-                                <p class="text-[11px] text-gray-400 mt-0.5 truncate"><span class="text-[#ea580c] font-extrabold">${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5 truncate">${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP</p>
                                 ${productPreview ? `<p class="order-product-preview text-[10px] text-gray-500 mt-1 truncate">${escapeProductEditorValue(productPreview)}</p>` : ''}
                             </div>
                         </div>
