@@ -162,6 +162,13 @@
             const ready = sourceShareCache.get(key);
             if (ready?.signature === descriptor.signature) {
                 hideLoading();
+
+                const iosPwaFallback = window.TAPHOA_IOS_SHARE_FALLBACK;
+                if (iosPwaFallback?.shouldUse?.()) {
+                    iosPwaFallback.open(ready.files,{ title: ready.title || 'Ảnh chia sẻ' });
+                    return;
+                }
+
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: ready.files })) {
                     if (sourceNativeShareInFlight) return;
                     if (navigator.userActivation && navigator.userActivation.isActive === false) {
@@ -174,16 +181,25 @@
                         shareResult = navigator.share(sourceNativeSharePayload(ready));
                     } catch (error) {
                         sourceNativeShareInFlight = false;
+                        if (sourceShareCancelled(error) && sourceIosShareContext()) {
+                            window.TAPHOA_IOS_SHARE_FALLBACK?.open?.(ready.files,{ title: ready.title || 'Ảnh chia sẻ' });
+                            return;
+                        }
                         if (!sourceShareCancelled(error)) showAlertPopup('Lỗi chia sẻ', error?.message || 'Không thể chia sẻ ảnh.');
                         return;
                     }
                     return Promise.resolve(shareResult).catch(error => {
-                        if (!sourceShareCancelled(error)) showAlertPopup('Lỗi chia sẻ', error?.message || 'Không thể chia sẻ ảnh.');
+                        if (sourceShareCancelled(error) && sourceIosShareContext()) {
+                            window.TAPHOA_IOS_SHARE_FALLBACK?.open?.(ready.files,{ title: ready.title || 'Ảnh chia sẻ' });
+                            return;
+                        }
+                        showAlertPopup('Lỗi chia sẻ', error?.message || 'Không thể chia sẻ ảnh.');
                     }).finally(() => {
                         sourceNativeShareInFlight = false;
                     });
                 }
-                downloadSourceShareFiles(ready.files);
+                iosPwaFallback?.open?.(ready.files,{ title: ready.title || 'Ảnh chia sẻ' });
+                if (!iosPwaFallback) downloadSourceShareFiles(ready.files);
                 return;
             }
 
