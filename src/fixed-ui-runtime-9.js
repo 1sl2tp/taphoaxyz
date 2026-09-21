@@ -11,12 +11,11 @@
             });
             const rows = Array.from(grouped.values())
                 .sort((a, b) => (b.qty - a.qty) || (a.firstIndex - b.firstIndex));
-            const visible = rows.slice(0, Math.max(1, Number(limit) || 2));
-            const text = visible
-                .map(item => `${item.name}${item.qty > 0 ? ` ×${item.qty.toLocaleString('vi-VN')}` : ''}`)
-                .join(' · ');
+            const visible = rows.slice(0, Math.max(1, Number(limit) || 2))
+                .map(item => `${item.name}${item.qty > 0 ? ` × ${item.qty.toLocaleString('vi-VN')}` : ''}`);
             const remaining = Math.max(0, rows.length - visible.length);
-            return remaining ? `${text} · +${remaining}` : text;
+            if (remaining) visible.push(`+${remaining}`);
+            return visible;
         }
 
         function openSourceDetail(sheetName, sourceName) {
@@ -79,37 +78,27 @@
         }
 
 
-        function sourceLineNoteEditorHtml(row, { showBuyer = false, noteLabel = '' } = {}) {
+        function sourceLineNoteEditorHtml(row) {
             const note = String(row?.note || '').trim();
-            const buyer = String(row?.buyerName || '').trim();
-            const qty = Number(row?.qty) || 0;
-            const label = String(noteLabel || '').trim();
             const backendOrderId = String(row?.backendOrderId || '').trim();
             const productCode = String(row?.productCode || '').trim();
             const editable = activeSourceDetailState.sheetName === 'dontam' && backendOrderId && productCode;
-            const buyerHtml = showBuyer
-                ? `<div class="source-detail-buyer whitespace-nowrap">${escapeProductEditorValue(buyer)}${qty > 0 ? ` · ${qty.toLocaleString('vi-VN')}` : ''}</div>`
-                : '';
-            const noteText = label
-                ? `${escapeProductEditorValue(label)}${note ? `: ${escapeProductEditorValue(note)}` : ''}`
-                : escapeProductEditorValue(note);
-            const noteClass = note ? 'text-gray-800 font-semibold' : 'text-gray-500';
+            if (!note) return '';
+
+            const chip = `<span class="note-chip">${escapeProductEditorValue(note)}</span>`;
             if (!editable) {
-                if (!note) return buyerHtml;
-                return `${buyerHtml}<div class="source-detail-note text-[10px] ${noteClass} mt-0.5">${noteText}</div>`;
+                return `<div class="note-chip-row source-detail-note"><span class="note-chip-bullet">•</span>${chip}</div>`;
             }
-            if (!note && !label && !showBuyer) return '';
             return `
                 <div class="source-line-note-editor mt-0.5 min-w-0" data-source-line-note-editor>
-                    ${buyerHtml}
                     <button type="button"
-                        class="allow-fast-click source-detail-note block w-full min-h-[18px] text-left text-[10px] ${noteClass}"
+                        class="allow-fast-click note-chip-row source-detail-note w-full text-left"
                         data-source-note-button
                         data-note-order-id="${escapeProductEditorValue(backendOrderId)}"
                         data-note-product-code="${escapeProductEditorValue(productCode)}"
                         data-note-current="${escapeProductEditorValue(note)}"
                         onclick="openSourceLineNoteEditor(this)"
-                        aria-label="${escapeProductEditorValue(label || 'Ghi chú')}">${noteText || escapeProductEditorValue(label || 'Ghi chú')}</button>
+                        aria-label="Sửa ghi chú"><span class="note-chip-bullet">•</span>${chip}</button>
                     <input type="text"
                         class="hidden w-full h-7 px-2 rounded-md border border-gray-200 bg-white text-[11px] text-gray-700 outline-none focus:border-primary"
                         data-source-note-input
@@ -118,7 +107,7 @@
                         data-note-current="${escapeProductEditorValue(note)}"
                         value="${escapeProductEditorValue(note)}"
                         autocomplete="off"
-                        placeholder="${escapeProductEditorValue(label || 'Ghi chú')}"
+                        placeholder="Ghi chú"
                         onblur="commitSourceLineNoteEditor(this)"
                         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){event.preventDefault();cancelSourceLineNoteEditor(this)}">
                 </div>`;
@@ -241,7 +230,7 @@
                         ${(() => {
                             const notes = (row.noteEntries || []).filter(entry => String(entry?.note || '').trim());
                             if (!notes.length) return '';
-                            return `<div class="mt-1 space-y-0.5">${notes.map((entry,noteIndex) => sourceLineNoteEditorHtml(entry, { noteLabel: `Ghi chú ${noteIndex + 1}` })).join('')}</div>`;
+                            return `<div class="mt-1 space-y-0.5">${notes.map(entry => sourceLineNoteEditorHtml(entry)).join('')}</div>`;
                         })()}
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
