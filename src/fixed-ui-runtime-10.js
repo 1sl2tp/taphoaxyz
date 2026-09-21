@@ -1,4 +1,4 @@
-        async function captureLongSourceSharePages(source, baseName, modeLabel) {
+        async function captureLongSourceSharePages(source, baseName, modeLabel, showProgress = true) {
             const capture = window.TAPHOA_SHARE_CAPTURE;
             if (!capture) throw new Error('Chưa khởi tạo bộ tạo ảnh.');
             let host = null;
@@ -28,7 +28,7 @@
                     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
                     const height = Math.ceil(pageEl.scrollHeight) + 4;
-                    showLoading(`Đang tạo ảnh ${i + 1}/${pageElements.length}...`);
+                    if (showProgress) showLoading(`Đang tạo ảnh ${i + 1}/${pageElements.length}...`);
                     const canvas = await capture.captureElement(pageEl, {
                         width,
                         height,
@@ -47,43 +47,154 @@
             }
         }
 
+        const sourceShareCache = new Map();
+        const sourceSharePreparing = new Map();
+
+        function sourceShareHash(value) {
+            const text = String(value || '');
+            let hash = 2166136261;
+            for (let i = 0; i < text.length; i++) {
+                hash ^= text.charCodeAt(i);
+                hash = Math.imul(hash, 16777619);
+            }
+            return (hash >>> 0).toString(36);
+        }
+
+        function getSourceShareDescriptor(tabName) {
+            const grouped = tabName === 'grouped';
+            const source = document.getElementById(grouped ? 'sourceDetailCaptureGrouped' : 'sourceDetailCaptureDetail');
+            if (!source) return null;
+            const safeSource = sanitizeSourceShareFileName(activeSourceDetailState.source);
+            const mode = grouped ? 'gop' : 'chitiet';
+            const modeLabel = grouped ? 'Gộp để gửi NCC' : 'Chi tiết';
+            const signature = sourceShareHash([
+                activeSourceDetailState.sheetName || '',
+                activeSourceDetailState.source || '',
+                activeSourceDetailState.timeLabel || '',
+                grouped ? 'grouped' : 'detail',
+                source.innerText || source.textContent || ''
+            ].join('|'));
+            return {
+                grouped,
+                source,
+                safeSource,
+                mode,
+                modeLabel,
+                signature,
+                title: `${activeSourceDetailState.source} · ${grouped ? 'Gộp' : 'Chi tiết'}`,
+                text: `${getSourceDetailSheetLabel(activeSourceDetailState.sheetName)} · ${activeSourceDetailState.timeLabel}`
+            };
+        }
+
+        async function prepareSourceDetailShare(tabName) {
+            const key = tabName === 'grouped' ? 'grouped' : 'detail';
+            const descriptor = getSourceShareDescriptor(key);
+            if (!descriptor) return null;
+            const cached = sourceShareCache.get(key);
+            if (cached?.signature === descriptor.signature) return cached;
+
+            const inFlight = sourceSharePreparing.get(key);
+            if (inFlight?.signature === descriptor.signature) return inFlight.promise;
+
+            const promise = (async () => {
+                const files = await captureLongSourceSharePages(
+                    descriptor.source,
+                    `${descriptor.safeSource}_${descriptor.mode}`,
+                    descriptor.modeLabel,
+                    false
+                );
+                if (!files.length) throw new Error('Không tạo được ảnh.');
+                const artifact = {
+                    signature: descriptor.signature,
+                    files,
+                    title: descriptor.title,
+                    text: descriptor.text
+                };
+                const current = getSourceShareDescriptor(key);
+                if (current?.signature === descriptor.signature) sourceShareCache.set(key, artifact);
+                return artifact;
+            })().catch(() => null).finally(() => {
+                const current = sourceSharePreparing.get(key);
+                if (current?.promise === promise) sourceSharePreparing.delete(key);
+            });
+
+            sourceSharePreparing.set(key, { signature: descriptor.signature, promise });
+            return promise;
+        }
+
+        function sourceShareCancelled(error) {
+            return /abort|cancel|canceled|cancelled/i.test(String(error?.name || '') + ' ' + String(error?.message || error || ''));
+        }
+
+        function downloadSourceShareFiles(files) {
+            files.forEach((file,index) => {
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1500 + index * 100);
+            });
+        }
+
         function shareActiveSourceDetailTab() {
             return shareSourceDetailTab(activeSourceDetailState.tab || 'detail');
         }
 
-        async function shareSourceDetailTab(tabName) {
-            const grouped = tabName === 'grouped';
-            const source = document.getElementById(grouped ? 'sourceDetailCaptureGrouped' : 'sourceDetailCaptureDetail');
-            if (!source) return;
-            try {
-                showLoading('Đang tạo ảnh đầy đủ...');
-                const safeSource = sanitizeSourceShareFileName(activeSourceDetailState.source);
-                const mode = grouped ? 'gop' : 'chitiet';
-                const modeLabel = grouped ? 'Gộp để gửi NCC' : 'Chi tiết';
-                const files = await captureLongSourceSharePages(source, `${safeSource}_${mode}`, modeLabel);
-                if (!files.length) throw new Error('Không tạo được ảnh.');
+        function shareSourceDetailTab(tabName) {
+            const key = tabName === 'grouped' ? 'grouped' : 'detail';
+            const descriptor = getSourceShareDescriptor(key);
+            if (!descriptor) return;
 
-                if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
-                    await navigator.share({
-                        files,
-                        title: `${activeSourceDetailState.source} · ${grouped ? 'Gộp' : 'Chi tiết'}`,
-                        text: `${getSourceDetailSheetLabel(activeSourceDetailState.sheetName)} · ${activeSourceDetailState.timeLabel}`
-                    });
-                } else {
-                    files.forEach((file,index) => {
-                        const url = URL.createObjectURL(file);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = file.name;
-                        a.click();
-                        setTimeout(() => URL.revokeObjectURL(url), 1500 + index * 100);
+            const ready = sourceShareCache.get(key);
+            if (ready?.signature === descriptor.signature) {
+                hideLoading();
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: ready.files })) {
+                    return navigator.share({
+                        files: ready.files,
+                        title: ready.title,
+                        text: ready.text
+                    }).catch(error => {
+                        if (!sourceShareCancelled(error)) showAlertPopup('Lỗi chia sẻ', error?.message || 'Không thể chia sẻ ảnh.');
                     });
                 }
-            } catch (e) {
-                showAlertPopup('Lỗi tạo ảnh', e?.message || 'Không thể tạo ảnh.');
-            } finally {
-                hideLoading();
+                downloadSourceShareFiles(ready.files);
+                return;
             }
+
+            return prepareSourceDetailShare(key).then(prepared => {
+                hideLoading();
+                if (!prepared) {
+                    showAlertPopup('Lỗi tạo ảnh', 'Không thể tạo ảnh.');
+                    return;
+                }
+                if (typeof showToast === 'function') {
+                    showToast('Ảnh đã sẵn sàng. Bấm Chia sẻ lại để gửi ngay.', 'success');
+                }
+            });
+        }
+
+        if (typeof openSourceDetail === 'function') {
+            const openSourceDetailBeforeSharePrep = openSourceDetail;
+            openSourceDetail = function(...args) {
+                sourceShareCache.clear();
+                sourceSharePreparing.clear();
+                const result = openSourceDetailBeforeSharePrep.apply(this,args);
+                setTimeout(() => {
+                    void prepareSourceDetailShare('grouped');
+                    setTimeout(() => void prepareSourceDetailShare('detail'), 80);
+                }, 20);
+                return result;
+            };
+        }
+
+        if (typeof switchSourceDetailTab === 'function') {
+            const switchSourceDetailTabBeforeSharePrep = switchSourceDetailTab;
+            switchSourceDetailTab = function(tabName) {
+                const result = switchSourceDetailTabBeforeSharePrep.apply(this,arguments);
+                setTimeout(() => void prepareSourceDetailShare(tabName), 0);
+                return result;
+            };
         }
 
         function renderDonTam() {
