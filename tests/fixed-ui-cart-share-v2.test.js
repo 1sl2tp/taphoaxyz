@@ -56,7 +56,8 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(sourceShare,/const sourceShareCache = new Map\(\)/);
   assert.match(sourceShare,/prepareSourceDetailShare/);
   assert.match(sourceShare,/captureLongSourceSharePages\(source, baseName, modeLabel, showProgress = true\)/);
-  assert.match(sourceShare,/navigator\.share\(\{[\s\S]{0,180}files: ready\.files/);
+  assert.match(sourceShare,/sourceNativeSharePayload\(ready\)/);
+  assert.match(sourceShare,/if \(sourceIosShareContext\(\)\) return \{ files: ready\.files \}/);
 
   const [markup5,runtime13]=await Promise.all([
     readFile('src/fixed-ui-markup-5.js','utf8'),
@@ -65,6 +66,9 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(markup5,/id=\\\"orderDetailShareButton\\\"/);
   assert.match(cartShare,/detailShareBtn\.removeAttribute\('onclick'\)/);
   assert.match(cartShare,/detailShareBtn\.onclick=shareDetailOrderImageV3/);
+  assert.match(cartShare,/if\(isIosShareContext\(\)\) return \{files\}/);
+  assert.match(cartShare,/navigator\.userActivation/);
+  assert.match(cartShare,/nativeShareInFlight/);
   assert.match(runtime13,/function isNativeShareCancellation/);
   assert.match(runtime13,/if \(!isNativeShareCancellation\(e\)\) showAlertPopup\("Lỗi tạo ảnh", e\.message\)/);
 });
