@@ -320,7 +320,7 @@
             const sourceClass = getMarketQuickSourceClass(row?.source);
             return `
             <div class="market-quick-card bg-white rounded-[16px] px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-3">
-                <span class="market-quick-thumb w-12 h-12 rounded-xl border border-gray-100 bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center">
+                <span class="market-quick-thumb shrink-0 overflow-hidden flex items-center justify-center">
                     ${image ? `<img src="${escapeProductEditorValue(image)}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">` : '<i class="ph ph-image text-gray-300 text-lg"></i>'}
                 </span>
                 <span class="min-w-0 flex-1">
