@@ -12,7 +12,7 @@ test('delivered and pending source summaries use one calm neutral visual system'
   ]);
 
   assert.match(html,/fixed-ui-markup-2\.js\?v=calm-summary-20260922/);
-  assert.match(html,/fixed-ui-pending-summary-colors\.css\?v=calm-summary-20260922/);
+  assert.match(html,/fixed-ui-pending-summary-colors\.css\?v=clean-summary-grid-20260922/);
 
   const panelMatches=markup.match(/order-summary-panel/g) || [];
   assert.equal(panelMatches.length,2);
@@ -20,12 +20,14 @@ test('delivered and pending source summaries use one calm neutral visual system'
   assert.equal(iconMatches.length,2);
 
   assert.match(css,/\.order-summary-panel\{/);
-  assert.match(css,/linear-gradient\(180deg,#ffffff 0%,#fcfcfd 100%\)/);
+  assert.match(css,/\.order-summary-panel\{[\s\S]*background:#ffffff !important;/);
   assert.match(css,/thead th:nth-child\(3\)::before/);
   assert.match(css,/thead th:nth-child\(4\)::before/);
   assert.match(css,/thead th:nth-child\(5\)::before/);
-  assert.match(css,/tbody tr:nth-child\(even\):not\(\.summary-total-row\) > td/);
-  assert.match(css,/tbody tr\.summary-total-row > td[\s\S]*color:#111827 !important;[\s\S]*background:#f5f6f7 !important;/);
+  assert.match(css,/tbody tr:not\(\.summary-total-row\) > td[\s\S]*background:transparent !important;[\s\S]*border-bottom:1px solid #f1f3f5 !important;/);
+  assert.match(css,/tbody tr\.summary-total-row > td[\s\S]*color:#111827 !important;[\s\S]*background:transparent !important;[\s\S]*border-top:1\.5px solid #d9dde2 !important;/);
+  assert.doesNotMatch(css,/tbody tr:nth-child\(even\):not\(\.summary-total-row\)/);
+  assert.doesNotMatch(css,/box-shadow:inset 2px 0/);
 
   assert.doesNotMatch(css,/#ef4444/);
   assert.doesNotMatch(css,/#2563eb/);
