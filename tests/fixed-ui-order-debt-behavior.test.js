@@ -332,6 +332,23 @@ test('order item notes survive product edit cart save reload detail and share',a
   assert.match(share,/String\(item\?\.note \|\| ''\)\.trim\(\)/);
 });
 
+
+test('source summary detail and supplier grouping preserve line notes',async()=>{
+  const [runtime8,runtime9]=await Promise.all([
+    read('src/fixed-ui-runtime-8.js'),
+    read('src/fixed-ui-runtime-9.js')
+  ]);
+
+  assert.match(runtime8,/note: String\(r\[9\] \|\| ''\)\.trim\(\)/);
+  assert.match(runtime8,/const note = String\(row\.note \|\| ''\)\.trim\(\)/);
+  assert.match(runtime8,/const key = productKey \+ '\\|\\|' \+ noteKey/);
+  assert.match(runtime8,/map\.set\(key, \{ productName: row\.productName, note, qty: 0 \}\)/);
+
+  assert.match(runtime9,/class="source-detail-note/);
+  assert.ok(runtime9.includes('escapeProductEditorValue(row.note)'));
+  assert.match(runtime9,/TỔNG · \$\{rows\.length\} dòng/);
+});
+
 test('login screen matches the outlined welcome layout',async()=>{
   const markup=await read('src/fixed-ui-markup-1.js');
   const css=await read('src/fixed-ui-source-4.css');

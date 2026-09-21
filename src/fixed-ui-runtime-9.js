@@ -100,6 +100,7 @@
                     <div class="min-w-0">
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
                         <div class="source-detail-buyer">${escapeProductEditorValue(row.buyerName)}</div>
+                        ${row.note ? `<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${escapeProductEditorValue(row.note)}</div>` : ''}
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
@@ -125,7 +126,10 @@
             const rowHtml = rows.map((row,index) => `
                 <div class="source-detail-grid source-detail-data-row" data-source-share-row>
                     <div class="source-detail-stt">${index + 1}</div>
-                    <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
+                    <div class="min-w-0">
+                        <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
+                        ${row.note ? `<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${escapeProductEditorValue(row.note)}</div>` : ''}
+                    </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
             owner.innerHTML = `
@@ -134,7 +138,7 @@
                 </div>
                 <div data-source-share-rows>${rowHtml}</div>
                 <div class="source-detail-grid source-detail-total" data-source-share-footer>
-                    <div class="source-detail-total-label">TỔNG · ${rows.length} mã</div>
+                    <div class="source-detail-total-label">TỔNG · ${rows.length} dòng</div>
                     <div class="source-detail-total-qty">${activeSourceDetailState.totalQty.toLocaleString('vi-VN')}</div>
                 </div>`;
         }
