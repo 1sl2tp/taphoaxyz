@@ -54,14 +54,14 @@
         sl:Number(item?.sl??item?.qty)||0,
         gia:Number(item?.gia??item?.unit_price)||0,
         lineNo:Number(item?.lineNo??item?.line_no)||index+1,
-        ghiChu:isTarget?String(note||''):String(item?.ghiChu??item?.note||'')
+        ghiChu:isTarget?String(note||''):String((item?.ghiChu??item?.note)||'')
       };
     }).filter(item=>item.maSP&&item.sl>0);
     if(!found)throw new Error('Không tìm thấy sản phẩm trong đơn tạm.');
     await backend().saveOrder({
       maKH:String(order.maKH||order.customer_id||''),
       status:'pending',
-      ghiChu:String(order.ghiChu??order.note||''),
+      ghiChu:String((order.ghiChu??order.note)||''),
       editOrderId:backendId,
       items
     });
