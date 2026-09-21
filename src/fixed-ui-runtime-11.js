@@ -66,8 +66,7 @@
 
             orderKeys.forEach((k, idx) => {
                 let o = orders[k];
-                let shortTime = o.thoiGian;
-                try { let parts = shortTime.split(' '); if(parts.length >= 2) { shortTime = `${parts[0].split('/').slice(0,2).join('/')} ${parts[1].split(':').slice(0,2).join(':')}`; } } catch(e){}
+                const shortTime = formatOrderCardTime(o.thoiGian);
                 const productPreview = buildOrderProductPreview(o.items, 2);
 
                 orderHtml += `
@@ -80,10 +79,10 @@
                                     <p class="order-card-total font-extrabold text-[15px] text-gray-900">${o.tongThu.toLocaleString('vi-VN')}</p>
                                 </div>
                                 <div class="order-card-meta-row">
-                                    <p class="text-[11px] text-gray-400 mt-0.5 truncate min-w-0">${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5 truncate min-w-0">${shortTime} · ${o.countSp} mã · SL ${o.tongSl}</p>
                                     <p class="profit-only text-[11px] font-bold text-success mt-0.5">+${o.tongLai.toLocaleString('vi-VN')}</p>
                                 </div>
-                                ${productPreview.items.length ? `<div class="order-product-preview mt-1"><div class="order-product-text-row">${productPreview.items.map(item => `<span class="order-product-text">${escapeProductEditorValue(item)}</span>`).join('')}${productPreview.remaining ? `<span class="order-product-more">+${productPreview.remaining} sp</span>` : ''}</div></div>` : ''}
+                                ${productPreview.items.length ? `<div class="order-product-preview"><div class="order-product-text-row">${productPreview.items.map(item => `<span class="order-product-text">${escapeProductEditorValue(item)}</span>`).join('')}${productPreview.remaining ? `<span class="order-product-more">+${productPreview.remaining} mã</span>` : ''}</div></div>` : ''}
                             </div>
                         </div>
                     </div>`;
