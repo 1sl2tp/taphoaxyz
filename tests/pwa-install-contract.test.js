@@ -26,5 +26,8 @@ test('PWA is branded Bán Hàng and uses separate favicon and app icons', () => 
   assert.match(index, /<meta\s+name="apple-mobile-web-app-title"\s+content="Bán Hàng">/);
   assert.match(index, /<link\s+rel="apple-touch-icon"\s+sizes="180x180"\s+href="\.\/src\/assets\/app-icon-180-bag-v5.png">/);
   assert.ok(!index.includes('logo.jpg'));
-  assert.match(index, /navigator\.serviceWorker\.register\('\.\/sw\.js'\)/);
+  assert.match(index, /fixed-pwa-auto-update\.js\?v=pwa-auto-update-20260921/);
+  const updater = fs.readFileSync(new URL('../src/fixed-pwa-auto-update.js', import.meta.url), 'utf8');
+  assert.match(updater, /navigator\.serviceWorker\.register\(SW_URL/);
+  assert.match(updater, /updateViaCache:'none'/);
 });

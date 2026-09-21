@@ -1,7 +1,7 @@
 {
   "version": "TAPHOA",
   "build_id": "source-main",
-  "update_policy": "auto-when-safe",
+  "update_policy": "active-build-check-on-launch",
   "published_from": "main-source",
-  "ui_fix": "mobile-thumbnail-64px-override"
+  "ui_fix": "pwa-active-auto-update"
 }
