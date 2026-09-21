@@ -355,7 +355,7 @@ test('order card keeps product suggestions on one independent row',async()=>{
   assert.match(css,/\.order-card-total,[\s\S]*\.profit-only[\s\S]*white-space:nowrap/);
   assert.match(css,/\.order-product-preview\{[\s\S]*margin-top:5px;[\s\S]*padding-top:4px;[\s\S]*border-top:1px solid #f3f4f6;/);
   assert.match(css,/\.order-product-text-row\{[\s\S]*flex-wrap:nowrap;[\s\S]*overflow:hidden;/);
-  assert.match(css,/\.order-product-text\{[\s\S]*text-overflow:ellipsis;[\s\S]*max-width:44%/);
+  assert.match(css,/\.order-product-text\{[\s\S]*max-width:44%;[\s\S]*text-overflow:ellipsis;/);
 });
 
 test('order cards center STT and keep delete-all action visually quiet',async()=>{
