@@ -1,10 +1,11 @@
         async function captureLongSourceSharePages(source, baseName, modeLabel) {
-            if (!window.html2canvas) throw new Error('Chưa tải thư viện tạo ảnh.');
+            const capture = window.TAPHOA_SHARE_CAPTURE;
+            if (!capture) throw new Error('Chưa khởi tạo bộ tạo ảnh.');
             let host = null;
             try {
                 const sourceWidth = Math.ceil(source.getBoundingClientRect().width || 420);
                 const width = Math.min(760, Math.max(420, sourceWidth));
-                const pageElements = buildSourceSharePageElements(source, width, modeLabel, 3600);
+                const pageElements = buildSourceSharePageElements(source, width, modeLabel, 1800);
                 if (!pageElements.length) throw new Error('Không có nội dung để tạo ảnh.');
 
                 host = document.createElement('div');
@@ -27,19 +28,16 @@
                     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
                     const height = Math.ceil(pageEl.scrollHeight) + 4;
-                    const canvas = await html2canvas(pageEl, {
-                        scale:2,
-                        useCORS:true,
-                        backgroundColor:'#ffffff',
+                    showLoading(`Đang tạo ảnh ${i + 1}/${pageElements.length}...`);
+                    const canvas = await capture.captureElement(pageEl, {
                         width,
                         height,
-                        windowWidth:width,
-                        windowHeight:height,
-                        scrollX:0,
-                        scrollY:0
+                        scale:1.4,
+                        renderTimeout:10000,
+                        libraryTimeout:5000
                     });
                     if (!canvas.width || !canvas.height) throw new Error(`Ảnh phần ${i+1} không hợp lệ.`);
-                    const blob = await canvasToPngBlob(canvas);
+                    const blob = await capture.canvasToPngBlob(canvas, `Không tạo được ảnh phần ${i+1}.`);
                     const suffix = pageElements.length > 1 ? `_${i+1}-${pageElements.length}` : '';
                     files.push(new File([blob], `${baseName}${suffix}.png`, { type:'image/png' }));
                 }
