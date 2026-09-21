@@ -39,5 +39,5 @@ test('production asset versions include order cost snapshot fix',()=>{
   const html=read('index.html');
   assert.match(html,/fixed-production-bridge\.js\?v=order-cost-snapshot-20260921/);
   assert.match(html,/fixed-ui-runtime-10\.js\?v=order-cost-snapshot-20260921/);
-  assert.match(html,/fixed-ui-runtime-11\.js\?v=debt-avatar-sync-20260921/);
+  assert.match(html,/fixed-ui-runtime-11\.js\?v=debt-age-latest-sale-20260921/);
 });
