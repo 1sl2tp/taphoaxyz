@@ -25,6 +25,15 @@ test('customer selector has realtime accent-insensitive search shared by sales a
     'customer selector must filter locally while typing');
 });
 
+test('opening customer selector focuses search immediately for sale and debt contexts', () => {
+  assert.match(runtime6, /function openCustomerModal\(context = 'sale'\)/);
+  assert.match(runtime6, /customerSelectionContext = context \|\| 'sale'/);
+  assert.match(runtime6, /const search = document\.getElementById\('customerSearchInput'\)/);
+  assert.match(runtime6, /search\.value = ''/);
+  assert.match(runtime6, /search\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(runtime6, /requestAnimationFrame\(\(\) => \{/);
+});
+
 test('customer avatar flows from v21 account data through frontend rows into selector UI', () => {
   assert.match(bridge, /avatar_path|avatar_url|avatar/,
     'customer sheet rows must carry an avatar field');
