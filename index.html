@@ -16,6 +16,7 @@
     <link rel="mask-icon" href="./src/assets/favicon.svg" color="#16a34a">
     <link rel="apple-touch-icon" sizes="180x180" href="./src/assets/app-icon-180-bag-v5.png">
     <title>Bán Hàng</title>
+    <script defer src="./src/fixed-pwa-auto-update.js?v=pwa-auto-update-20260921"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script type="module" src="./src/fixed-production-bridge.js?v=product-infinite-scroll-20260921"></script>
@@ -58,12 +59,5 @@
     <script src="./src/fixed-ui-behavior.js"></script>
     <script src="./src/fixed-production-overrides.js"></script>
     <script src="./src/fixed-ui-product-media.js?v=compare-fit-20260920"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(() => {});
-        });
-      }
-    </script>
 </body>
 </html>
