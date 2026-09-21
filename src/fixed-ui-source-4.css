@@ -218,6 +218,9 @@ body[data-resolved-mode="mobile"] .product-editor-source-btn{
   white-space:nowrap;
 }
 .order-product-preview{
+  margin-top:5px;
+  padding-top:4px;
+  border-top:1px solid #f3f4f6;
   overflow:hidden;
   max-width:100%;
 }
@@ -225,11 +228,17 @@ body[data-resolved-mode="mobile"] .product-editor-source-btn{
   display:flex;
   align-items:center;
   gap:10px;
-  flex-wrap:wrap;
+  flex-wrap:nowrap;
   min-width:0;
   max-width:100%;
+  overflow:hidden;
 }
 .order-product-text{
+  flex:0 1 auto;
+  min-width:0;
+  max-width:44%;
+  overflow:hidden;
+  text-overflow:ellipsis;
   color:#111827;
   font-size:11px;
   line-height:1.3;
