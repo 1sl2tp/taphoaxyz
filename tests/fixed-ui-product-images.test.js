@@ -168,7 +168,7 @@ test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
   assert.match(index,/fixed-ui-product-media\.js\?v=compare-fit-20260920/);
-  assert.match(sw,/taphoa-runtime-v30/);
+  assert.match(sw,/taphoa-runtime-v31/);
 });
 
 
