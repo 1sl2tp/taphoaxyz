@@ -237,6 +237,7 @@ body[data-resolved-mode="mobile"] .product-editor-source-btn{
   white-space:nowrap;
 }
 .order-rank-dot{
+  align-self:center;
   border:1px solid rgba(148,163,184,.12);
 }
 .order-rank-dot-pending{

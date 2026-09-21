@@ -335,6 +335,17 @@ test('order card reserves full third row for product suggestions',async()=>{
   assert.match(css,/\.order-card-total,[\s\S]*\.profit-only[\s\S]*white-space:nowrap/);
 });
 
+test('order cards center STT and keep delete-all action visually quiet',async()=>{
+  const [css,markup2]=await Promise.all([
+    read('src/fixed-ui-source-4.css'),
+    read('src/fixed-ui-markup-2.js')
+  ]);
+  assert.match(css,/\.order-rank-dot\{[\s\S]*align-self:center;/);
+  assert.match(markup2,/bg-white hover:bg-rose-50 text-gray-400 hover:text-rose-600 border border-gray-200 hover:border-rose-200/);
+  assert.match(markup2,/title=\\\"Xóa toàn bộ đơn tạm\\\"/);
+  assert.doesNotMatch(markup2,/bg\[#e14d4d\]/);
+});
+
 test('order item notes survive product edit cart save reload detail and share',async()=>{
   const [runtime4,runtime5,runtime6,runtime12,runtime13,bridge,overrides,business,share]=await Promise.all([
     read('src/fixed-ui-runtime-4.js'),
