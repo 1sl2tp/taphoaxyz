@@ -386,7 +386,7 @@ test('order empty states are centered consistently in summary and list regions',
   assert.match(pending,/orderListEmptyState\('Không có đơn tạm trong khoảng thời gian này'\)/);
   assert.match(delivered,/orderListEmptyState\('Chưa có đơn đã giao nào'\)/);
   assert.match(delivered,/orderListEmptyState\('Không có đơn đã giao trong khoảng thời gian này'\)/);
-  assert.match(css,/\.order-list-empty-state\{[\s\S]*place-items:center;[\s\S]*min-height:clamp\(140px,28vh,220px\)/);
+  assert.match(css,/\.order-list-empty-state\{[\s\S]*min-height:clamp\(140px,28vh,220px\);[\s\S]*place-items:center;/);
   assert.match(summaryCss,/tr\.order-summary-empty-row > td\{[\s\S]*text-align:center !important;/);
   assert.match(summaryCss,/\.order-summary-empty-state\{[\s\S]*align-items:center;[\s\S]*justify-content:center;/);
 });
