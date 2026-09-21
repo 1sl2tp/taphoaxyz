@@ -351,7 +351,7 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.match(runtime8,/const productKey = String\(row\.productCode \|\| ''\)\.trim\(\) \|\| normalizeSourceGroupName\(row\.productName\)/);
   assert.match(runtime8,/noteEntries: \[\]/);
   assert.match(runtime8,/grouped\.noteEntries\.push\(\{/);
-  assert.doesNotMatch(runtime8,/productKey \+ '\\|\\|' \+ noteKey/);
+  assert.ok(!runtime8.includes("productKey + '||' + noteKey"));
 
   assert.match(runtime9,/function sourceLineNoteEditorHtml\(row/);
   assert.match(runtime9,/function openSourceLineNoteEditor\(button\)/);
