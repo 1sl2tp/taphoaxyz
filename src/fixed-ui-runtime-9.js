@@ -93,16 +93,17 @@
             const noteText = label
                 ? `${escapeProductEditorValue(label)}${note ? `: ${escapeProductEditorValue(note)}` : ''}`
                 : escapeProductEditorValue(note);
-            const noteClass = label && note ? 'text-gray-800 font-semibold' : 'text-gray-500';
+            const noteClass = note ? 'text-gray-800 font-semibold' : 'text-gray-500';
             if (!editable) {
                 if (!note) return buyerHtml;
-                return `${buyerHtml}<div class="source-detail-note text-[10px] ${noteClass} mt-0.5 truncate">${noteText}</div>`;
+                return `${buyerHtml}<div class="source-detail-note text-[10px] ${noteClass} mt-0.5">${noteText}</div>`;
             }
+            if (!note && !label && !showBuyer) return '';
             return `
                 <div class="source-line-note-editor mt-0.5 min-w-0" data-source-line-note-editor>
                     ${buyerHtml}
                     <button type="button"
-                        class="allow-fast-click source-detail-note block w-full min-h-[18px] text-left text-[10px] ${noteClass} truncate"
+                        class="allow-fast-click source-detail-note block w-full min-h-[18px] text-left text-[10px] ${noteClass}"
                         data-source-note-button
                         data-note-order-id="${escapeProductEditorValue(backendOrderId)}"
                         data-note-product-code="${escapeProductEditorValue(productCode)}"
@@ -202,21 +203,23 @@
                 return;
             }
             const rowHtml = rows.map((row,index) => `
-                <div class="source-detail-grid source-detail-data-row" data-source-share-row>
+                <div class="source-detail-grid source-detail-grid-detail source-detail-data-row" data-source-share-row>
                     <div class="source-detail-stt">${index + 1}</div>
-                    <div class="min-w-0">
+                    <div class="source-detail-product-cell min-w-0">
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
+                    </div>
+                    <div class="source-detail-buyer-cell min-w-0">
                         <div class="source-detail-buyer">${escapeProductEditorValue(row.buyerName)}</div>
                         ${sourceLineNoteEditorHtml(row)}
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
             owner.innerHTML = `
-                <div class="source-detail-grid source-detail-table-head" data-source-share-table-head>
-                    <div class="text-right">STT</div><div>Tên SP / Người mua</div><div class="text-right">SL</div>
+                <div class="source-detail-grid source-detail-grid-detail source-detail-table-head" data-source-share-table-head>
+                    <div class="text-right">STT</div><div>Tên hàng</div><div>Tên KH</div><div class="text-right">SL</div>
                 </div>
                 <div data-source-share-rows>${rowHtml}</div>
-                <div class="source-detail-grid source-detail-total" data-source-share-footer>
+                <div class="source-detail-grid source-detail-grid-detail source-detail-total" data-source-share-footer>
                     <div class="source-detail-total-label">TỔNG · ${rows.length} dòng</div>
                     <div class="source-detail-total-qty">${activeSourceDetailState.totalQty.toLocaleString('vi-VN')}</div>
                 </div>`;
