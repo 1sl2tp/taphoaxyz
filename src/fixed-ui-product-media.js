@@ -856,5 +856,13 @@
 
   installSettings();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSettings,{once:true});
-  window.addEventListener('taphoa-production-sync',()=>{syncToggle();if(!document.getElementById('productImageManagerWrapper')?.classList.contains('hidden'))renderProducts(document.getElementById('productImageProductSearch')?.value||'');});
+  window.addEventListener('taphoa-production-sync',(event)=>{
+    const changed=Array.isArray(event?.detail?.changed)?event.detail.changed:[];
+    if(event?.detail?.permissionsChanged)syncToggle();
+    if(!changed.includes('products'))return;
+    syncToggle();
+    if(!document.getElementById('productImageManagerWrapper')?.classList.contains('hidden')){
+      renderProducts(document.getElementById('productImageProductSearch')?.value||'');
+    }
+  });
 })();
