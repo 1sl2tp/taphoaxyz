@@ -168,7 +168,7 @@ test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
   assert.match(index,/fixed-ui-product-media\.js\?v=compare-fit-20260920/);
-  assert.match(sw,/taphoa-runtime-v32/);
+  assert.match(sw,/taphoa-runtime-v33/);
 });
 
 
@@ -438,5 +438,5 @@ test('mobile supermarket thumbnail override cannot shrink below the shared 64px 
   assert.match(mediaCss,/\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px !important;[\s\S]*?height:64px !important;/);
   assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
   assert.match(index,/fixed-ui-source-4\.css\?v=thumb-override-fix-20260921/);
-  assert.match(sw,/taphoa-runtime-v32/);
+  assert.match(sw,/taphoa-runtime-v33/);
 });
