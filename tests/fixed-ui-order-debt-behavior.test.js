@@ -346,29 +346,7 @@ test('source summary detail and supplier grouping preserve line notes',async()=>
 
   assert.match(runtime9,/class="source-detail-note/);
   assert.ok(runtime9.includes('escapeProductEditorValue(row.note)'));
-  assert.ok(runtime9.includes('TỔNG · ' + '
-  const markup=await read('src/fixed-ui-markup-1.js');
-  const css=await read('src/fixed-ui-source-4.css');
-  const s0=markup.indexOf('id=\\\"loginScreen\\\"');
-  const s1=markup.indexOf('id=\\\"appContainer\\\"',s0);
-  const login=s0>=0&&s1>s0?markup.slice(s0,s1):'';
-
-  assert.match(login,/Chào mừng trở lại/);
-  assert.match(login,/login-outline-field/);
-  assert.match(login,/login-outline-legend[^>]*for=\\\"loginUsername\\\"[^>]*>Tài khoản<\/label>/);
-  assert.match(login,/login-outline-legend[^>]*for=\\\"loginPassword\\\"[^>]*>Mật khẩu<\/label>/);
-  assert.match(login,/id=\\\"loginPasswordToggle\\\"/);
-  assert.ok(login.includes('bg-[#171717] text-white font-bold text-[15px]'));
-  assert.ok(login.includes('>Đăng nhập</button>'));
-  assert.doesNotMatch(login,/placeholder=\\\"|Đăng nhập để tiếp tục bán hàng|ph-storefront/);
-  assert.match(login,/autocomplete=\\\"off\\\"/);
-  assert.match(login,/autocomplete=\\\"new-password\\\"/);
-
-  assert.match(css,/LOGIN OUTLINE FIELD/);
-  assert.match(css,/\.login-outline-field:focus-within/);
-  assert.match(css,/#loginScreen input:-webkit-autofill/);
-});
- + '{rows.length} dòng'));
+  assert.match(runtime9,/TỔNG · \$\{rows\.length\} dòng/);
 });
 
 test('login screen matches the outlined welcome layout',async()=>{
