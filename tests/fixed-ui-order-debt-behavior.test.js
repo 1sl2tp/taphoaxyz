@@ -289,11 +289,17 @@ test('order list cards keep customer, order summary and product hint compact',as
   assert.ok(!pending.includes('${o.tenKh} - <span'));
   assert.ok(!delivered.includes('${o.tenKh} - <span'));
 
-  assert.ok(pending.includes('${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP'));
-  assert.ok(delivered.includes('${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP'));
+  assert.ok(pending.includes('${shortTime} · ${o.countSp} mã · SL ${o.tongSl}'));
+  assert.ok(delivered.includes('${shortTime} · ${o.countSp} mã · SL ${o.tongSl}'));
+  assert.ok(!pending.includes('${shortTime} · ${k} ·'));
+  assert.ok(!delivered.includes('${shortTime} · ${k} ·'));
   assert.ok(!pending.includes('text-[#ea580c] font-extrabold">${k}'));
   assert.ok(!delivered.includes('text-success font-extrabold">${k}'));
 
+  assert.match(helper,/function formatOrderCardTime\(value\)/);
+  assert.match(helper,/daysAgo === 0[\s\S]*Hôm nay/);
+  assert.match(helper,/daysAgo > 0 && daysAgo < 7[\s\S]*getWeekdayLabelVi/);
+  assert.match(helper,/const sameYear = dateKey\.slice\(0, 4\) === todayKey\.slice\(0, 4\)/);
   assert.match(helper,/function buildOrderProductPreview\(items, limit = 2\)/);
   assert.match(helper,/\.sort\(\(a, b\) => \(b\.qty - a\.qty\)/);
   assert.match(helper,/\.map\(item => `\$\{item\.name\}\$\{item\.qty > 0 \? ` × \$\{item\.qty\.toLocaleString\('vi-VN'\)\}` : ''\}`\)/);
@@ -310,8 +316,8 @@ test('order list cards keep customer, order summary and product hint compact',as
   assert.match(delivered,/class="order-product-text"/);
   assert.match(pending,/productPreview\.items\.map\(item =>/);
   assert.match(delivered,/productPreview\.items\.map\(item =>/);
-  assert.match(pending,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} sp<\/span>`/);
-  assert.match(delivered,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} sp<\/span>`/);
+  assert.match(pending,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} mã<\/span>`/);
+  assert.match(delivered,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} mã<\/span>`/);
   assert.doesNotMatch(pending,/note-chip-bullet/);
   assert.doesNotMatch(delivered,/note-chip-bullet/);
   assert.match(pending,/order-card-title-row[\s\S]{0,220}\$\{o\.tenKh\}[\s\S]{0,220}order-card-total[\s\S]{0,160}\$\{o\.tongThu\.toLocaleString\('vi-VN'\)\}/);
@@ -342,11 +348,14 @@ test('order suggestions are plain black normal-weight text with no colored backg
   assert.doesNotMatch(delivered,/order-product-chip|note-chip-bullet/);
 });
 
-test('order card reserves full third row for product suggestions',async()=>{
+test('order card keeps product suggestions on one independent row',async()=>{
   const css=await read('src/fixed-ui-source-4.css');
   assert.match(css,/\.order-card-title-row,[\s\S]*\.order-card-meta-row\{/);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
   assert.match(css,/\.order-card-total,[\s\S]*\.profit-only[\s\S]*white-space:nowrap/);
+  assert.match(css,/\.order-product-preview\{[\s\S]*margin-top:5px;[\s\S]*padding-top:4px;[\s\S]*border-top:1px solid #f3f4f6;/);
+  assert.match(css,/\.order-product-text-row\{[\s\S]*flex-wrap:nowrap;[\s\S]*overflow:hidden;/);
+  assert.match(css,/\.order-product-text\{[\s\S]*text-overflow:ellipsis;[\s\S]*max-width:44%/);
 });
 
 test('order cards center STT and keep delete-all action visually quiet',async()=>{
