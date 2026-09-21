@@ -32,9 +32,10 @@
                 sourceSummary[nguon].sl += sl; sourceSummary[nguon].chi += chi; sourceSummary[nguon].thu += thu; sourceSummary[nguon].lai += lai;
 
                 if (!orders[idDon]) {
-                    orders[idDon] = { maKh: maKh, tenKh: khDict[maKh] || maKh, thoiGian: thoiGian, tongSl: 0, tongThu: 0, tongLai: 0, countSp: 0 };
+                    orders[idDon] = { maKh: maKh, tenKh: khDict[maKh] || maKh, thoiGian: thoiGian, tongSl: 0, tongThu: 0, tongLai: 0, countSp: 0, items: [] };
                 }
                 orders[idDon].tongSl += sl; orders[idDon].tongThu += thu; orders[idDon].tongLai += lai; orders[idDon].countSp += 1;
+                orders[idDon].items.push({ code: maSp, name: spInfo.ten || maSp, qty: sl });
             });
 
             let sumHtml = ''; let tSl = 0, tChi = 0, tThu = 0, tLai = 0;
@@ -65,6 +66,7 @@
                 let o = orders[k];
                 let shortTime = o.thoiGian;
                 try { let parts = shortTime.split(' '); if(parts.length >= 2) { shortTime = `${parts[0].split('/').slice(0,2).join('/')} ${parts[1].split(':').slice(0,2).join(':')}`; } } catch(e){}
+                const productPreview = buildOrderProductPreview(o.items, 2);
 
                 orderHtml += `
                     <div onclick="clickOrder('${k}', 'dongiao')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-success/50 cursor-pointer transition flex justify-between items-center mb-3">
@@ -73,6 +75,7 @@
                             <div class="min-w-0">
                                 <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh}</p>
                                 <p class="text-[11px] text-gray-400 mt-0.5 truncate"><span class="text-success font-extrabold">${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}</p>
+                                ${productPreview ? `<p class="order-product-preview text-[10px] text-gray-500 mt-1 truncate">${escapeProductEditorValue(productPreview)}</p>` : ''}
                             </div>
                         </div>
                         <div class="pointer-events-none text-right">

@@ -263,20 +263,34 @@ test('switching away from an order preview clears the preview unless edit mode i
 });
 
 
-test('order list cards put customer name before order code and stay two-line',async()=>{
-  const pending=await read('src/fixed-ui-runtime-10.js');
-  const delivered=await read('src/fixed-ui-runtime-11.js');
+test('order list cards keep customer, order summary and product hint compact',async()=>{
+  const [helper,pending,delivered]=await Promise.all([
+    read('src/fixed-ui-runtime-9.js'),
+    read('src/fixed-ui-runtime-10.js'),
+    read('src/fixed-ui-runtime-11.js')
+  ]);
 
-  assert.match(pending,/>\$\{o\.tenKh\}<\/p>/);
-  assert.match(delivered,/>\$\{o\.tenKh\}<\/p>/);
-  assert.doesNotMatch(pending,/\$\{o\.tenKh\} - <span/);
-  assert.doesNotMatch(delivered,/\$\{o\.tenKh\} - <span/);
+  assert.ok(pending.includes('${o.tenKh}</p>'));
+  assert.ok(delivered.includes('${o.tenKh}</p>'));
+  assert.ok(!pending.includes('${o.tenKh} - <span'));
+  assert.ok(!delivered.includes('${o.tenKh} - <span'));
 
-  assert.match(pending,/<span[^>]*>\$\{k\}<\/span> · \$\{o\.countSp\} mã · \$\{o\.tongSl\} SP · \$\{shortTime\}/);
-  assert.match(delivered,/<span[^>]*>\$\{k\}<\/span> · \$\{o\.countSp\} mã · \$\{o\.tongSl\} SP · \$\{shortTime\}/);
+  assert.ok(pending.includes('${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}'));
+  assert.ok(delivered.includes('${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}'));
 
-  assert.match(pending,/text-\[14px\][^"]*truncate/);
-  assert.match(delivered,/text-\[14px\][^"]*truncate/);
+  assert.match(helper,/function buildOrderProductPreview\(items, limit = 2\)/);
+  assert.match(helper,/\.sort\(\(a, b\) => \(b\.qty - a\.qty\)/);
+  assert.match(helper,/rows\.length - visible\.length/);
+  assert.match(pending,/items: \[\]/);
+  assert.match(delivered,/items: \[\]/);
+  assert.match(pending,/items\.push\(\{ code: maSp, name: spInfo\.ten \|\| maSp, qty: sl \}\)/);
+  assert.match(delivered,/items\.push\(\{ code: maSp, name: spInfo\.ten \|\| maSp, qty: sl \}\)/);
+  assert.match(pending,/buildOrderProductPreview\(o\.items, 2\)/);
+  assert.match(delivered,/buildOrderProductPreview\(o\.items, 2\)/);
+  assert.match(pending,/class="order-product-preview text-\[10px\][^"]*truncate"/);
+  assert.match(delivered,/class="order-product-preview text-\[10px\][^"]*truncate"/);
+  assert.match(pending,/escapeProductEditorValue\(productPreview\)/);
+  assert.match(delivered,/escapeProductEditorValue\(productPreview\)/);
 });
 
 
