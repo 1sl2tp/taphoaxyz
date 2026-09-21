@@ -79,18 +79,23 @@
         }
 
 
-        function sourceLineNoteEditorHtml(row, { showBuyer = false } = {}) {
+        function sourceLineNoteEditorHtml(row, { showBuyer = false, noteLabel = '' } = {}) {
             const note = String(row?.note || '').trim();
             const buyer = String(row?.buyerName || '').trim();
             const qty = Number(row?.qty) || 0;
+            const label = String(noteLabel || '').trim();
             const backendOrderId = String(row?.backendOrderId || '').trim();
             const productCode = String(row?.productCode || '').trim();
             const editable = activeSourceDetailState.sheetName === 'dontam' && backendOrderId && productCode;
             const buyerHtml = showBuyer
                 ? `<div class="source-detail-buyer whitespace-nowrap">${escapeProductEditorValue(buyer)}${qty > 0 ? ` · ${qty.toLocaleString('vi-VN')}` : ''}</div>`
                 : '';
+            const noteText = label
+                ? `${escapeProductEditorValue(label)}${note ? `: ${escapeProductEditorValue(note)}` : ''}`
+                : escapeProductEditorValue(note);
             if (!editable) {
-                return `${buyerHtml}${note ? `<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${escapeProductEditorValue(note)}</div>` : ''}`;
+                if (!note) return buyerHtml;
+                return `${buyerHtml}<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${noteText}</div>`;
             }
             return `
                 <div class="source-line-note-editor mt-0.5 min-w-0" data-source-line-note-editor>
@@ -102,7 +107,7 @@
                         data-note-product-code="${escapeProductEditorValue(productCode)}"
                         data-note-current="${escapeProductEditorValue(note)}"
                         onclick="openSourceLineNoteEditor(this)"
-                        aria-label="Ghi chú">${note ? escapeProductEditorValue(note) : ''}</button>
+                        aria-label="${escapeProductEditorValue(label || 'Ghi chú')}">${noteText || escapeProductEditorValue(label || 'Ghi chú')}</button>
                     <input type="text"
                         class="hidden w-full h-7 px-2 rounded-md border border-gray-200 bg-white text-[11px] text-gray-700 outline-none focus:border-primary"
                         data-source-note-input
@@ -111,7 +116,7 @@
                         data-note-current="${escapeProductEditorValue(note)}"
                         value="${escapeProductEditorValue(note)}"
                         autocomplete="off"
-                        placeholder="Ghi chú"
+                        placeholder="${escapeProductEditorValue(label || 'Ghi chú')}"
                         onblur="commitSourceLineNoteEditor(this)"
                         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){event.preventDefault();cancelSourceLineNoteEditor(this)}">
                 </div>`;
@@ -230,7 +235,7 @@
                     <div class="min-w-0">
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
                         <div class="mt-1 space-y-0.5">
-                            ${(row.noteEntries || []).map(entry => sourceLineNoteEditorHtml(entry, { showBuyer: true })).join('')}
+                            ${(row.noteEntries || []).map((entry,noteIndex) => sourceLineNoteEditorHtml(entry, { noteLabel: `Ghi chú ${noteIndex + 1}` })).join('')}
                         </div>
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>

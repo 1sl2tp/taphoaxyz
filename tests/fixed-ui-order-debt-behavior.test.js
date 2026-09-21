@@ -358,7 +358,9 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.match(runtime9,/async function commitSourceLineNoteEditor\(input\)/);
   assert.match(runtime9,/savePendingOrderItemNoteDirect/);
   assert.match(runtime9,/row\.noteEntries \|\| \[\]/);
-  assert.match(runtime9,/showBuyer: true/);
+  assert.doesNotMatch(runtime9,/showBuyer: true/);
+  assert.match(runtime9,/noteLabel: `Ghi chú \${noteIndex \+ 1}`/);
+  assert.match(runtime9,/const noteText = label/);
   assert.match(runtime9,/TỔNG · \$\{rows\.length\} mã/);
 });
 
