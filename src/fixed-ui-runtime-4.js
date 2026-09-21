@@ -535,7 +535,7 @@
             }
             const visibleProducts = filtered.slice(0, ownProductVisibleLimit);
             document.getElementById('productList').innerHTML = visibleProducts.map(r => {
-                let maSp = r[0]; let tenSp = r[1]; let giaBan = Number(r[3]) || 0; let giaLe = Number(r[7]) || 0; let qty = cart[maSp] ? cart[maSp].qty : 0;
+                let maSp = r[0]; let tenSp = r[1]; let giaBan = Number(r[3]) || 0; let giaLe = Number(r[7]) || 0; let qty = cart[maSp] ? cart[maSp].qty : 0; let lineNote = String(cart[maSp]?.note || '');
                 const marketCartonPrice = getSelectedMarketCartonPriceForSale(maSp);
                 const marketIsLower = marketCartonPrice > 0 && giaBan > 0 && marketCartonPrice < giaBan;
                 const salePriceHtml = marketIsLower
@@ -549,23 +549,28 @@
                         : imageTag)
                     : '';
                 return `
-                <div class="product-card bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 flex justify-between items-center transition-colors">
-                    <div class="flex items-center min-w-0 flex-1 pr-3 gap-3">
-                        ${imageHtml}
-                        <div class="min-w-0 flex-1">
-                            <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
-                            <div class="mt-1 flex items-baseline gap-2 min-w-0">
-                                ${salePriceHtml}
-                                ${giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
+                <div class="product-card bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 transition-colors">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center min-w-0 flex-1 pr-3 gap-3">
+                            ${imageHtml}
+                            <div class="min-w-0 flex-1">
+                                <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
+                                <div class="mt-1 flex items-baseline gap-2 min-w-0">
+                                    ${salePriceHtml}
+                                    ${giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center shrink-0">
+                            <div class="flex items-center gap-1 border border-gray-200 rounded-full px-2 py-1 bg-white shadow-sm">
+                                <button onclick="updateCart('${maSp}', '${tenSp}', ${giaBan}, -1)" class="allow-fast-click w-6 h-6 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><i class="ph-bold ph-minus text-[10px]"></i></button>
+                                <input type="number" value="${qty}" min="1" step="1" inputmode="numeric" data-qty-editor="product" data-qty-id="${maSp}" data-qty-price="${giaBan}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-7 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[12px]">
+                                <button onclick="updateCart('${maSp}', '${tenSp}', ${giaBan}, 1)" class="allow-fast-click w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[10px]"></i></button>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center shrink-0">
-                        <div class="flex items-center gap-1 border border-gray-200 rounded-full px-2 py-1 bg-white shadow-sm">
-                            <button onclick="updateCart('${maSp}', '${tenSp}', ${giaBan}, -1)" class="allow-fast-click w-6 h-6 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><i class="ph-bold ph-minus text-[10px]"></i></button>
-                            <input type="number" value="${qty}" min="1" step="1" inputmode="numeric" data-qty-editor="product" data-qty-id="${maSp}" data-qty-price="${giaBan}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-7 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[12px]">
-                            <button onclick="updateCart('${maSp}', '${tenSp}', ${giaBan}, 1)" class="allow-fast-click w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[10px]"></i></button>
-                        </div>
+                    <div data-product-note-wrap="${escapeProductEditorValue(maSp)}" class="product-line-note-wrap mt-2 ${qty > 0 ? '' : 'hidden'}">
+                        <input type="text" value="${escapeProductEditorValue(lineNote)}" data-line-note-id="${escapeProductEditorValue(maSp)}" oninput="previewProductLineNote(this)" placeholder="Ghi chú màu / loại..." autocomplete="off" class="w-full h-8 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[12px] text-gray-700 outline-none focus:border-primary">
                     </div>
                 </div>`;
             }).join('');
@@ -600,4 +605,5 @@
                     el.value = qty;
                 }
             });
+            if (typeof syncProductNoteEditorVisibility === 'function') syncProductNoteEditorVisibility(maSp, qty);
         }
