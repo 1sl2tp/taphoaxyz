@@ -431,6 +431,13 @@
     cartShareBtn.setAttribute('data-cart-share-version','4-ios-prepared');
   }
 
+  const detailShareBtn=document.getElementById('orderDetailShareButton');
+  if(detailShareBtn){
+    detailShareBtn.removeAttribute('onclick');
+    detailShareBtn.onclick=shareDetailOrderImageV3;
+    detailShareBtn.setAttribute('data-order-share-version','4-ios-prepared');
+  }
+
   if(typeof renderCartUI==='function'){
     const renderCartUIBeforeSharePrep=renderCartUI;
     renderCartUI=function(...args){

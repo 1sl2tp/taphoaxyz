@@ -29,7 +29,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
 
   assert.doesNotMatch(html,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
   assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=iphone-share-20260921'));
-  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=iphone-share-20260921'));
+  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=iphone-share-cancel-20260921'));
 
   assert.match(helper,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
   assert.match(helper,/cdn\.jsdelivr\.net\/npm\/html2canvas@1\.4\.1\/dist\/html2canvas\.min\.js/);
@@ -57,4 +57,14 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(sourceShare,/prepareSourceDetailShare/);
   assert.match(sourceShare,/captureLongSourceSharePages\(source, baseName, modeLabel, showProgress = true\)/);
   assert.match(sourceShare,/navigator\.share\(\{[\s\S]{0,180}files: ready\.files/);
+
+  const [markup5,runtime13]=await Promise.all([
+    readFile('src/fixed-ui-markup-5.js','utf8'),
+    readFile('src/fixed-ui-runtime-13.js','utf8')
+  ]);
+  assert.match(markup5,/id=\\\"orderDetailShareButton\\\"/);
+  assert.match(cartShare,/detailShareBtn\.removeAttribute\('onclick'\)/);
+  assert.match(cartShare,/detailShareBtn\.onclick=shareDetailOrderImageV3/);
+  assert.match(runtime13,/function isNativeShareCancellation/);
+  assert.match(runtime13,/if \(!isNativeShareCancellation\(e\)\) showAlertPopup\("Lỗi tạo ảnh", e\.message\)/);
 });
