@@ -282,17 +282,18 @@ test('order list cards keep customer, order summary and product hint compact',as
 
   assert.match(helper,/function buildOrderProductPreview\(items, limit = 2\)/);
   assert.match(helper,/\.sort\(\(a, b\) => \(b\.qty - a\.qty\)/);
-  assert.match(helper,/rows\.length - visible\.length/);
+  assert.match(helper,/\.map\(item => `\$\{item\.name\}\$\{item\.qty > 0 \? ` × \$\{item\.qty\.toLocaleString\('vi-VN'\)\}` : ''\}`\)/);
+  assert.match(helper,/if \(remaining\) visible\.push\(`\+\$\{remaining\}`\)/);
   assert.match(pending,/items: \[\]/);
   assert.match(delivered,/items: \[\]/);
   assert.match(pending,/items\.push\(\{ code: maSp, name: spInfo\.ten \|\| maSp, qty: sl \}\)/);
   assert.match(delivered,/items\.push\(\{ code: maSp, name: spInfo\.ten \|\| maSp, qty: sl \}\)/);
   assert.match(pending,/buildOrderProductPreview\(o\.items, 2\)/);
   assert.match(delivered,/buildOrderProductPreview\(o\.items, 2\)/);
-  assert.match(pending,/class="order-product-preview text-\[10px\][^"]*truncate"/);
-  assert.match(delivered,/class="order-product-preview text-\[10px\][^"]*truncate"/);
-  assert.match(pending,/escapeProductEditorValue\(productPreview\)/);
-  assert.match(delivered,/escapeProductEditorValue\(productPreview\)/);
+  assert.match(pending,/order-product-preview note-chip-row/);
+  assert.match(delivered,/order-product-preview note-chip-row/);
+  assert.match(pending,/productPreview\.map\(item => `<span class="note-chip">\$\{escapeProductEditorValue\(item\)\}<\/span>`\)\.join\(''\)/);
+  assert.match(delivered,/productPreview\.map\(item => `<span class="note-chip">\$\{escapeProductEditorValue\(item\)\}<\/span>`\)\.join\(''\)/);
 });
 
 
@@ -361,10 +362,11 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.doesNotMatch(runtime9,/showBuyer: true/);
   assert.match(runtime9,/filter\(entry => String\(entry\?\.note \|\| ''\)\.trim\(\)\)/);
   assert.match(runtime9,/if \(!notes\.length\) return ''/);
-  assert.match(runtime9,/noteLabel: `Ghi chú \${noteIndex \+ 1}`/);
-  assert.match(runtime9,/const noteText = label/);
-  assert.match(runtime9,/const noteClass = note \? 'text-gray-800 font-semibold' : 'text-gray-500'/);
-  assert.match(runtime9,/if \(!note && !label && !showBuyer\) return ''/);
+  assert.doesNotMatch(runtime9,/Ghi chú \$\{noteIndex \+ 1\}/);
+  assert.match(runtime9,/notes\.map\(entry => sourceLineNoteEditorHtml\(entry\)\)\.join\(''\)/);
+  assert.match(runtime9,/const chip = `<span class="note-chip">/);
+  assert.match(runtime9,/note-chip-bullet">•<\/span>/);
+  assert.match(runtime9,/if \(!note\) return ''/);
   assert.match(runtime9,/TỔNG · \$\{rows\.length\} mã/);
   assert.match(runtime9,/source-detail-grid source-detail-grid-detail source-detail-data-row/);
   assert.match(runtime9,/Tên hàng<\/div><div>Tên KH<\/div><div class="text-right">SL/);
@@ -373,6 +375,21 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.match(runtime9,/source-detail-product-cell[\s\S]{0,260}source-detail-name[\s\S]{0,220}sourceLineNoteEditorHtml\(row\)[\s\S]{0,220}source-detail-buyer-cell/);
   assert.doesNotMatch(runtime9,/source-detail-buyer-cell[\s\S]{0,260}sourceLineNoteEditorHtml\(row\)/);
   assert.doesNotMatch(runtime9,/Tên SP \/ Người mua/);
+});
+
+test('all visible notes use one bullet and one independent chip per note',async()=>{
+  const [runtime9,css]=await Promise.all([
+    read('src/fixed-ui-runtime-9.js'),
+    read('src/fixed-ui-source-4.css')
+  ]);
+  assert.match(runtime9,/note-chip-row source-detail-note/);
+  assert.match(runtime9,/note-chip-bullet/);
+  assert.match(runtime9,/class="note-chip"/);
+  assert.doesNotMatch(runtime9,/Ghi chú 1|Ghi chú 2/);
+  assert.match(css,/\.note-chip-row\{/);
+  assert.match(css,/\.note-chip-bullet\{/);
+  assert.match(css,/\.note-chip\{/);
+  assert.match(css,/background:#f1f3f5/);
 });
 
 test('source detail mobile grid keeps product buyer and quantity in separate columns',async()=>{
