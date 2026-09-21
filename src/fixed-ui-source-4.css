@@ -429,17 +429,79 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   text-align:center !important;
 }
 
-/* FIXED STYLE: summary-finance-colors */
+/* FIXED STYLE: calm-source-summary-table */
 
-/* Tổng hợp: Chi đỏ, Thu xanh nước biển, Lãi xanh lá — áp dụng cả header và số liệu. */
-.summary-compact-table :is(th,td):nth-child(3){
-  color:#ef4444 !important;
+/* Source summaries use one monochrome hierarchy; row bands do the separating instead of bright finance colors. */
+.order-source-summary-card{
+  background:linear-gradient(180deg,#ffffff 0%,#fcfcfd 100%) !important;
 }
-.summary-compact-table :is(th,td):nth-child(4){
-  color:#2563eb !important;
+.summary-compact-table{
+  border-collapse:separate;
+  border-spacing:0 3px;
+  font-variant-numeric:tabular-nums;
 }
-.summary-compact-table :is(th,td):nth-child(5){
-  color:#16a34a !important;
+.summary-compact-table thead th{
+  color:#64748b !important;
+  font-weight:650 !important;
+}
+.summary-compact-table thead th:first-child{
+  color:#374151 !important;
+}
+.summary-compact-table .summary-source-row > td{
+  border:0 !important;
+  background:#fbfcfd;
+  transition:background-color .12s ease;
+}
+.summary-compact-table .summary-source-row:nth-child(even) > td{
+  background:#f6f8fa;
+}
+.summary-compact-table .summary-source-row:hover > td{
+  background:#f1f5f9;
+}
+.summary-compact-table .summary-source-row > td:first-child,
+.summary-compact-table .summary-total-row > td:first-child{
+  border-radius:8px 0 0 8px;
+}
+.summary-compact-table .summary-source-row > td:last-child,
+.summary-compact-table .summary-total-row > td:last-child{
+  border-radius:0 8px 8px 0;
+}
+.summary-compact-table .summary-source-name,
+.summary-compact-table .summary-source-name .source-summary-link{
+  color:#1f2937 !important;
+}
+.summary-compact-table .source-summary-link:hover{
+  color:#111827 !important;
+  text-decoration:none;
+}
+.summary-compact-table .summary-value-qty{
+  color:#64748b !important;
+}
+.summary-compact-table .summary-value-cost{
+  color:#6b7280 !important;
+}
+.summary-compact-table .summary-value-revenue{
+  color:#475569 !important;
+}
+.summary-compact-table .summary-value-profit{
+  color:#334155 !important;
+}
+.summary-compact-table .summary-total-row > td{
+  background:#eef1f4;
+  color:#111827 !important;
+  box-shadow:inset 0 1px 0 #dfe3e8;
+}
+.summary-compact-table .summary-total-row .summary-value-qty{
+  color:#374151 !important;
+}
+.summary-compact-table .summary-total-row .summary-value-cost{
+  color:#4b5563 !important;
+}
+.summary-compact-table .summary-total-row .summary-value-revenue{
+  color:#334155 !important;
+}
+.summary-compact-table .summary-total-row .summary-value-profit{
+  color:#111827 !important;
 }
 
 
