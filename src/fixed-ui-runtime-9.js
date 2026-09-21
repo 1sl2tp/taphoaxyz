@@ -23,6 +23,14 @@
             return `${dateLabel} ${time}`;
         }
 
+        function orderSummaryEmptyRow(label = 'Chưa có dữ liệu tổng hợp') {
+            return `<tr class="order-summary-empty-row"><td colspan="5"><div class="order-summary-empty-state"><span>${escapeProductEditorValue(label)}</span></div></td></tr>`;
+        }
+
+        function orderListEmptyState(message) {
+            return `<div class="order-list-empty-state"><div class="order-list-empty-inner"><i class="ph ph-receipt"></i><span>${escapeProductEditorValue(message)}</span></div></div>`;
+        }
+
         function buildOrderProductPreview(items, limit = 2) {
             const grouped = new Map();
             (Array.isArray(items) ? items : []).forEach((item, index) => {
