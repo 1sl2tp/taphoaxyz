@@ -9,7 +9,12 @@ updateCart = function(maSp, tenSp, giaBan, change) {
   if (cart[maSp].qty <= 0) {
     delete cart[maSp];
   }
-  renderProductList();
+
+  // Quantity changes must stay local to the existing product card.
+  // Rebuilding productList recreates <img> nodes and causes visible image flicker
+  // on mobile Safari/Chrome when tapping +/- repeatedly.
+  const nextQty = cart[maSp]?.qty || 0;
+  syncQtyEditors(maSp, nextQty);
   renderCartUI();
 };
 
