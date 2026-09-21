@@ -424,3 +424,19 @@ test('VNM participates in supermarket image candidates and quick search',async()
   assert.match(migration,/taphoa_market_search/);
   assert.match(migration,/l\.source in \('GO!','WinMart','Bách Hóa XANH','VNM'\)/);
 });
+
+
+test('mobile supermarket thumbnail override cannot shrink below the shared 64px rule',async()=>{
+  const [source4,mediaCss,index,sw]=await Promise.all([
+    read('src/fixed-ui-source-4.css'),
+    read('src/fixed-ui-product-media.css'),
+    read('index.html'),
+    read('sw.js')
+  ]);
+  assert.doesNotMatch(source4,/market-quick-thumb\{[\s\S]*?width:46px !important;[\s\S]*?height:46px !important;/);
+  assert.match(source4,/market-quick-thumb\{[\s\S]*?width:64px !important;[\s\S]*?height:64px !important;/);
+  assert.match(mediaCss,/\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px !important;[\s\S]*?height:64px !important;/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=thumb-override-fix-20260921/);
+  assert.match(sw,/taphoa-runtime-v31/);
+});
