@@ -364,9 +364,31 @@ test('order cards center STT and keep delete-all action visually quiet',async()=
     read('src/fixed-ui-markup-2.js')
   ]);
   assert.match(css,/\.order-rank-dot\{[\s\S]*align-self:center;/);
-  assert.match(markup2,/bg-white hover:bg-rose-50 text-gray-400 hover:text-rose-600 border border-gray-200 hover:border-rose-200/);
+  assert.match(markup2,/h-9 min-w-9 bg-white\/10 hover:bg-white\/15 text-slate-300 hover:text-white border border-white\/10/);
   assert.match(markup2,/title=\\\"Xóa toàn bộ đơn tạm\\\"/);
+  assert.doesNotMatch(markup2,/bg-white hover:bg-rose-50/);
   assert.doesNotMatch(markup2,/bg\[#e14d4d\]/);
+});
+
+test('order empty states are centered consistently in summary and list regions',async()=>{
+  const [helper,pending,delivered,css,summaryCss]=await Promise.all([
+    read('src/fixed-ui-runtime-9.js'),
+    read('src/fixed-ui-runtime-10.js'),
+    read('src/fixed-ui-runtime-11.js'),
+    read('src/fixed-ui-source-4.css'),
+    read('src/fixed-ui-pending-summary-colors.css')
+  ]);
+  assert.match(helper,/function orderSummaryEmptyRow\(label = 'Chưa có dữ liệu tổng hợp'\)/);
+  assert.match(helper,/class="order-summary-empty-state"/);
+  assert.match(helper,/function orderListEmptyState\(message\)/);
+  assert.match(helper,/class="order-list-empty-state"/);
+  assert.match(pending,/orderListEmptyState\('Chưa có đơn tạm nào'\)/);
+  assert.match(pending,/orderListEmptyState\('Không có đơn tạm trong khoảng thời gian này'\)/);
+  assert.match(delivered,/orderListEmptyState\('Chưa có đơn đã giao nào'\)/);
+  assert.match(delivered,/orderListEmptyState\('Không có đơn đã giao trong khoảng thời gian này'\)/);
+  assert.match(css,/\.order-list-empty-state\{[\s\S]*place-items:center;[\s\S]*min-height:clamp\(140px,28vh,220px\)/);
+  assert.match(summaryCss,/tr\.order-summary-empty-row > td\{[\s\S]*text-align:center !important;/);
+  assert.match(summaryCss,/\.order-summary-empty-state\{[\s\S]*align-items:center;[\s\S]*justify-content:center;/);
 });
 
 test('order item notes survive product edit cart save reload detail and share',async()=>{
