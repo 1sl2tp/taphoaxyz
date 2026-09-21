@@ -88,7 +88,10 @@
       return `
         <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 72px 42px 86px;column-gap:10px;align-items:center;min-height:38px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;">
           <div style="text-align:center;color:#9ca3af;font-weight:700;">${idx+1}</div>
-          <div style="min-width:0;color:#111827;font-weight:700;line-height:1.35;overflow-wrap:anywhere;">${escapeHtml(item?.name || id)}</div>
+          <div style="min-width:0;line-height:1.35;overflow-wrap:anywhere;">
+            <div style="color:#111827;font-weight:700;">${escapeHtml(item?.name || id)}</div>
+            ${String(item?.note || '').trim() ? `<div style="margin-top:2px;color:#6b7280;font-size:10px;font-weight:500;">${escapeHtml(String(item.note).trim())}</div>` : ''}
+          </div>
           <div style="text-align:right;color:#374151;font-weight:600;font-variant-numeric:tabular-nums;">${price.toLocaleString('vi-VN')}</div>
           <div style="text-align:right;color:#374151;font-weight:700;font-variant-numeric:tabular-nums;">${qty}</div>
           <div style="text-align:right;color:#111827;font-weight:800;font-variant-numeric:tabular-nums;">${lineTotal.toLocaleString('vi-VN')}</div>
