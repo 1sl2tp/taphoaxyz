@@ -15,7 +15,10 @@
                 <div class="cart-compact-grid py-3 border-b border-gray-50 text-[12px]">
                     <div class="cart-left">
                         <div class="cart-stt font-bold text-gray-400">${index++}</div>
-                        <div class="cart-name font-bold text-gray-900 leading-tight">${item.name}</div>
+                        <div class="min-w-0">
+                            <div class="cart-name font-bold text-gray-900 leading-tight">${item.name}</div>
+                            <div data-cart-note-id="${escapeProductEditorValue(id)}" class="cart-line-note text-[10px] text-gray-400 mt-0.5 truncate ${String(item.note || '').trim() ? '' : 'hidden'}">${escapeProductEditorValue(String(item.note || '').trim())}</div>
+                        </div>
                     </div>
                     <div class="cart-price font-semibold text-gray-700">${item.price.toLocaleString('vi-VN')}</div>
                     <div class="cart-qty">
