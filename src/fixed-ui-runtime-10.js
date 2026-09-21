@@ -141,6 +141,19 @@
             return shareSourceDetailTab(activeSourceDetailState.tab || 'detail');
         }
 
+        let sourceNativeShareInFlight = false;
+
+        function sourceIosShareContext() {
+            const ua = String(navigator.userAgent || '');
+            return /iPad|iPhone|iPod/.test(ua)
+                || (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1);
+        }
+
+        function sourceNativeSharePayload(ready) {
+            if (sourceIosShareContext()) return { files: ready.files };
+            return { files: ready.files, title: ready.title, text: ready.text };
+        }
+
         function shareSourceDetailTab(tabName) {
             const key = tabName === 'grouped' ? 'grouped' : 'detail';
             const descriptor = getSourceShareDescriptor(key);
@@ -150,12 +163,24 @@
             if (ready?.signature === descriptor.signature) {
                 hideLoading();
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: ready.files })) {
-                    return navigator.share({
-                        files: ready.files,
-                        title: ready.title,
-                        text: ready.text
-                    }).catch(error => {
+                    if (sourceNativeShareInFlight) return;
+                    if (navigator.userActivation && navigator.userActivation.isActive === false) {
+                        if (typeof showToast === 'function') showToast('Bấm Chia sẻ lại để mở bảng chia sẻ.','info');
+                        return;
+                    }
+                    sourceNativeShareInFlight = true;
+                    let shareResult;
+                    try {
+                        shareResult = navigator.share(sourceNativeSharePayload(ready));
+                    } catch (error) {
+                        sourceNativeShareInFlight = false;
                         if (!sourceShareCancelled(error)) showAlertPopup('Lỗi chia sẻ', error?.message || 'Không thể chia sẻ ảnh.');
+                        return;
+                    }
+                    return Promise.resolve(shareResult).catch(error => {
+                        if (!sourceShareCancelled(error)) showAlertPopup('Lỗi chia sẻ', error?.message || 'Không thể chia sẻ ảnh.');
+                    }).finally(() => {
+                        sourceNativeShareInFlight = false;
                     });
                 }
                 downloadSourceShareFiles(ready.files);
