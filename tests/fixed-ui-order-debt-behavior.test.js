@@ -283,21 +283,42 @@ test('order list cards keep customer, order summary and product hint compact',as
   assert.match(helper,/function buildOrderProductPreview\(items, limit = 2\)/);
   assert.match(helper,/\.sort\(\(a, b\) => \(b\.qty - a\.qty\)/);
   assert.match(helper,/\.map\(item => `\$\{item\.name\}\$\{item\.qty > 0 \? ` × \$\{item\.qty\.toLocaleString\('vi-VN'\)\}` : ''\}`\)/);
-  assert.match(helper,/if \(remaining\) visible\.push\(`\+\$\{remaining\}`\)/);
+  assert.match(helper,/return \{[\s\S]*items: visible,[\s\S]*remaining: Math\.max\(0, rows\.length - visible\.length\)[\s\S]*\}/);
   assert.match(pending,/items: \[\]/);
   assert.match(delivered,/items: \[\]/);
   assert.match(pending,/items\.push\(\{ code: maSp, name: spInfo\.ten \|\| maSp, qty: sl \}\)/);
   assert.match(delivered,/items\.push\(\{ code: maSp, name: spInfo\.ten \|\| maSp, qty: sl \}\)/);
   assert.match(pending,/buildOrderProductPreview\(o\.items, 2\)/);
   assert.match(delivered,/buildOrderProductPreview\(o\.items, 2\)/);
-  assert.match(pending,/order-product-preview note-chip-row/);
-  assert.match(delivered,/order-product-preview note-chip-row/);
-  assert.match(pending,/productPreview\.map\(item => `<span class="note-chip">\$\{escapeProductEditorValue\(item\)\}<\/span>`\)\.join\(''\)/);
-  assert.match(delivered,/productPreview\.map\(item => `<span class="note-chip">\$\{escapeProductEditorValue\(item\)\}<\/span>`\)\.join\(''\)/);
+  assert.match(pending,/order-product-chip-row/);
+  assert.match(delivered,/order-product-chip-row/);
+  assert.match(pending,/order-product-chip order-product-chip-pending/);
+  assert.match(delivered,/order-product-chip order-product-chip-delivered/);
+  assert.match(pending,/productPreview\.items\.map\(item =>/);
+  assert.match(delivered,/productPreview\.items\.map\(item =>/);
+  assert.match(pending,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} sp<\/span>`/);
+  assert.match(delivered,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} sp<\/span>`/);
+  assert.doesNotMatch(pending,/note-chip-bullet/);
+  assert.doesNotMatch(delivered,/note-chip-bullet/);
 });
 
 
 
+
+test('order suggestions keep old card language: separate chips, no note bullet',async()=>{
+  const [pending,delivered,css]=await Promise.all([
+    read('src/fixed-ui-runtime-10.js'),
+    read('src/fixed-ui-runtime-11.js'),
+    read('src/fixed-ui-source-4.css')
+  ]);
+  assert.match(css,/\.order-product-chip-row\{/);
+  assert.match(css,/\.order-product-chip\{/);
+  assert.match(css,/\.order-product-chip-pending\{/);
+  assert.match(css,/\.order-product-chip-delivered\{/);
+  assert.match(css,/\.order-product-more\{/);
+  assert.doesNotMatch(pending,/order-product-preview note-chip-row/);
+  assert.doesNotMatch(delivered,/order-product-preview note-chip-row/);
+});
 
 test('order item notes survive product edit cart save reload detail and share',async()=>{
   const [runtime4,runtime5,runtime6,runtime12,runtime13,bridge,overrides,business,share]=await Promise.all([

@@ -75,7 +75,7 @@
                             <div class="min-w-0">
                                 <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh}</p>
                                 <p class="text-[11px] text-gray-400 mt-0.5 truncate">${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP</p>
-                                ${productPreview.length ? `<div class="order-product-preview note-chip-row mt-1"><span class="note-chip-bullet">•</span>${productPreview.map(item => `<span class="note-chip">${escapeProductEditorValue(item)}</span>`).join('')}</div>` : ''}
+                                ${productPreview.items.length ? `<div class="order-product-preview mt-1"><div class="order-product-chip-row">${productPreview.items.map(item => `<span class="order-product-chip order-product-chip-delivered">${escapeProductEditorValue(item)}</span>`).join('')}${productPreview.remaining ? `<span class="order-product-more">+${productPreview.remaining} sp</span>` : ''}</div></div>` : ''}
                             </div>
                         </div>
                         <div class="pointer-events-none text-right">

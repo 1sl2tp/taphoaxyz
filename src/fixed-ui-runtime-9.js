@@ -13,9 +13,10 @@
                 .sort((a, b) => (b.qty - a.qty) || (a.firstIndex - b.firstIndex));
             const visible = rows.slice(0, Math.max(1, Number(limit) || 2))
                 .map(item => `${item.name}${item.qty > 0 ? ` × ${item.qty.toLocaleString('vi-VN')}` : ''}`);
-            const remaining = Math.max(0, rows.length - visible.length);
-            if (remaining) visible.push(`+${remaining}`);
-            return visible;
+            return {
+                items: visible,
+                remaining: Math.max(0, rows.length - visible.length)
+            };
         }
 
         function openSourceDetail(sheetName, sourceName) {
