@@ -20,10 +20,11 @@ test('selected app font is loaded on demand before fallback',async()=>{
   assert.match(loader,/fonts\.googleapis\.com\/css2\?family=Be\+Vietnam\+Pro/);
   assert.match(loader,/fonts\.googleapis\.com\/css2\?family=Geist/);
   assert.match(loader,/cdn\.openai\.com\/common\/fonts\/openai-sans/);
-  assert.match(loader,/OpenAISans-Regular\.woff2/);
-  assert.match(loader,/OpenAISans-Medium\.woff2/);
-  assert.match(loader,/OpenAISans-Semibold\.woff2/);
-  assert.match(loader,/OpenAISans-Bold\.woff2/);
+  assert.match(loader,/\[400, 'Regular'\]/);
+  assert.match(loader,/\[500, 'Medium'\]/);
+  assert.match(loader,/\[600, 'Semibold'\]/);
+  assert.match(loader,/\[700, 'Bold'\]/);
+  assert.match(loader,/OpenAISans-\$\{file\}\.woff2/);
   assert.match(loader,/font-display:\s*swap/);
   assert.match(loader,/localStorage\.getItem\('APP_FONT_CHOICE'\)/);
 
