@@ -5,10 +5,11 @@ import {readFile} from 'node:fs/promises';
 const read=path=>readFile(path,'utf8');
 
 test('selected app font is loaded on demand before fallback',async()=>{
-  const [html,loader,runtime,markup,css]=await Promise.all([
+  const [html,loader,runtime,runtime4,markup,css]=await Promise.all([
     read('index.html'),
     read('src/fixed-ui-font-loader.js'),
     read('src/fixed-ui-runtime-3.js'),
+    read('src/fixed-ui-runtime-4.js'),
     read('src/fixed-ui-markup-3.js'),
     read('src/fixed-ui-source-2.css')
   ]);
@@ -41,4 +42,8 @@ test('selected app font is loaded on demand before fallback',async()=>{
   assert.match(markup,/Thiếu font trên máy sẽ tự tải; chỉ dùng fallback khi không tải được\./);
   assert.match(html,/fixed-ui-source-2\.css\?v=global-font-sharp-20260922/);
   assert.match(html,/fixed-ui-markup-3\.js\?v=global-font-sharp-20260922/);
+  assert.match(html,/fixed-ui-runtime-4\.js\?v=global-font-sharp-20260922/);
+  assert.match(runtime4,/source-filter-chip[\s\S]*text-\[12px\] font-medium/);
+  assert.match(runtime4,/market-source-filter-chip[\s\S]*text-\[12px\] font-medium/);
+  assert.doesNotMatch(runtime4,/source-filter-chip[\s\S]{0,160}font-semibold/);
 });
