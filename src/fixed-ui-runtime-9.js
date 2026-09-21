@@ -93,15 +93,16 @@
             const noteText = label
                 ? `${escapeProductEditorValue(label)}${note ? `: ${escapeProductEditorValue(note)}` : ''}`
                 : escapeProductEditorValue(note);
+            const noteClass = label && note ? 'text-gray-800 font-semibold' : 'text-gray-500';
             if (!editable) {
                 if (!note) return buyerHtml;
-                return `${buyerHtml}<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${noteText}</div>`;
+                return `${buyerHtml}<div class="source-detail-note text-[10px] ${noteClass} mt-0.5 truncate">${noteText}</div>`;
             }
             return `
                 <div class="source-line-note-editor mt-0.5 min-w-0" data-source-line-note-editor>
                     ${buyerHtml}
                     <button type="button"
-                        class="allow-fast-click source-detail-note block w-full min-h-[18px] text-left text-[10px] text-gray-500 truncate"
+                        class="allow-fast-click source-detail-note block w-full min-h-[18px] text-left text-[10px] ${noteClass} truncate"
                         data-source-note-button
                         data-note-order-id="${escapeProductEditorValue(backendOrderId)}"
                         data-note-product-code="${escapeProductEditorValue(productCode)}"
@@ -234,9 +235,11 @@
                     <div class="source-detail-stt">${index + 1}</div>
                     <div class="min-w-0">
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
-                        <div class="mt-1 space-y-0.5">
-                            ${(row.noteEntries || []).map((entry,noteIndex) => sourceLineNoteEditorHtml(entry, { noteLabel: `Ghi chú ${noteIndex + 1}` })).join('')}
-                        </div>
+                        ${(() => {
+                            const notes = (row.noteEntries || []).filter(entry => String(entry?.note || '').trim());
+                            if (!notes.length) return '';
+                            return `<div class="mt-1 space-y-0.5">${notes.map((entry,noteIndex) => sourceLineNoteEditorHtml(entry, { noteLabel: `Ghi chú ${noteIndex + 1}` })).join('')}</div>`;
+                        })()}
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
