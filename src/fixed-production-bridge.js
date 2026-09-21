@@ -211,16 +211,21 @@ async function syncOnce(){
   if(!identity||navigator.onLine===false||document.hidden)return appState.get();
   if(syncInFlight)return syncInFlight;
   syncInFlight=(async()=>{
+    const before=appState.get();
     const meta=await business.meta();
-    const changed=changedDomains(appState.get().revisions,meta?.revisions||{});
+    const changed=changedDomains(before.revisions,meta?.revisions||{});
+    const nextPermissions=meta?.permissions||before.permissions;
+    const permissionsChanged=JSON.stringify(before.permissions||{})!==JSON.stringify(nextPermissions||{});
     if(changed.length)await refresh(changed);
     else appState.mergeDomains({
-      version:meta?.version||appState.get().version,
-      syncSeconds:Number(meta?.syncSeconds)||appState.get().syncSeconds,
-      permissions:meta?.permissions||appState.get().permissions,
-      revisions:meta?.revisions||appState.get().revisions
+      version:meta?.version||before.version,
+      syncSeconds:Number(meta?.syncSeconds)||before.syncSeconds,
+      permissions:nextPermissions,
+      revisions:meta?.revisions||before.revisions
     });
-    window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed}}));
+    if(changed.length||permissionsChanged){
+      window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed,permissionsChanged}}));
+    }
     return appState.get();
   })().finally(()=>{syncInFlight=null;});
   return syncInFlight;
@@ -241,7 +246,15 @@ async function attachSession(info){
 
 async function login(username,password){return attachSession(await auth.login(username,password));}
 async function restore(){const info=await auth.restore();if(!info)return null;return attachSession(info);}
-async function logout(){stopSync();await auth.logout();identity=null;bootstrapped=false;appState.reset();}
+async function logout(){
+  const uid=currentUid();
+  stopSync();
+  try{await auth.logout();}
+  finally{
+    if(uid)snapshot.clear(uid);
+    identity=null;bootstrapped=false;appState.reset();
+  }
+}
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){return business.debtLedger(customerId);}
 async function saveOrder(payload){const result=await business.saveOrder(payload);await refresh(['orders','debt']);return result;}

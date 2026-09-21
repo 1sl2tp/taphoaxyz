@@ -7,6 +7,26 @@
 
   const backend=()=>window.TAPHOA_PRODUCTION;
   const sheetNames=['sanpham','khachhang','dontam','dongiao','thuchi'];
+  const sheetNamesByDomain=Object.freeze({
+    products:['sanpham'],
+    customers:['khachhang'],
+    orders:['dontam','dongiao'],
+    debt:['thuchi'],
+    settings:[]
+  });
+
+  function sheetsForChangedDomains(changed=[]){
+    const names=[];
+    const seen=new Set();
+    for(const domain of changed){
+      for(const name of sheetNamesByDomain[String(domain)]||[]){
+        if(seen.has(name))continue;
+        seen.add(name);
+        names.push(name);
+      }
+    }
+    return names;
+  }
 
   function backendOrderIdFor(sheetName,displayId){
     const row=(appData?.[sheetName]||[]).slice(1).find(r=>String(r?.[0]||'').trim()===String(displayId||'').trim());
@@ -232,8 +252,12 @@
     return fixedOpenCustomerDebtModal(maKh);
   };
 
-  window.addEventListener('taphoa-production-sync',()=>{
-    refreshFixedSheets().catch(error=>console.warn('refresh fixed UI',error));
+  window.addEventListener('taphoa-production-sync',(event)=>{
+    const changed=Array.isArray(event?.detail?.changed)?event.detail.changed:[];
+    const names=sheetsForChangedDomains(changed);
+    if(event?.detail?.permissionsChanged)applyRolePermissions();
+    if(!names.length)return;
+    refreshFixedSheets(names).catch(error=>console.warn('refresh fixed UI',error));
   });
 
   window.onload=async function(){

@@ -21,7 +21,7 @@ test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-source-4\.css\?v=order-empty-state-20260922/);
   assert.match(index,/fixed-ui-runtime-4\.js\?v=global-font-sharp-20260922/);
-  assert.match(sw,/taphoa-runtime-v35/);
+  assert.match(sw,/taphoa-runtime-v36/);
 });
 
 test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
