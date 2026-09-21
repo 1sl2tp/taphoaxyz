@@ -275,8 +275,10 @@ test('order list cards keep customer, order summary and product hint compact',as
   assert.ok(!pending.includes('${o.tenKh} - <span'));
   assert.ok(!delivered.includes('${o.tenKh} - <span'));
 
-  assert.ok(pending.includes('${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}'));
-  assert.ok(delivered.includes('${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}'));
+  assert.ok(pending.includes('${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP'));
+  assert.ok(delivered.includes('${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP'));
+  assert.ok(!pending.includes('text-[#ea580c] font-extrabold">${k}'));
+  assert.ok(!delivered.includes('text-success font-extrabold">${k}'));
 
   assert.match(helper,/function buildOrderProductPreview\(items, limit = 2\)/);
   assert.match(helper,/\.sort\(\(a, b\) => \(b\.qty - a\.qty\)/);
