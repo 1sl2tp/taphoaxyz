@@ -69,18 +69,20 @@
                 const productPreview = buildOrderProductPreview(o.items, 2);
 
                 orderHtml += `
-                    <div onclick="clickOrder('${k}', 'dongiao')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-success/50 cursor-pointer transition flex justify-between items-center mb-3">
-                        <div class="pointer-events-none flex items-center gap-3 min-w-0">
+                    <div onclick="clickOrder('${k}', 'dongiao')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-success/50 cursor-pointer transition mb-3">
+                        <div class="pointer-events-none flex items-start gap-3 min-w-0 w-full">
                             <div style="width: 36px; height: 36px;" class="rounded-full bg-green-50 text-success font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
-                            <div class="min-w-0">
-                                <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh}</p>
-                                <p class="text-[11px] text-gray-400 mt-0.5 truncate">${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP</p>
+                            <div class="min-w-0 flex-1">
+                                <div class="order-card-title-row">
+                                    <p class="font-bold text-[14px] text-gray-700 truncate min-w-0">${o.tenKh}</p>
+                                    <p class="order-card-total font-extrabold text-[15px] text-gray-900">${o.tongThu.toLocaleString('vi-VN')}</p>
+                                </div>
+                                <div class="order-card-meta-row">
+                                    <p class="text-[11px] text-gray-400 mt-0.5 truncate min-w-0">${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP</p>
+                                    <p class="profit-only text-[11px] font-bold text-success mt-0.5">+${o.tongLai.toLocaleString('vi-VN')}</p>
+                                </div>
                                 ${productPreview.items.length ? `<div class="order-product-preview mt-1"><div class="order-product-chip-row">${productPreview.items.map(item => `<span class="order-product-chip order-product-chip-delivered">${escapeProductEditorValue(item)}</span>`).join('')}${productPreview.remaining ? `<span class="order-product-more">+${productPreview.remaining} sp</span>` : ''}</div></div>` : ''}
                             </div>
-                        </div>
-                        <div class="pointer-events-none text-right">
-                            <p class="font-extrabold text-[15px] text-gray-900">${o.tongThu.toLocaleString('vi-VN')}</p>
-                            <p class="profit-only text-[11px] font-bold text-success mt-0.5">+${o.tongLai.toLocaleString('vi-VN')}</p>
                         </div>
                     </div>`;
             });
