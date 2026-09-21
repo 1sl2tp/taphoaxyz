@@ -1,4 +1,28 @@
 
+        function formatOrderCardTime(value) {
+            const raw = String(value || '').trim();
+            const match = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+            if (!match) return raw;
+
+            const dateKey = toDateKey(Number(match[3]), Number(match[2]), Number(match[1]));
+            const todayKey = getTodayKeyInAppTimezone();
+            const date = dateKeyToUtcDate(dateKey);
+            const today = dateKeyToUtcDate(todayKey);
+            if (!date || !today) return raw;
+
+            const daysAgo = Math.floor((today.getTime() - date.getTime()) / 86400000);
+            const time = `${String(match[4]).padStart(2, '0')}:${match[5]}`;
+
+            if (daysAgo === 0) return `Hôm nay ${time}`;
+            if (daysAgo > 0 && daysAgo < 7) return `${getWeekdayLabelVi(dateKey)} ${time}`;
+
+            const sameYear = dateKey.slice(0, 4) === todayKey.slice(0, 4);
+            const dateLabel = sameYear
+                ? `${String(match[1]).padStart(2, '0')}/${String(match[2]).padStart(2, '0')}`
+                : `${String(match[1]).padStart(2, '0')}/${String(match[2]).padStart(2, '0')}/${String(match[3]).slice(-2)}`;
+            return `${dateLabel} ${time}`;
+        }
+
         function buildOrderProductPreview(items, limit = 2) {
             const grouped = new Map();
             (Array.isArray(items) ? items : []).forEach((item, index) => {
