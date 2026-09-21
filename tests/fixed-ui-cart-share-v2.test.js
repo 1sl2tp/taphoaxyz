@@ -28,8 +28,8 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   ]);
 
   assert.doesNotMatch(html,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
-  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=share-fast-20260921') < html.indexOf('fixed-ui-runtime-10.js'));
-  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=share-fast-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=share-fast-20260921'));
+  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=iphone-share-20260921'));
+  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=iphone-share-20260921'));
 
   assert.match(helper,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
   assert.match(helper,/cdn\.jsdelivr\.net\/npm\/html2canvas@1\.4\.1\/dist\/html2canvas\.min\.js/);
@@ -46,4 +46,15 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(sourceShare,/scale:1\.4/);
   assert.match(sourceShare,/Đang tạo ảnh \$\{i \+ 1\}\/\$\{pageElements\.length\}/);
   assert.doesNotMatch(sourceShare,/scale:2/);
+
+  // iOS Web Share requires navigator.share() to run from the original tap.
+  // Images are therefore prepared ahead of time and the cached File(s) are shared synchronously on tap.
+  assert.match(cartShare,/prepareCartShareCache/);
+  assert.match(cartShare,/prepareDetailShareCache/);
+  assert.match(cartShare,/openOrderMobileBeforeSharePrep/);
+  assert.match(cartShare,/data-cart-share-version','4-ios-prepared/);
+  assert.match(sourceShare,/const sourceShareCache = new Map\(\)/);
+  assert.match(sourceShare,/prepareSourceDetailShare/);
+  assert.match(sourceShare,/captureLongSourceSharePages\(source, baseName, modeLabel, showProgress = true\)/);
+  assert.match(sourceShare,/navigator\.share\(\{[\s\S]{0,180}files: ready\.files/);
 });
