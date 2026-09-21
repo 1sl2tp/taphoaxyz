@@ -87,6 +87,12 @@
             }
         }
 
+        function isNativeShareCancellation(error) {
+            const name = String(error?.name || '');
+            const message = String(error?.message || error || '');
+            return /abort|cancel|canceled|cancelled/i.test(name + ' ' + message);
+        }
+
         async function shareOrderImage() {
             const source = document.getElementById('orderDetailContentToShare');
             if (!source) return;
@@ -178,7 +184,7 @@
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                 }
             } catch (e) {
-                showAlertPopup("Lỗi tạo ảnh", e.message);
+                if (!isNativeShareCancellation(e)) showAlertPopup("Lỗi tạo ảnh", e.message);
             } finally {
                 captureHost?.remove();
                 hideLoading();
@@ -337,7 +343,7 @@
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                 }
             } catch (e) {
-                showAlertPopup("Lỗi tạo ảnh", e.message);
+                if (!isNativeShareCancellation(e)) showAlertPopup("Lỗi tạo ảnh", e.message);
             } finally {
                 captureHost?.remove();
                 hideLoading();
