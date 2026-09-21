@@ -121,6 +121,23 @@
             renderCustomerList();
             document.getElementById('customerModal').classList.remove('pointer-events-none', 'opacity-0');
             document.getElementById('customerBox').classList.remove('scale-95');
+
+            if (search) {
+                try {
+                    search.focus({ preventScroll: true });
+                } catch (_) {
+                    search.focus();
+                }
+                requestAnimationFrame(() => {
+                    if (document.activeElement !== search) {
+                        try {
+                            search.focus({ preventScroll: true });
+                        } catch (_) {
+                            search.focus();
+                        }
+                    }
+                });
+            }
         }
 
         function closeCustomerModal() {
