@@ -12,11 +12,16 @@
             const rows = Array.from(grouped.values())
                 .sort((a, b) => (b.qty - a.qty) || (a.firstIndex - b.firstIndex));
             const visible = rows.slice(0, Math.max(1, Number(limit) || 2));
-            const text = visible
-                .map(item => `${item.name}${item.qty > 0 ? ` ×${item.qty.toLocaleString('vi-VN')}` : ''}`)
-                .join(' · ');
+            if (!visible.length) return '';
+            const chips = visible.map(item => {
+                const label = `${item.name}${item.qty > 0 ? ` × ${item.qty.toLocaleString('vi-VN')}` : ''}`;
+                return `<span class="order-product-preview-chip inline-block rounded-[3px] bg-gray-100 px-1.5 py-0.5 font-semibold text-gray-800">${escapeProductEditorValue(label)}</span>`;
+            }).join('');
             const remaining = Math.max(0, rows.length - visible.length);
-            return remaining ? `${text} · +${remaining}` : text;
+            const moreChip = remaining
+                ? `<span class="order-product-preview-chip inline-block rounded-[3px] bg-gray-100 px-1.5 py-0.5 font-semibold text-gray-600">+${remaining}</span>`
+                : '';
+            return `<span class="order-product-preview-bullet font-bold text-gray-900">•</span>${chips}${moreChip}`;
         }
 
         function openSourceDetail(sheetName, sourceName) {
