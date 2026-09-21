@@ -26,7 +26,12 @@ test('installed PWA actively checks for a fresh build and service worker on laun
   assert.match(updater,/attempts>=3/);
   assert.match(updater,/hasLiveCart\(\)/);
 
-  assert.match(sw,/taphoa-runtime-v35/);
+  assert.match(sw,/taphoa-runtime-v36/);
+  assert.match(sw,/staleWhileRevalidate/);
+  assert.match(sw,/url\.searchParams\.has\('v'\)/);
+  assert.match(sw,/request\.mode==='navigate'/);
+  assert.match(sw,/cache:'no-cache'/);
+  assert.match(sw,/cache:'no-store'/);
   assert.match(sw,/self\.skipWaiting\(\)/);
   assert.match(sw,/self\.clients\.claim\(\)/);
 
