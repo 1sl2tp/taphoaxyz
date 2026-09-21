@@ -185,8 +185,21 @@
                 });
 
                 const file = new File([blob], 'donhang.png', { type: 'image/png' });
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share(legacyOrderSharePayload(file));
+                const iosPwaFallback = window.TAPHOA_IOS_SHARE_FALLBACK;
+                if (iosPwaFallback?.shouldUse?.()) {
+                    iosPwaFallback.open([file], { title:'Đơn hàng' });
+                } else if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share(legacyOrderSharePayload(file));
+                    } catch (error) {
+                        if (isNativeShareCancellation(error) && isIosNativeFileShareContext()) {
+                            window.TAPHOA_IOS_SHARE_FALLBACK?.open?.([file], { title:'Đơn hàng' });
+                        } else {
+                            throw error;
+                        }
+                    }
+                } else if (iosPwaFallback) {
+                    iosPwaFallback.open([file], { title:'Đơn hàng' });
                 } else {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -344,8 +357,21 @@
 
                 const fileName = editingOrderId ? `donhang_${String(editingOrderId).replace(/[^a-zA-Z0-9_-]+/g, '_')}.png` : 'giohang.png';
                 const file = new File([blob], fileName, { type: 'image/png' });
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share(legacyOrderSharePayload(file));
+                const iosPwaFallback = window.TAPHOA_IOS_SHARE_FALLBACK;
+                if (iosPwaFallback?.shouldUse?.()) {
+                    iosPwaFallback.open([file], { title:'Đơn hàng' });
+                } else if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share(legacyOrderSharePayload(file));
+                    } catch (error) {
+                        if (isNativeShareCancellation(error) && isIosNativeFileShareContext()) {
+                            window.TAPHOA_IOS_SHARE_FALLBACK?.open?.([file], { title:'Đơn hàng' });
+                        } else {
+                            throw error;
+                        }
+                    }
+                } else if (iosPwaFallback) {
+                    iosPwaFallback.open([file], { title:'Đơn hàng' });
                 } else {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
