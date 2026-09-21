@@ -75,7 +75,7 @@
                             <div class="min-w-0">
                                 <p class="font-bold text-[14px] text-gray-700 truncate">${o.tenKh}</p>
                                 <p class="text-[11px] text-gray-400 mt-0.5 truncate">${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP</p>
-                                ${productPreview ? `<p class="order-product-preview text-[10px] text-gray-500 mt-1 truncate">${escapeProductEditorValue(productPreview)}</p>` : ''}
+                                ${productPreview ? `<div class="order-product-preview mt-1 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[10px] leading-[1.3]">${productPreview}</div>` : ''}
                             </div>
                         </div>
                         <div class="pointer-events-none text-right">
