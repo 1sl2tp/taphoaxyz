@@ -10,9 +10,12 @@ const css = fs.readdirSync('src')
   .join('\n');
 const index = fs.readFileSync('index.html', 'utf8');
 
-test('Đơn tạm locks Chi red, Thu blue, Lãi green independently of theme utility classes', () => {
-  assert.match(css, /#tab-don-tam\s+\.summary-compact-table\s+:is\(th,td\):nth-child\(3\)\s*\{\s*color:\s*#ef4444\s*!important;\s*\}/);
-  assert.match(css, /#tab-don-tam\s+\.summary-compact-table\s+:is\(th,td\):nth-child\(4\)\s*\{\s*color:\s*#2563eb\s*!important;\s*\}/);
-  assert.match(css, /#tab-don-tam\s+\.summary-compact-table\s+:is\(th,td\):nth-child\(5\)\s*\{\s*color:\s*#16a34a\s*!important;\s*\}/);
-  assert.match(index, /fixed-ui-pending-summary-colors\.css/);
+test('order source summaries keep finance meaning without repeated strong colors', () => {
+  assert.match(css, /\.order-summary-panel\s+\.summary-compact-table\s+thead th:nth-child\(3\)::before/);
+  assert.match(css, /\.order-summary-panel\s+\.summary-compact-table\s+thead th:nth-child\(4\)::before/);
+  assert.match(css, /\.order-summary-panel\s+\.summary-compact-table\s+thead th:nth-child\(5\)::before/);
+  assert.match(css, /tbody tr:not\(\.summary-total-row\) > td\{[\s\S]*color:#374151 !important;/);
+  assert.match(css, /tbody tr\.summary-total-row > td\{[\s\S]*color:#111827 !important;/);
+  assert.doesNotMatch(css, /#tab-don-tam\s+\.summary-compact-table\s+:is\(th,td\):nth-child\(3\)/);
+  assert.match(index, /fixed-ui-pending-summary-colors\.css\?v=calm-summary-20260922/);
 });
