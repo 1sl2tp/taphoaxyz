@@ -363,8 +363,23 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.match(runtime9,/if \(!notes\.length\) return ''/);
   assert.match(runtime9,/noteLabel: `Ghi chú \${noteIndex \+ 1}`/);
   assert.match(runtime9,/const noteText = label/);
-  assert.match(runtime9,/const noteClass = label && note \? 'text-gray-800 font-semibold' : 'text-gray-500'/);
+  assert.match(runtime9,/const noteClass = note \? 'text-gray-800 font-semibold' : 'text-gray-500'/);
+  assert.match(runtime9,/if \(!note && !label && !showBuyer\) return ''/);
   assert.match(runtime9,/TỔNG · \$\{rows\.length\} mã/);
+  assert.match(runtime9,/source-detail-grid source-detail-grid-detail source-detail-data-row/);
+  assert.match(runtime9,/Tên hàng<\/div><div>Tên KH<\/div><div class="text-right">SL/);
+  assert.match(runtime9,/source-detail-product-cell/);
+  assert.match(runtime9,/source-detail-buyer-cell/);
+  assert.doesNotMatch(runtime9,/Tên SP \/ Người mua/);
+});
+
+test('source detail mobile grid keeps product buyer and quantity in separate columns',async()=>{
+  const css=await read('src/fixed-ui-source-4.css');
+  assert.match(css,/\.source-detail-grid-detail\{/);
+  assert.match(css,/grid-template-columns:24px minmax\(0,1\.45fr\) minmax\(78px,\.8fr\) 42px/);
+  assert.match(css,/\.source-detail-grid-detail \.source-detail-qty,[\s\S]*grid-column:4 \/ 5/);
+  assert.match(css,/\.source-detail-grid-detail \.source-detail-total-label\{grid-column:1 \/ 4;\}/);
+  assert.match(css,/\.source-detail-note\{white-space:normal;overflow-wrap:anywhere/);
 });
 
 test('login screen matches the outlined welcome layout',async()=>{
