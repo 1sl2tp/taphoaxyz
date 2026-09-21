@@ -36,9 +36,12 @@ test('product image mode remains optional and uses compact lazy thumbnails',asyn
   ]);
   assert.match(runtime,/productViewMode === 'image'/);
   assert.match(runtime,/class="product-thumb shrink-0" loading="lazy" decoding="async"/);
-  assert.match(mediaCss,/width:48px/);
-  assert.match(mediaCss,/height:48px/);
+  assert.match(mediaCss,/width:54px/);
+  assert.match(mediaCss,/height:54px/);
+  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb\{[\s\S]*?width:58px;[\s\S]*?height:58px;/);
   assert.match(mediaCss,/object-fit:contain/);
+  assert.match(mediaCss,/padding:1px/);
+  assert.match(mediaCss,/border:1px solid #f1f3f5/);
   assert.match(mediaJs,/APP_PRODUCT_VIEW/);
   assert.match(mediaJs,/Ảnh sản phẩm/);
   assert.match(mediaJs,/Chọn ảnh từ siêu thị/);
@@ -159,7 +162,7 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=compare-fit-20260920/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=thumb-fit-20260921/);
   assert.match(index,/fixed-ui-product-media\.js\?v=compare-fit-20260920/);
   assert.match(sw,/taphoa-runtime-v30/);
 });
