@@ -219,12 +219,19 @@
         function groupSourceRowsForSupplier(detailRows) {
             const map = new Map();
             (detailRows || []).forEach(row => {
-                const key = normalizeSourceGroupName(row.productName);
-                if (!key) return;
-                if (!map.has(key)) map.set(key, { productName: row.productName, qty: 0 });
+                const productKey = normalizeSourceGroupName(row.productName);
+                const note = String(row.note || '').trim();
+                const noteKey = normalizeSourceGroupName(note);
+                if (!productKey) return;
+                const key = productKey + '||' + noteKey;
+                if (!map.has(key)) map.set(key, { productName: row.productName, note, qty: 0 });
                 map.get(key).qty += Number(row.qty) || 0;
             });
-            return Array.from(map.values()).sort((a,b) => String(a.productName).localeCompare(String(b.productName), 'vi', { sensitivity:'base' }));
+            return Array.from(map.values()).sort((a,b) => {
+                const byName = String(a.productName).localeCompare(String(b.productName), 'vi', { sensitivity:'base' });
+                if (byName) return byName;
+                return String(a.note || '').localeCompare(String(b.note || ''), 'vi', { sensitivity:'base' });
+            });
         }
 
         function buildSourceDetailData(sheetName, sourceName) {
@@ -249,7 +256,8 @@
                     productName: product.productName,
                     buyerName: customerDict[String(r[1])] || String(r[1] || ''),
                     qty: Number(r[3]) || 0,
-                    time: String(r[6] || '')
+                    time: String(r[6] || ''),
+                    note: String(r[9] || '').trim()
                 });
             });
 
