@@ -1,7 +1,14 @@
-/* FIXED STYLE: calm-source-summary-clean-grid */
+/* FIXED STYLE: source-summary-real-table */
 
+/*
+  Tổng hợp nguồn là bảng dữ liệu thật:
+  - không grid-gap giữa các ô;
+  - không nền theo từng ô;
+  - không chấm màu / vạch trang trí;
+  - header + body + tổng dùng cùng một hệ cột.
+*/
 .order-summary-panel{
-  background:#ffffff !important;
+  background:#fff !important;
   border-color:#edf0f2 !important;
   box-shadow:0 1px 3px rgba(15,23,42,.04) !important;
 }
@@ -10,96 +17,151 @@
   letter-spacing:.045em;
 }
 .order-summary-panel .summary-panel-icon{
-  color:#64748b !important;
-  opacity:.68;
+  color:#94a3b8 !important;
+  opacity:.9;
 }
 
-/* Header dùng một hệ đen/xám. Chỉ chấm nhỏ giữ nghĩa Chi / Thu / Lãi. */
-#tab-da-giao .order-summary-panel .summary-compact-table thead th,
-#tab-don-tam .order-summary-panel .summary-compact-table thead th{
-  color:#6b7280 !important;
-  font-weight:650 !important;
-  background:transparent !important;
+.order-summary-panel .summary-compact-table{
+  display:table !important;
+  width:100% !important;
+  table-layout:fixed !important;
+  border-collapse:collapse !important;
+  border-spacing:0 !important;
+  column-gap:0 !important;
+  grid-template-columns:none !important;
 }
-#tab-da-giao .order-summary-panel .summary-compact-table thead th:first-child,
-#tab-don-tam .order-summary-panel .summary-compact-table thead th:first-child{
+.order-summary-panel .summary-compact-table thead{
+  display:table-header-group !important;
+  width:auto !important;
+}
+.order-summary-panel .summary-compact-table tbody{
+  display:table-row-group !important;
+  width:auto !important;
+}
+.order-summary-panel .summary-compact-table tr{
+  display:table-row !important;
+  width:auto !important;
+}
+.order-summary-panel .summary-compact-table th,
+.order-summary-panel .summary-compact-table td{
+  display:table-cell !important;
+  width:auto !important;
+  min-width:0 !important;
+  padding:0 !important;
+  box-sizing:border-box;
+  white-space:nowrap !important;
+  vertical-align:middle;
+  background:#fff !important;
+  box-shadow:none !important;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1,"lnum" 1;
+}
+
+/* 40 + 12 + 16 + 16 + 16 = 100% */
+.order-summary-panel .summary-compact-table th:nth-child(1),
+.order-summary-panel .summary-compact-table td:nth-child(1){width:40% !important;}
+.order-summary-panel .summary-compact-table th:nth-child(2),
+.order-summary-panel .summary-compact-table td:nth-child(2){width:12% !important;}
+.order-summary-panel .summary-compact-table th:nth-child(3),
+.order-summary-panel .summary-compact-table td:nth-child(3),
+.order-summary-panel .summary-compact-table th:nth-child(4),
+.order-summary-panel .summary-compact-table td:nth-child(4),
+.order-summary-panel .summary-compact-table th:nth-child(5),
+.order-summary-panel .summary-compact-table td:nth-child(5){width:16% !important;}
+
+.order-summary-panel .summary-compact-table thead th{
+  padding:8px 5px !important;
+  color:#6b7280 !important;
+  background:#f8fafc !important;
+  border-bottom:1px solid #dfe3e8 !important;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:650 !important;
+}
+.order-summary-panel .summary-compact-table thead th:first-child{
+  padding-left:7px !important;
+  text-align:left !important;
   color:#374151 !important;
   font-weight:700 !important;
 }
-#tab-da-giao .order-summary-panel .summary-compact-table thead th:nth-child(2),
-#tab-don-tam .order-summary-panel .summary-compact-table thead th:nth-child(2){
-  color:#9ca3af !important;
+.order-summary-panel .summary-compact-table thead th:nth-child(n+2){
+  text-align:right !important;
 }
-.order-summary-panel .summary-compact-table thead th:nth-child(3)::before,
-.order-summary-panel .summary-compact-table thead th:nth-child(4)::before,
-.order-summary-panel .summary-compact-table thead th:nth-child(5)::before{
-  content:"";
-  display:inline-block;
-  width:4px;
-  height:4px;
-  margin-right:4px;
-  border-radius:999px;
-  vertical-align:2px;
-  opacity:.85;
+.order-summary-panel .summary-compact-table thead th::before{
+  content:none !important;
+  display:none !important;
 }
-.order-summary-panel .summary-compact-table thead th:nth-child(3)::before{background:#c7a3a3;}
-.order-summary-panel .summary-compact-table thead th:nth-child(4)::before{background:#a3acb8;}
-.order-summary-panel .summary-compact-table thead th:nth-child(5)::before{background:#99ab9e;}
 
-/* Không tô nền từng ô: tránh cảm giác bảng bị chia thành các hộp lệch nhau bởi column-gap. */
-#tab-da-giao .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td,
-#tab-don-tam .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td{
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td{
+  padding:11px 5px !important;
   color:#374151 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  border-bottom:1px solid #f1f3f5 !important;
+  background:#fff !important;
+  border-bottom:1px solid #edf0f2 !important;
+  font-size:12px;
+  line-height:1.25;
   font-weight:600 !important;
 }
-#tab-da-giao .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:nth-child(2),
-#tab-don-tam .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:nth-child(2){
-  color:#6b7280 !important;
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:first-child{
+  padding-left:7px !important;
+  text-align:left !important;
 }
-#tab-da-giao .order-summary-panel .summary-compact-table .source-summary-link,
-#tab-don-tam .order-summary-panel .summary-compact-table .source-summary-link{
+.order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td:nth-child(n+2){
+  text-align:right !important;
+}
+.order-summary-panel .summary-compact-table .source-summary-link{
+  display:block;
+  width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
   color:#1f2937 !important;
   font-weight:700 !important;
 }
 
-/* Khóa màu theme ở thân bảng để Thu/Lãi không tự xanh lại. */
-#tab-da-giao .order-summary-panel .summary-compact-table tbody td:nth-child(3),
-#tab-da-giao .order-summary-panel .summary-compact-table tbody td:nth-child(4),
-#tab-da-giao .order-summary-panel .summary-compact-table tbody td:nth-child(5),
-#tab-don-tam .order-summary-panel .summary-compact-table tbody td:nth-child(3),
-#tab-don-tam .order-summary-panel .summary-compact-table tbody td:nth-child(4),
-#tab-don-tam .order-summary-panel .summary-compact-table tbody td:nth-child(5){
+/* Theme không được đổi màu từng cột ở thân bảng. */
+#tab-da-giao .order-summary-panel .summary-compact-table tbody td,
+#tab-don-tam .order-summary-panel .summary-compact-table tbody td{
   color:#374151 !important;
 }
-
-/* TỔNG chỉ dùng đường chốt + chữ đen; không còn các ô nền rời. */
 #tab-da-giao .order-summary-panel .summary-compact-table tbody tr.summary-total-row > td,
 #tab-don-tam .order-summary-panel .summary-compact-table tbody tr.summary-total-row > td{
   color:#111827 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  border-top:1.5px solid #d9dde2 !important;
-  border-bottom:0 !important;
-  font-weight:800 !important;
 }
 
-/* Khoảng dọc đồng nhất, không thêm padding lệch riêng cho cột Nguồn. */
+/* TỔNG là footer bảng: một dải nền liền mạch, không chia thành các ô rời. */
+.order-summary-panel .summary-compact-table tbody tr.summary-total-row > td{
+  padding:11px 5px !important;
+  background:#f8fafc !important;
+  border-top:1.5px solid #cfd5dc !important;
+  border-bottom:0 !important;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:800 !important;
+}
+.order-summary-panel .summary-compact-table tbody tr.summary-total-row > td:first-child{
+  padding-left:7px !important;
+  text-align:left !important;
+}
+.order-summary-panel .summary-compact-table tbody tr.summary-total-row > td:nth-child(n+2){
+  text-align:right !important;
+}
+
+/* User chỉ còn Nguồn | SL | Thu: phân lại đúng 100% cho 3 cột đang thấy. */
+body[data-auth-role="user"] .order-summary-panel .summary-compact-table th:nth-child(1),
+body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-child(1){width:58% !important;}
+body[data-auth-role="user"] .order-summary-panel .summary-compact-table th:nth-child(2),
+body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-child(2){width:14% !important;}
+body[data-auth-role="user"] .order-summary-panel .summary-compact-table th:nth-child(4),
+body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-child(4){width:28% !important;}
+
+.order-summary-panel .summary-compact-table td[colspan="5"]{
+  display:table-cell !important;
+  width:auto !important;
+  text-align:center !important;
+  padding:16px 8px !important;
+}
+
 @media (max-width:620px){
-  .order-summary-panel{
-    padding:14px !important;
-  }
-  .order-summary-panel > .flex:first-child{
-    margin-bottom:12px !important;
-  }
-  .order-summary-panel .summary-compact-table tbody tr:not(.summary-total-row) > td{
-    padding-top:11px !important;
-    padding-bottom:11px !important;
-  }
-  .order-summary-panel .summary-compact-table tbody tr.summary-total-row > td{
-    padding-top:11px !important;
-    padding-bottom:11px !important;
-  }
+  .order-summary-panel{padding:14px !important;}
+  .order-summary-panel > .flex:first-child{margin-bottom:10px !important;}
 }
