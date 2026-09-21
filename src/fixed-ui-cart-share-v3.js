@@ -104,6 +104,12 @@
     const canNativeShare=!!(navigator.share && navigator.canShare && navigator.canShare({files}));
     hideShareLoading();
 
+    const iosPwaFallback=window.TAPHOA_IOS_SHARE_FALLBACK;
+    if(iosPwaFallback?.shouldUse?.()){
+      iosPwaFallback.open(files,{title:title||'Ảnh chia sẻ'});
+      return;
+    }
+
     if(canNativeShare){
       if(nativeShareInFlight)return;
       const activation=navigator.userActivation;
@@ -116,6 +122,12 @@
       try{
         const payload=nativeFileSharePayload(files,title,text);
         await navigator.share(payload);
+      }catch(error){
+        if(isShareCancel(error) && isIosShareContext()){
+          window.TAPHOA_IOS_SHARE_FALLBACK?.open?.(files,{title:title||'Ảnh chia sẻ'});
+          return;
+        }
+        throw error;
       }finally{
         nativeShareInFlight=false;
       }
