@@ -25,7 +25,9 @@
                 if (!idDon) return;
 
                 let spInfo = spDict[maSp] || { ten: maSp, von: 0, nguon: 'Khác' };
-                let chi = spInfo.von * sl; let thu = donGia * sl; let lai = thu - chi;
+                const hasCostSnapshot = r[10] !== undefined && r[10] !== null && r[10] !== '';
+                const unitCost = hasCostSnapshot ? (Number(r[10]) || 0) : spInfo.von;
+                let chi = unitCost * sl; let thu = donGia * sl; let lai = thu - chi;
                 let nguon = spInfo.nguon;
 
                 if (!sourceSummary[nguon]) sourceSummary[nguon] = { sl: 0, chi: 0, thu: 0, lai: 0 };

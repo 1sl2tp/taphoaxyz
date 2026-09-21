@@ -378,7 +378,7 @@ test('order item notes survive product edit cart save reload detail and share',a
   assert.match(overrides,/isTarget\?String\(note\|\|''\):String\(\(item\?\.ghiChu\?\?item\?\.note\)\|\|''\)/);
   assert.match(business,/note:String\(item\.ghiChu\|\|item\.note\|\|''\)/);
 
-  assert.match(bridge,/\['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú'\]/);
+  assert.match(bridge,/\['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú','Giá vốn snapshot'\]/);
   assert.match(bridge,/first\(item,\['ghiChu','note'\],''\)/);
   assert.match(runtime12,/let note = String\(r\[9\] \|\| ''\)/);
 
