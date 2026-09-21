@@ -270,13 +270,13 @@ test('order list cards keep customer, order summary and product hint compact',as
     read('src/fixed-ui-runtime-11.js')
   ]);
 
-  assert.match(pending,/>${o.tenKh}<\/p>/);
-  assert.match(delivered,/>${o.tenKh}<\/p>/);
-  assert.doesNotMatch(pending,/${o.tenKh} - <span/);
-  assert.doesNotMatch(delivered,/${o.tenKh} - <span/);
+  assert.ok(pending.includes('${o.tenKh}</p>'));
+  assert.ok(delivered.includes('${o.tenKh}</p>'));
+  assert.ok(!pending.includes('${o.tenKh} - <span'));
+  assert.ok(!delivered.includes('${o.tenKh} - <span'));
 
-  assert.match(pending,/<span[^>]*>${k}<\/span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}/);
-  assert.match(delivered,/<span[^>]*>${k}<\/span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}/);
+  assert.ok(pending.includes('${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}'));
+  assert.ok(delivered.includes('${k}</span> · ${o.countSp} mã · ${o.tongSl} SP · ${shortTime}'));
 
   assert.match(helper,/function buildOrderProductPreview\(items, limit = 2\)/);
   assert.match(helper,/\.sort\(\(a, b\) => \(b\.qty - a\.qty\)/);
