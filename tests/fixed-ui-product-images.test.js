@@ -36,16 +36,16 @@ test('product image mode remains optional and uses compact lazy thumbnails',asyn
   ]);
   assert.match(runtime,/productViewMode === 'image'/);
   assert.match(runtime,/class="product-thumb shrink-0" loading="lazy" decoding="async"/);
-  assert.match(mediaCss,/width:54px/);
-  assert.match(mediaCss,/height:54px/);
-  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:58px;[\s\S]*?height:58px;/);
+  assert.match(mediaCss,/width:58px/);
+  assert.match(mediaCss,/height:58px/);
+  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px;[\s\S]*?height:64px;/);
   assert.match(mediaCss,/object-fit:contain/);
-  assert.match(mediaCss,/padding:1px/);
+  assert.match(mediaCss,/padding:0/);
   assert.match(mediaCss,/border:1px solid #f1f3f5/);
   assert.match(runtime,/class="market-quick-thumb shrink-0 overflow-hidden flex items-center justify-center"/);
-  assert.match(mediaCss,/\.market-quick-thumb\{[\s\S]*?width:54px;[\s\S]*?height:54px;[\s\S]*?border:1px solid #f1f3f5;[\s\S]*?border-radius:11px;[\s\S]*?padding:1px;/);
+  assert.match(mediaCss,/\.market-quick-thumb\{[\s\S]*?width:64px;[\s\S]*?height:64px;[\s\S]*?border:1px solid #f1f3f5;[\s\S]*?border-radius:11px;[\s\S]*?padding:0;/);
   assert.match(mediaCss,/\.market-quick-thumb img\{[\s\S]*?object-fit:contain;/);
-  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:58px;[\s\S]*?height:58px;/);
+  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px;[\s\S]*?height:64px;/);
   assert.match(mediaJs,/APP_PRODUCT_VIEW/);
   assert.match(mediaJs,/Ảnh sản phẩm/);
   assert.match(mediaJs,/Chọn ảnh từ siêu thị/);
@@ -166,7 +166,7 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=market-thumb-fit-20260921/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-20260921/);
   assert.match(index,/fixed-ui-product-media\.js\?v=compare-fit-20260920/);
   assert.match(sw,/taphoa-runtime-v30/);
 });
