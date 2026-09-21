@@ -108,7 +108,13 @@
 
             khRows.forEach(kh => {
                 let maKh = kh[0];
-                customerDebts[maKh] = { name: kh[1], debt: 0, lastTime: "--", daysAgo: 0 };
+                customerDebts[maKh] = {
+                    name: kh[1],
+                    avatarHtml: customerAvatarMarkup(kh),
+                    debt: 0,
+                    lastTime: "--",
+                    daysAgo: 0
+                };
                 customerHistory[maKh] = [];
             });
 
@@ -176,10 +182,7 @@
             }
 
             let listHtml = '';
-            filteredList.forEach((c, idx) => {
-                let badgeColor = ['bg-orange-500', 'bg-red-500', 'bg-purple-500', 'bg-blue-500', 'bg-emerald-500'][idx % 5];
-                let initials = c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-                
+            filteredList.forEach(c => {
                 let subText = `GD cuối: ${c.lastTime}`;
                 if (currentDebtFilter === 'no' && c.debt > 0) {
                     subText = `GD cuối: ${c.lastTime} · Nợ ${c.daysAgo} ngày`;
@@ -188,7 +191,7 @@
                 listHtml += `
                     <div onclick="openCustomerDebtModal('${c.maKh}')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition flex justify-between items-center">
                         <div class="pointer-events-none flex items-center gap-3">
-                            <div style="width: 40px; height: 40px;" class="rounded-full ${badgeColor} text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">${initials}</div>
+                            ${c.avatarHtml}
                             <div>
                                 <p class="font-bold text-[14px] text-gray-900">${c.name}</p>
                                 <p class="text-[11px] text-gray-400 mt-0.5">${subText}</p>
