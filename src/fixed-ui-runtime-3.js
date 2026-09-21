@@ -174,7 +174,7 @@
 
         const APP_FONT_MAP = {
             openai: '"OpenAI Sans", "Helvetica Neue", Arial, sans-serif',
-            geist: '"Geist Sans", Geist, "Helvetica Neue", Arial, sans-serif',
+            geist: '"Geist", "Geist Sans", "Helvetica Neue", Arial, sans-serif',
             current: '"Be Vietnam Pro", sans-serif'
         };
 
@@ -228,6 +228,7 @@
             if (!APP_FONT_MAP[choice]) choice = 'current';
 
             currentFontChoice = choice;
+            window.TAPHOA_FONT_LOADER?.ensure(choice);
             document.documentElement.style.setProperty('--app-font', APP_FONT_MAP[choice]);
             document.getElementById('appContainer')?.setAttribute('data-font-choice', choice);
 
