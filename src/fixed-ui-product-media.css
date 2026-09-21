@@ -1,21 +1,21 @@
 /* Product image display + supermarket image picker. */
 .product-thumb{
-  width:54px;
-  height:54px;
+  width:58px;
+  height:58px;
   border-radius:11px;
   object-fit:contain;
-  padding:1px;
+  padding:0;
   background:#fff;
   border:1px solid #f1f3f5;
 }
 
 .market-quick-thumb{
-  width:54px;
-  height:54px;
+  width:58px;
+  height:58px;
   box-sizing:border-box;
   border:1px solid #f1f3f5;
   border-radius:11px;
-  padding:1px;
+  padding:0;
   background:#fff;
 }
 .market-quick-thumb img{
@@ -37,8 +37,12 @@
 @media (max-width:767px){
   .product-thumb,
   .market-quick-thumb{
-    width:58px;
-    height:58px;
+    width:64px;
+    height:64px;
+  }
+  .product-card{
+    padding-top:10px !important;
+    padding-bottom:10px !important;
   }
   .product-image-manager{height:92vh !important;border-radius:20px !important;}
   .product-image-manager-body{grid-template-columns:42% minmax(0,58%);}
