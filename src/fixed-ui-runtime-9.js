@@ -1,3 +1,24 @@
+
+        function buildOrderProductPreview(items, limit = 2) {
+            const grouped = new Map();
+            (Array.isArray(items) ? items : []).forEach((item, index) => {
+                const key = String(item?.code || item?.name || index).trim();
+                const name = String(item?.name || item?.code || '').trim();
+                const qty = Number(item?.qty) || 0;
+                if (!key || !name) return;
+                if (!grouped.has(key)) grouped.set(key, { name, qty: 0, firstIndex: index });
+                grouped.get(key).qty += qty;
+            });
+            const rows = Array.from(grouped.values())
+                .sort((a, b) => (b.qty - a.qty) || (a.firstIndex - b.firstIndex));
+            const visible = rows.slice(0, Math.max(1, Number(limit) || 2));
+            const text = visible
+                .map(item => `${item.name}${item.qty > 0 ? ` ×${item.qty.toLocaleString('vi-VN')}` : ''}`)
+                .join(' · ');
+            const remaining = Math.max(0, rows.length - visible.length);
+            return remaining ? `${text} · +${remaining}` : text;
+        }
+
         function openSourceDetail(sheetName, sourceName) {
             const built = buildSourceDetailData(sheetName, sourceName);
             activeSourceDetailState = {
