@@ -205,6 +205,18 @@ body[data-resolved-mode="mobile"] .product-editor-source-btn{
   overflow-wrap:anywhere;
   line-height:1.35;
 }
+.order-card-title-row,
+.order-card-meta-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  column-gap:8px;
+  align-items:baseline;
+  min-width:0;
+}
+.order-card-total,
+.order-card-meta-row .profit-only{
+  white-space:nowrap;
+}
 .order-product-preview{
   overflow:hidden;
   max-width:100%;
