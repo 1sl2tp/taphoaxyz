@@ -43,8 +43,9 @@
     }
 
     const loopKey='taphoa-pwa-reload-'+targetBuild;
-    if(sessionStorage.getItem(loopKey)==='1')return false;
-    sessionStorage.setItem(loopKey,'1');
+    const attempts=Number(sessionStorage.getItem(loopKey)||0);
+    if(attempts>=3)return false;
+    sessionStorage.setItem(loopKey,String(attempts+1));
     sessionStorage.setItem('taphoa-pwa-update-pending',targetBuild);
     controllerReloading=true;
 
