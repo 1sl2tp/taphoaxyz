@@ -28,7 +28,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   ]);
 
   assert.doesNotMatch(html,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
-  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=unified-note-chips-20260921'));
+  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=order-preview-old-style-20260921'));
   assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=ios-pwa-preview-20260921'));
 
   assert.match(helper,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
@@ -73,7 +73,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(runtime13,/if \(!isNativeShareCancellation\(e\)\) showAlertPopup\("Lỗi tạo ảnh", e\.message\)/);
 
   const fallback=await readFile('src/fixed-ui-ios-share-fallback.js','utf8');
-  assert.ok(html.indexOf('fixed-ui-ios-share-fallback.js?v=ios-pwa-preview-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=unified-note-chips-20260921'));
+  assert.ok(html.indexOf('fixed-ui-ios-share-fallback.js?v=ios-pwa-preview-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=order-preview-old-style-20260921'));
   assert.ok(html.indexOf('fixed-ui-ios-share-fallback.js?v=ios-pwa-preview-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=ios-pwa-preview-20260921'));
   assert.match(fallback,/function shouldUse\(\)/);
   assert.match(fallback,/navigator\.standalone===true/);
