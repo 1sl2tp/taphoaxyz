@@ -20,7 +20,7 @@ test('delivered and pending source summaries use one calm neutral visual system'
   assert.equal(iconMatches.length,2);
 
   assert.match(css,/\.order-summary-panel\{/);
-  assert.match(css,/\.order-summary-panel\{[\s\S]*background:#ffffff !important;/);
+  assert.match(css,/\.order-summary-panel\{[\s\S]*background:#fff !important;/);
   assert.match(css,/\.summary-compact-table\{[\s\S]*display:table !important;[\s\S]*border-collapse:collapse !important;/);
   assert.match(css,/\.summary-compact-table thead\{[\s\S]*display:table-header-group !important;/);
   assert.match(css,/\.summary-compact-table tbody\{[\s\S]*display:table-row-group !important;/);
