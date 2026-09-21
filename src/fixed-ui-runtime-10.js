@@ -241,15 +241,15 @@
         function renderDonTam() {
             renderOrderTimeFilterUI('dontam');
             if (!appData.dontam || appData.dontam.length <= 1) {
-                document.getElementById('pendingOrderListContainer').innerHTML = '';
-                document.getElementById('sourceSummaryTableBody').innerHTML = '';
+                document.getElementById('pendingOrderListContainer').innerHTML = orderListEmptyState('Chưa có đơn tạm nào');
+                document.getElementById('sourceSummaryTableBody').innerHTML = orderSummaryEmptyRow();
                 document.getElementById('pendingCountBadge').innerText = '0'; return;
             }
 
             let rows = getRowsVisibleForOrderTab('dontam');
             if (!rows.length) {
-                document.getElementById('pendingOrderListContainer').innerHTML = '<p class="text-center text-gray-400 mt-4 text-xs">Không có đơn tạm trong khoảng thời gian này</p>';
-                document.getElementById('sourceSummaryTableBody').innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-400">Không có dữ liệu</td></tr>';
+                document.getElementById('pendingOrderListContainer').innerHTML = orderListEmptyState('Không có đơn tạm trong khoảng thời gian này');
+                document.getElementById('sourceSummaryTableBody').innerHTML = orderSummaryEmptyRow();
                 document.getElementById('pendingCountBadge').innerText = '0';
                 return;
             }
