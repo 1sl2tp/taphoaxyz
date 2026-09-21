@@ -320,7 +320,7 @@
                                     <p class="text-[11px] text-gray-400 mt-0.5 truncate min-w-0">${shortTime} · ${k} · ${o.countSp} mã · ${o.tongSl} SP</p>
                                     <p class="profit-only text-[11px] font-bold text-primary mt-0.5">+${o.tongLai.toLocaleString('vi-VN')}</p>
                                 </div>
-                                ${productPreview.items.length ? `<div class="order-product-preview mt-1"><div class="order-product-chip-row">${productPreview.items.map(item => `<span class="order-product-chip order-product-chip-pending">${escapeProductEditorValue(item)}</span>`).join('')}${productPreview.remaining ? `<span class="order-product-more">+${productPreview.remaining} sp</span>` : ''}</div></div>` : ''}
+                                ${productPreview.items.length ? `<div class="order-product-preview mt-1"><div class="order-product-text-row">${productPreview.items.map(item => `<span class="order-product-text">${escapeProductEditorValue(item)}</span>`).join('')}${productPreview.remaining ? `<span class="order-product-more">+${productPreview.remaining} sp</span>` : ''}</div></div>` : ''}
                             </div>
                         </div>
                     </div>`;

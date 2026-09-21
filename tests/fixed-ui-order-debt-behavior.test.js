@@ -290,10 +290,10 @@ test('order list cards keep customer, order summary and product hint compact',as
   assert.match(delivered,/items\.push\(\{ code: maSp, name: spInfo\.ten \|\| maSp, qty: sl \}\)/);
   assert.match(pending,/buildOrderProductPreview\(o\.items, 2\)/);
   assert.match(delivered,/buildOrderProductPreview\(o\.items, 2\)/);
-  assert.match(pending,/order-product-chip-row/);
-  assert.match(delivered,/order-product-chip-row/);
-  assert.match(pending,/order-product-chip order-product-chip-pending/);
-  assert.match(delivered,/order-product-chip order-product-chip-delivered/);
+  assert.match(pending,/order-product-text-row/);
+  assert.match(delivered,/order-product-text-row/);
+  assert.match(pending,/class="order-product-text"/);
+  assert.match(delivered,/class="order-product-text"/);
   assert.match(pending,/productPreview\.items\.map\(item =>/);
   assert.match(delivered,/productPreview\.items\.map\(item =>/);
   assert.match(pending,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} sp<\/span>`/);
@@ -309,28 +309,26 @@ test('order list cards keep customer, order summary and product hint compact',as
 
 
 
-test('order suggestions keep old card language: separate chips, no note bullet',async()=>{
+test('order suggestions are plain black normal-weight text with no colored background',async()=>{
   const [pending,delivered,css]=await Promise.all([
     read('src/fixed-ui-runtime-10.js'),
     read('src/fixed-ui-runtime-11.js'),
     read('src/fixed-ui-source-4.css')
   ]);
-  assert.match(css,/\.order-product-chip-row\{/);
-  assert.match(css,/\.order-product-chip\{/);
-  assert.match(css,/\.order-product-chip-pending\{/);
-  assert.match(css,/\.order-product-chip-delivered\{/);
-  assert.match(css,/\.order-product-more\{/);
+  assert.match(css,/\.order-product-text-row\{/);
+  assert.match(css,/\.order-product-text\{[\s\S]*color:#111827;[\s\S]*font-size:11px;[\s\S]*font-weight:400;/);
+  assert.match(css,/\.order-product-more\{[\s\S]*font-size:11px;[\s\S]*font-weight:400;[\s\S]*color:#94a3b8;/);
   assert.match(pending,/order-rank-dot order-rank-dot-pending/);
   assert.match(delivered,/order-rank-dot order-rank-dot-delivered/);
   assert.match(css,/\.order-rank-dot-pending\{[\s\S]*background:#fffaf3;[\s\S]*color:#d97706;/);
   assert.match(css,/\.order-rank-dot-delivered\{[\s\S]*background:#f5faf6;[\s\S]*color:#2f855a;/);
-  assert.match(css,/\.order-product-chip-pending\{[\s\S]*background:#fff8ef;[\s\S]*color:#c96a20;/);
-  assert.match(css,/\.order-product-chip-delivered\{[\s\S]*background:#f3f8f4;[\s\S]*color:#367a4c;/);
-  assert.doesNotMatch(pending,/order-product-preview note-chip-row/);
-  assert.doesNotMatch(delivered,/order-product-preview note-chip-row/);
+  assert.doesNotMatch(css,/\.order-product-chip-pending\{/);
+  assert.doesNotMatch(css,/\.order-product-chip-delivered\{/);
+  assert.doesNotMatch(pending,/order-product-chip|note-chip-bullet/);
+  assert.doesNotMatch(delivered,/order-product-chip|note-chip-bullet/);
 });
 
-test('order card reserves full third row for product chips',async()=>{
+test('order card reserves full third row for product suggestions',async()=>{
   const css=await read('src/fixed-ui-source-4.css');
   assert.match(css,/\.order-card-title-row,[\s\S]*\.order-card-meta-row\{/);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
