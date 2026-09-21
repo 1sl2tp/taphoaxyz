@@ -327,7 +327,7 @@ test('order item notes survive product edit cart save reload detail and share',a
   assert.match(overrides,/ghiChu:String\(item\.note\|\|''\)/);
   assert.match(overrides,/async function savePendingOrderItemNoteDirect\(orderId,productCode,note\)/);
   assert.match(overrides,/const detail=await backend\(\)\.orderDetail\(backendId\)/);
-  assert.match(overrides,/isTarget\?String\(note\|\|''\):String\(item\?\.ghiChu\?\?item\?\.note\|\|''\)/);
+  assert.match(overrides,/isTarget\?String\(note\|\|''\):String\(\(item\?\.ghiChu\?\?item\?\.note\)\|\|''\)/);
   assert.match(business,/note:String\(item\.ghiChu\|\|item\.note\|\|''\)/);
 
   assert.match(bridge,/\['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú'\]/);
