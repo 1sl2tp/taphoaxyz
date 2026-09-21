@@ -35,6 +35,42 @@
     for(const name of names)await SheetDB.read(name);
   }
 
+
+  async function savePendingOrderItemNoteDirect(orderId,productCode,note){
+    const backendId=String(orderId||'').trim();
+    const targetCode=String(productCode||'').trim();
+    if(!backendId||!targetCode)throw new Error('Thiếu thông tin dòng sản phẩm.');
+    const detail=await backend().orderDetail(backendId);
+    const order=detail?.order||detail||{};
+    const status=String(order.status||order.trangThai||'').toLowerCase();
+    if(status!=='pending')throw new Error('Chỉ sửa ghi chú trực tiếp ở Đơn tạm.');
+    let found=false;
+    const items=(Array.isArray(order.items)?order.items:[]).map((item,index)=>{
+      const maSP=String(item?.maSP||item?.product_id||'').trim();
+      const isTarget=maSP===targetCode;
+      if(isTarget)found=true;
+      return {
+        maSP,
+        sl:Number(item?.sl??item?.qty)||0,
+        gia:Number(item?.gia??item?.unit_price)||0,
+        lineNo:Number(item?.lineNo??item?.line_no)||index+1,
+        ghiChu:isTarget?String(note||''):String((item?.ghiChu??item?.note)||'')
+      };
+    }).filter(item=>item.maSP&&item.sl>0);
+    if(!found)throw new Error('Không tìm thấy sản phẩm trong đơn tạm.');
+    await backend().saveOrder({
+      maKH:String(order.maKH||order.customer_id||''),
+      status:'pending',
+      ghiChu:String((order.ghiChu??order.note)||''),
+      editOrderId:backendId,
+      items
+    });
+    await refreshFixedSheets(['dontam']);
+    return true;
+  }
+
+  window.savePendingOrderItemNoteDirect=savePendingOrderItemNoteDirect;
+
   SheetDB.API_URL='taphoa://production';
   SheetDB.init=function(){this.API_URL='taphoa://production';};
   SheetDB.read=async function(sheetName){

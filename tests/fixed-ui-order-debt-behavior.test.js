@@ -318,9 +318,16 @@ test('order item notes survive product edit cart save reload detail and share',a
   assert.match(runtime5,/function previewProductLineNote\(input\)/);
   assert.match(runtime5,/cart\[maSp\]\.note = String\(input\.value \|\| ''\)/);
   assert.match(runtime5,/const existing = cart\[maSp\] \|\| \{\};[\s\S]*?note: String\(existing\.note \|\| ''\)/);
+  assert.match(runtime5,/function openCartLineNoteEditor\(button\)/);
+  assert.match(runtime5,/function previewCartLineNote\(input\)/);
+  assert.match(runtime5,/function commitCartLineNoteEditor\(input\)/);
   assert.match(runtime6,/data-cart-note-id=/);
+  assert.match(runtime6,/data-cart-note-input-id=/);
 
   assert.match(overrides,/ghiChu:String\(item\.note\|\|''\)/);
+  assert.match(overrides,/async function savePendingOrderItemNoteDirect\(orderId,productCode,note\)/);
+  assert.match(overrides,/const detail=await backend\(\)\.orderDetail\(backendId\)/);
+  assert.match(overrides,/isTarget\?String\(note\|\|''\):String\(\(item\?\.ghiChu\?\?item\?\.note\)\|\|''\)/);
   assert.match(business,/note:String\(item\.ghiChu\|\|item\.note\|\|''\)/);
 
   assert.match(bridge,/\['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú'\]/);
@@ -333,20 +340,26 @@ test('order item notes survive product edit cart save reload detail and share',a
 });
 
 
-test('source summary detail and supplier grouping preserve line notes',async()=>{
+test('source summary keeps one product row and customer-owned editable notes',async()=>{
   const [runtime8,runtime9]=await Promise.all([
     read('src/fixed-ui-runtime-8.js'),
     read('src/fixed-ui-runtime-9.js')
   ]);
 
+  assert.match(runtime8,/backendOrderId: String\(r\[7\] \|\| ''\)/);
   assert.match(runtime8,/note: String\(r\[9\] \|\| ''\)\.trim\(\)/);
-  assert.match(runtime8,/const note = String\(row\.note \|\| ''\)\.trim\(\)/);
-  assert.match(runtime8,/const key = productKey \+ '\\|\\|' \+ noteKey/);
-  assert.match(runtime8,/map\.set\(key, \{ productName: row\.productName, note, qty: 0 \}\)/);
+  assert.match(runtime8,/const productKey = String\(row\.productCode \|\| ''\)\.trim\(\) \|\| normalizeSourceGroupName\(row\.productName\)/);
+  assert.match(runtime8,/noteEntries: \[\]/);
+  assert.match(runtime8,/grouped\.noteEntries\.push\(\{/);
+  assert.ok(!runtime8.includes("productKey + '||' + noteKey"));
 
-  assert.match(runtime9,/class="source-detail-note/);
-  assert.ok(runtime9.includes('escapeProductEditorValue(row.note)'));
-  assert.match(runtime9,/TỔNG · \$\{rows\.length\} dòng/);
+  assert.match(runtime9,/function sourceLineNoteEditorHtml\(row/);
+  assert.match(runtime9,/function openSourceLineNoteEditor\(button\)/);
+  assert.match(runtime9,/async function commitSourceLineNoteEditor\(input\)/);
+  assert.match(runtime9,/savePendingOrderItemNoteDirect/);
+  assert.match(runtime9,/row\.noteEntries \|\| \[\]/);
+  assert.match(runtime9,/showBuyer: true/);
+  assert.match(runtime9,/TỔNG · \$\{rows\.length\} mã/);
 });
 
 test('login screen matches the outlined welcome layout',async()=>{

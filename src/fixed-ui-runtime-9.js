@@ -78,6 +78,107 @@
             return sheetName === 'dongiao' ? 'Đã giao' : 'Đơn tạm';
         }
 
+
+        function sourceLineNoteEditorHtml(row, { showBuyer = false } = {}) {
+            const note = String(row?.note || '').trim();
+            const buyer = String(row?.buyerName || '').trim();
+            const qty = Number(row?.qty) || 0;
+            const backendOrderId = String(row?.backendOrderId || '').trim();
+            const productCode = String(row?.productCode || '').trim();
+            const editable = activeSourceDetailState.sheetName === 'dontam' && backendOrderId && productCode;
+            const buyerHtml = showBuyer
+                ? `<div class="source-detail-buyer whitespace-nowrap">${escapeProductEditorValue(buyer)}${qty > 0 ? ` · ${qty.toLocaleString('vi-VN')}` : ''}</div>`
+                : '';
+            if (!editable) {
+                return `${buyerHtml}${note ? `<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${escapeProductEditorValue(note)}</div>` : ''}`;
+            }
+            return `
+                <div class="source-line-note-editor mt-0.5 min-w-0" data-source-line-note-editor>
+                    ${buyerHtml}
+                    <button type="button"
+                        class="allow-fast-click source-detail-note block w-full min-h-[18px] text-left text-[10px] text-gray-500 truncate"
+                        data-source-note-button
+                        data-note-order-id="${escapeProductEditorValue(backendOrderId)}"
+                        data-note-product-code="${escapeProductEditorValue(productCode)}"
+                        data-note-current="${escapeProductEditorValue(note)}"
+                        onclick="openSourceLineNoteEditor(this)"
+                        aria-label="Ghi chú">${note ? escapeProductEditorValue(note) : ''}</button>
+                    <input type="text"
+                        class="hidden w-full h-7 px-2 rounded-md border border-gray-200 bg-white text-[11px] text-gray-700 outline-none focus:border-primary"
+                        data-source-note-input
+                        data-note-order-id="${escapeProductEditorValue(backendOrderId)}"
+                        data-note-product-code="${escapeProductEditorValue(productCode)}"
+                        data-note-current="${escapeProductEditorValue(note)}"
+                        value="${escapeProductEditorValue(note)}"
+                        autocomplete="off"
+                        placeholder="Ghi chú"
+                        onblur="commitSourceLineNoteEditor(this)"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){event.preventDefault();cancelSourceLineNoteEditor(this)}">
+                </div>`;
+        }
+
+        function openSourceLineNoteEditor(button) {
+            if (!button || activeSourceDetailState.sheetName !== 'dontam') return;
+            const wrap = button.closest('[data-source-line-note-editor]');
+            const input = wrap?.querySelector('[data-source-note-input]');
+            if (!input) return;
+            button.classList.add('hidden');
+            input.classList.remove('hidden');
+            input.value = String(button.dataset.noteCurrent || '');
+            requestAnimationFrame(() => {
+                input.focus({ preventScroll: true });
+                input.select();
+            });
+        }
+
+        function cancelSourceLineNoteEditor(input) {
+            const wrap = input?.closest?.('[data-source-line-note-editor]');
+            const button = wrap?.querySelector('[data-source-note-button]');
+            if (!input || !button) return;
+            input.value = String(input.dataset.noteCurrent || '');
+            input.classList.add('hidden');
+            button.classList.remove('hidden');
+        }
+
+        async function commitSourceLineNoteEditor(input) {
+            if (!input || input.dataset.noteSaving === '1') return;
+            const current = String(input.dataset.noteCurrent || '').trim();
+            const next = String(input.value || '').trim();
+            if (current === next) {
+                cancelSourceLineNoteEditor(input);
+                return;
+            }
+            const backendOrderId = String(input.dataset.noteOrderId || '').trim();
+            const productCode = String(input.dataset.noteProductCode || '').trim();
+            if (!backendOrderId || !productCode || typeof window.savePendingOrderItemNoteDirect !== 'function') {
+                cancelSourceLineNoteEditor(input);
+                return;
+            }
+            input.dataset.noteSaving = '1';
+            input.disabled = true;
+            try {
+                await window.savePendingOrderItemNoteDirect(backendOrderId, productCode, next);
+                const activeTab = activeSourceDetailState.tab;
+                const built = buildSourceDetailData(activeSourceDetailState.sheetName, activeSourceDetailState.source);
+                activeSourceDetailState = {
+                    ...activeSourceDetailState,
+                    tab: activeTab,
+                    detailRows: built.detailRows,
+                    groupedRows: built.groupedRows,
+                    totalQty: built.totalQty,
+                    timeLabel: built.timeLabel
+                };
+                renderSourceDetailModal();
+                switchSourceDetailTab(activeTab);
+                showToast('Đã cập nhật ghi chú.','success');
+            } catch (error) {
+                console.error('save source line note', error);
+                input.disabled = false;
+                input.dataset.noteSaving = '0';
+                showAlertPopup('Không lưu được ghi chú', error?.message || 'Vui lòng thử lại.');
+            }
+        }
+
         function buildSourceCaptureHeaderHtml(modeLabel) {
             return `
                 <div class="source-detail-share-header" data-source-share-header>
@@ -100,7 +201,7 @@
                     <div class="min-w-0">
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
                         <div class="source-detail-buyer">${escapeProductEditorValue(row.buyerName)}</div>
-                        ${row.note ? `<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${escapeProductEditorValue(row.note)}</div>` : ''}
+                        ${sourceLineNoteEditorHtml(row)}
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
@@ -128,7 +229,9 @@
                     <div class="source-detail-stt">${index + 1}</div>
                     <div class="min-w-0">
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
-                        ${row.note ? `<div class="source-detail-note text-[10px] text-gray-500 mt-0.5 truncate">${escapeProductEditorValue(row.note)}</div>` : ''}
+                        <div class="mt-1 space-y-0.5">
+                            ${(row.noteEntries || []).map(entry => sourceLineNoteEditorHtml(entry, { showBuyer: true })).join('')}
+                        </div>
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
@@ -138,7 +241,7 @@
                 </div>
                 <div data-source-share-rows>${rowHtml}</div>
                 <div class="source-detail-grid source-detail-total" data-source-share-footer>
-                    <div class="source-detail-total-label">TỔNG · ${rows.length} dòng</div>
+                    <div class="source-detail-total-label">TỔNG · ${rows.length} mã</div>
                     <div class="source-detail-total-qty">${activeSourceDetailState.totalQty.toLocaleString('vi-VN')}</div>
                 </div>`;
         }

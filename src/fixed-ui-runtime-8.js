@@ -219,19 +219,32 @@
         function groupSourceRowsForSupplier(detailRows) {
             const map = new Map();
             (detailRows || []).forEach(row => {
-                const productKey = normalizeSourceGroupName(row.productName);
-                const note = String(row.note || '').trim();
-                const noteKey = normalizeSourceGroupName(note);
+                const productKey = String(row.productCode || '').trim() || normalizeSourceGroupName(row.productName);
                 if (!productKey) return;
-                const key = productKey + '||' + noteKey;
-                if (!map.has(key)) map.set(key, { productName: row.productName, note, qty: 0 });
-                map.get(key).qty += Number(row.qty) || 0;
+                if (!map.has(productKey)) {
+                    map.set(productKey, {
+                        productCode: row.productCode,
+                        productName: row.productName,
+                        qty: 0,
+                        noteEntries: []
+                    });
+                }
+                const grouped = map.get(productKey);
+                grouped.qty += Number(row.qty) || 0;
+                grouped.noteEntries.push({
+                    orderId: row.orderId,
+                    backendOrderId: row.backendOrderId,
+                    productCode: row.productCode,
+                    buyerName: row.buyerName,
+                    qty: Number(row.qty) || 0,
+                    note: String(row.note || '').trim()
+                });
             });
-            return Array.from(map.values()).sort((a,b) => {
-                const byName = String(a.productName).localeCompare(String(b.productName), 'vi', { sensitivity:'base' });
-                if (byName) return byName;
-                return String(a.note || '').localeCompare(String(b.note || ''), 'vi', { sensitivity:'base' });
-            });
+            return Array.from(map.values()).sort((a,b) => String(a.productName).localeCompare(
+                String(b.productName),
+                'vi',
+                { sensitivity:'base' }
+            ));
         }
 
         function buildSourceDetailData(sheetName, sourceName) {
@@ -252,6 +265,7 @@
                 if (product.source !== sourceName) return;
                 detailRows.push({
                     orderId: String(r[0] || ''),
+                    backendOrderId: String(r[7] || ''),
                     productCode: String(r[2] || ''),
                     productName: product.productName,
                     buyerName: customerDict[String(r[1])] || String(r[1] || ''),

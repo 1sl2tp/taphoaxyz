@@ -44,8 +44,68 @@
             document.querySelectorAll('[data-cart-note-id]').forEach(el => {
                 if (String(el.dataset.cartNoteId) !== String(maSp)) return;
                 el.textContent = note;
-                el.classList.toggle('hidden', !note);
+                el.dataset.noteCurrent = note;
             });
+            document.querySelectorAll('[data-cart-note-input-id]').forEach(input => {
+                if (String(input.dataset.cartNoteInputId) !== String(maSp)) return;
+                if (document.activeElement !== input) input.value = note;
+                input.dataset.noteCurrent = note;
+            });
+        }
+
+        function openCartLineNoteEditor(button) {
+            if (!button) return;
+            if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') return;
+            const wrap = button.closest('[data-cart-line-note-editor]');
+            const input = wrap?.querySelector('[data-cart-note-input-id]');
+            if (!input) return;
+            button.classList.add('hidden');
+            input.classList.remove('hidden');
+            input.value = String(button.dataset.noteCurrent || '');
+            requestAnimationFrame(() => {
+                input.focus({ preventScroll: true });
+                input.select();
+            });
+        }
+
+        function previewCartLineNote(input) {
+            if (!input) return;
+            const maSp = String(input.dataset.cartNoteInputId || '');
+            if (!maSp || !cart[maSp]) return;
+            cart[maSp].note = String(input.value || '');
+            const button = input.closest('[data-cart-line-note-editor]')?.querySelector('[data-cart-note-id]');
+            if (button) {
+                button.textContent = String(input.value || '').trim();
+                button.dataset.noteCurrent = String(input.value || '').trim();
+            }
+            document.querySelectorAll('[data-line-note-id]').forEach(productInput => {
+                if (String(productInput.dataset.lineNoteId) === maSp && document.activeElement !== productInput) {
+                    productInput.value = String(input.value || '');
+                }
+            });
+        }
+
+        function commitCartLineNoteEditor(input) {
+            if (!input) return;
+            const maSp = String(input.dataset.cartNoteInputId || '');
+            if (maSp && cart[maSp]) cart[maSp].note = String(input.value || '').trim();
+            const wrap = input.closest('[data-cart-line-note-editor]');
+            const button = wrap?.querySelector('[data-cart-note-id]');
+            if (button) {
+                const note = String(cart[maSp]?.note || '');
+                button.textContent = note;
+                button.dataset.noteCurrent = note;
+                button.classList.remove('hidden');
+            }
+            input.classList.add('hidden');
+        }
+
+        function cancelCartLineNoteEditor(input) {
+            if (!input) return;
+            const maSp = String(input.dataset.cartNoteInputId || '');
+            input.value = String(cart[maSp]?.note || '');
+            input.classList.add('hidden');
+            input.closest('[data-cart-line-note-editor]')?.querySelector('[data-cart-note-id]')?.classList.remove('hidden');
         }
 
         function previewProductLineNote(input) {

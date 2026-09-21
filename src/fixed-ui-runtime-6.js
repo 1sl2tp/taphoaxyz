@@ -17,7 +17,28 @@
                         <div class="cart-stt font-bold text-gray-400">${index++}</div>
                         <div class="min-w-0">
                             <div class="cart-name font-bold text-gray-900 leading-tight">${item.name}</div>
-                            <div data-cart-note-id="${escapeProductEditorValue(id)}" class="cart-line-note text-[10px] text-gray-400 mt-0.5 truncate ${String(item.note || '').trim() ? '' : 'hidden'}">${escapeProductEditorValue(String(item.note || '').trim())}</div>
+                            ${isDeliveredReadOnlyPreview
+                                ? (String(item.note || '').trim()
+                                    ? `<div class="cart-line-note text-[10px] text-gray-400 mt-0.5 truncate">${escapeProductEditorValue(String(item.note || '').trim())}</div>`
+                                    : '<div class="min-h-[18px]"></div>')
+                                : `<div class="mt-0.5 min-w-0" data-cart-line-note-editor>
+                                    <button type="button"
+                                        data-cart-note-id="${escapeProductEditorValue(id)}"
+                                        data-note-current="${escapeProductEditorValue(String(item.note || '').trim())}"
+                                        onclick="openCartLineNoteEditor(this)"
+                                        aria-label="Ghi chú"
+                                        class="allow-fast-click cart-line-note block w-full min-h-[18px] text-left text-[10px] text-gray-400 truncate">${escapeProductEditorValue(String(item.note || '').trim())}</button>
+                                    <input type="text"
+                                        data-cart-note-input-id="${escapeProductEditorValue(id)}"
+                                        data-note-current="${escapeProductEditorValue(String(item.note || '').trim())}"
+                                        value="${escapeProductEditorValue(String(item.note || '').trim())}"
+                                        oninput="previewCartLineNote(this)"
+                                        onblur="commitCartLineNoteEditor(this)"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){event.preventDefault();cancelCartLineNoteEditor(this)}"
+                                        autocomplete="off"
+                                        placeholder="Ghi chú"
+                                        class="hidden w-full h-7 px-2 rounded-md border border-gray-200 bg-white text-[11px] text-gray-700 outline-none focus:border-primary">
+                                </div>`}
                         </div>
                     </div>
                     <div class="cart-price font-semibold text-gray-700">${item.price.toLocaleString('vi-VN')}</div>
