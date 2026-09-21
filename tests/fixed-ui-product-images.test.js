@@ -43,7 +43,7 @@ test('product image mode remains optional and uses compact lazy thumbnails',asyn
   assert.match(mediaCss,/padding:0/);
   assert.match(mediaCss,/border:1px solid #f1f3f5/);
   assert.match(runtime,/class="market-quick-thumb shrink-0 overflow-hidden flex items-center justify-center"/);
-  assert.match(mediaCss,/\.market-quick-thumb\{[\s\S]*?width:64px;[\s\S]*?height:64px;[\s\S]*?border:1px solid #f1f3f5;[\s\S]*?border-radius:11px;[\s\S]*?padding:0;/);
+  assert.match(mediaCss,/\.market-quick-thumb\{[\s\S]*?width:58px;[\s\S]*?height:58px;[\s\S]*?border:1px solid #f1f3f5;[\s\S]*?border-radius:11px;[\s\S]*?padding:0;/);
   assert.match(mediaCss,/\.market-quick-thumb img\{[\s\S]*?object-fit:contain;/);
   assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px;[\s\S]*?height:64px;/);
   assert.match(mediaJs,/APP_PRODUCT_VIEW/);
