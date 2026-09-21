@@ -91,6 +91,26 @@
             document.getElementById('completedOrderListContainer').innerHTML = orderHtml;
         }
 
+        function latestDeliveredDateKeyByCustomer() {
+            const latest = {};
+            (appData.dongiao || []).slice(1).forEach(row => {
+                const customerId = String(row?.[1] || '').trim();
+                const dateKey = parseOrderDateKey(row?.[6] || '');
+                if (!customerId || !dateKey) return;
+                if (!latest[customerId] || dateKey > latest[customerId]) latest[customerId] = dateKey;
+            });
+            return latest;
+        }
+
+        function debtDaysFromDeliveryDateKey(dateKey) {
+            if (!dateKey) return null;
+            const today = dateKeyToUtcDate(getTodayKeyInAppTimezone());
+            const delivered = dateKeyToUtcDate(dateKey);
+            if (!today || !delivered) return null;
+            const days = Math.floor((today.getTime() - delivered.getTime()) / 86400000);
+            return Math.max(0, days);
+        }
+
         function renderCongNo() {
             if (!hasPermission('canViewDebt')) return;
             if (!appData.khachhang || appData.khachhang.length <= 1) return;
@@ -104,7 +124,7 @@
             }
 
             let customerDebts = {}; let customerHistory = {};
-            let nowTime = new Date().getTime();
+            const latestDeliveryDateKeys = latestDeliveredDateKeyByCustomer();
 
             khRows.forEach(kh => {
                 let maKh = kh[0];
@@ -113,7 +133,7 @@
                     avatarHtml: customerAvatarMarkup(kh),
                     debt: 0,
                     lastTime: "--",
-                    daysAgo: 0
+                    daysAgo: debtDaysFromDeliveryDateKey(latestDeliveryDateKeys[String(maKh)] || '')
                 };
                 customerHistory[maKh] = [];
             });
@@ -125,17 +145,6 @@
                         customerDebts[maKh].debt += soTien; 
                         if (time) {
                             customerDebts[maKh].lastTime = time;
-                            try {
-                                let parts = time.split(' ');
-                                if(parts.length >= 2) {
-                                    let dateParts = parts[1].split('/');
-                                    if(dateParts.length === 3) {
-                                        let d = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${parts[0]}`);
-                                        let diffDays = Math.floor((nowTime - d.getTime()) / (1000 * 60 * 60 * 24));
-                                        if(diffDays >= 0) customerDebts[maKh].daysAgo = diffDays;
-                                    }
-                                }
-                            } catch(e){}
                         }
                         customerHistory[maKh].push({ loaiGd, soTien, time, currentDebt: customerDebts[maKh].debt });
                     }
@@ -170,7 +179,11 @@
             if (currentDebtFilter === 'no') {
                 let sortVal = document.getElementById('debtSortSelect').value;
                 if (sortVal === 'days') {
-                    filteredList.sort((a, b) => b.daysAgo - a.daysAgo);
+                    filteredList.sort((a, b) => {
+                        const aDays = Number.isFinite(a.daysAgo) ? a.daysAgo : -1;
+                        const bDays = Number.isFinite(b.daysAgo) ? b.daysAgo : -1;
+                        return bDays - aDays;
+                    });
                 } else {
                     filteredList.sort((a, b) => b.debt - a.debt);
                 }
@@ -184,7 +197,7 @@
             let listHtml = '';
             filteredList.forEach(c => {
                 let subText = `GD cuối: ${c.lastTime}`;
-                if (currentDebtFilter === 'no' && c.debt > 0) {
+                if (currentDebtFilter === 'no' && c.debt > 0 && Number.isFinite(c.daysAgo)) {
                     subText = `GD cuối: ${c.lastTime} · Nợ ${c.daysAgo} ngày`;
                 }
 

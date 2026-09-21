@@ -95,6 +95,20 @@ test('editing a pending order and selling now promotes the same backend order to
 });
 
 
+test('debt age uses latest delivered order by Vietnam calendar day and hides when not owing',async()=>{
+  const runtime=await read('src/fixed-ui-runtime-11.js');
+  assert.match(runtime,/function latestDeliveredDateKeyByCustomer\(\)/);
+  assert.match(runtime,/\(appData\.dongiao \|\| \[\]\)\.slice\(1\)/);
+  assert.match(runtime,/parseOrderDateKey\(row\?\.\[6\] \|\| ''\)/);
+  assert.match(runtime,/function debtDaysFromDeliveryDateKey\(dateKey\)/);
+  assert.match(runtime,/getTodayKeyInAppTimezone\(\)/);
+  assert.match(runtime,/dateKeyToUtcDate\(dateKey\)/);
+  assert.match(runtime,/Math\.floor\(\(today\.getTime\(\) - delivered\.getTime\(\)\) \/ 86400000\)/);
+  assert.match(runtime,/daysAgo: debtDaysFromDeliveryDateKey\(latestDeliveryDateKeys\[String\(maKh\)\] \|\| ''\)/);
+  assert.match(runtime,/currentDebtFilter === 'no' && c\.debt > 0 && Number\.isFinite\(c\.daysAgo\)/);
+  assert.doesNotMatch(runtime,/nowTime - d\.getTime\(\)/);
+});
+
 test('debt surplus is shown as a positive amount with surplus wording instead of negative debt',async()=>{
   const runtime=await read('src/fixed-ui-runtime-11.js');
   const behavior=await read('src/fixed-ui-behavior.js');
