@@ -31,12 +31,16 @@
                 let donGia = Number(r[4]) || 0;
                 let sl = Number(r[3]) || 0;
                 let tTien = Number(r[5]) || 0;
+                let note = String(r[9] || '').trim();
                 total += tTien;
                 totalQty += sl;
                 html += `
                 <div class="order-detail-compact-grid py-2 border-b border-gray-50 text-[12px]">
                     <div class="order-stt font-bold text-gray-400">${idx+1}</div>
-                    <div class="order-name font-bold text-gray-900 leading-tight">${tenSp}</div>
+                    <div class="min-w-0">
+                        <div class="order-name font-bold text-gray-900 leading-tight">${tenSp}</div>
+                        ${note ? `<div class="order-line-note text-[10px] text-gray-400 mt-0.5 truncate">${escapeProductEditorValue(note)}</div>` : ''}
+                    </div>
                     <div class="order-price font-semibold text-gray-700">${donGia.toLocaleString('vi-VN')}</div>
                     <div class="order-qty font-bold text-gray-700">${sl}</div>
                     <div class="order-total font-extrabold text-gray-900">${tTien.toLocaleString('vi-VN')}</div>
@@ -215,7 +219,10 @@
                     rowsHtml += `
                         <div class="order-detail-compact-grid py-2 border-b border-gray-50 text-[12px]">
                             <div class="order-stt font-bold text-gray-400">${idx + 1}</div>
-                            <div class="order-name font-bold text-gray-900 leading-tight">${escapeText(item?.name || id)}</div>
+                            <div class="min-w-0">
+                                <div class="order-name font-bold text-gray-900 leading-tight">${escapeText(item?.name || id)}</div>
+                                ${String(item?.note || '').trim() ? `<div class="order-line-note text-[10px] text-gray-500 mt-0.5">${escapeText(String(item.note).trim())}</div>` : ''}
+                            </div>
                             <div class="order-price font-semibold text-gray-700">${price.toLocaleString('vi-VN')}</div>
                             <div class="order-qty font-bold text-gray-700">${qty}</div>
                             <div class="order-total font-extrabold text-gray-900">${lineTotal.toLocaleString('vi-VN')}</div>

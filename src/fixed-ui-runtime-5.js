@@ -26,6 +26,37 @@
             renderCartFooterActions();
         }
 
+
+        function syncProductNoteEditorVisibility(maSp, qty) {
+            document.querySelectorAll('[data-product-note-wrap]').forEach(wrap => {
+                if (String(wrap.dataset.productNoteWrap) !== String(maSp)) return;
+                const visible = Number(qty) > 0;
+                wrap.classList.toggle('hidden', !visible);
+                if (!visible) {
+                    const input = wrap.querySelector('[data-line-note-id]');
+                    if (input) input.value = '';
+                }
+            });
+        }
+
+        function syncCartItemNoteDisplay(maSp) {
+            const note = String(cart[maSp]?.note || '').trim();
+            document.querySelectorAll('[data-cart-note-id]').forEach(el => {
+                if (String(el.dataset.cartNoteId) !== String(maSp)) return;
+                el.textContent = note;
+                el.classList.toggle('hidden', !note);
+            });
+        }
+
+        function previewProductLineNote(input) {
+            if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') return;
+            if (!input) return;
+            const maSp = input.dataset.lineNoteId;
+            if (!maSp || !cart[maSp]) return;
+            cart[maSp].note = String(input.value || '');
+            syncCartItemNoteDisplay(maSp);
+        }
+
         function previewQtyInput(input) {
             if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') {
                 return;
@@ -40,7 +71,8 @@
 
             const qty = Math.max(1, parsed);
             const meta = getQtyMeta(maSp, input);
-            cart[maSp] = { name: meta.name, price: meta.price, qty };
+            const existing = cart[maSp] || {};
+            cart[maSp] = { ...existing, name: meta.name, price: meta.price, qty, note: String(existing.note || '') };
 
             syncQtyEditors(maSp, qty, input);
 
@@ -66,7 +98,8 @@
             input.value = qty;
 
             const meta = getQtyMeta(maSp, input);
-            cart[maSp] = { name: meta.name, price: meta.price, qty };
+            const existing = cart[maSp] || {};
+            cart[maSp] = { ...existing, name: meta.name, price: meta.price, qty, note: String(existing.note || '') };
             syncQtyEditors(maSp, qty, input);
 
             if (input.dataset.qtyEditor === 'cart') {
@@ -82,7 +115,7 @@
             if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') {
                 return;
             }
-            if (!cart[maSp]) cart[maSp] = { name: tenSp, price: giaBan, qty: 0 };
+            if (!cart[maSp]) cart[maSp] = { name: tenSp, price: giaBan, qty: 0, note: '' };
             cart[maSp].qty += change;
             if (cart[maSp].qty <= 0) delete cart[maSp];
             const nextQty = cart[maSp]?.qty || 0;

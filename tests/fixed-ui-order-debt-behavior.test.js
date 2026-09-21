@@ -296,6 +296,42 @@ test('order list cards keep customer, order summary and product hint compact',as
 });
 
 
+
+
+test('order item notes survive product edit cart save reload detail and share',async()=>{
+  const [runtime4,runtime5,runtime6,runtime12,runtime13,bridge,overrides,business,share]=await Promise.all([
+    read('src/fixed-ui-runtime-4.js'),
+    read('src/fixed-ui-runtime-5.js'),
+    read('src/fixed-ui-runtime-6.js'),
+    read('src/fixed-ui-runtime-12.js'),
+    read('src/fixed-ui-runtime-13.js'),
+    read('src/fixed-production-bridge.js'),
+    read('src/fixed-production-overrides.js'),
+    read('src/core/business.js'),
+    read('src/fixed-ui-cart-share-v3.js')
+  ]);
+
+  assert.ok(runtime4.includes('data-product-note-wrap="${escapeProductEditorValue(maSp)}"'));
+  assert.ok(runtime4.includes('data-line-note-id="${escapeProductEditorValue(maSp)}"'));
+  assert.ok(runtime4.includes('placeholder="Ghi chú màu / loại..."'));
+
+  assert.match(runtime5,/function previewProductLineNote\(input\)/);
+  assert.match(runtime5,/cart\[maSp\]\.note = String\(input\.value \|\| ''\)/);
+  assert.match(runtime5,/const existing = cart\[maSp\] \|\| \{\};[\s\S]*?note: String\(existing\.note \|\| ''\)/);
+  assert.match(runtime6,/data-cart-note-id=/);
+
+  assert.match(overrides,/ghiChu:String\(item\.note\|\|''\)/);
+  assert.match(business,/note:String\(item\.ghiChu\|\|item\.note\|\|''\)/);
+
+  assert.match(bridge,/\['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú'\]/);
+  assert.match(bridge,/first\(item,\['ghiChu','note'\],''\)/);
+  assert.match(runtime12,/let note = String\(r\[9\] \|\| ''\)/);
+
+  assert.match(runtime13,/let note = String\(r\[9\] \|\| ''\)\.trim\(\)/);
+  assert.match(runtime13,/class="order-line-note/);
+  assert.match(share,/String\(item\?\.note \|\| ''\)\.trim\(\)/);
+});
+
 test('login screen matches the outlined welcome layout',async()=>{
   const markup=await read('src/fixed-ui-markup-1.js');
   const css=await read('src/fixed-ui-source-4.css');

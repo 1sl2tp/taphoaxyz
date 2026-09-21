@@ -244,8 +244,8 @@
 
             cart = {};
             items.forEach(r => {
-                let maSp = r[2]; let qty = Number(r[3]); let price = Number(r[4]);
-                cart[maSp] = { name: spDict[maSp] || maSp, price: price, qty: qty };
+                let maSp = r[2]; let qty = Number(r[3]); let price = Number(r[4]); let note = String(r[9] || '');
+                cart[maSp] = { name: spDict[maSp] || maSp, price: price, qty: qty, note };
             });
 
             editingOrderId = orderId;
