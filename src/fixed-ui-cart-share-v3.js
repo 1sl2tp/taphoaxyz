@@ -78,14 +78,50 @@
     if(typeof hideLoading==='function') hideLoading();
   }
 
+  let nativeShareInFlight=false;
+
+  function isIosShareContext(){
+    const ua=String(navigator.userAgent||'');
+    return /iPad|iPhone|iPod/.test(ua)
+      || (navigator.platform==='MacIntel' && Number(navigator.maxTouchPoints)>1);
+  }
+
+  function isStandalonePwa(){
+    return navigator.standalone===true
+      || !!window.matchMedia?.('(display-mode: standalone)')?.matches;
+  }
+
+  function nativeFileSharePayload(files,title,text){
+    // WebKit/iOS is more reliable when file shares contain files only.
+    // In particular, installed PWAs can reject/abort image + text payloads.
+    if(isIosShareContext()) return {files};
+    return {files,title,text};
+  }
+
   async function shareOrDownloadPng(blob,fileName,title,text){
     const file=new File([blob],fileName,{type:'image/png'});
-    const canNativeShare=!!(navigator.share && navigator.canShare && navigator.canShare({files:[file]}));
+    const files=[file];
+    const canNativeShare=!!(navigator.share && navigator.canShare && navigator.canShare({files}));
     hideShareLoading();
+
     if(canNativeShare){
-      await navigator.share({files:[file],title,text});
+      if(nativeShareInFlight)return;
+      const activation=navigator.userActivation;
+      if(activation && activation.isActive===false){
+        if(typeof showToast==='function')showToast('Bấm Chia sẻ lại để mở bảng chia sẻ.','info');
+        return;
+      }
+
+      nativeShareInFlight=true;
+      try{
+        const payload=nativeFileSharePayload(files,title,text);
+        await navigator.share(payload);
+      }finally{
+        nativeShareInFlight=false;
+      }
       return;
     }
+
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
@@ -465,6 +501,9 @@
       return result;
     };
   }
+
+  document.documentElement.setAttribute('data-ios-share-context',isIosShareContext()?'1':'0');
+  document.documentElement.setAttribute('data-pwa-standalone',isStandalonePwa()?'1':'0');
 
   const prewarm=()=>window.TAPHOA_SHARE_CAPTURE?.ensureHtml2Canvas?.().catch(()=>{});
   if(typeof requestIdleCallback==='function')requestIdleCallback(prewarm,{timeout:1200});
