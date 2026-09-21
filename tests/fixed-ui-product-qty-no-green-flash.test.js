@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const runtime4 = fs.readFileSync(path.join(here, '..', 'src', 'fixed-ui-runtime-4.js'), 'utf8');
 const runtime5 = fs.readFileSync(path.join(here, '..', 'src', 'fixed-ui-runtime-5.js'), 'utf8');
+const behavior = fs.readFileSync(path.join(here, '..', 'src', 'fixed-ui-behavior.js'), 'utf8');
 const css2 = fs.readFileSync(path.join(here, '..', 'src', 'fixed-ui-source-2.css'), 'utf8');
 
 test('product card border stays neutral during quantity interaction on every pointer type', () => {
@@ -36,4 +37,20 @@ test('product card border stays neutral during quantity interaction on every poi
     'quantity +/- must not rebuild product cards');
   assert.match(updateCart, /syncQtyEditors\s*\(/,
     'quantity +/- must update visible quantity inputs in place');
+});
+
+
+test('behavior override also keeps product image DOM stable during quantity +/-', () => {
+  const updateStart = behavior.indexOf('updateCart = function(');
+  const updateEnd = behavior.indexOf('function parseCartPriceInputValue', updateStart);
+  assert.notEqual(updateStart, -1, 'behavior updateCart override must exist');
+  assert.notEqual(updateEnd, -1, 'behavior updateCart override must be bounded');
+
+  const updateCart = behavior.slice(updateStart, updateEnd);
+  assert.doesNotMatch(updateCart, /renderProductList\s*\(/,
+    'behavior override must not rebuild product cards or recreate product images');
+  assert.match(updateCart, /syncQtyEditors\s*\(maSp,\s*nextQty\)/,
+    'behavior override must update the visible quantity editor in place');
+  assert.match(updateCart, /renderCartUI\s*\(/,
+    'cart rows may still refresh after a quantity change');
 });
