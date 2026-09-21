@@ -17,3 +17,33 @@ test('cart share v3 supports a live sale draft before it becomes a saved order',
   assert.match(js,/Object\.entries\(currentCart\)/);
   assert.match(js,/totalPrice\.toLocaleString\('vi-VN'\)/);
 });
+
+
+test('share image capture is on-demand bounded and lighter on Safari-sized pages',async()=>{
+  const [html,helper,cartShare,sourceShare]=await Promise.all([
+    readFile('index.html','utf8'),
+    readFile('src/fixed-ui-share-capture.js','utf8'),
+    readFile('src/fixed-ui-cart-share-v3.js','utf8'),
+    readFile('src/fixed-ui-runtime-10.js','utf8')
+  ]);
+
+  assert.doesNotMatch(html,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
+  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=share-fast-20260921') < html.indexOf('fixed-ui-runtime-10.js'));
+  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=share-fast-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=share-fast-20260921'));
+
+  assert.match(helper,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
+  assert.match(helper,/cdn\.jsdelivr\.net\/npm\/html2canvas@1\.4\.1\/dist\/html2canvas\.min\.js/);
+  assert.match(helper,/withTimeout/);
+  assert.match(helper,/renderTimeout/);
+  assert.match(helper,/scale=Math\.max\(1,Math\.min\(1\.5/);
+
+  assert.match(cartShare,/window\.TAPHOA_SHARE_CAPTURE/);
+  assert.match(cartShare,/scale:1\.4/);
+  assert.doesNotMatch(cartShare,/scale:2/);
+
+  assert.match(sourceShare,/buildSourceSharePageElements\(source, width, modeLabel, 1800\)/);
+  assert.match(sourceShare,/capture\.captureElement/);
+  assert.match(sourceShare,/scale:1\.4/);
+  assert.match(sourceShare,/Đang tạo ảnh \$\{i \+ 1\}\/\$\{pageElements\.length\}/);
+  assert.doesNotMatch(sourceShare,/scale:2/);
+});

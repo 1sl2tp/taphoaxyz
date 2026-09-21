@@ -205,20 +205,16 @@
   }
 
   async function canvasToPngBlob(target,width,height,errorMessage){
-    const canvas=await html2canvas(target,{
-      scale:2,
-      useCORS:true,
-      backgroundColor:'#ffffff',
+    const capture=window.TAPHOA_SHARE_CAPTURE;
+    if(!capture) throw new Error('Chưa khởi tạo bộ tạo ảnh.');
+    const canvas=await capture.captureElement(target,{
       width,
       height,
-      windowWidth:width,
-      windowHeight:height,
-      scrollX:0,
-      scrollY:0
+      scale:1.4,
+      renderTimeout:10000,
+      libraryTimeout:5000
     });
-    return new Promise((resolve,reject)=>{
-      canvas.toBlob(result=>result?resolve(result):reject(new Error(errorMessage)),'image/png');
-    });
+    return capture.canvasToPngBlob(canvas,errorMessage);
   }
 
   async function shareDetailOrderImageV3(){
@@ -231,7 +227,7 @@
     let built=null;
     try{
       if(typeof showLoading==='function') showLoading('Đang tạo ảnh...');
-      if(!window.html2canvas) throw new Error('Chưa tải thư viện tạo ảnh.');
+      if(!window.TAPHOA_SHARE_CAPTURE) throw new Error('Chưa khởi tạo bộ tạo ảnh.');
 
       built=prepareDetailClone(source);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
@@ -263,7 +259,7 @@
     let built=null;
     try{
       if(typeof showLoading==='function') showLoading('Đang tạo ảnh...');
-      if(!window.html2canvas) throw new Error('Chưa tải thư viện tạo ảnh.');
+      if(!window.TAPHOA_SHARE_CAPTURE) throw new Error('Chưa khởi tạo bộ tạo ảnh.');
 
       built=buildCapture(entries);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
