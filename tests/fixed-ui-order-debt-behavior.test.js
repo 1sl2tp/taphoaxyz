@@ -370,6 +370,8 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.match(runtime9,/Tên hàng<\/div><div>Tên KH<\/div><div class="text-right">SL/);
   assert.match(runtime9,/source-detail-product-cell/);
   assert.match(runtime9,/source-detail-buyer-cell/);
+  assert.match(runtime9,/source-detail-product-cell[\s\S]{0,260}source-detail-name[\s\S]{0,220}sourceLineNoteEditorHtml\(row\)[\s\S]{0,220}source-detail-buyer-cell/);
+  assert.doesNotMatch(runtime9,/source-detail-buyer-cell[\s\S]{0,260}sourceLineNoteEditorHtml\(row\)/);
   assert.doesNotMatch(runtime9,/Tên SP \/ Người mua/);
 });
 
