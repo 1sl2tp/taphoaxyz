@@ -38,14 +38,14 @@ test('product image mode remains optional and uses compact lazy thumbnails',asyn
   assert.match(runtime,/class="product-thumb shrink-0" loading="lazy" decoding="async"/);
   assert.match(mediaCss,/width:58px/);
   assert.match(mediaCss,/height:58px/);
-  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px;[\s\S]*?height:64px;/);
+  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px !important;[\s\S]*?height:64px !important;/);
   assert.match(mediaCss,/object-fit:contain/);
   assert.match(mediaCss,/padding:0/);
   assert.match(mediaCss,/border:1px solid #f1f3f5/);
   assert.match(runtime,/class="market-quick-thumb shrink-0 overflow-hidden flex items-center justify-center"/);
   assert.match(mediaCss,/\.market-quick-thumb\{[\s\S]*?width:58px;[\s\S]*?height:58px;[\s\S]*?border:1px solid #f1f3f5;[\s\S]*?border-radius:11px;[\s\S]*?padding:0;/);
   assert.match(mediaCss,/\.market-quick-thumb img\{[\s\S]*?object-fit:contain;/);
-  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px;[\s\S]*?height:64px;/);
+  assert.match(mediaCss,/@media \(max-width:767px\)\{[\s\S]*?\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px !important;[\s\S]*?height:64px !important;/);
   assert.match(mediaJs,/APP_PRODUCT_VIEW/);
   assert.match(mediaJs,/Ảnh sản phẩm/);
   assert.match(mediaJs,/Chọn ảnh từ siêu thị/);
@@ -166,9 +166,9 @@ test('saved market comparison rows align and preserve source link',async()=>{
 
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-20260921/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
   assert.match(index,/fixed-ui-product-media\.js\?v=compare-fit-20260920/);
-  assert.match(sw,/taphoa-runtime-v30/);
+  assert.match(sw,/taphoa-runtime-v31/);
 });
 
 
@@ -423,4 +423,20 @@ test('VNM participates in supermarket image candidates and quick search',async()
   assert.match(migration,/taphoa_product_media_candidates/);
   assert.match(migration,/taphoa_market_search/);
   assert.match(migration,/l\.source in \('GO!','WinMart','Bách Hóa XANH','VNM'\)/);
+});
+
+
+test('mobile supermarket thumbnail override cannot shrink below the shared 64px rule',async()=>{
+  const [source4,mediaCss,index,sw]=await Promise.all([
+    read('src/fixed-ui-source-4.css'),
+    read('src/fixed-ui-product-media.css'),
+    read('index.html'),
+    read('sw.js')
+  ]);
+  assert.doesNotMatch(source4,/market-quick-thumb\{[\s\S]*?width:46px !important;[\s\S]*?height:46px !important;/);
+  assert.match(source4,/market-quick-thumb\{[\s\S]*?width:64px !important;[\s\S]*?height:64px !important;/);
+  assert.match(mediaCss,/\.product-thumb,[\s\S]*?\.market-quick-thumb\{[\s\S]*?width:64px !important;[\s\S]*?height:64px !important;/);
+  assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=thumb-override-fix-20260921/);
+  assert.match(sw,/taphoa-runtime-v31/);
 });

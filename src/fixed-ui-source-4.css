@@ -421,7 +421,7 @@ body[data-force-pc="1"] #orderTimeCustomCard{
     padding-bottom:8px !important;
   }
   body[data-resolved-mode="mobile"] .market-quick-thumb{
-    width:46px !important;
-    height:46px !important;
+    width:64px !important;
+    height:64px !important;
   }
 }
