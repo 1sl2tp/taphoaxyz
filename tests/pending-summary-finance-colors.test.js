@@ -16,5 +16,5 @@ test('order source summaries use neutral true-table finance columns', () => {
   assert.match(css, /\.summary-compact-table\{[\s\S]*display:table !important;/);
   assert.match(css, /tbody tr\.summary-total-row > td\{[\s\S]*color:#111827 !important;/);
   assert.doesNotMatch(css, /#tab-don-tam\s+\.summary-compact-table\s+:is\(th,td\):nth-child\(3\)/);
-  assert.match(index, /fixed-ui-pending-summary-colors\.css\?v=real-table-summary-20260922/);
+  assert.match(index, /fixed-ui-pending-summary-colors\.css\?v=order-empty-state-20260922/);
 });

@@ -165,3 +165,27 @@ body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-c
   .order-summary-panel{padding:14px !important;}
   .order-summary-panel > .flex:first-child{margin-bottom:10px !important;}
 }
+
+
+/* Empty summary stays centered as one table-wide state. */
+.order-summary-panel .summary-compact-table tbody tr.order-summary-empty-row > td{
+  height:76px !important;
+  padding:0 8px !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+  background:#fff !important;
+  border-top:0 !important;
+  border-bottom:0 !important;
+}
+.order-summary-empty-state{
+  width:100%;
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#9ca3af;
+  font-size:11px;
+  line-height:1.4;
+  font-weight:500;
+  text-align:center;
+}

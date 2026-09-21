@@ -38,6 +38,6 @@ test('legacy order rows carry frozen cost and both order lists calculate profit 
 test('production asset versions include order cost snapshot fix',()=>{
   const html=read('index.html');
   assert.match(html,/fixed-production-bridge\.js\?v=order-cost-snapshot-20260921/);
-  assert.match(html,/fixed-ui-runtime-10\.js\?v=order-card-summary-20260921/);
-  assert.match(html,/fixed-ui-runtime-11\.js\?v=order-card-summary-20260921/);
+  assert.match(html,/fixed-ui-runtime-10\.js\?v=order-empty-state-20260922/);
+  assert.match(html,/fixed-ui-runtime-11\.js\?v=order-empty-state-20260922/);
 });

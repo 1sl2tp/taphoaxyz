@@ -11,8 +11,8 @@ test('delivered and pending source summaries use one calm neutral visual system'
     read('src/fixed-ui-pending-summary-colors.css')
   ]);
 
-  assert.match(html,/fixed-ui-markup-2\.js\?v=calm-summary-20260922/);
-  assert.match(html,/fixed-ui-pending-summary-colors\.css\?v=real-table-summary-20260922/);
+  assert.match(html,/fixed-ui-markup-2\.js\?v=order-empty-state-20260922/);
+  assert.match(html,/fixed-ui-pending-summary-colors\.css\?v=order-empty-state-20260922/);
 
   const panelMatches=markup.match(/order-summary-panel/g) || [];
   assert.equal(panelMatches.length,2);
