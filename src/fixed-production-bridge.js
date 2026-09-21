@@ -98,7 +98,7 @@ function displayCodeForBackendId(id,state=appState.get()){
 
 function mapOrderRows(kind,state=appState.get()){
   const expected=kind==='dongiao'?'done':'pending';
-  const rows=[['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn']];
+  const rows=[['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú']];
   for(const order of state.orders||[]){
     if(orderStatus(order)!==expected)continue;
     const displayId=orderDisplayCode(order);
@@ -110,7 +110,8 @@ function mapOrderRows(kind,state=appState.get()){
       const productId=text(first(item,['maSP','product_id','id']));
       const qty=num(first(item,['sl','qty'],0));
       const price=num(first(item,['gia','unit_price','price'],0));
-      rows.push([displayId,customerId,productId,String(qty),String(price),String(qty*price),time,backendId,displayNo]);
+      const note=text(first(item,['ghiChu','note'],''));
+      rows.push([displayId,customerId,productId,String(qty),String(price),String(qty*price),time,backendId,displayNo,note]);
     }
   }
   return rows;
