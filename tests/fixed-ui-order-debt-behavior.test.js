@@ -320,6 +320,12 @@ test('order suggestions keep old card language: separate chips, no note bullet',
   assert.match(css,/\.order-product-chip-pending\{/);
   assert.match(css,/\.order-product-chip-delivered\{/);
   assert.match(css,/\.order-product-more\{/);
+  assert.match(pending,/order-rank-dot order-rank-dot-pending/);
+  assert.match(delivered,/order-rank-dot order-rank-dot-delivered/);
+  assert.match(css,/\.order-rank-dot-pending\{[\s\S]*background:#fffaf3;[\s\S]*color:#d97706;/);
+  assert.match(css,/\.order-rank-dot-delivered\{[\s\S]*background:#f5faf6;[\s\S]*color:#2f855a;/);
+  assert.match(css,/\.order-product-chip-pending\{[\s\S]*background:#fff8ef;[\s\S]*color:#c96a20;/);
+  assert.match(css,/\.order-product-chip-delivered\{[\s\S]*background:#f3f8f4;[\s\S]*color:#367a4c;/);
   assert.doesNotMatch(pending,/order-product-preview note-chip-row/);
   assert.doesNotMatch(delivered,/order-product-preview note-chip-row/);
 });

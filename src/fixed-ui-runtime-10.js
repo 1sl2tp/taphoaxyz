@@ -310,7 +310,7 @@
                 orderHtml += `
                     <div onclick="clickOrder('${k}', 'dontam')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition mb-3">
                         <div class="pointer-events-none flex items-start gap-3 min-w-0 w-full">
-                            <div style="width: 36px; height: 36px;" class="rounded-full bg-orange-50 text-orange-500 font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
+                            <div style="width: 36px; height: 36px;" class="order-rank-dot order-rank-dot-pending rounded-full font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
                             <div class="min-w-0 flex-1">
                                 <div class="order-card-title-row">
                                     <p class="font-bold text-[14px] text-gray-700 truncate min-w-0">${o.tenKh}</p>
