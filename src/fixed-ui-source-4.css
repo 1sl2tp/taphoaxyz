@@ -806,3 +806,10 @@ body[data-employee-mode="true"] .product-line-note-wrap{
 body[data-employee-mode="true"] #searchProductInput{
   padding-left:1rem !important;
 }
+body[data-employee-link="true"] #statusBar,
+body[data-employee-link="true"] #publicSharePanel{
+  display:none !important;
+}
+body[data-employee-link="true"] #saleCustomerTrigger{
+  pointer-events:none !important;
+}
