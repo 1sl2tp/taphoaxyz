@@ -40,8 +40,10 @@ test('manager business mapping stays A:D and sync metadata is isolated in hidden
   assert.match(worker,/const name=clean\(row\?\.\[1\]\)/);
   assert.match(worker,/const inputSheet=num\(row\?\.\[2\]\)/);
   assert.match(worker,/const saleSheet=num\(row\?\.\[3\]\)/);
-  assert.match(worker,/Math\.round\(inputSheet\*1000\)/);
-  assert.match(worker,/Math\.round\(saleSheet\*1000\)/);
+  assert.match(worker,/const input=inputSheet!==null&&inputSheet>0\?inputSheet:null/);
+  assert.match(worker,/const sale=saleSheet!==null&&saleSheet>0\?saleSheet:null/);
+  assert.doesNotMatch(worker,/inputSheet\*1000/);
+  assert.doesNotMatch(worker,/saleSheet\*1000/);
 });
 
 test('sync remains TAPHOA-only and never touches GETLINK or NCC pairing',()=>{
