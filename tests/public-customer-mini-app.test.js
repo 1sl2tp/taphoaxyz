@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const html=fs.readFileSync(new URL('../kh/index.html',import.meta.url),'utf8');
 const edge=fs.readFileSync(new URL('../supabase/functions/taphoa-stock-check/index.ts',import.meta.url),'utf8');
+const draftMigration=fs.readFileSync(new URL('../supabase/migrations/20260923010000_stock_check_pending_order.sql',import.meta.url),'utf8');
 const low=html.toLowerCase();
 const edgeLow=edge.toLowerCase();
 
@@ -16,7 +17,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     'mini=1','data-order','<span>gửi kiểm hàng</span>','id="share-nv"',
     'font-size:16px;font-weight:700','font-size:15px;font-weight:400',
     "action:'update'",
-    'xóa / nhập lại',
+    '>xóa</button>','>cập nhật</button>','>tạo đơn tạm</button>',
     '.product-stock{grid-column:2;grid-row:1 / span 2',
     'data-stock-footer hidden',
     "stock+'?kh='+encodeuricomponent(kh)",
@@ -41,6 +42,9 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     'id="app-modal"',
     "appconfirm({title:'nhập lại số lượng?'",
     'appinfo({title:\'link kiểm hàng\'',
+    "action:'save_pending_order'",
+    'data-stock-order',
+    "draft?'xem '+(draft.code||'đơn tạm'):'tạo đơn tạm'",
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
@@ -65,6 +69,10 @@ test('customer mini app stays compact and keeps products, quantities, orders and
 
   assert.ok(edgeLow.includes('url.searchparams.get("kh")'));
   assert.ok(edgeLow.includes('body?.kh'));
+  assert.ok(edgeLow.includes('save_pending_order'));
+  assert.ok(edgeLow.includes('taphoa_public_save_stock_draft'));
+  assert.ok(draftMigration.includes('pending_order_id uuid'));
+  assert.ok(draftMigration.includes('taphoa_public_save_stock_draft'));
   assert.ok(edge.includes('&tab=hang'));
   assert.equal(edge.includes('&tab=hang&t='),false);
   assert.equal(edge.includes('&tab=kiemhang&t='),false);
