@@ -59,7 +59,6 @@ test('public customer access reuses the production bridge and existing User scre
     'public-user-tool',
     '>đã mua</button>',
     '>gợi ý</button>',
-    '>nhân viên</button>',
     '>gửi link</button>',
     'installsharedcartquantitysync()',
     'startsharedcartsync()',
@@ -68,6 +67,7 @@ test('public customer access reuses the production bridge and existing User scre
     "sharedcartsignature=''",
     'applysharedcartsnapshot(await backend().employeesnapshot(),{force:true})'
   ])assert.ok(overrides.includes(needle),needle);
+  assert.equal(overrides.includes('id="publictoolemployee"'),false,'owner toolbar must not render an employee switch button');
 });
 
 test('bought suggested and employee modes are thin filters on the existing product renderer',()=>{
@@ -97,7 +97,6 @@ test('bought suggested and employee modes are thin filters on the existing produ
     "bar.dataset.publictoolview='hang'",
     "bar.dataset.publictoolview!=='hang'",
     'requestanimationframe(()=>renderproductlist())',
-    "employeebutton.textcontent=employee?'chủ':'nhân viên'",
     'function openpublicsharepanel',
     'gửi link nhân viên',
     'tạo pin',
