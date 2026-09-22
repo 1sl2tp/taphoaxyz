@@ -46,7 +46,7 @@ test('public customer access reuses the production bridge and existing User scre
     'async function publicpinstate()',
     'async function setpublicpin(newpin)',
     "taphoa_public_pin_manage_access",
-    "getaccessmode:()=>publicaccess?'public-link':'account'"
+    "getaccessmode:()=>employeeaccess?'employee-link':publicaccess?'public-link':'account'"
   ])assert.ok(bridge.includes(needle),needle);
 
   for(const needle of [
