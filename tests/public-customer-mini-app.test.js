@@ -19,6 +19,10 @@ test('customer mini app keeps products orders and debt in one shell, with stock 
     'kiểm hàng: chọn số lượng và cập nhật ngay tại đây',
     'xem đơn đã giao và chi tiết từng đơn',
     'xem số còn nợ/còn dư và lịch sử giao dịch',
+    'xóa / nhập lại',
+    'grid-template-rows:auto auto',
+    '.product-meta{grid-column:1;grid-row:2',
+    '.product-stock{grid-column:2;grid-row:2',
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
