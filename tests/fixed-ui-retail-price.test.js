@@ -19,7 +19,7 @@ test('sales product cards show retail price only when available',async()=>{
 
 test('retail price cache bust is wired into production shell',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
-  assert.match(index,/fixed-ui-source-4\.css\?v=order-empty-state-20260922/);
+  assert.match(index,/fixed-ui-source-4\.css\?v=employee-link-real-ui-20260923/);
   assert.match(index,/fixed-ui-runtime-4\.js\?v=global-font-sharp-20260922/);
   assert.match(sw,/taphoa-runtime-v36/);
 });
@@ -158,7 +158,7 @@ test('supermarket mode shows source filters and sends selected source to RPC',as
   assert.match(css,/market-source-filter-chip/);
   assert.match(migration,/taphoa_market_search\([\s\S]*p_source text/);
   assert.match(migration,/v_source='' or l\.source=v_source/);
-  assert.match(index,/fixed-production-bridge\.js\?v=order-cost-snapshot-20260921/);
+  assert.match(index,/fixed-production-bridge\.js\?v=employee-link-real-ui-20260923/);
 });
 
 
