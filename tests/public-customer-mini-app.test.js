@@ -21,13 +21,12 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     'data-stock-footer hidden',
     "stock+'?kh='+encodeuricomponent(kh)",
     "json.stringify({kh,action:'update',items})",
+    "json.stringify({kh,action:'update',items:[]})",
     'max-height:min(72dvh,620px)',
     'width:min(428px,100%)',
     '.list-scroll{flex:1 1 auto',
     "row.hidden=!show",
-    "data-product-count",
     "const sources=[['all','tất cả'],...sourcerows()]",
-    "count.textcontent=visible+' sản phẩm'",
     "localecompare(string(b.product_name||''),'vi',{sensitivity:'base',numeric:true})",
     '.nav[data-active="true"]::after{background:#111827}',
     'background:#1e293b',
@@ -35,6 +34,8 @@ test('customer mini app stays compact and keeps products, quantities, orders and
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
+    'data-product-count',
+    ' sản phẩm</div></div></div>',
     'data-tab="kiemhang"',
     'xem trước nhân viên',
     'data-stock-copy',
