@@ -12,6 +12,7 @@ await cp('src','dist/src',{recursive:true});
 await cp('no','dist/no',{recursive:true});
 await cp('d','dist/d',{recursive:true});
 await cp('b','dist/b',{recursive:true});
+await cp('kiemhang','dist/kiemhang',{recursive:true});
 
 const toPosix=value=>value.split(path.sep).join('/');
 
