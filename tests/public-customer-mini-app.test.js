@@ -85,7 +85,8 @@ test('bought suggested and employee modes are thin filters on the existing produ
     'function syncpublictoolstate()',
     "bar.dataset.publictoolview='hang'",
     "bar.dataset.publictoolview!=='hang'",
-    'requestanimationframe(()=>renderproductlist())'
+    'requestanimationframe(()=>renderproductlist())',
+    "employeebutton.textcontent=employee?'chủ':'nhân viên'"
   ])assert.ok(overrides.includes(needle),needle);
 });
 
