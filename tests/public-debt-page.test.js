@@ -13,7 +13,7 @@ test('public debt page is login-free and shows customer debt history',()=>{
     'đơn hàng',
     'thu tiền',
     'taphoa-public-debt',
-    "new urlsearchparams(location.search).get('k')",
+    "new urlsearchparams(location.search)",\n    "params.get('kh')",\n    "params.get('k')",
     'xem chi tiết đơn',
     'còn nợ',
     'còn dư',

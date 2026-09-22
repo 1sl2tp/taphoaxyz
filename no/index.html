@@ -69,7 +69,7 @@ main{width:min(760px,100%);margin:0 auto;padding:14px}
 (function(){
 'use strict';
 var API='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-public-debt';
-var handle=new URLSearchParams(location.search).get('k')||'';
+var params=new URLSearchParams(location.search);\nvar customerSlug=params.get('kh')||'';\nvar legacyKey=params.get('k')||'';\nvar publicId=customerSlug||legacyKey;\nvar publicParam=customerSlug?'kh':'k';
 var els={
   head:document.getElementById('head'),customer:document.getElementById('customer'),
   balanceLabel:document.getElementById('balance-label'),balanceValue:document.getElementById('balance-value'),
@@ -112,7 +112,7 @@ async function openOrder(orderId,sourceRow){
   els.sheetTitle.textContent=sourceRow&&sourceRow.order&&sourceRow.order.display_code?'Đơn '+sourceRow.order.display_code:'Chi tiết đơn';
   els.sheetMeta.textContent='Đang tải…';els.sheetBody.innerHTML='';
   try{
-    var res=await fetch(API+'?k='+encodeURIComponent(handle)+'&order='+encodeURIComponent(orderId),{cache:'no-store'});
+    var res=await fetch(API+'?'+publicParam+'='+encodeURIComponent(publicId)+'&order='+encodeURIComponent(orderId),{cache:'no-store'});
     if(!res.ok)throw new Error('load_failed');
     var detail=await res.json(),o=detail.order;
     els.sheetTitle.textContent=o.display_code?'Đơn '+o.display_code:'Chi tiết đơn';els.sheetMeta.textContent=time(o.delivered_at||o.created_at);
@@ -126,8 +126,8 @@ els.sheet.addEventListener('click',function(e){if(e.target===els.sheet)closeShee
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet();});
 document.querySelector('.filters').addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-filter]');if(!b)return;activeFilter=b.dataset.filter||'all';document.querySelectorAll('[data-filter]').forEach(function(x){x.dataset.active=String(x===b);});render();});
 els.timeline.addEventListener('click',function(e){var row=e.target.closest&&e.target.closest('[data-order]');if(!row)return;var source=(data&&data.entries||[]).find(function(x){return String(x.order&&x.order.id||'')===String(row.dataset.order||'')&&x.entry_type==='sale';});openOrder(row.dataset.order,source);});
-if(!handle){fail();return;}
-fetch(API+'?k='+encodeURIComponent(handle),{cache:'no-store'})
+if(!publicId){fail();return;}
+fetch(API+'?'+publicParam+'='+encodeURIComponent(publicId),{cache:'no-store'})
   .then(function(r){if(!r.ok)throw new Error('load_failed');return r.json();})
   .then(function(payload){if(!payload||!payload.ok||!payload.customer)throw new Error('invalid');data=payload;els.loading.hidden=true;els.error.hidden=true;els.head.hidden=false;els.history.hidden=false;render();})
   .catch(fail);

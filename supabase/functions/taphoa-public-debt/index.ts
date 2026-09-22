@@ -25,20 +25,41 @@ function json(data:unknown,status=200){
     headers:{'content-type':'application/json; charset=utf-8',...corsHeaders},
   });
 }
-async function resolveCustomer(handle:string){
-  const accessKey=accessKeyFromHandle(handle);
-  if(!accessKey)return null;
-  const link=await db.from('v21_customer_public_links')
-    .select('customer_account_id')
-    .eq('access_key',accessKey)
-    .is('revoked_at',null)
-    .maybeSingle();
-  if(link.error)throw link.error;
-  if(!link.data?.customer_account_id)return null;
+function publicSlug(value:unknown){
+  const slug=clean(value,100).toLowerCase();
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)?slug:'';
+}
+async function resolveCustomer(value:string){
+  const slug=publicSlug(value);
+  let link:any=null;
+
+  if(slug){
+    const bySlug=await db.from('v21_customer_public_links')
+      .select('customer_account_id')
+      .eq('public_slug',slug)
+      .is('revoked_at',null)
+      .maybeSingle();
+    if(bySlug.error)throw bySlug.error;
+    link=bySlug.data||null;
+  }
+
+  if(!link){
+    const accessKey=accessKeyFromHandle(value);
+    if(!accessKey)return null;
+    const legacy=await db.from('v21_customer_public_links')
+      .select('customer_account_id')
+      .eq('access_key',accessKey)
+      .is('revoked_at',null)
+      .maybeSingle();
+    if(legacy.error)throw legacy.error;
+    link=legacy.data||null;
+  }
+
+  if(!link?.customer_account_id)return null;
 
   const account=await db.from('v21_accounts')
     .select('id,username,display_name')
-    .eq('id',link.data.customer_account_id)
+    .eq('id',link.customer_account_id)
     .eq('role','user')
     .eq('contact_group','customer')
     .is('deleted_at',null)
@@ -174,9 +195,9 @@ Deno.serve(async(req:Request)=>{
     if(req.method==='OPTIONS')return new Response(null,{status:204,headers:corsHeaders});
     if(req.method!=='GET')return json({ok:false,error:'method_not_allowed'},405);
     const url=new URL(req.url);
-    const handle=clean(url.searchParams.get('k'),160);
-    if(!handle)return json({ok:false,error:'link_required'},400);
-    const customer=await resolveCustomer(handle);
+    const publicId=clean(url.searchParams.get('kh')||url.searchParams.get('k'),160);
+    if(!publicId)return json({ok:false,error:'link_required'},400);
+    const customer=await resolveCustomer(publicId);
     if(!customer)return json({ok:false,error:'not_found'},404);
 
     const orderId=clean(url.searchParams.get('order'),80);
