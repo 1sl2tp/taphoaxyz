@@ -358,23 +358,15 @@
 
   function syncPublicToolState(){
     const seg=String(window.TAPHOA_PRODUCT_SEGMENT||'all');
-    const employee=Boolean(window.TAPHOA_EMPLOYEE_MODE);
     const states=[
       ['publicToolBought',seg==='bought'],
-      ['publicToolSuggested',seg==='suggested'],
-      ['publicToolEmployee',employee]
+      ['publicToolSuggested',seg==='suggested']
     ];
     for(const [id,active] of states){
       const button=document.getElementById(id);
       if(!button)continue;
       button.classList.toggle('is-active',active);
       button.setAttribute('aria-pressed',String(active));
-    }
-    const employeeButton=document.getElementById('publicToolEmployee');
-    if(employeeButton){
-      employeeButton.textContent=employee?'Chủ':'Nhân viên';
-      employeeButton.setAttribute('aria-label',employee?'Quay lại chế độ chủ':'Chuyển sang chế độ nhân viên');
-      employeeButton.title=employee?'Quay lại chế độ chủ':'Chuyển sang chế độ nhân viên';
     }
   }
 
@@ -507,10 +499,14 @@
 
   function renderPublicTools(){
     const bar=document.getElementById('statusBar');
-    if(!bar||backend()?.getAccessMode?.()!=='public-link')return;
+    const mode=backend()?.getAccessMode?.();
+    if(!bar||(mode!=='public-link'&&mode!=='employee-link'))return;
     const onHang=publicTabId==='tab-ban-hang';
+    const employeeLink=mode==='employee-link';
     bar.dataset.publicUserTools='true';
+    bar.dataset.toolCount=employeeLink?'2':'3';
     bar.className='public-user-tools shrink-0 z-40';
+
     if(!onHang){
       if(bar.dataset.publicToolView!=='status'){
         bar.innerHTML='<div class="public-user-tool-status"><i class="ph-fill ph-check-circle"></i><span>Hệ thống sẵn sàng</span></div>';
@@ -519,16 +515,15 @@
       return;
     }
 
-    if(bar.dataset.publicToolView!=='hang'||!document.getElementById('publicToolBought')){
+    const view=employeeLink?'employee-hang':'owner-hang';
+    if(bar.dataset.publicToolView!==view||!document.getElementById('publicToolBought')){
       bar.innerHTML=
         '<button type="button" class="public-user-tool" id="publicToolBought" aria-pressed="false">Đã mua</button>'+
         '<button type="button" class="public-user-tool" id="publicToolSuggested" aria-pressed="false">Gợi ý</button>'+
-        '<button type="button" class="public-user-tool" id="publicToolEmployee" aria-pressed="false">Nhân viên</button>'+
-        '<button type="button" class="public-user-tool public-user-tool-share" id="publicToolShare" data-label="Gửi link">Gửi link</button>';
-      bar.dataset.publicToolView='hang';
+        (employeeLink?'':'<button type="button" class="public-user-tool public-user-tool-share" id="publicToolShare" data-label="Gửi link">Gửi link</button>');
+      bar.dataset.publicToolView=view;
       document.getElementById('publicToolBought')?.addEventListener('click',()=>setPublicSegment('bought'));
       document.getElementById('publicToolSuggested')?.addEventListener('click',()=>setPublicSegment('suggested'));
-      document.getElementById('publicToolEmployee')?.addEventListener('click',()=>setPublicEmployeeMode(!Boolean(window.TAPHOA_EMPLOYEE_MODE)));
       document.getElementById('publicToolShare')?.addEventListener('click',sharePublicMode);
     }
     syncPublicToolState();
@@ -662,6 +657,28 @@
     };
   }
 
+  function installEmployeeOrderActionGuard(){
+    if(window.__taphoaEmployeeOrderActionGuard)return;
+    window.__taphoaEmployeeOrderActionGuard=true;
+    const baseRenderCartFooterActions=renderCartFooterActions;
+    renderCartFooterActions=function(){
+      if(backend()?.getAccessMode?.()!=='employee-link'){
+        return baseRenderCartFooterActions.apply(this,arguments);
+      }
+      const owner=document.getElementById('cartFooterActions');
+      if(!owner)return;
+      const hasItems=Object.keys(cart||{}).length>0;
+      const cartShareOrderBtn=document.getElementById('cartShareOrderBtn');
+      if(cartShareOrderBtn)cartShareOrderBtn.classList.add('hidden');
+      owner.classList.remove('hidden');
+      owner.innerHTML=
+        '<button '+(hasItems?'onclick="clearCart()"':'disabled')+
+        ' class="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold transition flex items-center justify-center gap-1 '+
+        (hasItems?'hover:bg-gray-50':'opacity-40 cursor-not-allowed pointer-events-none')+'">'+
+        '<i class="ph ph-trash"></i> Xóa</button>';
+    };
+  }
+
   function applySharedCartSnapshot(snapshot,{force=false}={}){
     if(!force&&Date.now()-sharedCartLocalWriteAt<500)return;
     const rows=Array.isArray(snapshot?.items)?snapshot.items:[];
@@ -720,10 +737,13 @@
     publicTabId='tab-ban-hang';
 
     installSharedCartQuantitySync();
+    installEmployeeOrderActionGuard();
     sharedCartSignature='';
     applySharedCartSnapshot(info?.employeeSnapshot||await backend().getEmployeeSnapshot(),{force:true});
     ownProductRenderKey='';
     renderProductList();
+    renderPublicTools();
+    renderCartFooterActions();
     startSharedCartSync();
   }
 
