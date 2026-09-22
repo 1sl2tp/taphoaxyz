@@ -19,7 +19,11 @@ test('customer link offers self-created PIN, skip, and account login',()=>{
     'tạo pin',
     'bỏ qua',
     'đăng nhập',
-    'chưa được bảo vệ bằng pin'
+    'chưa được bảo vệ bằng pin',
+    'class="pin-grid"',
+    'data-pin-digit',
+    'function fillpindigits',
+    'event.clipboarddata'
   ])assert.ok(gate.includes(needle),needle);
 
   for(const forbidden of [
@@ -94,6 +98,8 @@ test('bought suggested and employee modes are thin filters on the existing produ
     '.public-share-copy',
     'border-radius:0',
     '.public-share-warning',
+    '.public-share-pin-boxes',
+    '.public-share-pin-digit',
     '-webkit-tap-highlight-color:transparent',
     'background:rgba(255,255,255,.14)',
     'body[data-employee-mode="true"] #headerquicktotal',
@@ -111,6 +117,9 @@ test('bought suggested and employee modes are thin filters on the existing produ
     'không chia sẻ link ra bên ngoài',
     'tạo pin',
     'đổi pin',
+    'id="publicsharepinboxes"',
+    'data-share-pin-digit',
+    'const fillpin=',
     "const url=string(links?.employee_url||'')",
     "await copypublictext(employeeurl,'đã copy link nv')"
   ])assert.ok(overrides.includes(needle),needle);
