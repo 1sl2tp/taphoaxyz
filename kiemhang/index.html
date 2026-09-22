@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f8">
+<meta name="robots" content="noindex,nofollow">
+<title>Kiểm hàng · TAPHOA</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f6f7f8}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#f6f7f8;color:#171717}
+body{padding-bottom:max(106px,env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.98);border-bottom:1px solid #e5e7eb;padding:13px 14px 10px}
+.head-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:.08em;color:#9ca3af;text-transform:uppercase}.title{margin:3px 0 0;font-size:20px;line-height:1.2}.role{margin-top:5px;font-size:12px;color:#6b7280}
+.search{width:100%;height:40px;margin-top:10px;border:1px solid #d1d5db;border-radius:12px;padding:0 12px;font:inherit;font-size:14px;background:#f9fafb;outline:none}.search:focus{border-color:#9ca3af;background:#fff}
+.tabs{display:flex;gap:6px;overflow:auto;padding:9px 0 1px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{height:33px;flex:0 0 auto;border:1px solid #d8dde4;background:#fff;color:#4b5563;border-radius:999px;padding:0 11px;font:700 11px inherit}.tab[data-active="true"]{background:#171717;border-color:#171717;color:#fff}
+main{width:min(760px,100%);margin:0 auto;padding:10px 12px 0}.status{padding:34px 14px;text-align:center;color:#6b7280}
+.note{margin-bottom:9px;padding:10px 12px;border:1px solid #e5e7eb;background:#fff;border-radius:13px;font-size:12px;line-height:1.45;color:#4b5563}.note strong{color:#111827}
+.list{display:grid;gap:7px}.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:13px;padding:10px 10px 10px 12px}.name{font-size:14px;font-weight:700;line-height:1.3}.meta{margin-top:3px;font-size:10px;color:#9ca3af}.price{margin-top:3px;font-size:11px;color:#166534;font-weight:700}
+.qty{display:grid;grid-template-columns:34px 48px 34px;height:34px;border:1px solid #d1d5db;border-radius:10px;overflow:hidden;background:#fff}.qty button{border:0;background:#f9fafb;font-size:20px;color:#374151}.qty input{width:48px;border:0;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;text-align:center;font:800 14px inherit;outline:none;background:#fff}.qty input:focus{background:#f0fdf4}
+.empty{padding:26px 12px;text-align:center;color:#9ca3af;background:#fff;border:1px dashed #d1d5db;border-radius:14px}
+.footer{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.98);border-top:1px solid #e5e7eb;padding:9px 12px max(10px,env(safe-area-inset-bottom));box-shadow:0 -8px 25px rgba(15,23,42,.06)}.footer-inner{width:min(760px,100%);margin:0 auto}.summary{display:flex;align-items:center;justify-content:space-between;gap:10px}.summary-main{font-size:13px;font-weight:800}.summary-sub{margin-top:2px;font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65vw}.summary-money{font-size:15px;font-weight:850;color:#15803d;white-space:nowrap}.send{width:100%;height:43px;margin-top:8px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 14px inherit}.send:disabled{opacity:.55}
+.toast{position:fixed;left:50%;bottom:122px;z-index:30;transform:translateX(-50%) translateY(8px);opacity:0;pointer-events:none;transition:.2s;background:#111827;color:#fff;border-radius:999px;padding:9px 13px;font-size:12px;white-space:nowrap}.toast[data-show="true"]{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:760px){header{padding-left:20px;padding-right:20px}.row{padding:11px 12px 11px 14px}.summary-sub{max-width:520px}}
+</style>
+</head>
+<body>
+<header id="head" hidden>
+  <div class="head-top">
+    <div>
+      <div class="eyebrow">TAPHOA · KIỂM HÀNG</div>
+      <h1 class="title" id="title">Kiểm hàng</h1>
+      <div class="role" id="role"></div>
+    </div>
+  </div>
+  <input class="search" id="search" type="search" autocomplete="off" placeholder="Tìm sản phẩm">
+  <div class="tabs" id="tabs"></div>
+</header>
+<main>
+  <div class="status" id="status">Đang tải danh sách…</div>
+  <div id="content" hidden>
+    <div class="note" id="note"></div>
+    <div class="list" id="list"></div>
+  </div>
+</main>
+<div class="footer" id="footer" hidden>
+  <div class="footer-inner">
+    <div class="summary">
+      <div class="summary-copy">
+        <div class="summary-main" id="summary-main">0 mã · 0 sản phẩm</div>
+        <div class="summary-sub" id="summary-sub">Chưa chọn hàng</div>
+      </div>
+      <div class="summary-money" id="summary-money" hidden></div>
+    </div>
+    <button class="send" id="send" type="button">Gửi kiểm hàng</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(()=>{
+'use strict';
+const API='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-stock-check';
+const token=new URLSearchParams(location.search).get('t')||'';
+const sourceNames={'hang-thuong':'Hàng thường','hang-u':'Hàng U','sua':'Sữa','thuoc-la':'Thuốc lá','sheet-1150410221':'#'};
+const els={
+ head:document.getElementById('head'),title:document.getElementById('title'),role:document.getElementById('role'),
+ search:document.getElementById('search'),tabs:document.getElementById('tabs'),status:document.getElementById('status'),
+ content:document.getElementById('content'),note:document.getElementById('note'),list:document.getElementById('list'),
+ footer:document.getElementById('footer'),summaryMain:document.getElementById('summary-main'),
+ summarySub:document.getElementById('summary-sub'),summaryMoney:document.getElementById('summary-money'),
+ send:document.getElementById('send'),toast:document.getElementById('toast')
+};
+let snapshot=null,active='fav',qty=new Map(),saveBusy=false;
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function norm(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();}
+function money(v){const n=Number(v)||0;return new Intl.NumberFormat('vi-VN',{maximumFractionDigits:3}).format(n);}
+function int(v){return Math.max(0,Math.trunc(Number(v)||0));}
+function productMap(){return new Map((snapshot?.products||[]).map(p=>[String(p.product_code),p]));}
+function sourceName(k){return sourceNames[k]||String(k||'Khác');}
+function showToast(text){els.toast.textContent=text;els.toast.dataset.show='true';setTimeout(()=>els.toast.dataset.show='false',1800);}
+function fail(message='Không mở được link kiểm hàng.'){els.status.textContent=message;els.status.style.color='#b42318';els.head.hidden=true;els.content.hidden=true;els.footer.hidden=true;}
+
+function hydrateQty(){
+ const rows=Array.isArray(snapshot?.items)?snapshot.items:[];
+ for(const row of rows){
+   const value=snapshot.role==='owner'&&row.owner_qty!==null&&row.owner_qty!==undefined?row.owner_qty:row.employee_qty;
+   const n=int(value); if(n>0)qty.set(String(row.product_code),n);
+ }
+}
+function favorites(){return (snapshot?.products||[]).filter(p=>Number(p.personal_order_count)>0);}
+function suggestions(){return [...(snapshot?.products||[])].sort((a,b)=>
+  Number(b.market_customer_count||0)-Number(a.market_customer_count||0)||
+  Number(b.market_order_count||0)-Number(a.market_order_count||0)||
+  String(a.product_name).localeCompare(String(b.product_name),'vi')
+).slice(0,40);}
+function sourceKeys(){
+ const seen=new Set();const out=[];
+ for(const p of snapshot?.products||[]){const k=String(p.source_key||'');if(k&&!seen.has(k)){seen.add(k);out.push(k);}}
+ return out.sort((a,b)=>sourceName(a).localeCompare(sourceName(b),'vi'));
+}
+function renderTabs(){
+ const hasFav=favorites().length>0;
+ const defs=[];
+ if(hasFav)defs.push(['fav','Hay mua']);
+ else defs.push(['suggest','Gợi ý']);
+ for(const k of sourceKeys())defs.push([k,sourceName(k)]);
+ if(!defs.some(([k])=>k===active))active=defs[0]?.[0]||'suggest';
+ els.tabs.innerHTML=defs.map(([k,label])=>`<button class="tab" type="button" data-tab="${esc(k)}" data-active="${String(k===active)}">${esc(label)}</button>`).join('');
+}
+function visible(){
+ const q=norm(els.search.value).trim();
+ let rows;
+ if(q)rows=(snapshot?.products||[]).filter(p=>norm(p.product_name+' '+sourceName(p.source_key)).includes(q));
+ else if(active==='fav')rows=favorites();
+ else if(active==='suggest')rows=suggestions();
+ else rows=(snapshot?.products||[]).filter(p=>String(p.source_key)===active);
+ return rows;
+}
+function rowMeta(p){
+ const parts=[];
+ if(Number(p.personal_order_count)>0)parts.push(`Đã lấy ${Number(p.personal_order_count)} lần`);
+ else if(Number(p.market_customer_count)>0)parts.push(`${Number(p.market_customer_count)} khách khác đã lấy`);
+ return parts.join(' · ');
+}
+function renderList(){
+ const rows=visible();
+ if(!rows.length){els.list.innerHTML='<div class="empty">Không có sản phẩm phù hợp.</div>';return;}
+ els.list.innerHTML=rows.map(p=>{
+   const code=String(p.product_code);const n=qty.get(code)||0;const meta=rowMeta(p);
+   const price=snapshot.role==='owner'&&Number(p.sale_price_vnd)>0?`<div class="price">${money(p.sale_price_vnd)}</div>`:'';
+   return `<article class="row" data-code="${esc(code)}">
+     <div class="copy"><div class="name">${esc(p.product_name)}</div><div class="meta">${esc(sourceName(p.source_key))}${meta?' · '+esc(meta):''}</div>${price}</div>
+     <div class="qty">
+       <button type="button" data-delta="-1" aria-label="Giảm">−</button>
+       <input type="text" inputmode="numeric" autocomplete="off" value="${n}" aria-label="Số lượng">
+       <button type="button" data-delta="1" aria-label="Tăng">+</button>
+     </div>
+   </article>`;
+ }).join('');
+}
+function summaryRows(){
+ const map=new Map();const products=productMap();
+ for(const [code,n0] of qty){const n=int(n0);if(!n)continue;const p=products.get(code);if(!p)continue;const key=String(p.source_key||'khac');if(!map.has(key))map.set(key,{codes:0,qty:0,money:0});const x=map.get(key);x.codes++;x.qty+=n;x.money+=n*(Number(p.sale_price_vnd)||0);}
+ return map;
+}
+function renderSummary(){
+ const map=summaryRows();let codes=0,total=0,totalMoney=0;const parts=[];
+ for(const [k,x] of map){codes+=x.codes;total+=x.qty;totalMoney+=x.money;parts.push(`${sourceName(k)}: ${x.qty}`);}
+ els.summaryMain.textContent=`${codes} mã · ${total} sản phẩm`;
+ els.summarySub.textContent=parts.length?parts.join(' · '):'Chưa chọn hàng';
+ if(snapshot.role==='owner'){els.summaryMoney.hidden=false;els.summaryMoney.textContent=money(totalMoney);}
+ else{els.summaryMoney.hidden=true;els.summaryMoney.textContent='';}
+}
+function setQty(code,value){
+ const n=int(value);if(n>0)qty.set(code,n);else qty.delete(code);
+ const row=els.list.querySelector(`[data-code="${CSS.escape(code)}"]`);const input=row?.querySelector('input');if(input&&String(input.value)!==String(n))input.value=String(n);
+ renderSummary();
+}
+async function submit(){
+ if(saveBusy)return;
+ const items=[...qty].filter(([,n])=>int(n)>0).map(([product_code,n])=>({product_code,qty:int(n)}));
+ saveBusy=true;els.send.disabled=true;const old=els.send.textContent;els.send.textContent='Đang gửi…';
+ try{
+   const action=snapshot.role==='owner'?'update':'submit';
+   const res=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,action,items})});
+   const data=await res.json().catch(()=>({}));
+   if(!res.ok||!data?.ok)throw new Error('save_failed');
+   if(snapshot.role==='owner'){els.send.textContent='Đã cập nhật';els.note.innerHTML='<strong>Đã cập nhật.</strong> TAPHOA đã nhận được bản chủ cửa hàng rà soát.';}
+   else{els.send.textContent='Đã gửi';els.note.innerHTML='<strong>Đã gửi kiểm hàng.</strong> Chủ cửa hàng có thể mở link riêng để rà soát và cập nhật.';}
+   showToast(snapshot.role==='owner'?'Đã cập nhật kiểm hàng':'Đã gửi kiểm hàng');
+   setTimeout(()=>{els.send.textContent=old;},1600);
+ }catch(_){els.send.textContent=old;showToast('Chưa gửi được, thử lại');}
+ finally{saveBusy=false;els.send.disabled=false;}
+}
+function init(){
+ const customer=String(snapshot.customer_name||'Khách hàng');
+ document.title=`Kiểm hàng · ${customer}`;
+ els.title.textContent=customer;
+ const employee=snapshot.role==='employee';
+ els.role.textContent=employee?'Nhân viên kiểm số lượng · không hiển thị giá/tiền':'Chủ cửa hàng rà soát số lượng và cập nhật';
+ els.note.innerHTML=employee
+  ?'<strong>Kiểm nhanh:</strong> chọn số lượng cần lấy bằng − / + hoặc chạm vào số để nhập trực tiếp.'
+  :'<strong>Rà soát:</strong> số nhân viên đã nhập được giữ sẵn. Có thể sửa, thêm/bớt mặt hàng rồi cập nhật.';
+ els.send.textContent=employee?'Gửi kiểm hàng':'Cập nhật kiểm hàng';
+ hydrateQty();
+ active=favorites().length?'fav':'suggest';
+ renderTabs();renderList();renderSummary();
+ els.status.hidden=true;els.head.hidden=false;els.content.hidden=false;els.footer.hidden=false;
+}
+els.tabs.addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;active=String(b.dataset.tab);renderTabs();renderList();});
+els.search.addEventListener('input',renderList);
+els.list.addEventListener('click',e=>{const b=e.target.closest('[data-delta]');if(!b)return;const row=b.closest('[data-code]');if(!row)return;const code=String(row.dataset.code);setQty(code,(qty.get(code)||0)+Number(b.dataset.delta||0));});
+els.list.addEventListener('input',e=>{if(e.target.tagName!=='INPUT')return;const row=e.target.closest('[data-code]');if(!row)return;setQty(String(row.dataset.code),e.target.value);});
+els.send.addEventListener('click',submit);
+if(!token){fail();return;}
+fetch(`${API}?t=${encodeURIComponent(token)}`,{cache:'no-store'})
+ .then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error('load_failed');return d;})
+ .then(d=>{snapshot=d;init();})
+ .catch(()=>fail());
+})();
+</script>
+</body>
+</html>
