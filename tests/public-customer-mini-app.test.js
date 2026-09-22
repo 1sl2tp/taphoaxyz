@@ -21,6 +21,10 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     "stock+'?kh='+encodeuricomponent(kh)",
     "json.stringify({kh,action:'update',items})",
     'max-height:min(72dvh,620px)',
+    'width:min(620px,100%)',
+    '.list-scroll{flex:1 1 auto',
+    "row.hidden=!show",
+    "data-product-count",
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
@@ -34,6 +38,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     'xem số còn nợ/còn dư và lịch sử giao dịch',
     '<div class="product-meta"><span class="tag">',
     'xem chi tiết đơn</div></button>',
+    "query=e.target.value;renderhang();",
     'signin','login','localstorage','document.cookie'
   ])assert.equal(low.includes(forbidden),false,forbidden);
 
