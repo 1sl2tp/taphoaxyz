@@ -3,381 +3,131 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f3f5f7">
+<meta name="theme-color" content="#f3f4f6">
 <meta name="robots" content="noindex,nofollow">
 <title>Nhân viên · TAPHOA</title>
 <style>
-:root{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-  color:#111827;background:#dfe3e8;
-  --green:#0aad4f;--dark:#1e2b40;--line:#e5e7eb;--muted:#94a3b8;
-}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#dfe3e8;color:#111827}
-button,input{font:inherit}
-button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-[hidden]{display:none!important}
-
-.shell{width:min(760px,100%);min-height:100vh;margin:0 auto;background:#f3f5f7}
-.app-head{position:sticky;top:0;z-index:20;background:#fff}
-.brand{height:66px;display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--green)}
-.brand-inner{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--green);font-size:10px;font-weight:750}
-.brand-icon{font-size:20px;line-height:1}
-.customer-bar{height:66px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:0 16px;background:var(--dark);color:#fff}
-.customer-chip{display:flex;align-items:center;gap:7px;min-width:0}
-.avatar{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:rgba(255,255,255,.12);font-size:14px}
-.customer-name{min-width:0;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.clock{text-align:center;min-width:74px}
-.clock-date{font-size:9px;color:#94a3b8}
-.clock-time{margin-top:3px;font-size:13px;font-weight:800}
-.total-pill{min-width:74px;height:42px;padding:0 12px;border-radius:999px;background:var(--green);display:flex;align-items:center;justify-content:center}
-.total-pill span{min-width:34px;height:34px;border-radius:999px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:13px;font-weight:850}
-
-.tools{padding:12px 16px 11px;background:#fff;border-bottom:1px solid var(--line)}
-.search-wrap{position:relative}
-.search{width:100%;height:42px;border:1px solid #e6e9ed;border-radius:13px;padding:0 13px;background:#f7f8fa;color:#111827;font-size:13px;outline:none}
-.search::placeholder{color:#9ca3af}.search:focus{border-color:#cbd5e1;background:#fff}
-.tabs{display:flex;gap:8px;overflow:auto;margin-top:10px;padding-bottom:1px;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{height:34px;flex:0 0 auto;border:1px solid #d7dce3;border-radius:999px;padding:0 15px;background:#fff;color:#4b5563;font-size:11px;font-weight:650}
-.tab[data-active="true"]{border-color:var(--green);background:var(--green);color:#fff}
-
-.main{padding:12px 16px 24px}
-.list{display:grid;gap:9px}
-.row{min-height:58px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:11px 13px;background:#fff;border:1px solid #eef0f2;border-radius:15px;box-shadow:0 1px 2px rgba(15,23,42,.08)}
-.name{font-size:14px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.qty{height:34px;display:grid;grid-template-columns:30px 36px 30px;align-items:center;border:1px solid #e1e5ea;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}
-.qty button{width:30px;height:32px;border:0;background:transparent;color:#7c8798;font-size:16px;font-weight:500;padding:0}
-.qty button:last-child{width:26px;height:26px;margin:3px;border-radius:999px;background:var(--green);color:#fff;font-size:18px;line-height:1}
-.qty input{width:36px;height:32px;border:0;padding:0;text-align:center;background:transparent;color:#111827;font-size:12px;font-weight:800;outline:none;-moz-appearance:textfield}
-.qty input::-webkit-outer-spin-button,.qty input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.qty input:focus{background:#f0fdf4}
-.empty{padding:34px 16px;text-align:center;color:#94a3b8;font-size:13px}
-
-.status{min-height:100vh;display:grid;place-items:center;padding:20px;background:#f3f5f7;color:#6b7280}
-.pin-gate{width:min(360px,100%);padding:20px;background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 12px 32px rgba(15,23,42,.08)}
-.pin-gate h2{margin:0;font-size:18px;color:#111827}.pin-gate p{margin:7px 0 15px;font-size:12px;line-height:1.5;color:#6b7280}
-.pin-gate input{width:100%;height:48px;border:1px solid #d1d5db;border-radius:13px;text-align:center;font-size:21px;font-weight:850;letter-spacing:.24em;outline:none}
-.pin-gate input:focus{border-color:#111827}
-.pin-gate button{width:100%;height:45px;margin-top:10px;border:0;border-radius:13px;background:#111827;color:#fff;font-size:13px;font-weight:800}
-.pin-gate .retry{background:#f3f4f6;color:#374151}.pin-error{min-height:18px;margin-top:8px;text-align:center;color:#b42318;font-size:11px}
-
-.toast{position:fixed;left:50%;bottom:20px;z-index:40;max-width:calc(100vw - 30px);transform:translateX(-50%) translateY(10px);opacity:0;pointer-events:none;transition:.18s;background:#111827;color:#fff;border-radius:999px;padding:9px 13px;font-size:11px;white-space:nowrap}
-.toast[data-show="true"]{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(min-width:760px){
-  .shell{min-height:100vh}
-  .main,.tools{padding-left:20px;padding-right:20px}
-  .row{min-height:62px;padding-left:15px;padding-right:15px}
-}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f3f4f6}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{display:grid;place-items:center;padding:20px;background:#f3f4f6}
+.card{width:min(380px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:24px;box-shadow:0 12px 36px rgba(15,23,42,.08)}
+h1{margin:0;font-size:20px}p{margin:7px 0 18px;color:#667085;font-size:13px;line-height:1.5}
+input{width:100%;height:50px;border:1px solid #d0d5dd;border-radius:14px;font-size:22px;font-weight:800;text-align:center;letter-spacing:.28em;padding-left:.28em;outline:none;background:#fff}
+input:focus{border-color:#171717}
+button{width:100%;height:48px;margin-top:12px;border:0;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{opacity:.55}.primary{background:#171717;color:#fff}.secondary{background:#f3f4f6;color:#344054}
+.error{min-height:18px;margin-top:10px;color:#b42318;font-size:12px;text-align:center}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
-<div class="shell" id="employeeApp" hidden>
-  <div class="app-head">
-    <div class="brand">
-      <div class="brand-inner"><div class="brand-icon">🛒</div><div>Bán hàng</div></div>
-    </div>
-    <div class="customer-bar">
-      <div class="customer-chip">
-        <div class="avatar">●</div>
-        <div class="customer-name" id="customerName">Khách hàng</div>
-      </div>
-      <div class="clock">
-        <div class="clock-date" id="clockDate"></div>
-        <div class="clock-time" id="clockTime"></div>
-      </div>
-      <div class="total-pill"><span id="totalQty">0</span></div>
-    </div>
-    <div class="tools">
-      <div class="search-wrap">
-        <input class="search" id="search" type="search" autocomplete="off" placeholder="Tìm tên, mã sản phẩm...">
-      </div>
-      <div class="tabs" id="tabs"></div>
-    </div>
+<section class="card">
+  <h1 id="title">Nhập mã PIN</h1>
+  <p id="description">Nhập PIN do chủ cửa hàng cung cấp để mở giao diện Nhân viên.</p>
+  <div id="pinPanel">
+    <input id="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Mã PIN">
+    <button id="submit" class="primary" type="button">Tiếp tục</button>
   </div>
-  <main class="main">
-    <div class="list" id="list"></div>
-  </main>
-</div>
-
-<div class="status" id="status">Đang kiểm tra liên kết…</div>
-<div class="toast" id="toast"></div>
+  <button id="retry" class="secondary hidden" type="button">Thử lại</button>
+  <div class="error" id="error"></div>
+</section>
 
 <script>
 (()=>{
 'use strict';
 
 const API='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-stock-check';
-const token=new URLSearchParams(location.search).get('t')||'';
-const pinStoreKey='taphoa.employee.pin.v1:'+token;
-let currentPin='';
-try{sessionStorage.removeItem(pinStoreKey);}catch{}
+const STORE='taphoa.employee.link.v1';
+const token=String(new URLSearchParams(location.search).get('t')||'').trim();
+const title=document.getElementById('title');
+const description=document.getElementById('description');
+const pinPanel=document.getElementById('pinPanel');
+const pin=document.getElementById('pin');
+const submit=document.getElementById('submit');
+const retry=document.getElementById('retry');
+const error=document.getElementById('error');
 
-const sourceNames={
-  'hang-thuong':'Hàng thường',
-  'thuoc-la':'Thuốc lá',
-  'sua':'Sữa',
-  'hang-u':'Hàng U',
-  'sheet-1150410221':'#'
-};
-const sourceOrder=['hang-thuong','thuoc-la','sua','hang-u','sheet-1150410221'];
+try{sessionStorage.removeItem(STORE);}catch{}
 
-const els={
-  app:document.getElementById('employeeApp'),
-  status:document.getElementById('status'),
-  customerName:document.getElementById('customerName'),
-  clockDate:document.getElementById('clockDate'),
-  clockTime:document.getElementById('clockTime'),
-  totalQty:document.getElementById('totalQty'),
-  search:document.getElementById('search'),
-  tabs:document.getElementById('tabs'),
-  list:document.getElementById('list'),
-  toast:document.getElementById('toast')
-};
-
-let snapshot=null;
-let active='all';
-let qty=new Map();
-let saveTimer=0;
-let saveChain=Promise.resolve();
-let toastTimer=0;
-let clockTimer=0;
-
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function norm(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();}
-function int(v){return Math.max(0,Math.trunc(Number(v)||0));}
-function sourceName(key){return sourceNames[String(key||'')]||String(key||'Khác');}
-function employeeHeaders(extra={}){return currentPin?{...extra,'x-employee-pin':currentPin}:extra;}
-function clearEmployeePin(){currentPin='';try{sessionStorage.removeItem(pinStoreKey);}catch{}}
-function rememberEmployeePin(){return;}
-
-function showToast(message){
-  clearTimeout(toastTimer);
-  els.toast.textContent=message;
-  els.toast.dataset.show='true';
-  toastTimer=setTimeout(()=>{els.toast.dataset.show='false';},1500);
+function setError(message=''){error.textContent=message;}
+function setBusy(busy){
+  submit.disabled=busy;
+  submit.textContent=busy?'Đang kiểm tra…':'Tiếp tục';
 }
-function fail(message='Không mở được link nhân viên.'){
-  els.app.hidden=true;
-  els.status.hidden=false;
-  els.status.textContent=message;
-  els.status.style.color='#b42318';
+function showMissingOwnerPin(){
+  title.textContent='Chưa có mã PIN';
+  description.textContent='Chủ cửa hàng chưa tạo PIN cho link Nhân viên. Hãy hỏi chủ tạo PIN rồi thử lại.';
+  pinPanel.classList.add('hidden');
+  retry.classList.remove('hidden');
+  setError('');
 }
-function showOwnerPinMissing(){
-  clearEmployeePin();
-  els.app.hidden=true;els.status.hidden=false;els.status.style.color='#6b7280';
-  els.status.innerHTML='<div class="pin-gate"><h2>Chưa có mã PIN</h2><p>Chủ cửa hàng chưa tạo PIN cho liên kết này. Hãy hỏi chủ để được cấp PIN rồi thử lại.</p><button class="retry" id="retryPin" type="button">Thử lại</button></div>';
-  document.getElementById('retryPin')?.addEventListener('click',()=>loadEmployee());
+function showPin(message='Nhập PIN do chủ cửa hàng cung cấp để mở giao diện Nhân viên.'){
+  title.textContent='Nhập mã PIN';
+  description.textContent=message;
+  pinPanel.classList.remove('hidden');
+  retry.classList.add('hidden');
+  setError('');
+  setTimeout(()=>pin.focus(),0);
 }
-function showEmployeePinGate(message='Nhập mã PIN do chủ cửa hàng cung cấp.'){
-  clearEmployeePin();
-  els.app.hidden=true;els.status.hidden=false;els.status.style.color='#6b7280';
-  els.status.innerHTML='<div class="pin-gate"><h2>Nhập mã PIN</h2><p>'+esc(message)+'</p><input id="employeePin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Mã PIN"><button id="employeePinSubmit" type="button">Tiếp tục</button><div class="pin-error" id="employeePinError"></div></div>';
-  const input=document.getElementById('employeePin');
-  const button=document.getElementById('employeePinSubmit');
-  const error=document.getElementById('employeePinError');
-  input?.addEventListener('input',()=>{
-    input.value=String(input.value||'').replace(/\D/g,'').slice(0,6);
-    if(error)error.textContent='';
-  });
-  const submitPin=async()=>{
-    const pin=String(input?.value||'').trim();
-    if(!/^\d{6}$/.test(pin)){
-      if(error)error.textContent='PIN gồm 6 chữ số.';
-      return;
-    }
-    currentPin=pin;
-    if(button){button.disabled=true;button.textContent='Đang kiểm tra…';}
-    await loadEmployee();
-  };
-  button?.addEventListener('click',submitPin);
-  input?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();void submitPin();}});
-  setTimeout(()=>input?.focus(),0);
+function fail(){
+  title.textContent='Liên kết không hợp lệ';
+  description.textContent='Không mở được link Nhân viên.';
+  pinPanel.classList.add('hidden');
+  retry.classList.add('hidden');
+  setError('');
 }
-
-function hydrateQty(){
-  qty=new Map();
-  for(const row of Array.isArray(snapshot?.items)?snapshot.items:[]){
-    const n=int(row?.employee_qty);
-    if(n>0)qty.set(String(row?.product_code||''),n);
-  }
+async function checkPin(value=''){
+  const headers={};
+  if(value)headers['x-employee-pin']=value;
+  const res=await fetch(API+'?t='+encodeURIComponent(token),{cache:'no-store',headers});
+  const data=await res.json().catch(()=>({}));
+  return {res,data};
 }
-function sourceKeys(){
-  const seen=new Set((snapshot?.products||[]).map(p=>String(p?.source_key||'')).filter(Boolean));
-  return [...seen].sort((a,b)=>{
-    const ai=sourceOrder.indexOf(a),bi=sourceOrder.indexOf(b);
-    if(ai>=0||bi>=0)return (ai<0?999:ai)-(bi<0?999:bi);
-    return sourceName(a).localeCompare(sourceName(b),'vi');
-  });
-}
-function renderTabs(){
-  const defs=[['all','Tất cả'],...sourceKeys().map(key=>[key,sourceName(key)])];
-  if(!defs.some(([key])=>key===active))active='all';
-  els.tabs.innerHTML=defs.map(([key,label])=>'<button class="tab" type="button" data-tab="'+esc(key)+'" data-active="'+String(key===active)+'">'+esc(label)+'</button>').join('');
-}
-function visibleProducts(){
-  const query=norm(els.search.value).trim();
-  let rows=snapshot?.products||[];
-  if(active!=='all')rows=rows.filter(p=>String(p?.source_key||'')===active);
-  if(query)rows=rows.filter(p=>norm(String(p?.product_name||'')+' '+String(p?.product_code||'')).includes(query));
-  return rows;
-}
-function renderList(){
-  const rows=visibleProducts();
-  if(!rows.length){
-    els.list.innerHTML='<div class="empty">Không tìm thấy sản phẩm.</div>';
-    return;
-  }
-  els.list.innerHTML=rows.map(p=>{
-    const code=String(p?.product_code||'');
-    const name=String(p?.product_name||code);
-    const n=qty.get(code)||0;
-    return '<article class="row" data-code="'+esc(code)+'">'+
-      '<div class="name">'+esc(name)+'</div>'+
-      '<div class="qty">'+
-        '<button type="button" data-delta="-1" aria-label="Giảm">−</button>'+
-        '<input type="number" value="'+n+'" min="0" step="1" inputmode="numeric" aria-label="Số lượng">'+
-        '<button type="button" data-delta="1" aria-label="Tăng">+</button>'+
-      '</div>'+
-    '</article>';
-  }).join('');
-}
-function renderTotal(){
-  let total=0;
-  for(const value of qty.values())total+=int(value);
-  els.totalQty.textContent=String(total);
-}
-function currentItems(){
-  return [...qty].filter(([,value])=>int(value)>0).map(([product_code,value])=>({product_code,qty:int(value)}));
-}
-function persistDraft(){
-  const items=currentItems();
-  saveChain=saveChain.catch(()=>{}).then(async()=>{
-    const res=await fetch(API,{
-      method:'POST',
-      headers:employeeHeaders({'content-type':'application/json'}),
-      body:JSON.stringify({token,action:'save',items})
-    });
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok||!data?.ok){
-      if(data?.error==='pin_invalid'||data?.error==='pin_required'){
-        showEmployeePinGate('Phiên PIN không còn hợp lệ. Hãy nhập lại PIN của chủ.');
-        return;
-      }
-      throw new Error(String(data?.error||'employee_save_failed'));
-    }
-  }).catch(error=>{
-    console.warn('employee autosave',error);
-    showToast('Chưa đồng bộ được · thử lại');
-  });
-  return saveChain;
-}
-function scheduleSave(){
-  clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>void persistDraft(),100);
-}
-function setQty(code,value,{syncInput=true}={}){
-  const next=int(value);
-  if(next>0)qty.set(code,next); else qty.delete(code);
-  if(syncInput){
-    const row=els.list.querySelector('[data-code="'+CSS.escape(code)+'"]');
-    const input=row?.querySelector('input');
-    if(input&&String(input.value)!==String(next))input.value=String(next);
-  }
-  renderTotal();
-  scheduleSave();
-}
-function updateClock(){
-  const d=new Date();
-  const weekdays=['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
-  const pad=n=>String(n).padStart(2,'0');
-  els.clockDate.textContent=weekdays[d.getDay()]+', '+pad(d.getDate())+'/'+pad(d.getMonth()+1);
-  els.clockTime.textContent=pad(d.getHours())+':'+pad(d.getMinutes());
-}
-function init(){
-  const customer=String(snapshot?.customer_name||'Khách hàng');
-  document.title='Nhân viên · '+customer;
-  els.customerName.textContent=customer;
-  hydrateQty();
-  active='all';
-  renderTabs();
-  renderList();
-  renderTotal();
-  updateClock();
-  clearInterval(clockTimer);
-  clockTimer=setInterval(updateClock,30000);
-  els.status.hidden=true;
-  els.app.hidden=false;
-}
-
-els.tabs.addEventListener('click',event=>{
-  const button=event.target.closest('[data-tab]');
-  if(!button)return;
-  active=String(button.dataset.tab||'all');
-  renderTabs();
-  renderList();
-});
-els.search.addEventListener('input',renderList);
-els.list.addEventListener('click',event=>{
-  const button=event.target.closest('[data-delta]');
-  if(!button)return;
-  const row=button.closest('[data-code]');
-  if(!row)return;
-  const code=String(row.dataset.code||'');
-  setQty(code,(qty.get(code)||0)+Number(button.dataset.delta||0));
-});
-els.list.addEventListener('focusin',event=>{
-  if(event.target.tagName!=='INPUT')return;
-  setTimeout(()=>{try{event.target.select();}catch{}},0);
-});
-els.list.addEventListener('input',event=>{
-  if(event.target.tagName!=='INPUT')return;
-  const row=event.target.closest('[data-code]');
-  if(!row)return;
-  const code=String(row.dataset.code||'');
-  const raw=String(event.target.value||'').replace(/\D/g,'');
-  if(event.target.value!==raw)event.target.value=raw;
-  setQty(code,raw||0,{syncInput:false});
-});
-els.list.addEventListener('focusout',event=>{
-  if(event.target.tagName!=='INPUT')return;
-  const row=event.target.closest('[data-code]');
-  if(!row)return;
-  const code=String(row.dataset.code||'');
-  const next=int(event.target.value);
-  event.target.value=String(next);
-  setQty(code,next,{syncInput:false});
-});
-
-async function loadEmployee(){
+async function probe(){
+  if(!token){fail();return;}
   try{
-    const res=await fetch(API+'?t='+encodeURIComponent(token),{cache:'no-store',headers:employeeHeaders()});
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok||!data?.ok){
+    const {res,data}=await checkPin('');
+    if(res.ok&&data?.ok){showPin();return;}
+    const code=String(data?.error||'');
+    if(code==='owner_pin_not_set'){showMissingOwnerPin();return;}
+    if(code==='pin_required'||code==='pin_invalid'){showPin();return;}
+    if(code==='pin_locked'){showPin('PIN đang tạm khóa do nhập sai nhiều lần. Hãy chờ một lúc rồi thử lại.');return;}
+    fail();
+  }catch{fail();}
+}
+async function enter(){
+  const value=String(pin.value||'').replace(/\D/g,'').slice(0,6);
+  pin.value=value;
+  if(!/^\d{6}$/.test(value)){setError('PIN gồm đúng 6 chữ số.');return;}
+  setBusy(true);setError('');
+  try{
+    const {res,data}=await checkPin(value);
+    if(!res.ok||data?.ok!==true){
       const code=String(data?.error||'');
-      if(code==='owner_pin_not_set'){showOwnerPinMissing();return;}
-      if(code==='pin_required'){showEmployeePinGate();return;}
-      if(code==='pin_invalid'){showEmployeePinGate('PIN không đúng. Hãy hỏi lại chủ cửa hàng.');return;}
-      if(code==='pin_locked'){showEmployeePinGate('PIN đang tạm khóa do nhập sai nhiều lần. Hãy chờ một lúc hoặc hỏi chủ cửa hàng.');return;}
-      fail();return;
-    }
-    snapshot=data;
-    if(snapshot.role==='owner'){
-      if(snapshot.owner_url)location.replace(String(snapshot.owner_url));
-      else fail('Link chủ cửa hàng không hợp lệ.');
+      if(code==='owner_pin_not_set'){showMissingOwnerPin();return;}
+      if(code==='pin_locked'){setError('PIN đang tạm khóa. Hãy thử lại sau.');return;}
+      setError('PIN không đúng. Hãy hỏi lại chủ cửa hàng.');
+      pin.select();
       return;
     }
-    if(snapshot.role!=='employee'){fail();return;}
-    rememberEmployeePin();
-    init();
-  }catch(error){
-    console.warn('employee load',error);
-    fail();
+    if(String(data?.role||'')!=='employee'){fail();return;}
+    sessionStorage.setItem(STORE,JSON.stringify({token,pin:value}));
+    location.replace('/?employee=1&t='+encodeURIComponent(token));
+  }catch{
+    setError('Không kiểm tra được PIN. Vui lòng thử lại.');
+  }finally{
+    setBusy(false);
   }
 }
 
-if(!token){fail();return;}
-void loadEmployee();
+pin.addEventListener('input',()=>{
+  pin.value=String(pin.value||'').replace(/\D/g,'').slice(0,6);
+  setError('');
+});
+pin.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();void enter();}});
+submit.addEventListener('click',()=>void enter());
+retry.addEventListener('click',()=>void probe());
+
+void probe();
 })();
 </script>
 </body>
