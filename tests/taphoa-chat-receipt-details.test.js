@@ -54,7 +54,7 @@ test('cash collection is one compact line plus weekday time and app debt link',(
   assert.match(fn,/'Đã thu ' \|\| v_amount_text/);
   assert.match(fn,/taphoa_chat_balance_label\(v_balance,false\)/);
   assert.match(fn,/taphoa_chat_when\(now\(\)\)/);
-  assert.match(fn,/https:\/\/app\.taphoa\.xyz\/no\/\?kh=/);
+  assert.match(fn,/taphoa_customer_mini_link\(p_customer_id,'no',null,null,null\)/);
   assert.doesNotMatch(fn,/Nợ trước:/);
 });
 
