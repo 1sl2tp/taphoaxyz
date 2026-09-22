@@ -108,13 +108,21 @@ async function summary(customer:any){
     generated_at:new Date().toISOString(),
   };
 }
-async function orderDetail(customer:any,orderId:string){
-  if(!/^[0-9a-f-]{36}$/i.test(orderId))return null;
-  const orderResult=await db.from('taphoa_orders')
+async function orderDetail(customer:any,orderId:string,displayCode:string=''){
+  let orderQuery=db.from('taphoa_orders')
     .select('id,note,created_at,updated_at,delivered_at,display_prefix,display_no')
-    .eq('id',orderId)
-    .eq('customer_account_id',customer.id)
-    .maybeSingle();
+    .eq('customer_account_id',customer.id);
+  if(orderId){
+    if(!/^[0-9a-f-]{36}$/i.test(orderId))return null;
+    orderQuery=orderQuery.eq('id',orderId);
+  }else{
+    const match=/^(DG|DT)(\d+)$/i.exec(clean(displayCode,32));
+    if(!match)return null;
+    orderQuery=orderQuery
+      .eq('display_prefix',match[1].toUpperCase())
+      .eq('display_no',Number(match[2]));
+  }
+  const orderResult=await orderQuery.maybeSingle();
   if(orderResult.error)throw orderResult.error;
   const order=orderResult.data;
   if(!order)return null;
@@ -176,8 +184,9 @@ Deno.serve(async(req:Request)=>{
     if(!customer)return json({ok:false,error:'not_found'},404);
 
     const orderId=clean(url.searchParams.get('order'),80);
-    if(orderId){
-      const detail=await orderDetail(customer,orderId);
+    const displayCode=clean(url.searchParams.get('don'),32);
+    if(orderId||displayCode){
+      const detail=await orderDetail(customer,orderId,displayCode);
       return detail?json(detail):json({ok:false,error:'order_not_found'},404);
     }
     return json(await summary(customer));
