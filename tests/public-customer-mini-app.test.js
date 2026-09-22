@@ -8,6 +8,7 @@ const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',i
 const runtime=fs.readFileSync(new URL('../src/fixed-ui-runtime-4.js',import.meta.url),'utf8').toLowerCase();
 const css=fs.readFileSync(new URL('../src/fixed-ui-source-4.css',import.meta.url),'utf8').toLowerCase();
 const optionalPin=fs.readFileSync(new URL('../supabase/migrations/20260922184409_public_link_optional_self_pin.sql',import.meta.url),'utf8').toLowerCase();
+const pinManagement=fs.readFileSync(new URL('../supabase/migrations/20260923023000_public_pin_management.sql',import.meta.url),'utf8').toLowerCase();
 const gateway=fs.readFileSync(new URL('../supabase/migrations/20260923020000_public_user_ui_gateway.sql',import.meta.url),'utf8').toLowerCase();
 
 test('customer link offers self-created PIN, skip, and account login',()=>{
@@ -42,6 +43,9 @@ test('public customer access reuses the production bridge and existing User scre
     "taphoa_public_delete_pending_access",
     "taphoa_public_order_detail_access",
     "taphoa_public_debt_ledger_access",
+    'async function publicpinstate()',
+    'async function setpublicpin(newpin)',
+    "taphoa_public_pin_manage_access",
     "getaccessmode:()=>publicaccess?'public-link':'account'"
   ])assert.ok(bridge.includes(needle),needle);
 
@@ -74,6 +78,9 @@ test('bought suggested and employee modes are thin filters on the existing produ
 
   for(const needle of [
     '.public-user-tools',
+    '.public-share-panel',
+    '.public-share-card',
+    '.public-share-copy',
     'border-radius:16px',
     '-webkit-tap-highlight-color:transparent',
     'background:rgba(255,255,255,.14)',
@@ -87,8 +94,12 @@ test('bought suggested and employee modes are thin filters on the existing produ
     "bar.dataset.publictoolview!=='hang'",
     'requestanimationframe(()=>renderproductlist())',
     "employeebutton.textcontent=employee?'chủ':'nhân viên'",
+    'function openpublicsharepanel',
+    'gửi link nhân viên',
+    'tạo pin',
+    'đổi pin',
     "const url=string(links?.employee_url||'')",
-    "await copypublictext(url,'đã copy link nv')"
+    "await copypublictext(employeeurl,'đã copy link nv')"
   ])assert.ok(overrides.includes(needle),needle);
 });
 
@@ -112,4 +123,12 @@ test('optional PIN access keeps link possession open until PIN is created and le
     'taphoa_public_save_pending_order',
     'taphoa_public_delete_pending_order'
   ])assert.ok(gateway.includes(needle),needle);
+
+  for(const needle of [
+    'taphoa_public_pin_manage_access',
+    'p_new_pin text',
+    'taphoa_public_customer_id_for_access',
+    "extensions.digest(v_link.access_key||':'||v_new",
+    "'pin_configured',true"
+  ])assert.ok(pinManagement.includes(needle),needle);
 });
