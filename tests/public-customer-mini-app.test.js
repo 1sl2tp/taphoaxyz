@@ -13,7 +13,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     "p.get('nguon')","p.get('muc')","p.get('don')",
     'tất cả','đã mua','gợi ý',
     'v21-quote','taphoa-public-debt','taphoa-stock-check',
-    'mini=1','data-order','>chia sẻ nv</button>','id="share-nv"',
+    'mini=1','data-order','<span>gửi kiểm hàng</span>','id="share-nv"',
     'font-size:18px;font-weight:700','font-size:15px;font-weight:400',
     "action:'update'",
     'xóa / nhập lại',
@@ -26,6 +26,8 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     '.list-scroll{flex:1 1 auto',
     "row.hidden=!show",
     "data-product-count",
+    "localecompare(string(b.product_name||''),'vi',{sensitivity:'base',numeric:true})",
+    '.nav[data-active="true"]::before{background:#111827}',
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
