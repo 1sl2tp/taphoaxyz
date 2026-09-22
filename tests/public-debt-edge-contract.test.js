@@ -7,7 +7,6 @@ const src=fs.readFileSync(new URL('../supabase/functions/taphoa-public-debt/inde
 test('public debt endpoint resolves only a valid customer public handle',()=>{
   for(const needle of [
     'v21_customer_public_links',
-    "lastindexof('~')",
     "public_slug",
     "url.searchparams.get('kh')",
     "is('revoked_at',null)",
@@ -37,3 +36,7 @@ test('public debt endpoint is read only',()=>{
   assert.equal(/\.insert\(|\.update\(|\.delete\(|\.upsert\(/.test(src),false);
   assert.ok(src.includes("req.method!=='get'"));
 });
+
+assert.equal(src.includes("url.searchparams.get('k')"),false);
+assert.equal(src.includes("lastindexof('~')"),false);
+assert.equal(src.includes("access_key"),false);
