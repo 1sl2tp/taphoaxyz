@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const cors = {
   "access-control-allow-origin": "*",
-  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-headers": "authorization, x-customer-pin, x-client-info, apikey, content-type",
   "access-control-allow-methods": "GET,POST,OPTIONS",
   "cache-control": "no-store"
 };
@@ -22,6 +22,44 @@ Deno.serve(async (req: Request) => {
   const db = createClient(supabaseUrl, serviceRole, {
     auth: { persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
   });
+
+  async function isAdminRequest(request:Request){
+    const header=String(request.headers.get("authorization")||"").trim();
+    if(!/^Bearer\s+/i.test(header))return false;
+    const token=header.replace(/^Bearer\s+/i,"").trim();
+    if(!token)return false;
+    const userResult=await db.auth.getUser(token);
+    const userId=String(userResult.data?.user?.id||"").trim();
+    if(userResult.error||!userId)return false;
+    const { data, error } = await db.from("v21_accounts")
+      .select("id")
+      .eq("auth_user_id",userId)
+      .eq("role","admin")
+      .is("deleted_at",null)
+      .is("locked_at",null)
+      .maybeSingle();
+    if(error)return false;
+    return Boolean(data?.id);
+  }
+
+  async function authorizeCustomerSlug(request:Request,slug:string){
+    if(await isAdminRequest(request))return {ok:true,admin:true};
+    const pin=String(request.headers.get("x-customer-pin")||"").trim();
+    if(!pin)return {ok:false,error:"pin_required",status:401};
+    const { data, error } = await db.rpc("taphoa_public_pin_check",{
+      p_public_slug:slug,
+      p_pin:pin
+    });
+    if(error)throw error;
+    if(data?.ok===true)return {ok:true,admin:false};
+    return {
+      ok:false,
+      error:String(data?.error||"pin_invalid"),
+      status:String(data?.error||"")==="pin_locked"?423:403,
+      remaining:data?.remaining,
+      retry_after:data?.retry_after
+    };
+  }
 
   async function customerIdFromSlug(slug:string){
     const { data, error } = await db.from("v21_customer_public_links")
@@ -84,6 +122,13 @@ Deno.serve(async (req: Request) => {
       const slug = String(url.searchParams.get("kh") || "").trim();
 
       if (slug) {
+        const access=await authorizeCustomerSlug(req,slug);
+        if(!access.ok)return json({
+          ok:false,error:access.error,remaining:access.remaining,retry_after:access.retry_after
+        },access.status||403);
+        if(String(url.searchParams.get("access")||"")==="1"){
+          return json({ok:true,access:"granted",admin:access.admin===true});
+        }
         const customerId = await customerIdFromSlug(slug);
         const links = await ensureStockLinks(customerId);
         const { data, error } = await db.rpc("taphoa_stock_check_snapshot", { p_token: links.owner });
@@ -116,6 +161,10 @@ Deno.serve(async (req: Request) => {
       const items = Array.isArray(body?.items) ? body.items : [];
 
       if (!token && slug) {
+        const access=await authorizeCustomerSlug(req,slug);
+        if(!access.ok)return json({
+          ok:false,error:access.error,remaining:access.remaining,retry_after:access.retry_after
+        },access.status||403);
         const customerId = await customerIdFromSlug(slug);
         const links = await ensureStockLinks(customerId);
         token = String(links.owner || "");
