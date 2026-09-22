@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const cors = {
   "access-control-allow-origin": "*",
-  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, x-employee-pin",
   "access-control-allow-methods": "GET,POST,OPTIONS",
   "cache-control": "no-store"
 };
@@ -33,6 +33,57 @@ Deno.serve(async (req: Request) => {
     const id = String(data?.customer_account_id || "").trim();
     if (!id) throw new Error("customer_not_found");
     return id;
+  }
+
+  async function employeePinState(customerId:string){
+    let { data, error } = await db.from("v21_customer_public_links")
+      .select("public_slug,pin_set_at")
+      .eq("customer_account_id", customerId)
+      .is("revoked_at", null)
+      .maybeSingle();
+    if (error) throw error;
+
+    if (!data?.public_slug) {
+      const created = await db.rpc("v21_customer_public_link_info_get_or_create", { p_customer_id: customerId });
+      if (created.error) throw created.error;
+      const retry = await db.from("v21_customer_public_links")
+        .select("public_slug,pin_set_at")
+        .eq("customer_account_id", customerId)
+        .is("revoked_at", null)
+        .maybeSingle();
+      if (retry.error) throw retry.error;
+      data = retry.data;
+    }
+
+    return {
+      slug:String(data?.public_slug || "").trim(),
+      configured:Boolean(data?.pin_set_at)
+    };
+  }
+
+  async function requireEmployeePin(snapshot:any, pin:string){
+    if (!snapshot?.ok || snapshot?.role !== "employee" || !snapshot?.customer_id) return { ok:true };
+
+    const state = await employeePinState(String(snapshot.customer_id));
+    if (!state.slug || !state.configured) {
+      return { ok:false, status:403, error:"owner_pin_not_set" };
+    }
+    if (!/^\d{6}$/.test(pin)) {
+      return { ok:false, status:401, error:"pin_required" };
+    }
+
+    const checked = await db.rpc("taphoa_public_pin_check", {
+      p_public_slug: state.slug,
+      p_pin: pin
+    });
+    if (checked.error) throw checked.error;
+    if (checked.data?.ok === true) return { ok:true };
+
+    const code = String(checked.data?.error || "pin_invalid");
+    if (code === "pin_locked") {
+      return { ok:false, status:429, error:"pin_locked", retry_after:Number(checked.data?.retry_after)||600 };
+    }
+    return { ok:false, status:401, error:"pin_invalid" };
   }
 
   async function pendingOrderInfo(orderId:unknown){
@@ -146,6 +197,14 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await db.rpc("taphoa_stock_check_snapshot", { p_token: token });
       if (error) throw error;
       const snapshot:any = data || { ok:false, error:"empty_snapshot" };
+      if (!snapshot?.ok) return json(snapshot, 404);
+
+      if (snapshot?.role === "employee") {
+        const pin = String(req.headers.get("x-employee-pin") || "").trim();
+        const access:any = await requireEmployeePin(snapshot, pin);
+        if (!access.ok) return json(access, access.status);
+      }
+
       if (snapshot?.ok && snapshot?.role === "owner" && snapshot?.customer_id) {
         const publicLink = await db.rpc("v21_customer_public_link_info_get_or_create", { p_customer_id: String(snapshot.customer_id) });
         const slug = String(publicLink.data?.public_slug || "").trim();
@@ -184,6 +243,18 @@ Deno.serve(async (req: Request) => {
       }
       if (!token) return json({ ok:false, error:"token_required" }, 400);
       if (items.length > 1000) return json({ ok:false, error:"too_many_items" }, 400);
+
+      if (!slug) {
+        const snapshotResult = await db.rpc("taphoa_stock_check_snapshot", { p_token: token });
+        if (snapshotResult.error) throw snapshotResult.error;
+        const snapshot:any = snapshotResult.data || { ok:false, error:"empty_snapshot" };
+        if (!snapshot?.ok) return json(snapshot, 404);
+        if (snapshot?.role === "employee") {
+          const pin = String(req.headers.get("x-employee-pin") || "").trim();
+          const access:any = await requireEmployeePin(snapshot, pin);
+          if (!access.ok) return json(access, access.status);
+        }
+      }
 
       const { data, error } = await db.rpc("taphoa_stock_check_submit", {
         p_token: token,
