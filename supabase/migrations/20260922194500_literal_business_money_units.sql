@@ -724,6 +724,12 @@ begin
     raise exception 'amount_must_be_positive';
   end if;
 
+  -- Manual debt input is whole business numbers. A stale client that parses
+  -- "1.704" as decimal 1.704 is rejected instead of corrupting the ledger.
+  if p_amount<>trunc(p_amount) then
+    raise exception 'amount_must_be_whole_number';
+  end if;
+
   v_amount_vnd := p_amount;
   if lower(coalesce(p_type,''))='collection' then
     v_entry_type := 'collection';
