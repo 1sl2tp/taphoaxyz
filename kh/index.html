@@ -11,16 +11,17 @@
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f6f7f8;font-size:16px}
 *{box-sizing:border-box}html,body{height:100%;height:100dvh;overflow:hidden}body{margin:0;background:#f6f7f8;color:#171717}
 button,input{font:inherit}.app{width:min(620px,100%);height:100dvh;margin:0 auto;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:#fff;overflow:hidden}
-.top{padding:10px 14px 8px;border-bottom:1px solid #edf0f2;background:#fff}.brand{font-size:11px;font-weight:750;letter-spacing:.08em;color:#9ca3af}.title{margin:0;font-size:19px;line-height:1.2}.sub{display:none}
+.top{min-height:48px;padding:9px 14px;border-bottom:1px solid #edf0f2;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:11px;font-weight:700;letter-spacing:.08em;color:#9ca3af}.title{margin:0;font-size:18px;font-weight:700;line-height:1.2}.sub{display:none}.top-share{height:30px;border:1px solid #d7dce2;border-radius:999px;background:#fff;padding:0 11px;color:#344054;font-size:12px;font-weight:700;white-space:nowrap}.top-share:disabled{opacity:.45}
 .view{min-height:0;overflow:hidden;background:#f6f7f8}.panel{height:100%;min-height:0;overflow:hidden;padding:0}.tab-shell{height:100%;min-height:0;display:flex;flex-direction:column}.tab-tools{flex:0 0 auto;padding:10px 12px 8px;background:#f6f7f8;border-bottom:1px solid #eceff2}.list-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:8px 12px 18px}.state{padding:28px 14px;text-align:center;color:#6b7280}.error{margin:20px auto;max-width:520px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;text-align:center;color:#6b7280}.error strong{display:block;color:#111827;margin-bottom:7px}
-.bottom{display:flex;gap:0;border-top:1px solid #e5e7eb;background:#fff;padding-bottom:env(safe-area-inset-bottom)}.nav{flex:1;height:50px;border:0;background:#fff;color:#6b7280;font-weight:650;font-size:13px}.nav[data-active="true"]{color:#111827;background:#f8fafc}
-.toolbar{background:#f6f7f8;padding:0}.search{width:100%;height:40px;border:1px solid #d5d9df;border-radius:11px;padding:0 12px;background:#fff;outline:none}.chips{display:flex;gap:6px;overflow-x:auto;padding:7px 0 0;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chip{height:32px;flex:0 0 auto;border:1px solid #d8dde4;border-radius:999px;padding:0 11px;background:#fff;color:#4b5563;font-weight:650;font-size:12px;white-space:nowrap}.chip[data-active="true"]{background:#171717;color:#fff;border-color:#171717}
-.product-list{display:grid;gap:7px}.product{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:10px;row-gap:5px;align-items:center;padding:10px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:13px}.product-name{grid-column:1;grid-row:1;min-width:0;font-size:14px;font-weight:750;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-price{grid-column:1;grid-row:2;text-align:left;font-size:13px;font-weight:800;color:#16a34a;white-space:nowrap}.product-meta{display:none}.product-stock{grid-column:2;grid-row:1 / span 2;display:flex;justify-content:flex-end;align-items:center}.tag{display:none}
-.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:3px 2px 8px}.section-title{margin:0;font-size:12px;font-weight:750;color:#667085}.employee-share{flex:0 0 auto;border:0;background:transparent;padding:3px 0;color:#4b5563;font-size:11px;font-weight:750}.empty{padding:28px 12px;text-align:center;color:#6b7280}
+.bottom{display:flex;gap:0;border-top:1px solid #e5e7eb;background:#fff;padding-bottom:env(safe-area-inset-bottom)}.nav{flex:1;height:50px;border:0;background:#fff;color:#6b7280;font-weight:600;font-size:13px}.nav[data-active="true"]{color:#111827;background:#f8fafc}
+.toolbar{background:#f6f7f8;padding:0}.search{width:100%;height:40px;border:1px solid #d5d9df;border-radius:11px;padding:0 12px;background:#fff;outline:none;font-size:15px;font-weight:400;color:#111827}.search::placeholder{color:#98a2b3}.chips{display:flex;gap:6px;overflow-x:auto;padding:7px 0 0;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chip{height:32px;flex:0 0 auto;border:1px solid #d8dde4;border-radius:999px;padding:0 11px;background:#fff;color:#475467;font-weight:600;font-size:12px;white-space:nowrap}.chip[data-active="true"]{background:#171717;color:#fff;border-color:#171717;font-weight:700}
+.product-list{display:grid;gap:7px}.product{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:10px;row-gap:5px;align-items:center;padding:10px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:13px}.product-name{grid-column:1;grid-row:1;min-width:0;font-size:14px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-price{grid-column:1;grid-row:2;text-align:left;font-size:13px;font-weight:700;color:#16a34a;white-space:nowrap}.product-meta{display:none}.product-stock{grid-column:2;grid-row:1 / span 2;display:flex;justify-content:flex-end;align-items:center}.tag{display:none}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:3px 2px 8px}.section-title{margin:0;font-size:12px;font-weight:600;color:#667085}.employee-share{display:none}.empty{padding:28px 12px;text-align:center;color:#6b7280}
 .order-list,.timeline{display:grid;gap:7px}.card{width:100%;border:1px solid #e5e7eb;border-radius:13px;background:#fff;padding:10px 12px;text-align:left;color:inherit}.card-top{display:flex;justify-content:space-between;gap:12px}.card-title{font-size:14px;font-weight:750}.card-money{font-size:14px;font-weight:800;white-space:nowrap}.card-meta{margin-top:4px;font-size:11px;color:#667085}.card-foot{margin-top:4px;padding:0;border:0;font-size:11px;color:#667085}
 .balance{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px 13px}.balance-label{font-size:11px;color:#6b7280}.balance-value{margin-top:2px;font-size:25px;font-weight:800;letter-spacing:-.03em}.balance-value[data-state="debt"]{color:#b42318}.balance-value[data-state="credit"]{color:#087a55}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}.stat{background:#fff;border:1px solid #e5e7eb;border-radius:11px;padding:9px 11px}.stat span{display:block;font-size:10px;color:#6b7280}.stat strong{display:block;margin-top:2px;font-size:14px}
 .stock-qty{display:grid;grid-template-columns:30px 36px 30px;height:32px;border:1px solid #d1d5db;border-radius:999px;overflow:hidden;background:#fff}.stock-qty button{border:0;background:#fff;font-size:18px;color:#667085;padding:0}.stock-qty button:last-child{background:#16a34a;color:#fff;margin:3px;border-radius:999px;font-size:17px}.stock-qty input{width:36px;height:100%;border:0;text-align:center;font:800 13px inherit;outline:none;background:#fff;padding:0}.stock-qty input:focus{background:#f0fdf4}.stock-footer{flex:0 0 auto;z-index:6;margin:0;padding:7px 12px max(8px,env(safe-area-inset-bottom));border-top:1px solid #e5e7eb;background:#fff;box-shadow:0 -6px 18px rgba(15,23,42,.04)}.stock-summary{display:flex;align-items:center;justify-content:space-between;gap:12px}.stock-summary-main{font-size:13px;font-weight:800}.stock-summary-sub{margin-top:1px;font-size:10px;color:#6b7280}.stock-summary-money{font-size:15px;font-weight:850;color:#15803d;white-space:nowrap}.stock-footer-actions{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:7px;margin-top:7px}.stock-reset,.stock-save{height:40px;border-radius:11px;font-weight:800;font-size:12px}.stock-reset{border:1px solid #d1d5db;background:#fff;color:#4b5563}.stock-save{border:0;background:#16a34a;color:#fff}.stock-reset:disabled,.stock-save:disabled{opacity:.45}
 .sheet{position:fixed;inset:0;z-index:40;display:none;align-items:flex-end;background:rgba(17,24,39,.46)}.sheet[data-open="true"]{display:flex}.sheet-card{width:100%;height:auto;max-height:min(72dvh,620px);background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden}.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid #eef0f2}.sheet-title{font-size:16px;font-weight:800}.close{width:34px;height:34px;border:0;border-radius:999px;background:#f3f4f6;font-size:22px}.sheet-meta{padding:8px 14px;background:#f8fafc;font-size:11px;color:#6b7280}.order-table{flex:0 1 auto;min-height:0;max-height:48dvh;overflow-y:auto}.orow{display:grid;grid-template-columns:minmax(0,1fr) 6ch 4ch 7ch;gap:8px;padding:9px 14px;border-bottom:1px solid #f1f2f3;font-size:12px}.orow.head{position:sticky;top:0;background:#fff;color:#9ca3af;font-size:10px;font-weight:750}.orow .n{font-weight:700}.orow .r{text-align:right;white-space:nowrap}.sheet-summary{display:flex;justify-content:space-between;gap:12px;padding:13px 16px;border-top:1px solid #edf0f2}.sheet-summary small{display:block;color:#9ca3af}.sheet-summary strong{display:block;margin-top:3px}.sheet-summary .sum{text-align:right}
+.pin-gate{height:100%;display:grid;place-items:center;padding:24px}.pin-card{width:min(340px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}.pin-title{margin:0;font-size:17px;font-weight:700}.pin-help{margin:6px 0 14px;color:#667085;font-size:12px;line-height:1.45}.pin-input{width:100%;height:46px;border:1px solid #cfd5dc;border-radius:11px;text-align:center;font-size:22px;font-weight:700;letter-spacing:.28em;outline:none}.pin-input:focus{border-color:#98a2b3}.pin-submit{width:100%;height:42px;margin-top:10px;border:0;border-radius:11px;background:#171717;color:#fff;font-size:13px;font-weight:700}.pin-status{min-height:18px;margin-top:8px;color:#b42318;font-size:11px;text-align:center}
 [hidden]{display:none!important}
 @media(min-width:760px){body{padding:14px}.app{height:calc(100dvh - 28px);border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 14px 40px rgba(15,23,42,.08)}.sheet{align-items:center;justify-content:center}.sheet-card{width:min(580px,calc(100vw - 40px));border-radius:20px}}
 </style>
@@ -28,8 +29,8 @@ button,input{font:inherit}.app{width:min(620px,100%);height:100dvh;margin:0 auto
 <body>
 <div class="app">
   <header class="top">
-    <h1 class="title" id="title">Hàng</h1>
-    <div class="sub" id="sub"></div>
+    <div><h1 class="title" id="title">Hàng</h1><div class="sub" id="sub"></div></div>
+    <button type="button" class="top-share" id="share-nv" hidden>Chia sẻ NV</button>
   </header>
   <main class="view">
     <section class="panel" id="panel"><div class="state">Đang tải…</div></section>
@@ -63,10 +64,13 @@ const legacyStockToken=p.has('t');
 let source=p.get('nguon')||'all';
 let segment=['tat-ca','da-mua','goi-y'].includes(p.get('muc'))?p.get('muc'):'tat-ca';
 const directOrder=(p.get('don')||'').toUpperCase();
-const panel=document.getElementById('panel'),title=document.getElementById('title'),sub=document.getElementById('sub');
+const panel=document.getElementById('panel'),title=document.getElementById('title'),sub=document.getElementById('sub'),shareTop=document.getElementById('share-nv'),bottomNav=document.querySelector('.bottom');
 const sheet=document.getElementById('sheet'),sheetTitle=document.getElementById('sheet-title'),sheetMeta=document.getElementById('sheet-meta'),sheetBody=document.getElementById('sheet-body'),sheetQty=document.getElementById('sheet-qty'),sheetTotal=document.getElementById('sheet-total');
 let quoteData=null,debtData=null,query='',directOrderOpened=false;
 let stockData=null,stockBusy=false;
+let customerPin='';
+const pinStorageKey='taphoa.kh.pin:'+kh;
+try{customerPin=String(sessionStorage.getItem(pinStorageKey)||'').trim();}catch{}
 const stockQty=new Map();
 const sourceFallback={'hang-thuong':'Hàng thường','hang-u':'Hàng U','sua':'Sữa','thuoc-la':'Thuốc lá','masan':'Masan'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -74,6 +78,84 @@ const money=v=>new Intl.NumberFormat('vi-VN',{maximumFractionDigits:3}).format(M
 const qty=v=>{const n=Number(v)||0;return Number.isInteger(n)?String(n):String(n).replace(/0+$/,'').replace(/\.$/,'');};
 const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
 const when=v=>{if(!v)return'';try{return new Date(v).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'});}catch{return'';}};
+function storedAccessToken(){
+  try{
+    const raw=localStorage.getItem('taphoa.xyz.auth.v2');
+    if(!raw)return'';
+    const parsed=JSON.parse(raw);
+    return String(parsed?.access_token||parsed?.currentSession?.access_token||parsed?.session?.access_token||'').trim();
+  }catch{return'';}
+}
+function accessHeaders(input={}){
+  const headers=new Headers(input||{});
+  const token=storedAccessToken();
+  if(token)headers.set('authorization','Bearer '+token);
+  if(customerPin)headers.set('x-customer-pin',customerPin);
+  return headers;
+}
+function apiFetch(url,options={}){
+  return fetch(url,{...options,headers:accessHeaders(options.headers)});
+}
+async function checkAccess(pin=''){
+  const previous=customerPin;
+  customerPin=String(pin||previous||'').trim();
+  try{
+    const r=await apiFetch(STOCK+'?kh='+encodeURIComponent(kh)+'&access=1',{cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    return {ok:r.ok&&d?.ok===true,status:r.status,data:d};
+  }finally{
+    if(!pin)customerPin=previous;
+  }
+}
+function showPinGate(data={}){
+  bottomNav.hidden=true;
+  shareTop.hidden=true;
+  title.textContent='Mã PIN';
+  panel.innerHTML='<div class="pin-gate"><div class="pin-card"><h2 class="pin-title">Nhập mã PIN</h2><p class="pin-help">Mã 6 số được gửi cùng thông tin đăng nhập. Admin đang đăng nhập sẽ vào thẳng.</p><input class="pin-input" data-pin-input inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-label="Mã PIN"><button class="pin-submit" type="button" data-pin-submit>Mở</button><div class="pin-status" data-pin-status></div></div></div>';
+  const input=panel.querySelector('[data-pin-input]');
+  const submit=panel.querySelector('[data-pin-submit]');
+  const status=panel.querySelector('[data-pin-status]');
+  const initialError=String(data?.error||'');
+  if(initialError==='pin_locked')status.textContent='Nhập sai nhiều lần. Vui lòng thử lại sau.';
+  const run=async()=>{
+    const pin=String(input?.value||'').replace(/\D/g,'').slice(0,6);
+    if(input)input.value=pin;
+    if(pin.length!==6){status.textContent='Nhập đủ 6 số';input?.focus();return;}
+    submit.disabled=true;status.textContent='Đang kiểm tra…';
+    customerPin=pin;
+    const result=await checkAccess(pin);
+    if(result.ok){
+      try{sessionStorage.setItem(pinStorageKey,pin);}catch{}
+      bottomNav.hidden=false;
+      title.textContent='Hàng';
+      render();
+      return;
+    }
+    customerPin='';
+    try{sessionStorage.removeItem(pinStorageKey);}catch{}
+    const err=String(result.data?.error||'');
+    if(err==='pin_locked')status.textContent='Nhập sai nhiều lần. Vui lòng thử lại sau.';
+    else if(err==='pin_invalid')status.textContent='PIN chưa đúng'+(Number.isFinite(Number(result.data?.remaining))?' · còn '+Number(result.data.remaining)+' lần':'');
+    else status.textContent='Không mở được liên kết';
+    submit.disabled=false;input?.focus();
+  };
+  input?.addEventListener('input',()=>{if(input)input.value=String(input.value||'').replace(/\D/g,'').slice(0,6);});
+  input?.addEventListener('keydown',e=>{if(e.key==='Enter')void run();});
+  submit?.addEventListener('click',()=>void run());
+  setTimeout(()=>input?.focus(),0);
+}
+async function start(){
+  if(legacyStockTab||legacyStockToken)updateUrl();
+  const access=await checkAccess();
+  if(!access.ok){
+    customerPin='';
+    try{sessionStorage.removeItem(pinStorageKey);}catch{}
+    showPinGate(access.data||{});
+    return;
+  }
+  bottomNav.hidden=false;
+  nav();render();
+}
 function updateUrl(){
   const x=new URLSearchParams();x.set('kh',kh);x.set('tab',tab);
   if(tab==='hang'){if(source!=='all')x.set('nguon',source);if(segment!=='tat-ca')x.set('muc',segment);}
@@ -85,6 +167,8 @@ function nav(){
   else if(tab==='don')title.textContent='Đơn';
   else title.textContent='Công nợ';
   sub.textContent='';
+  shareTop.hidden=!(tab==='hang'&&stockData?.employee_url);
+  shareTop.disabled=!stockData?.employee_url;
 }
 function fail(text='Không tải được dữ liệu'){panel.innerHTML='<div class="error"><strong>'+esc(text)+'</strong>Kiểm tra lại liên kết được gửi từ TAPHOA.</div>';}
 function sourceRows(){
@@ -120,7 +204,7 @@ function renderHang(){
     '<div class="toolbar"><input class="search" id="search" type="search" placeholder="Tìm sản phẩm">'+
     '<div class="chips" id="segments">'+[['tat-ca','Tất cả'],['da-mua','Đã mua'],['goi-y','Gợi ý']].map(x=>'<button class="chip" data-segment="'+x[0]+'" data-active="'+String(segment===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
     '<div class="chips" id="sources">'+sources.map(x=>'<button class="chip" data-source="'+esc(x[0])+'" data-active="'+String(source===x[0])+'">'+esc(x[1])+'</button>').join('')+'</div></div>'+
-    '<div class="section-head"><div class="section-title" data-product-count>'+esc(source==='all'?'Tất cả nguồn':sourceName(source))+' · '+items.length+' sản phẩm</div><button type="button" class="employee-share" data-stock-share '+(stockData?.employee_url?'':'disabled')+'>Chia sẻ NV</button></div></div>'+
+    '<div class="section-head"><div class="section-title" data-product-count>'+esc(source==='all'?'Tất cả nguồn':sourceName(source))+' · '+items.length+' sản phẩm</div></div></div>'+
     '<div class="list-scroll"><div class="product-list">'+(items.map(item=>{
       const code=String(item.product_code||'');
       const n=stockQty.get(code)||0;
@@ -145,7 +229,7 @@ function renderHang(){
   panel.querySelector('#sources')?.addEventListener('click',e=>{const b=e.target.closest('[data-source]');if(!b)return;source=b.dataset.source;updateUrl();renderHang();});
 
   renderStockSummary();
-  panel.querySelector('[data-stock-share]')?.addEventListener('click',shareEmployeeLink);
+  shareTop.hidden=!stockData?.employee_url;
   panel.querySelector('.product-list')?.addEventListener('click',e=>{
     const b=e.target.closest('[data-stock-delta]');if(!b)return;
     const row=b.closest('[data-stock-code]');if(!row)return;
@@ -164,7 +248,7 @@ function renderHang(){
   panel.querySelector('[data-stock-save]')?.addEventListener('click',submitStock);
 }
 async function loadQuote(){
-  try{const r=await fetch(QUOTE+'?kh='+encodeURIComponent(kh)+'&mini=1',{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!Array.isArray(d.items))throw 0;quoteData=d;renderHang();}catch{fail('Không mở được hàng');}
+  try{const r=await apiFetch(QUOTE+'?kh='+encodeURIComponent(kh)+'&mini=1',{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!Array.isArray(d.items))throw 0;quoteData=d;renderHang();}catch{fail('Không mở được hàng');}
 }
 
 function hydrateStockQty(){
@@ -231,7 +315,7 @@ async function shareEmployeeLink(){
 }
 async function loadStockForHang(){
   try{
-    const r=await fetch(STOCK+'?kh='+encodeURIComponent(kh),{cache:'no-store'});
+    const r=await apiFetch(STOCK+'?kh='+encodeURIComponent(kh),{cache:'no-store'});
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d?.ok||d.role!=='owner')throw 0;
     stockData=d;renderHang();
@@ -243,7 +327,7 @@ async function submitStock(){
   const items=[...stockQty].filter(([,n])=>Number(n)>0).map(([product_code,n])=>({product_code,qty:Math.max(0,Math.trunc(Number(n)||0))}));
   stockBusy=true;if(button){button.disabled=true;button.textContent='Đang cập nhật…';}
   try{
-    const r=await fetch(STOCK,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kh,action:'update',items})});
+    const r=await apiFetch(STOCK,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kh,action:'update',items})});
     const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw 0;
     if(button)button.textContent='Đã cập nhật';
     setTimeout(()=>{if(button?.isConnected){button.disabled=false;button.textContent='Cập nhật';}},1400);
@@ -273,19 +357,19 @@ function renderNo(){
   panel.addEventListener('click',e=>{const b=e.target.closest('[data-order]');if(b)openOrder({id:b.dataset.order,code:''});},{once:false});
 }
 async function loadDebt(){
-  try{const r=await fetch(DEBT+'?kh='+encodeURIComponent(kh),{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!d.customer)throw 0;debtData=d;render();}catch{fail(tab==='don'?'Không mở được đơn':'Không mở được công nợ');}
+  try{const r=await apiFetch(DEBT+'?kh='+encodeURIComponent(kh),{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!d.customer)throw 0;debtData=d;render();}catch{fail(tab==='don'?'Không mở được đơn':'Không mở được công nợ');}
 }
 async function openOrder({id='',code=''}) {
   sheet.dataset.open='true';sheet.setAttribute('aria-hidden','false');sheetTitle.textContent=code||'Chi tiết đơn';sheetMeta.textContent='Đang tải…';sheetBody.innerHTML='<div class="state">Đang tải chi tiết đơn…</div>';sheetQty.textContent='0';sheetTotal.textContent='0';
-  try{const suffix=id?'&order='+encodeURIComponent(id):'&don='+encodeURIComponent(code);const r=await fetch(DEBT+'?kh='+encodeURIComponent(kh)+suffix,{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json(),o=d.order||{},rows=Array.isArray(o.items)?o.items:[];let tq=0;sheetTitle.textContent=o.display_code||code||'Chi tiết đơn';sheetMeta.textContent=((d.customer?.display_name)||'Khách hàng')+' · '+when(o.delivered_at||o.created_at);sheetBody.innerHTML='<div class="orow head"><div>Tên SP</div><div class="r">Đ.Giá</div><div class="r">SL</div><div class="r">T.Tiền</div></div>'+rows.map(x=>{tq+=Number(x.qty)||0;return '<div class="orow"><div class="n">'+esc(x.product_name||x.product_code||'Sản phẩm')+'</div><div class="r">'+money(x.unit_price_vnd)+'</div><div class="r">'+qty(x.qty)+'</div><div class="r">'+money(x.line_total_vnd)+'</div></div>';}).join('');sheetQty.textContent=rows.length+' mã · '+qty(tq)+' SP';sheetTotal.textContent=money(o.total_vnd);}catch{sheetBody.innerHTML='<div class="error"><strong>Không tải được chi tiết đơn</strong></div>';}
+  try{const suffix=id?'&order='+encodeURIComponent(id):'&don='+encodeURIComponent(code);const r=await apiFetch(DEBT+'?kh='+encodeURIComponent(kh)+suffix,{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json(),o=d.order||{},rows=Array.isArray(o.items)?o.items:[];let tq=0;sheetTitle.textContent=o.display_code||code||'Chi tiết đơn';sheetMeta.textContent=((d.customer?.display_name)||'Khách hàng')+' · '+when(o.delivered_at||o.created_at);sheetBody.innerHTML='<div class="orow head"><div>Tên SP</div><div class="r">Đ.Giá</div><div class="r">SL</div><div class="r">T.Tiền</div></div>'+rows.map(x=>{tq+=Number(x.qty)||0;return '<div class="orow"><div class="n">'+esc(x.product_name||x.product_code||'Sản phẩm')+'</div><div class="r">'+money(x.unit_price_vnd)+'</div><div class="r">'+qty(x.qty)+'</div><div class="r">'+money(x.line_total_vnd)+'</div></div>';}).join('');sheetQty.textContent=rows.length+' mã · '+qty(tq)+' SP';sheetTotal.textContent=money(o.total_vnd);}catch{sheetBody.innerHTML='<div class="error"><strong>Không tải được chi tiết đơn</strong></div>';}
 }
 function closeSheet(){sheet.dataset.open='false';sheet.setAttribute('aria-hidden','true');}
 function render(){if(tab==='hang')renderHang();else if(tab==='don')renderDon();else renderNo();}
 document.querySelector('.bottom').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;updateUrl();render();});
+shareTop.addEventListener('click',shareEmployeeLink);
 document.getElementById('sheet-close').addEventListener('click',closeSheet);sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet();});
 if(!kh){fail('Liên kết không hợp lệ');return;}
-if(legacyStockTab||legacyStockToken)updateUrl();
-nav();render();
+void start();
 })();
 </script>
 </body>
