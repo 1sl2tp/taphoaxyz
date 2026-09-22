@@ -254,6 +254,254 @@
     return fixedOpenCustomerDebtModal(maKh);
   };
 
+
+  const PUBLIC_LINK_SESSION_KEY='taphoa.public.link.v1';
+  let publicEmployeePoll=0;
+  let publicEmployeeSignature='';
+  let publicEmployeeCodes=new Set();
+  let publicTabId='tab-ban-hang';
+
+  function publicQuery(){
+    const p=new URLSearchParams(location.search);
+    return {
+      kh:String(p.get('kh')||'').trim().toLowerCase(),
+      tab:String(p.get('tab')||'hang').trim().toLowerCase(),
+      muc:String(p.get('muc')||'').trim().toLowerCase(),
+      nguon:String(p.get('nguon')||'').trim().toLowerCase(),
+      don:String(p.get('don')||'').trim().toUpperCase()
+    };
+  }
+
+  function publicStoredAccess(){
+    try{
+      const value=JSON.parse(sessionStorage.getItem(PUBLIC_LINK_SESSION_KEY)||'null');
+      if(!value?.kh||!value?.pin)return null;
+      return {kh:String(value.kh).toLowerCase(),pin:String(value.pin)};
+    }catch{return null;}
+  }
+
+  function publicGateUrl(){
+    const p=new URLSearchParams(location.search);
+    return '/kh/?'+p.toString();
+  }
+
+  function sourceKeyFromCurrentFilter(){
+    const current=String(window.currentFilter||currentFilter||'Tất cả').trim();
+    if(!current||current==='Tất cả')return '';
+    const sources=backend()?.getState?.()?.sources||[];
+    const found=sources.find(row=>String(row?.name||row?.ten||'').trim()===current);
+    return String(found?.id||found?.key||found?.source_key||'').trim();
+  }
+
+  function publicCustomerLink(){
+    const q=publicQuery();
+    const p=new URLSearchParams();
+    p.set('kh',q.kh);
+    p.set('tab',publicTabId==='tab-cong-no'?'no':publicTabId==='tab-da-giao'||publicTabId==='tab-don-tam'?'don':'hang');
+    const seg=String(window.TAPHOA_PRODUCT_SEGMENT||'all');
+    if(p.get('tab')==='hang'){
+      if(seg==='bought')p.set('muc','da-mua');
+      else if(seg==='suggested')p.set('muc','goi-y');
+      const sourceKey=sourceKeyFromCurrentFilter();
+      if(sourceKey)p.set('nguon',sourceKey);
+    }
+    if((publicTabId==='tab-da-giao'||publicTabId==='tab-don-tam')&&editingOrderId){
+      p.set('don',String(editingOrderId).toUpperCase());
+    }
+    return location.origin+'/kh/?'+p.toString();
+  }
+
+  async function copyPublicText(value,label='Đã sao chép'){
+    try{
+      await navigator.clipboard.writeText(String(value||''));
+      const button=document.getElementById('publicToolShare');
+      if(button){
+        const old=button.dataset.label||'Gửi link';
+        button.textContent=label;
+        setTimeout(()=>{if(button.isConnected)button.textContent=old;},1200);
+      }
+      return true;
+    }catch{
+      showAlertPopup('Sao chép link',String(value||''));
+      return false;
+    }
+  }
+
+  function setPublicSegment(value){
+    const next=String(value||'all');
+    window.TAPHOA_PRODUCT_SEGMENT=window.TAPHOA_PRODUCT_SEGMENT===next?'all':next;
+    ownProductRenderKey='';
+    renderProductList();
+    renderPublicTools();
+  }
+
+  function setPublicEmployeeMode(value){
+    window.TAPHOA_EMPLOYEE_MODE=Boolean(value);
+    document.body.dataset.employeeMode=String(Boolean(value));
+    if(window.TAPHOA_EMPLOYEE_MODE){
+      const btn=document.querySelector('.tab-btn[onclick*="tab-ban-hang"]');
+      if(btn)switchTab('tab-ban-hang',btn);
+    }
+    ownProductRenderKey='';
+    renderProductList();
+    renderPublicTools();
+  }
+
+  async function sharePublicMode(){
+    if(window.TAPHOA_EMPLOYEE_MODE){
+      try{
+        const self=backend()?.getState?.()?.selfCustomer||{};
+        const links=await backend().stockCheckLinks(String(self.id||self.maKH||''));
+        const url=String(links?.employee_url||'');
+        if(!url)throw 0;
+        await copyPublicText(url,'Đã copy');
+      }catch{
+        showAlertPopup('Không lấy được link nhân viên','Vui lòng thử lại.');
+      }
+      return;
+    }
+    await copyPublicText(publicCustomerLink(),'Đã copy');
+  }
+
+  function renderPublicTools(){
+    const bar=document.getElementById('statusBar');
+    if(!bar||backend()?.getAccessMode?.()!=='public-link')return;
+    const onHang=publicTabId==='tab-ban-hang';
+    bar.dataset.publicUserTools='true';
+    bar.className='public-user-tools shrink-0 z-40 w-full';
+    if(!onHang){
+      bar.innerHTML='<div class="public-user-tool-status"><i class="ph-fill ph-check-circle"></i><span>Hệ thống sẵn sàng</span></div>';
+      return;
+    }
+    const seg=String(window.TAPHOA_PRODUCT_SEGMENT||'all');
+    const employee=Boolean(window.TAPHOA_EMPLOYEE_MODE);
+    bar.innerHTML=
+      '<button type="button" class="public-user-tool '+(seg==='bought'?'is-active':'')+'" id="publicToolBought">Đã mua</button>'+
+      '<button type="button" class="public-user-tool '+(seg==='suggested'?'is-active':'')+'" id="publicToolSuggested">Gợi ý</button>'+
+      '<button type="button" class="public-user-tool '+(employee?'is-active':'')+'" id="publicToolEmployee">Nhân viên</button>'+
+      '<button type="button" class="public-user-tool public-user-tool-share" id="publicToolShare" data-label="Gửi link">Gửi link</button>';
+    document.getElementById('publicToolBought')?.addEventListener('click',()=>setPublicSegment('bought'));
+    document.getElementById('publicToolSuggested')?.addEventListener('click',()=>setPublicSegment('suggested'));
+    document.getElementById('publicToolEmployee')?.addEventListener('click',()=>setPublicEmployeeMode(!employee));
+    document.getElementById('publicToolShare')?.addEventListener('click',sharePublicMode);
+  }
+
+  function applyPublicSourceFilter(sourceKey){
+    if(!sourceKey)return;
+    const sources=backend()?.getState?.()?.sources||[];
+    const found=sources.find(row=>String(row?.id||row?.key||row?.source_key||'')===sourceKey);
+    const name=String(found?.name||found?.ten||'').trim();
+    if(name&&typeof filterSource==='function')filterSource(name);
+  }
+
+  function applyPublicDeepLink(){
+    const q=publicQuery();
+    window.TAPHOA_PRODUCT_SEGMENT=q.muc==='da-mua'?'bought':q.muc==='goi-y'?'suggested':'all';
+    window.TAPHOA_EMPLOYEE_MODE=false;
+    document.body.dataset.employeeMode='false';
+
+    let target='tab-ban-hang';
+    if(q.tab==='no')target='tab-cong-no';
+    else if(q.tab==='don')target=q.don.startsWith('DT')?'tab-don-tam':'tab-da-giao';
+    const button=document.querySelector('.tab-btn[onclick*="'+target+'"]');
+    if(button)switchTab(target,button);
+    publicTabId=target;
+
+    if(target==='tab-ban-hang'){
+      applyPublicSourceFilter(q.nguon);
+      ownProductRenderKey='';
+      renderProductList();
+    }
+    if(q.don&&typeof clickOrder==='function'){
+      setTimeout(()=>clickOrder(q.don,q.don.startsWith('DT')?'dontam':'dongiao'),0);
+    }
+    renderPublicTools();
+  }
+
+  function applyEmployeeSnapshot(snapshot){
+    const rows=Array.isArray(snapshot?.items)?snapshot.items:[];
+    const signature=JSON.stringify(rows.map(row=>[String(row.product_code||''),Number(row.employee_qty)||0]));
+    if(signature===publicEmployeeSignature)return;
+    publicEmployeeSignature=signature;
+
+    const nextCodes=new Set();
+    const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
+    for(const row of rows){
+      const code=String(row?.product_code||'');
+      const qty=Math.max(0,Math.trunc(Number(row?.employee_qty)||0));
+      if(!code)continue;
+      nextCodes.add(code);
+      const product=productMap.get(code);
+      if(qty>0&&product){
+        const existing=cart[code]||{};
+        cart[code]={
+          ...existing,
+          name:String(product?.[1]||code),
+          price:Number(product?.[3])||0,
+          qty,
+          note:String(existing.note||'')
+        };
+      }else if(publicEmployeeCodes.has(code)){
+        delete cart[code];
+      }
+    }
+    for(const code of publicEmployeeCodes){
+      if(!nextCodes.has(code))delete cart[code];
+    }
+    publicEmployeeCodes=nextCodes;
+    renderProductList();
+    renderCartUI();
+  }
+
+  function startPublicEmployeeSync(){
+    if(publicEmployeePoll)clearInterval(publicEmployeePoll);
+    publicEmployeePoll=setInterval(async()=>{
+      if(document.hidden||backend()?.getAccessMode?.()!=='public-link')return;
+      try{applyEmployeeSnapshot(await backend().employeeSnapshot());}catch{}
+    },2000);
+  }
+
+  function installPublicSwitchTracking(){
+    if(window.__taphoaPublicSwitchWrapped)return;
+    window.__taphoaPublicSwitchWrapped=true;
+    const base=switchTab;
+    switchTab=function(tabId,element){
+      const result=base.apply(this,arguments);
+      publicTabId=String(tabId||'tab-ban-hang');
+      if(publicTabId!=='tab-ban-hang'&&window.TAPHOA_EMPLOYEE_MODE){
+        window.TAPHOA_EMPLOYEE_MODE=false;
+        document.body.dataset.employeeMode='false';
+      }
+      renderPublicTools();
+      return result;
+    };
+  }
+
+  async function openPublicUserFromSession(){
+    const q=publicQuery();
+    if(!q.kh)return false;
+    const stored=publicStoredAccess();
+    if(!stored||stored.kh!==q.kh){
+      location.replace(publicGateUrl());
+      return true;
+    }
+    try{
+      const info=await backend().openPublicLink(stored.kh,stored.pin);
+      setAuthRole('user');
+      syncSelfCustomer(info);
+      showAppScreen();
+      await refreshFixedSheets();
+      installPublicSwitchTracking();
+      applyPublicDeepLink();
+      startPublicEmployeeSync();
+      return true;
+    }catch(error){
+      sessionStorage.removeItem(PUBLIC_LINK_SESSION_KEY);
+      location.replace(publicGateUrl());
+      return true;
+    }
+  }
+
   window.addEventListener('taphoa-production-sync',(event)=>{
     const changed=Array.isArray(event?.detail?.changed)?event.detail.changed:[];
     const names=sheetsForChangedDomains(changed);
@@ -266,6 +514,10 @@
     loadUiPreferences();
     const apiInput=document.getElementById('inputScriptUrl');
     if(apiInput){apiInput.value='taphoa://production';apiInput.readOnly=true;}
+    if(publicQuery().kh){
+      await openPublicUserFromSession();
+      return;
+    }
     try{
       const info=await backend().restore();
       if(!info){showLoginScreen();return;}
