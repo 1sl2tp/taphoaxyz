@@ -85,6 +85,25 @@ Deno.serve(async (req: Request) => {
 
       if (slug) {
         const customerId = await customerIdFromSlug(slug);
+
+        if (String(url.searchParams.get("sync") || "") === "1") {
+          const { data: session, error: sessionError } = await db.from("taphoa_stock_check_sessions")
+            .select("id,status,employee_submitted_at,owner_reviewed_at,updated_at")
+            .eq("customer_account_id", customerId)
+            .order("updated_at", { ascending:false })
+            .limit(1)
+            .maybeSingle();
+          if (sessionError) throw sessionError;
+          if (!session?.id) return json({ ok:true, session:null, items:[] });
+
+          const { data: items, error: itemsError } = await db.from("taphoa_stock_check_items")
+            .select("product_code,employee_qty,owner_qty")
+            .eq("session_id", String(session.id))
+            .order("product_code", { ascending:true });
+          if (itemsError) throw itemsError;
+          return json({ ok:true, session, items:items || [] });
+        }
+
         const links = await ensureStockLinks(customerId);
         const { data, error } = await db.rpc("taphoa_stock_check_snapshot", { p_token: links.owner });
         if (error) throw error;
