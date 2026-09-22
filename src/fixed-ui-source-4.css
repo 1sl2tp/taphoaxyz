@@ -560,7 +560,7 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 .public-user-tools{
   min-height:48px;
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   align-items:stretch;
   gap:3px;
   width:auto !important;
@@ -635,6 +635,12 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   font-weight:650;
 }
 .public-user-tool-status i{color:#4ade80;}
+.public-user-tools[data-tool-count="2"]{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.public-user-tools[data-tool-count="3"]{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
 
 .public-share-panel{
   position:fixed;
@@ -806,10 +812,16 @@ body[data-employee-mode="true"] .product-line-note-wrap{
 body[data-employee-mode="true"] #searchProductInput{
   padding-left:1rem !important;
 }
-body[data-employee-link="true"] #statusBar,
 body[data-employee-link="true"] #publicSharePanel{
   display:none !important;
 }
 body[data-employee-link="true"] #saleCustomerTrigger{
   pointer-events:none !important;
+}
+body[data-employee-link="true"] #cartShareOrderBtn,
+body[data-employee-link="true"] #cartFooterActions button[onclick*="dayToanBoGioHang"],
+body[data-employee-link="true"] #cartFooterActions button[onclick*="updateExistingOrder"],
+body[data-employee-link="true"] #cartFooterActions button[onclick*="goToBanHangForEditing"],
+body[data-employee-link="true"] #cartFooterActions button[onclick*="requestDeleteEditingOrder"]{
+  display:none !important;
 }
