@@ -43,7 +43,7 @@ Deno.serve(async (req: Request) => {
         const employeeToken = String(employeeLink.data?.token || "").trim();
         const slug = String(publicLink.data?.public_slug || "").trim();
         if (employeeToken) snapshot.employee_url = `https://app.taphoa.xyz/kiemhang/?t=${employeeToken}`;
-        if (slug) snapshot.owner_url = `https://app.taphoa.xyz/kh/?kh=${encodeURIComponent(slug)}&tab=kiemhang&t=${encodeURIComponent(token)}`;
+        if (slug) snapshot.owner_url = `https://app.taphoa.xyz/kh/?kh=${encodeURIComponent(slug)}&tab=hang&t=${encodeURIComponent(token)}`;
       }
       return json(snapshot);
     }
