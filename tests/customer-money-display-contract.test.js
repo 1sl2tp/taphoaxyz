@@ -21,9 +21,12 @@ function latestFunction(name){
 }
 
 test('customer-facing money preserves literal values and only formats thousands separators',()=>{
-  assert.match(no,/Number\(v\)\|\|0\)\/1000/);
-  assert.match(quote,/format\(n\/1000\)/);
-  assert.match(order,/Number\(v\)\|\|0\)\/1000/);
+  assert.match(no,/var n=Math\.abs\(Number\(v\)\|\|0\);/);
+  assert.match(quote,/format\(n\)/);
+  assert.match(order,/format\(Math\.abs\(Number\(v\)\|\|0\)\)/);
+  assert.doesNotMatch(no,/\/1000/);
+  assert.doesNotMatch(quote,/\/1000/);
+  assert.doesNotMatch(order,/\/1000/);
   assert.doesNotMatch(no,/\+'đ'/);
   assert.doesNotMatch(no,/text:'0đ'/);
 });
@@ -31,7 +34,7 @@ test('customer-facing money preserves literal values and only formats thousands 
 test('customer chat money formatter keeps literal values and omits the currency suffix',()=>{
   const money=latestFunction('taphoa_chat_money');
   const balance=latestFunction('taphoa_chat_balance_label');
-  assert.match(money,/\/ 1000/);
+  assert.doesNotMatch(money,/\/\s*1000/);
   assert.doesNotMatch(money,/\|\|\s*'đ'/);
   assert.doesNotMatch(balance,/0đ/);
 });
