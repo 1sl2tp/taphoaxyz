@@ -26,8 +26,10 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     '.list-scroll{flex:1 1 auto',
     "row.hidden=!show",
     "data-product-count",
+    "const sources=[['all','tất cả'],...sourcerows()]",
+    "count.textcontent=visible+' sản phẩm'",
     "localecompare(string(b.product_name||''),'vi',{sensitivity:'base',numeric:true})",
-    '.nav[data-active="true"]::before{background:#111827}',
+    '.nav[data-active="true"]::after{background:#111827}',
     'background:#1e293b',
     'class="status-foot"','border:1px solid #111827',
   ])assert.ok(low.includes(needle),needle);
