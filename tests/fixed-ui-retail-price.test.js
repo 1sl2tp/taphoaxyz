@@ -158,7 +158,7 @@ test('supermarket mode shows source filters and sends selected source to RPC',as
   assert.match(css,/market-source-filter-chip/);
   assert.match(migration,/taphoa_market_search\([\s\S]*p_source text/);
   assert.match(migration,/v_source='' or l\.source=v_source/);
-  assert.match(index,/fixed-production-bridge\.js\?v=employee-link-real-ui-20260923/);
+  assert.match(index,/fixed-production-bridge\.js\?v=shared-cart-20260923/);
 });
 
 
