@@ -73,7 +73,7 @@ const els={
  summarySub:document.getElementById('summary-sub'),summaryMoney:document.getElementById('summary-money'),
  reset:document.getElementById('reset'),send:document.getElementById('send'),toast:document.getElementById('toast')
 };
-let snapshot=null,active='fav',qty=new Map(),saveBusy=false;
+let snapshot=null,active='fav',qty=new Map(),saveBusy=false,draftTimer=0,draftChain=Promise.resolve();
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function norm(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();}
@@ -160,6 +160,22 @@ function renderSummary(){
  els.summaryMoney.hidden=true;els.summaryMoney.textContent='';
  els.reset.disabled=total<=0;
 }
+function currentItems(){
+ return [...qty].filter(([,n])=>int(n)>0).map(([product_code,n])=>({product_code,qty:int(n)}));
+}
+function persistDraft(){
+ const items=currentItems();
+ draftChain=draftChain.catch(()=>{}).then(async()=>{
+   const res=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,action:'save',items})});
+   const data=await res.json().catch(()=>({}));
+   if(!res.ok||!data?.ok)throw new Error('draft_save_failed');
+ });
+ return draftChain;
+}
+function scheduleDraftSave(){
+ clearTimeout(draftTimer);
+ draftTimer=setTimeout(()=>void persistDraft(),280);
+}
 function syncQtyClear(input){
  const clear=input?.closest('[data-code]')?.querySelector('[data-clear]');
  if(clear)clear.hidden=!String(input.value||'').trim()||int(input.value)<=0;
@@ -172,6 +188,7 @@ function setQty(code,value,{syncInput=true}={}){
    syncQtyClear(input);
  }
  renderSummary();
+ scheduleDraftSave();
 }
 function resetAll(){
  if(!qty.size)return;
@@ -179,13 +196,16 @@ function resetAll(){
  qty.clear();
  renderList();
  renderSummary();
+ scheduleDraftSave();
  showToast('Đã xóa số lượng · nhập lại từ đầu');
 }
 async function submit(){
  if(saveBusy)return;
- const items=[...qty].filter(([,n])=>int(n)>0).map(([product_code,n])=>({product_code,qty:int(n)}));
+ clearTimeout(draftTimer);
+ const items=currentItems();
  saveBusy=true;els.send.disabled=true;const old=els.send.textContent;els.send.textContent='Đang gửi…';
  try{
+   await draftChain.catch(()=>{});
    const action='submit';
    const res=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,action,items})});
    const data=await res.json().catch(()=>({}));
@@ -217,7 +237,7 @@ els.list.addEventListener('click',e=>{
    const row=clear.closest('[data-code]');if(!row)return;
    const code=String(row.dataset.code);const input=row.querySelector('input');
    qty.delete(code);if(input){input.value='';syncQtyClear(input);input.focus();}
-   renderSummary();return;
+   renderSummary();scheduleDraftSave();return;
  }
  const b=e.target.closest('[data-delta]');if(!b)return;
  const row=b.closest('[data-code]');if(!row)return;
@@ -231,7 +251,7 @@ els.list.addEventListener('input',e=>{
  const raw=String(e.target.value||'').replace(/\D/g,'');
  if(e.target.value!==raw)e.target.value=raw;
  syncQtyClear(e.target);
- if(raw===''){qty.delete(code);renderSummary();return;}
+ if(raw===''){qty.delete(code);renderSummary();scheduleDraftSave();return;}
  setQty(code,raw,{syncInput:false});
 });
 els.list.addEventListener('focusout',e=>{
