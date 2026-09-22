@@ -1,5 +1,5 @@
 const initial=()=>({
-  user:null,permissions:{},products:[],sources:[],customers:[],orders:[],debtSummary:[],
+  user:null,permissions:{},products:[],sources:[],customers:[],orders:[],debtSummary:[],signals:[],
   printSettings:{},selfCustomer:null,revisions:{},version:'',syncSeconds:30,editOrder:null
 });
 
@@ -34,7 +34,7 @@ export function createAppState(){
       state={
         ...initial(),...(data||{}),
         permissions:data?.permissions||{},products:data?.products||[],sources:data?.sources||[],customers:data?.customers||[],
-        orders:data?.orders||[],debtSummary:data?.debtSummary||[],printSettings:data?.printSettings||{},selfCustomer:data?.selfCustomer??null,
+        orders:data?.orders||[],debtSummary:data?.debtSummary||[],signals:data?.signals||[],printSettings:data?.printSettings||{},selfCustomer:data?.selfCustomer??null,
         revisions:data?.revisions||{},version:String(data?.version||''),syncSeconds:Number(data?.syncSeconds)||30,editOrder:currentEditOrder
       };
       emit(['bootstrap']);
@@ -42,7 +42,7 @@ export function createAppState(){
     },
     mergeDomains:data=>{
       const next={...state};
-      for(const key of ['products','sources','customers','orders','debtSummary','printSettings','selfCustomer','permissions','version','syncSeconds']){
+      for(const key of ['products','sources','customers','orders','debtSummary','signals','printSettings','selfCustomer','permissions','version','syncSeconds']){
         if(Object.hasOwn(data||{},key))next[key]=data[key];
       }
       if(data?.revisions)next.revisions={...state.revisions,...data.revisions};
