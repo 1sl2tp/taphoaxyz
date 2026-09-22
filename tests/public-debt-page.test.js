@@ -26,8 +26,8 @@ test('public debt order detail stays inside the debt page',()=>{
   assert.ok(low.includes('&order='));
   assert.ok(low.includes('id="sheet"'));
   assert.ok(low.includes('id="sheet-body"'));
-  assert.ok(low.includes('tổng đơn'));
-  assert.ok(low.includes('sau đơn'));
+  assert.ok(low.includes('tổng thanh toán'));
+  assert.ok(low.includes('mã đơn: --'));
 });
 
 assert.equal(low.includes("params.get('k')"),false);
