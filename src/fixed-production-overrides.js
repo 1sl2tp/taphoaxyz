@@ -538,7 +538,7 @@
     });
     wrap.querySelector('.public-share-backdrop')?.addEventListener('click',closePublicSharePanel);
     wrap.querySelector('.public-share-close')?.addEventListener('click',closePublicSharePanel);
-    setTimeout(()=>input.focus(),0);
+    focusPin();
   }
 
   async function sharePublicMode(){
