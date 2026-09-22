@@ -35,6 +35,24 @@ Deno.serve(async (req: Request) => {
     return id;
   }
 
+  async function pendingOrderInfo(orderId:unknown){
+    const id=String(orderId||"").trim();
+    if(!id)return null;
+    const { data, error } = await db.from("taphoa_orders")
+      .select("id,status,display_prefix,display_no")
+      .eq("id",id)
+      .eq("status","pending")
+      .maybeSingle();
+    if(error)throw error;
+    if(!data?.id)return null;
+    const prefix=String(data.display_prefix||"DT").trim()||"DT";
+    const no=Number(data.display_no)||0;
+    return {
+      id:String(data.id),
+      display_code:no>0?`${prefix}${no}`:""
+    };
+  }
+
   async function ensureStockLinks(customerId:string){
     const read = async() => {
       const { data, error } = await db.from("taphoa_stock_check_links")
@@ -88,7 +106,7 @@ Deno.serve(async (req: Request) => {
 
         if (String(url.searchParams.get("sync") || "") === "1") {
           const { data: session, error: sessionError } = await db.from("taphoa_stock_check_sessions")
-            .select("id,status,employee_submitted_at,owner_reviewed_at,updated_at")
+            .select("id,status,employee_submitted_at,owner_reviewed_at,updated_at,pending_order_id")
             .eq("customer_account_id", customerId)
             .order("updated_at", { ascending:false })
             .limit(1)
@@ -101,7 +119,8 @@ Deno.serve(async (req: Request) => {
             .eq("session_id", String(session.id))
             .order("product_code", { ascending:true });
           if (itemsError) throw itemsError;
-          return json({ ok:true, session, items:items || [] });
+          const pending_order=await pendingOrderInfo(session?.pending_order_id);
+          return json({ ok:true, session, items:items || [], pending_order });
         }
 
         const links = await ensureStockLinks(customerId);
@@ -111,6 +130,14 @@ Deno.serve(async (req: Request) => {
         if (snapshot?.ok) {
           snapshot.employee_url = `https://app.taphoa.xyz/kiemhang/?t=${links.employee}`;
           snapshot.owner_url = `https://app.taphoa.xyz/kh/?kh=${encodeURIComponent(slug)}&tab=hang`;
+          const { data: latestSession, error: latestSessionError } = await db.from("taphoa_stock_check_sessions")
+            .select("pending_order_id")
+            .eq("customer_account_id", customerId)
+            .order("updated_at", { ascending:false })
+            .limit(1)
+            .maybeSingle();
+          if(latestSessionError)throw latestSessionError;
+          snapshot.pending_order=await pendingOrderInfo(latestSession?.pending_order_id);
         }
         return json(snapshot);
       }
@@ -134,6 +161,22 @@ Deno.serve(async (req: Request) => {
       const action = String(body?.action || "save").trim().toLowerCase();
       const items = Array.isArray(body?.items) ? body.items : [];
 
+      const normalized = items.map((item:any) => ({
+        product_code:String(item?.product_code || "").trim(),
+        qty:Math.max(0, Number(item?.qty) || 0)
+      })).filter((item:any) => item.product_code);
+
+      if (action === "save_pending_order") {
+        if (!slug) return json({ ok:false, error:"customer_required" }, 400);
+        if (normalized.length > 500) return json({ ok:false, error:"too_many_items" }, 400);
+        const { data, error } = await db.rpc("taphoa_public_save_stock_draft", {
+          p_public_slug: slug,
+          p_items: normalized
+        });
+        if (error) throw error;
+        return json(data || { ok:true });
+      }
+
       if (!token && slug) {
         const customerId = await customerIdFromSlug(slug);
         const links = await ensureStockLinks(customerId);
@@ -141,11 +184,6 @@ Deno.serve(async (req: Request) => {
       }
       if (!token) return json({ ok:false, error:"token_required" }, 400);
       if (items.length > 1000) return json({ ok:false, error:"too_many_items" }, 400);
-
-      const normalized = items.map((item:any) => ({
-        product_code:String(item?.product_code || "").trim(),
-        qty:Math.max(0, Number(item?.qty) || 0)
-      })).filter((item:any) => item.product_code);
 
       const { data, error } = await db.rpc("taphoa_stock_check_submit", {
         p_token: token,
