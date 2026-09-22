@@ -1,7 +1,7 @@
 create or replace function public.taphoa_chat_when(p_at timestamptz)
 returns text
 language sql
-immutable
+stable
 set search_path = public
 as $$
   select
