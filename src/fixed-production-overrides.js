@@ -257,11 +257,11 @@
 
   const PUBLIC_LINK_SESSION_KEY='taphoa.public.link.v1';
   const EMPLOYEE_LINK_SESSION_KEY='taphoa.employee.link.v1';
-  let employeeLinkSaveTimer=0;
-  let employeeLinkSaveChain=Promise.resolve();
-  let publicEmployeePoll=0;
-  let publicEmployeeSignature='';
-  let publicEmployeeCodes=new Set();
+  let sharedCartSaveTimer=0;
+  let sharedCartSaveChain=Promise.resolve();
+  let sharedCartPoll=0;
+  let sharedCartSignature='';
+  let sharedCartLocalWriteAt=0;
   let publicTabId='tab-ban-hang';
 
   function employeeQuery(){
@@ -567,38 +567,51 @@
     renderPublicTools();
   }
 
-  function employeeLinkItems(){
+  function sharedCartItems(){
     return Object.entries(cart||{}).map(([product_code,item])=>({
       product_code:String(product_code),
       qty:Math.max(0,Math.trunc(Number(item?.qty)||0))
     })).filter(item=>item.product_code&&item.qty>0);
   }
 
-  function scheduleEmployeeLinkSave(){
-    if(backend()?.getAccessMode?.()!=='employee-link')return;
-    clearTimeout(employeeLinkSaveTimer);
-    employeeLinkSaveTimer=setTimeout(()=>{
-      const items=employeeLinkItems();
-      employeeLinkSaveChain=employeeLinkSaveChain.catch(()=>{}).then(()=>backend().saveEmployeeQuantities(items)).catch(error=>{
-        console.warn('employee quantity sync',error);
-      });
+  function isSharedCartMode(){
+    const mode=backend()?.getAccessMode?.();
+    return mode==='public-link'||mode==='employee-link';
+  }
+
+  function scheduleSharedCartSave(){
+    if(!isSharedCartMode())return;
+    sharedCartLocalWriteAt=Date.now();
+    clearTimeout(sharedCartSaveTimer);
+    sharedCartSaveTimer=setTimeout(()=>{
+      const items=sharedCartItems();
+      sharedCartSaveChain=sharedCartSaveChain
+        .catch(()=>{})
+        .then(()=>backend().saveSharedQuantities(items))
+        .then(()=>{sharedCartSignature=JSON.stringify(items.map(row=>[row.product_code,row.qty]).sort());})
+        .catch(error=>console.warn('shared cart sync',error));
     },100);
   }
 
-  function installEmployeeLinkQuantitySync(){
-    if(window.__taphoaEmployeeLinkQuantitySync)return;
-    window.__taphoaEmployeeLinkQuantitySync=true;
+  function installSharedCartQuantitySync(){
+    if(window.__taphoaSharedCartQuantitySync)return;
+    window.__taphoaSharedCartQuantitySync=true;
 
     const baseUpdateCart=updateCart;
     updateCart=function(maSp,tenSp,giaBan,change){
       const result=baseUpdateCart.apply(this,arguments);
-      if(backend()?.getAccessMode?.()==='employee-link')scheduleEmployeeLinkSave();
+      if(isSharedCartMode())scheduleSharedCartSave();
       return result;
     };
 
     const basePreviewQtyInput=previewQtyInput;
     previewQtyInput=function(input){
-      if(backend()?.getAccessMode?.()!=='employee-link')return basePreviewQtyInput.apply(this,arguments);
+      const mode=backend()?.getAccessMode?.();
+      if(mode!=='employee-link'){
+        const result=basePreviewQtyInput.apply(this,arguments);
+        if(mode==='public-link')scheduleSharedCartSave();
+        return result;
+      }
       if(!input)return;
       const code=String(input.dataset.qtyId||'');
       const raw=String(input.value||'').trim();
@@ -613,12 +626,17 @@
       }
       syncQtyEditors(code,parsed,input);
       refreshCartTotalsOnly();
-      scheduleEmployeeLinkSave();
+      scheduleSharedCartSave();
     };
 
     const baseCommitQtyEditor=commitQtyEditor;
     commitQtyEditor=function(input){
-      if(backend()?.getAccessMode?.()!=='employee-link')return baseCommitQtyEditor.apply(this,arguments);
+      const mode=backend()?.getAccessMode?.();
+      if(mode!=='employee-link'){
+        const result=baseCommitQtyEditor.apply(this,arguments);
+        if(mode==='public-link')scheduleSharedCartSave();
+        return result;
+      }
       if(!input)return;
       const code=String(input.dataset.qtyId||'');
       if(!code)return;
@@ -633,28 +651,58 @@
       }
       syncQtyEditors(code,parsed,input);
       refreshCartTotalsOnly();
-      scheduleEmployeeLinkSave();
+      scheduleSharedCartSave();
+    };
+
+    const baseClearCart=clearCart;
+    clearCart=function(){
+      const result=baseClearCart.apply(this,arguments);
+      if(isSharedCartMode())scheduleSharedCartSave();
+      return result;
     };
   }
 
-  function applyEmployeeLinkSnapshot(snapshot){
-    cart={};
+  function applySharedCartSnapshot(snapshot,{force=false}={}){
+    if(!force&&Date.now()-sharedCartLocalWriteAt<500)return;
     const rows=Array.isArray(snapshot?.items)?snapshot.items:[];
+    const normalized=rows
+      .map(row=>[String(row?.product_code||''),Math.max(0,Math.trunc(Number(row?.employee_qty)||0))])
+      .filter(([code,qty])=>code&&qty>0)
+      .sort((a,b)=>a[0].localeCompare(b[0]));
+    const signature=JSON.stringify(normalized);
+    if(!force&&signature===sharedCartSignature)return;
+    sharedCartSignature=signature;
+
+    const employeeMode=backend()?.getAccessMode?.()==='employee-link';
     const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
-    for(const row of rows){
-      const code=String(row?.product_code||'');
-      const qty=Math.max(0,Math.trunc(Number(row?.employee_qty)||0));
+    const nextCart={};
+
+    for(const [code,qty] of normalized){
       const product=productMap.get(code);
-      if(!code||qty<=0||!product)continue;
-      cart[code]={
+      if(!product)continue;
+      nextCart[code]={
         name:String(product?.[1]||code),
-        price:0,
+        price:employeeMode?0:(Number(product?.[3])||0),
         qty,
         note:''
       };
     }
+
+    cart=nextCart;
     renderProductList();
     renderCartUI();
+  }
+
+  function startSharedCartSync(){
+    if(sharedCartPoll)clearInterval(sharedCartPoll);
+    sharedCartPoll=setInterval(async()=>{
+      if(document.hidden||!isSharedCartMode()||Date.now()-sharedCartLocalWriteAt<500)return;
+      try{
+        applySharedCartSnapshot(await backend().employeeSnapshot());
+      }catch(error){
+        console.warn('shared cart poll',error);
+      }
+    },900);
   }
 
   async function enterEmployeeLink(info){
@@ -671,10 +719,12 @@
     if(button)switchTab('tab-ban-hang',button);
     publicTabId='tab-ban-hang';
 
-    installEmployeeLinkQuantitySync();
-    applyEmployeeLinkSnapshot(info?.employeeSnapshot||await backend().getEmployeeSnapshot());
+    installSharedCartQuantitySync();
+    sharedCartSignature='';
+    applySharedCartSnapshot(info?.employeeSnapshot||await backend().getEmployeeSnapshot(),{force:true});
     ownProductRenderKey='';
     renderProductList();
+    startSharedCartSync();
   }
 
   async function openEmployeeLinkFromSession(){
@@ -696,44 +746,6 @@
       location.replace(employeeGateUrl(q.token));
       return true;
     }
-  }
-
-  function applyEmployeeSnapshot(snapshot){
-    const rows=Array.isArray(snapshot?.items)?snapshot.items:[];
-    const signature=JSON.stringify(rows.map(row=>[String(row.product_code||''),Number(row.employee_qty)||0]));
-    if(signature===publicEmployeeSignature)return;
-    publicEmployeeSignature=signature;
-
-    const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
-    const nextCart={};
-    const nextCodes=new Set();
-
-    for(const row of rows){
-      const code=String(row?.product_code||'');
-      const qty=Math.max(0,Math.trunc(Number(row?.employee_qty)||0));
-      const product=productMap.get(code);
-      if(!code||qty<=0||!product)continue;
-      nextCodes.add(code);
-      nextCart[code]={
-        name:String(product?.[1]||code),
-        price:Number(product?.[3])||0,
-        qty,
-        note:''
-      };
-    }
-
-    cart=nextCart;
-    publicEmployeeCodes=nextCodes;
-    renderProductList();
-    renderCartUI();
-  }
-
-  function startPublicEmployeeSync(){
-    if(publicEmployeePoll)clearInterval(publicEmployeePoll);
-    publicEmployeePoll=setInterval(async()=>{
-      if(document.hidden||backend()?.getAccessMode?.()!=='public-link')return;
-      try{applyEmployeeSnapshot(await backend().employeeSnapshot());}catch{}
-    },900);
   }
 
   function installPublicSwitchTracking(){
@@ -761,14 +773,14 @@
     installPublicSwitchTracking();
     applyPublicDeepLink();
 
-    publicEmployeeSignature='';
-    publicEmployeeCodes=new Set();
+    installSharedCartQuantitySync();
+    sharedCartSignature='';
     try{
-      applyEmployeeSnapshot(await backend().employeeSnapshot());
+      applySharedCartSnapshot(await backend().employeeSnapshot(),{force:true});
     }catch(error){
-      console.warn('initial employee snapshot',error);
+      console.warn('initial shared cart snapshot',error);
     }
-    startPublicEmployeeSync();
+    startSharedCartSync();
   }
 
   async function openPublicUserFromSession(){
