@@ -13,6 +13,7 @@ on:
       - 'no/**'
       - 'd/**'
       - 'b/**'
+      - 'kiemhang/**'
       - 'scripts/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
