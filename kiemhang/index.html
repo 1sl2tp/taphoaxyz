@@ -66,7 +66,7 @@ const API='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-stock-ch
 const token=new URLSearchParams(location.search).get('t')||'';
 const pinStoreKey='taphoa.employee.pin.v1:'+token;
 let currentPin='';
-try{currentPin=String(sessionStorage.getItem(pinStoreKey)||'').trim();}catch{}
+try{sessionStorage.removeItem(pinStoreKey);}catch{}
 const sourceNames={'hang-thuong':'Hàng thường','hang-u':'Hàng U','sua':'Sữa','thuoc-la':'Thuốc lá','sheet-1150410221':'#'};
 const els={
  head:document.getElementById('head'),title:document.getElementById('title'),role:document.getElementById('role'),
@@ -88,7 +88,7 @@ function showToast(text){els.toast.textContent=text;els.toast.dataset.show='true
 function fail(message='Không mở được link kiểm hàng.'){els.status.textContent=message;els.status.style.color='#b42318';els.head.hidden=true;els.content.hidden=true;els.footer.hidden=true;}
 function employeeHeaders(extra={}){return currentPin?{...extra,'x-employee-pin':currentPin}:extra;}
 function clearEmployeePin(){currentPin='';try{sessionStorage.removeItem(pinStoreKey);}catch{}}
-function rememberEmployeePin(){if(!currentPin)return;try{sessionStorage.setItem(pinStoreKey,currentPin);}catch{}}
+function rememberEmployeePin(){return;}
 function showOwnerPinMissing(){
  clearEmployeePin();
  els.head.hidden=true;els.content.hidden=true;els.footer.hidden=true;els.status.hidden=false;els.status.style.color='#6b7280';
