@@ -581,7 +581,7 @@
     publicEmployeePoll=setInterval(async()=>{
       if(document.hidden||backend()?.getAccessMode?.()!=='public-link')return;
       try{applyEmployeeSnapshot(await backend().employeeSnapshot());}catch{}
-    },2000);
+    },900);
   }
 
   function installPublicSwitchTracking(){
