@@ -331,12 +331,28 @@
     }
   }
 
+  function syncPublicToolState(){
+    const seg=String(window.TAPHOA_PRODUCT_SEGMENT||'all');
+    const employee=Boolean(window.TAPHOA_EMPLOYEE_MODE);
+    const states=[
+      ['publicToolBought',seg==='bought'],
+      ['publicToolSuggested',seg==='suggested'],
+      ['publicToolEmployee',employee]
+    ];
+    for(const [id,active] of states){
+      const button=document.getElementById(id);
+      if(!button)continue;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    }
+  }
+
   function setPublicSegment(value){
     const next=String(value||'all');
     window.TAPHOA_PRODUCT_SEGMENT=window.TAPHOA_PRODUCT_SEGMENT===next?'all':next;
+    syncPublicToolState();
     ownProductRenderKey='';
-    renderProductList();
-    renderPublicTools();
+    requestAnimationFrame(()=>renderProductList());
   }
 
   function setPublicEmployeeMode(value){
@@ -346,9 +362,9 @@
       const btn=document.querySelector('.tab-btn[onclick*="tab-ban-hang"]');
       if(btn)switchTab('tab-ban-hang',btn);
     }
+    syncPublicToolState();
     ownProductRenderKey='';
-    renderProductList();
-    renderPublicTools();
+    requestAnimationFrame(()=>renderProductList());
   }
 
   async function sharePublicMode(){
@@ -372,22 +388,28 @@
     if(!bar||backend()?.getAccessMode?.()!=='public-link')return;
     const onHang=publicTabId==='tab-ban-hang';
     bar.dataset.publicUserTools='true';
-    bar.className='public-user-tools shrink-0 z-40 w-full';
+    bar.className='public-user-tools shrink-0 z-40';
     if(!onHang){
-      bar.innerHTML='<div class="public-user-tool-status"><i class="ph-fill ph-check-circle"></i><span>Hệ thống sẵn sàng</span></div>';
+      if(bar.dataset.publicToolView!=='status'){
+        bar.innerHTML='<div class="public-user-tool-status"><i class="ph-fill ph-check-circle"></i><span>Hệ thống sẵn sàng</span></div>';
+        bar.dataset.publicToolView='status';
+      }
       return;
     }
-    const seg=String(window.TAPHOA_PRODUCT_SEGMENT||'all');
-    const employee=Boolean(window.TAPHOA_EMPLOYEE_MODE);
-    bar.innerHTML=
-      '<button type="button" class="public-user-tool '+(seg==='bought'?'is-active':'')+'" id="publicToolBought">Đã mua</button>'+
-      '<button type="button" class="public-user-tool '+(seg==='suggested'?'is-active':'')+'" id="publicToolSuggested">Gợi ý</button>'+
-      '<button type="button" class="public-user-tool '+(employee?'is-active':'')+'" id="publicToolEmployee">Nhân viên</button>'+
-      '<button type="button" class="public-user-tool public-user-tool-share" id="publicToolShare" data-label="Gửi link">Gửi link</button>';
-    document.getElementById('publicToolBought')?.addEventListener('click',()=>setPublicSegment('bought'));
-    document.getElementById('publicToolSuggested')?.addEventListener('click',()=>setPublicSegment('suggested'));
-    document.getElementById('publicToolEmployee')?.addEventListener('click',()=>setPublicEmployeeMode(!employee));
-    document.getElementById('publicToolShare')?.addEventListener('click',sharePublicMode);
+
+    if(bar.dataset.publicToolView!=='hang'||!document.getElementById('publicToolBought')){
+      bar.innerHTML=
+        '<button type="button" class="public-user-tool" id="publicToolBought" aria-pressed="false">Đã mua</button>'+
+        '<button type="button" class="public-user-tool" id="publicToolSuggested" aria-pressed="false">Gợi ý</button>'+
+        '<button type="button" class="public-user-tool" id="publicToolEmployee" aria-pressed="false">Nhân viên</button>'+
+        '<button type="button" class="public-user-tool public-user-tool-share" id="publicToolShare" data-label="Gửi link">Gửi link</button>';
+      bar.dataset.publicToolView='hang';
+      document.getElementById('publicToolBought')?.addEventListener('click',()=>setPublicSegment('bought'));
+      document.getElementById('publicToolSuggested')?.addEventListener('click',()=>setPublicSegment('suggested'));
+      document.getElementById('publicToolEmployee')?.addEventListener('click',()=>setPublicEmployeeMode(!Boolean(window.TAPHOA_EMPLOYEE_MODE)));
+      document.getElementById('publicToolShare')?.addEventListener('click',sharePublicMode);
+    }
+    syncPublicToolState();
   }
 
   function applyPublicSourceFilter(sourceKey){
