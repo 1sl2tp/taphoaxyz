@@ -10,6 +10,8 @@ await cp('version.json','dist/version.json');
 await cp('sw.js','dist/sw.js');
 await cp('src','dist/src',{recursive:true});
 await cp('no','dist/no',{recursive:true});
+await cp('d','dist/d',{recursive:true});
+await cp('b','dist/b',{recursive:true});
 
 const toPosix=value=>value.split(path.sep).join('/');
 
