@@ -345,6 +345,21 @@ async function stockCheckLinks(customerId){
   if(publicAccess)return publicRpc('taphoa_public_employee_link_access');
   return business.stockCheckLinks(customerId);
 }
+async function publicPinState(){
+  if(!publicAccess?.slug)throw new Error('public_access_required');
+  const client=await auth.getClient();
+  const {data,error}=await client.rpc('taphoa_public_gate_state',{p_public_slug:publicAccess.slug});
+  if(error)throw Object.assign(new Error(error.message||'PIN_STATE_ERROR'),{code:String(error.code||'PIN_STATE_ERROR')});
+  return data||{};
+}
+async function setPublicPin(newPin){
+  if(!publicAccess?.slug)throw new Error('public_access_required');
+  const pin=String(newPin||'').trim();
+  const data=await publicRpc('taphoa_public_pin_manage_access',{p_new_pin:pin});
+  if(data?.ok!==true)throw new Error(String(data?.error||'pin_update_failed'));
+  publicAccess={...publicAccess,pin};
+  return data;
+}
 async function employeeSnapshot(){
   if(!publicAccess)return null;
   return publicRpc('taphoa_public_employee_snapshot_access');
@@ -381,7 +396,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
-  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,employeeSnapshot,orderDetail,
+  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
