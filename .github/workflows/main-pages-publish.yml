@@ -11,6 +11,8 @@ on:
       - 'package.json'
       - 'src/**'
       - 'no/**'
+      - 'd/**'
+      - 'b/**'
       - 'scripts/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
