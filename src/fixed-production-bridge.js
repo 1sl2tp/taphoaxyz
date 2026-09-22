@@ -402,6 +402,15 @@ async function saveEmployeeQuantities(items=[]){
   return data;
 }
 
+async function saveSharedQuantities(items=[]){
+  const normalized=Array.isArray(items)?items:[];
+  if(employeeAccess)return saveEmployeeQuantities(normalized);
+  if(publicAccess){
+    return publicRpc('taphoa_public_shared_cart_save_access',{p_items:normalized});
+  }
+  throw new Error('shared_cart_access_required');
+}
+
 async function getEmployeeSnapshot(){
   if(!employeeAccess)return null;
   employeeSnapshotData=await employeeRequest();
@@ -523,7 +532,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
-  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,getEmployeeSnapshot,orderDetail,
+  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
