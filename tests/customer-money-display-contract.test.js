@@ -20,7 +20,7 @@ function latestFunction(name){
   return sql.slice(start,end+3);
 }
 
-test('all customer-facing public money is shown in thousand units without currency suffix',()=>{
+test('customer-facing money preserves literal values and only formats thousands separators',()=>{
   assert.match(no,/Number\(v\)\|\|0\)\/1000/);
   assert.match(quote,/format\(n\/1000\)/);
   assert.match(order,/Number\(v\)\|\|0\)\/1000/);
@@ -28,7 +28,7 @@ test('all customer-facing public money is shown in thousand units without curren
   assert.doesNotMatch(no,/text:'0đ'/);
 });
 
-test('customer chat money formatter removes trailing .000 and the đ suffix',()=>{
+test('customer chat money formatter keeps literal values and omits the currency suffix',()=>{
   const money=latestFunction('taphoa_chat_money');
   const balance=latestFunction('taphoa_chat_balance_label');
   assert.match(money,/\/ 1000/);
