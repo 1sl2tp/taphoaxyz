@@ -92,6 +92,25 @@
     return value;
   }
 
+  async function copyRawUrl(url){
+    if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(url);
+      return;
+    }
+    const input=document.createElement('textarea');
+    input.value=url;
+    input.setAttribute('readonly','');
+    input.style.position='fixed';
+    input.style.opacity='0';
+    input.style.pointerEvents='none';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    const ok=document.execCommand('copy');
+    input.remove();
+    if(!ok)throw new Error('copy_failed');
+  }
+
   async function shareLink(role){
     const customer=currentCustomer();
     if(!customer.id){
@@ -104,13 +123,8 @@
     try{
       const links=await getLinks(customer.id);
       const url=role==='employee'?links.employee_url:links.owner_url;
+      await copyRawUrl(url);
       closeSheet();
-      if(navigator.share){
-        try{await navigator.share({url});return;}catch(error){
-          if(/abort|cancel/i.test(String(error?.name||'')+' '+String(error?.message||'')))return;
-        }
-      }
-      await navigator.clipboard.writeText(url);
       if(typeof showToast==='function')showToast('Đã sao chép link kiểm hàng.','success');
     }catch(error){
       if(typeof showAlertPopup==='function')showAlertPopup('Không tạo được link',error?.message||String(error));
