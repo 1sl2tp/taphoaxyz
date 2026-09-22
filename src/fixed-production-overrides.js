@@ -704,30 +704,25 @@
     if(signature===publicEmployeeSignature)return;
     publicEmployeeSignature=signature;
 
-    const nextCodes=new Set();
     const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
+    const nextCart={};
+    const nextCodes=new Set();
+
     for(const row of rows){
       const code=String(row?.product_code||'');
       const qty=Math.max(0,Math.trunc(Number(row?.employee_qty)||0));
-      if(!code)continue;
-      nextCodes.add(code);
       const product=productMap.get(code);
-      if(qty>0&&product){
-        const existing=cart[code]||{};
-        cart[code]={
-          ...existing,
-          name:String(product?.[1]||code),
-          price:Number(product?.[3])||0,
-          qty,
-          note:String(existing.note||'')
-        };
-      }else if(publicEmployeeCodes.has(code)){
-        delete cart[code];
-      }
+      if(!code||qty<=0||!product)continue;
+      nextCodes.add(code);
+      nextCart[code]={
+        name:String(product?.[1]||code),
+        price:Number(product?.[3])||0,
+        qty,
+        note:''
+      };
     }
-    for(const code of publicEmployeeCodes){
-      if(!nextCodes.has(code))delete cart[code];
-    }
+
+    cart=nextCart;
     publicEmployeeCodes=nextCodes;
     renderProductList();
     renderCartUI();
@@ -765,6 +760,14 @@
     await refreshFixedSheets();
     installPublicSwitchTracking();
     applyPublicDeepLink();
+
+    publicEmployeeSignature='';
+    publicEmployeeCodes=new Set();
+    try{
+      applyEmployeeSnapshot(await backend().employeeSnapshot());
+    }catch(error){
+      console.warn('initial employee snapshot',error);
+    }
     startPublicEmployeeSync();
   }
 
