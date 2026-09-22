@@ -22,12 +22,14 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     "stock+'?kh='+encodeuricomponent(kh)",
     "json.stringify({kh,action:'update',items})",
     'max-height:min(72dvh,620px)',
-    'width:min(620px,100%)',
+    'width:min(560px,100%)',
     '.list-scroll{flex:1 1 auto',
     "row.hidden=!show",
     "data-product-count",
     "localecompare(string(b.product_name||''),'vi',{sensitivity:'base',numeric:true})",
     '.nav[data-active="true"]::before{background:#111827}',
+    'background:#f8fafb;border-bottom:1px solid #dfe3e8',
+    'background:#eef1f4',
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
