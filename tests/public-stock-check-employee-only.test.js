@@ -20,7 +20,11 @@ test('standalone stock check page is employee-only and never shows money',()=>{
     'x-employee-pin',
     'showemployeepingate',
     'showownerpinmissing',
+    'function rememberemployeepin(){return;}',
+    'sessionstorage.removeitem(pinstorekey)',
   ])assert.ok(html.includes(needle),needle);
+
+  assert.equal(html.includes('sessionstorage.getitem(pinstorekey)'),false,'employee PIN must not persist across link opens');
 
   for(const forbidden of [
     "snapshot.role==='owner'?'update':'submit'",
