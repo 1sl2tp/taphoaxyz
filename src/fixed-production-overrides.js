@@ -256,10 +256,35 @@
 
 
   const PUBLIC_LINK_SESSION_KEY='taphoa.public.link.v1';
+  const EMPLOYEE_LINK_SESSION_KEY='taphoa.employee.link.v1';
+  let employeeLinkSaveTimer=0;
+  let employeeLinkSaveChain=Promise.resolve();
   let publicEmployeePoll=0;
   let publicEmployeeSignature='';
   let publicEmployeeCodes=new Set();
   let publicTabId='tab-ban-hang';
+
+  function employeeQuery(){
+    const p=new URLSearchParams(location.search);
+    return {
+      active:String(p.get('employee')||'')==='1',
+      token:String(p.get('t')||'').trim()
+    };
+  }
+
+  function employeeStoredAccess(){
+    try{
+      const value=JSON.parse(sessionStorage.getItem(EMPLOYEE_LINK_SESSION_KEY)||'null');
+      if(!value?.token||!value?.pin)return null;
+      return {token:String(value.token),pin:String(value.pin)};
+    }catch{return null;}
+  }
+
+  function employeeGateUrl(token){
+    const p=new URLSearchParams();
+    if(token)p.set('t',String(token));
+    return '/kiemhang/?'+p.toString();
+  }
 
   function publicQuery(){
     const p=new URLSearchParams(location.search);
@@ -522,6 +547,7 @@
     window.TAPHOA_PRODUCT_SEGMENT=q.muc==='da-mua'?'bought':q.muc==='goi-y'?'suggested':'all';
     window.TAPHOA_EMPLOYEE_MODE=false;
     document.body.dataset.employeeMode='false';
+    document.body.dataset.employeeLink='false';
 
     let target='tab-ban-hang';
     if(q.tab==='no')target='tab-cong-no';
@@ -539,6 +565,136 @@
       setTimeout(()=>clickOrder(q.don,q.don.startsWith('DT')?'dontam':'dongiao'),0);
     }
     renderPublicTools();
+  }
+
+  function employeeLinkItems(){
+    return Object.entries(cart||{}).map(([product_code,item])=>({
+      product_code:String(product_code),
+      qty:Math.max(0,Math.trunc(Number(item?.qty)||0))
+    })).filter(item=>item.product_code&&item.qty>0);
+  }
+
+  function scheduleEmployeeLinkSave(){
+    if(backend()?.getAccessMode?.()!=='employee-link')return;
+    clearTimeout(employeeLinkSaveTimer);
+    employeeLinkSaveTimer=setTimeout(()=>{
+      const items=employeeLinkItems();
+      employeeLinkSaveChain=employeeLinkSaveChain.catch(()=>{}).then(()=>backend().saveEmployeeQuantities(items)).catch(error=>{
+        console.warn('employee quantity sync',error);
+      });
+    },100);
+  }
+
+  function installEmployeeLinkQuantitySync(){
+    if(window.__taphoaEmployeeLinkQuantitySync)return;
+    window.__taphoaEmployeeLinkQuantitySync=true;
+
+    const baseUpdateCart=updateCart;
+    updateCart=function(maSp,tenSp,giaBan,change){
+      const result=baseUpdateCart.apply(this,arguments);
+      if(backend()?.getAccessMode?.()==='employee-link')scheduleEmployeeLinkSave();
+      return result;
+    };
+
+    const basePreviewQtyInput=previewQtyInput;
+    previewQtyInput=function(input){
+      if(backend()?.getAccessMode?.()!=='employee-link')return basePreviewQtyInput.apply(this,arguments);
+      if(!input)return;
+      const code=String(input.dataset.qtyId||'');
+      const raw=String(input.value||'').trim();
+      if(!code||raw==='')return;
+      const parsed=Math.max(0,Math.trunc(Number(raw)||0));
+      const meta=getQtyMeta(code,input);
+      if(parsed>0){
+        const existing=cart[code]||{};
+        cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:''};
+      }else{
+        delete cart[code];
+      }
+      syncQtyEditors(code,parsed,input);
+      refreshCartTotalsOnly();
+      scheduleEmployeeLinkSave();
+    };
+
+    const baseCommitQtyEditor=commitQtyEditor;
+    commitQtyEditor=function(input){
+      if(backend()?.getAccessMode?.()!=='employee-link')return baseCommitQtyEditor.apply(this,arguments);
+      if(!input)return;
+      const code=String(input.dataset.qtyId||'');
+      if(!code)return;
+      const parsed=Math.max(0,Math.trunc(Number(input.value)||0));
+      input.value=String(parsed);
+      const meta=getQtyMeta(code,input);
+      if(parsed>0){
+        const existing=cart[code]||{};
+        cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:''};
+      }else{
+        delete cart[code];
+      }
+      syncQtyEditors(code,parsed,input);
+      refreshCartTotalsOnly();
+      scheduleEmployeeLinkSave();
+    };
+  }
+
+  function applyEmployeeLinkSnapshot(snapshot){
+    cart={};
+    const rows=Array.isArray(snapshot?.items)?snapshot.items:[];
+    const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
+    for(const row of rows){
+      const code=String(row?.product_code||'');
+      const qty=Math.max(0,Math.trunc(Number(row?.employee_qty)||0));
+      const product=productMap.get(code);
+      if(!code||qty<=0||!product)continue;
+      cart[code]={
+        name:String(product?.[1]||code),
+        price:0,
+        qty,
+        note:''
+      };
+    }
+    renderProductList();
+    renderCartUI();
+  }
+
+  async function enterEmployeeLink(info){
+    setAuthRole('user');
+    syncSelfCustomer(info);
+    showAppScreen();
+    await refreshFixedSheets(['sanpham','khachhang']);
+    window.TAPHOA_PRODUCT_SEGMENT='all';
+    window.TAPHOA_EMPLOYEE_MODE=true;
+    document.body.dataset.employeeMode='true';
+    document.body.dataset.employeeLink='true';
+
+    const button=document.querySelector('.tab-btn[onclick*="tab-ban-hang"]');
+    if(button)switchTab('tab-ban-hang',button);
+    publicTabId='tab-ban-hang';
+
+    installEmployeeLinkQuantitySync();
+    applyEmployeeLinkSnapshot(info?.employeeSnapshot||await backend().getEmployeeSnapshot());
+    ownProductRenderKey='';
+    renderProductList();
+  }
+
+  async function openEmployeeLinkFromSession(){
+    const q=employeeQuery();
+    if(!q.active||!q.token)return false;
+    const stored=employeeStoredAccess();
+    if(!stored||stored.token!==q.token){
+      location.replace(employeeGateUrl(q.token));
+      return true;
+    }
+    try{
+      const info=await backend().openEmployeeLink(stored.token,stored.pin);
+      await enterEmployeeLink(info);
+      return true;
+    }catch(error){
+      console.warn('employee link open',error);
+      sessionStorage.removeItem(EMPLOYEE_LINK_SESSION_KEY);
+      location.replace(employeeGateUrl(q.token));
+      return true;
+    }
   }
 
   function applyEmployeeSnapshot(snapshot){
@@ -601,6 +757,7 @@
   }
 
   async function enterPublicUser(info){
+    document.body.dataset.employeeLink='false';
     setAuthRole('user');
     syncSelfCustomer(info);
     showAppScreen();
@@ -657,6 +814,10 @@
     loadUiPreferences();
     const apiInput=document.getElementById('inputScriptUrl');
     if(apiInput){apiInput.value='taphoa://production';apiInput.readOnly=true;}
+    if(employeeQuery().active){
+      await openEmployeeLinkFromSession();
+      return;
+    }
     if(publicQuery().kh){
       await openPublicUserFromSession();
       return;
