@@ -15,6 +15,11 @@ test('standalone stock check page is employee-only and never shows money',()=>{
     'await draftchain.catch(()=>{})',
     'nhân viên kiểm số lượng · không hiển thị giá/tiền',
     'gửi kiểm hàng',
+    'nhập mã pin',
+    'chủ cửa hàng chưa tạo pin',
+    'x-employee-pin',
+    'showemployeepingate',
+    'showownerpinmissing',
   ])assert.ok(html.includes(needle),needle);
 
   for(const forbidden of [
