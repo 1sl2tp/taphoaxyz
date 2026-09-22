@@ -1,5 +1,6 @@
 import {createAuthService} from './core/auth.js';
 import {createApi} from './core/api.js';
+import {orderRpcPayload} from './core/business.js';
 import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
 import {CONFIG} from './core/config.js';
@@ -13,6 +14,7 @@ let identity=null;
 let bootstrapped=false;
 let syncTimer=null;
 let syncInFlight=null;
+let publicAccess=null;
 
 const num=value=>Number.isFinite(Number(value))?Number(value):0;
 const text=value=>String(value??'');
@@ -29,7 +31,22 @@ function viTime(value){
 }
 
 function currentUid(){return text(identity?.uid);}
-function saveSnapshot(){const uid=currentUid();if(uid)snapshot.save(uid,appState.get());}
+function saveSnapshot(){const uid=currentUid();if(uid&&!publicAccess)snapshot.save(uid,appState.get());}
+
+async function publicRpc(name,args={}){
+  if(!publicAccess?.slug||!publicAccess?.pin)throw new Error('public_access_required');
+  const client=await auth.getClient();
+  const {data,error}=await client.rpc(name,{
+    p_public_slug:publicAccess.slug,
+    p_pin:publicAccess.pin,
+    ...args
+  });
+  if(error){
+    const err=Object.assign(new Error(error.message||String(error.code||'PUBLIC_RPC_ERROR')),{code:String(error.code||'PUBLIC_RPC_ERROR')});
+    throw err;
+  }
+  return data;
+}
 
 function sourceDisplayName(product,state=appState.get()){
   const key=text(first(product,['source_key','nhom','source','product_group','nguon'],'')).trim();
@@ -188,13 +205,15 @@ function sheetRows(sheet){
 async function bootstrap({force=false}={}){
   if(bootstrapped&&!force)return appState.get();
   const uid=currentUid();
-  const cached=uid?snapshot.load(uid):null;
+  const cached=!publicAccess&&uid?snapshot.load(uid):null;
   if(cached?.data&&!bootstrapped){appState.setBootstrap(cached.data);bootstrapped=true;}
   if(navigator.onLine===false){
     if(bootstrapped)return appState.get();
     throw new Error('Chưa có dữ liệu đã lưu cho tài khoản này');
   }
-  const data=await business.bootstrap();
+  const data=publicAccess
+    ?await publicRpc('taphoa_public_bootstrap_by_pin')
+    :await business.bootstrap();
   appState.setBootstrap(data||{});bootstrapped=true;saveSnapshot();
   return appState.get();
 }
@@ -202,7 +221,9 @@ async function bootstrap({force=false}={}){
 async function refresh(domains=[]){
   const list=[...new Set((domains||[]).map(String))];
   if(!list.length)return appState.get();
-  const data=await business.domains(list);
+  const data=publicAccess
+    ?await publicRpc('taphoa_public_domains_by_pin',{p_domains:list})
+    :await business.domains(list);
   appState.mergeDomains(data||{});bootstrapped=true;saveSnapshot();
   return appState.get();
 }
@@ -212,7 +233,9 @@ async function syncOnce(){
   if(syncInFlight)return syncInFlight;
   syncInFlight=(async()=>{
     const before=appState.get();
-    const meta=await business.meta();
+    const meta=publicAccess
+      ?await publicRpc('taphoa_public_domains_by_pin',{p_domains:[]})
+      :await business.meta();
     const changed=changedDomains(before.revisions,meta?.revisions||{});
     const nextPermissions=meta?.permissions||before.permissions;
     const permissionsChanged=JSON.stringify(before.permissions||{})!==JSON.stringify(nextPermissions||{});
@@ -244,11 +267,40 @@ async function attachSession(info){
   return {identity,state:appState.get()};
 }
 
-async function login(username,password){return attachSession(await auth.login(username,password));}
-async function restore(){const info=await auth.restore();if(!info)return null;return attachSession(info);}
+async function login(username,password){
+  publicAccess=null;
+  return attachSession(await auth.login(username,password));
+}
+async function restore(){
+  if(publicAccess)return {identity,state:appState.get()};
+  const info=await auth.restore();if(!info)return null;return attachSession(info);
+}
+async function openPublicLink(slug,pin){
+  publicAccess={slug:String(slug||'').trim().toLowerCase(),pin:String(pin||'').trim()};
+  bootstrapped=false;
+  const data=await publicRpc('taphoa_public_bootstrap_by_pin');
+  appState.setBootstrap(data||{});
+  const user=data?.user||{};
+  identity={
+    uid:String(user.id||user.uid||''),
+    username:String(user.username||''),
+    role:'customer',
+    maKH:String(user.id||user.uid||''),
+    displayName:String(user.displayName||user.ten||user.username||''),
+    active:true
+  };
+  bootstrapped=true;
+  startSync();
+  return {identity,state:appState.get()};
+}
 async function logout(){
   const uid=currentUid();
   stopSync();
+  if(publicAccess){
+    publicAccess=null;
+    identity=null;bootstrapped=false;appState.reset();
+    return;
+  }
   try{await auth.logout();}
   finally{
     if(uid)snapshot.clear(uid);
@@ -256,15 +308,51 @@ async function logout(){
   }
 }
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
-async function debtLedger(customerId){return business.debtLedger(customerId);}
-async function saveOrder(payload){const result=await business.saveOrder(payload);await refresh(['orders','debt']);return result;}
-async function deliverOrder(id){const result=await business.deliverOrder(id);await refresh(['orders','debt']);return result;}
-async function reverseOrder(id,reason='Hoàn đơn'){const result=await business.reverseOrder(id,reason);await refresh(['orders','debt']);return result;}
-async function deletePending(id){const result=await business.deletePending(id);await refresh(['orders']);return result;}
-async function batchOrders(action,ids){const result=await business.batchOrders(action,ids);await refresh(['orders','debt']);return result;}
-async function debtTransaction(customerId,type,amount,note=''){const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;}
-async function stockCheckLinks(customerId){return business.stockCheckLinks(customerId);}
-async function orderDetail(id){return business.orderDetail(id);}
+async function debtLedger(customerId){
+  if(publicAccess)return publicRpc('taphoa_public_debt_ledger_by_pin',{p_before_at:null,p_before_id:null,p_limit:50});
+  return business.debtLedger(customerId);
+}
+async function saveOrder(payload){
+  const result=publicAccess
+    ?await publicRpc('taphoa_public_save_pending_by_pin',{p_order:orderRpcPayload({...payload,status:'pending'}),p_command_id:crypto.randomUUID()})
+    :await business.saveOrder(payload);
+  await refresh(['orders','debt']);
+  return result;
+}
+async function deliverOrder(id){
+  if(publicAccess)throw new Error('public_pending_only');
+  const result=await business.deliverOrder(id);await refresh(['orders','debt']);return result;
+}
+async function reverseOrder(id,reason='Hoàn đơn'){
+  if(publicAccess)throw new Error('public_pending_only');
+  const result=await business.reverseOrder(id,reason);await refresh(['orders','debt']);return result;
+}
+async function deletePending(id){
+  const result=publicAccess
+    ?await publicRpc('taphoa_public_delete_pending_by_pin',{p_order_id:String(id||''),p_command_id:crypto.randomUUID()})
+    :await business.deletePending(id);
+  await refresh(['orders']);return result;
+}
+async function batchOrders(action,ids){
+  if(publicAccess)throw new Error('public_pending_only');
+  const result=await business.batchOrders(action,ids);await refresh(['orders','debt']);return result;
+}
+async function debtTransaction(customerId,type,amount,note=''){
+  if(publicAccess)throw new Error('public_read_only');
+  const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;
+}
+async function stockCheckLinks(customerId){
+  if(publicAccess)return publicRpc('taphoa_public_employee_link_by_pin');
+  return business.stockCheckLinks(customerId);
+}
+async function employeeSnapshot(){
+  if(!publicAccess)return null;
+  return publicRpc('taphoa_public_employee_snapshot_by_pin');
+}
+async function orderDetail(id){
+  if(publicAccess)return publicRpc('taphoa_public_order_detail_by_pin',{p_order_id:String(id||'')});
+  return business.orderDetail(id);
+}
 async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}
 async function marketSearch(query,limit=60,source='',offset=0){return business.marketSearch(query,limit,source,offset);}
 async function setProductMedia(productCode,canonicalProductId){
@@ -292,11 +380,13 @@ window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('tapho
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
-  login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
-  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,orderDetail,
+  login,restore,openPublicLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
+  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,employeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
-  getIdentity:()=>identity,getState:()=>appState.get()
+  getIdentity:()=>identity,getState:()=>appState.get(),
+  getAccessMode:()=>publicAccess?'public-link':'account',
+  getPublicAccess:()=>publicAccess?{slug:publicAccess.slug}:null
 });
 
 window.dispatchEvent(new CustomEvent('taphoa-production-bridge-ready'));
