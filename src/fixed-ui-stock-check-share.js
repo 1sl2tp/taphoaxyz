@@ -104,13 +104,9 @@
     try{
       const links=await getLinks(customer.id);
       const url=role==='employee'?links.employee_url:links.owner_url;
-      const title=role==='employee'?'Kiểm hàng cho nhân viên':'Rà soát kiểm hàng';
-      const text=role==='employee'
-        ?`${customer.name} · Nhân viên kiểm hàng (không hiển thị giá/tiền)`
-        :`${customer.name} · Link chủ cửa hàng rà soát và cập nhật kiểm hàng`;
       closeSheet();
       if(navigator.share){
-        try{await navigator.share({title,text,url});return;}catch(error){
+        try{await navigator.share({url});return;}catch(error){
           if(/abort|cancel/i.test(String(error?.name||'')+' '+String(error?.message||'')))return;
         }
       }
