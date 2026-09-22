@@ -22,6 +22,8 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     "stock+'?kh='+encodeuricomponent(kh)",
     "json.stringify({kh,action:'update',items})",
     "json.stringify({kh,action:'update',items:[]})",
+    "const [quoteresponse,stockresponse]=await promise.all([",
+    "if(!quotedata||!stockdata)",
     'max-height:min(72dvh,620px)',
     'width:min(428px,100%)',
     '.list-scroll{flex:1 1 auto',
@@ -35,6 +37,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
 
   for(const forbidden of [
     'font:800 13px inherit',
+    'async function loadquote()',
     'data-product-count',
     ' sản phẩm</div></div></div>',
     'data-tab="kiemhang"',
