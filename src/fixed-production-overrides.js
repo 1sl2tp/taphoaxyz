@@ -189,7 +189,9 @@
     if(!hasPermission('canMutateDebt'))return denyPermission('Tài khoản này chỉ được xem Công nợ, không được Thu tiền/Ghi nợ.');
     const maKh=targetMaKh||document.getElementById('quickDebtCustomer')?.value||'';
     const amountStr=targetAmount!==null?String(targetAmount):String(document.getElementById('quickDebtAmount')?.value||'').trim();
-    const amount=Number(amountStr)||0;
+    const amount=typeof parseDebtAmountValue==='function'
+      ? parseDebtAmountValue(amountStr)
+      : Number(String(amountStr).replace(/\D/g,''))||0;
     if(!maKh){showAlertPopup('Chưa chọn khách','Vui lòng chọn khách hàng!');return;}
     if(amount<=0){showAlertPopup('Số tiền không hợp lệ','Vui lòng nhập số tiền lớn hơn 0!');return;}
     showLoading('Đang lập phiếu...');
