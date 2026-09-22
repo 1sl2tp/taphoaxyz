@@ -45,13 +45,20 @@ test('real app has a scoped employee-link access mode with no owner privilege pa
     'installsharedcartquantitysync()',
     'schedulesharedcartsave()',
     'backend().savesharedquantities(items)',
-    'sessionstorage.removeitem(employee_link_session_key)'
+    'sessionstorage.removeitem(employee_link_session_key)',
+    'renderpublictools()',
+    'installemployeeorderactionguard()',
+    "bar.dataset.toolcount=employeelink?'2':'3'"
   ])assert.ok(overrides.includes(needle),needle);
 
   for(const needle of [
-    'body[data-employee-link="true"] #statusbar',
+    '.public-user-tools[data-tool-count="2"]',
     'body[data-employee-mode="true"] #topnav .tab-btn:not(:first-child)',
     'body[data-employee-mode="true"] #headerquicktotal',
-    'body[data-employee-mode="true"] #btnopencartmobile'
+    'body[data-employee-mode="true"] #btnopencartmobile',
+    'body[data-employee-link="true"] #cartshareorderbtn',
+    'button[onclick*="daytoanbogiohang"]'
   ])assert.ok(css.includes(needle),needle);
+
+  assert.equal(css.includes('body[data-employee-link="true"] #statusbar'),false,'employee toolbar must remain visible for Đã mua / Gợi ý');
 });
