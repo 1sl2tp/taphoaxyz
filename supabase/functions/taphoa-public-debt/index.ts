@@ -6,7 +6,7 @@ const db=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoR
 const corsHeaders={
   'access-control-allow-origin':'*',
   'access-control-allow-methods':'GET,OPTIONS',
-  'access-control-allow-headers':'content-type,apikey,x-client-info',
+  'access-control-allow-headers':'authorization,x-customer-pin,content-type,apikey,x-client-info',
   'cache-control':'no-store',
 };
 
@@ -23,6 +23,39 @@ function publicSlug(value:unknown){
   const slug=clean(value,100).toLowerCase();
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)?slug:'';
 }
+async function isAdminRequest(req:Request){
+  const header=clean(req.headers.get('authorization'),4000);
+  if(!header.toLowerCase().startsWith('bearer '))return false;
+  const token=clean(header.slice(7),4000);
+  if(!token)return false;
+  const userResult=await db.auth.getUser(token);
+  const userId=clean(userResult.data?.user?.id,80);
+  if(userResult.error||!userId)return false;
+  const account=await db.from('v21_accounts')
+    .select('id')
+    .eq('auth_user_id',userId)
+    .eq('role','admin')
+    .is('deleted_at',null)
+    .is('locked_at',null)
+    .maybeSingle();
+  return !account.error&&Boolean(account.data?.id);
+}
+async function authorizeCustomerSlug(req:Request,slug:string){
+  if(await isAdminRequest(req))return {ok:true,admin:true};
+  const pin=clean(req.headers.get('x-customer-pin'),20);
+  if(!pin)return {ok:false,error:'pin_required',status:401};
+  const result=await db.rpc('taphoa_public_pin_check',{p_public_slug:slug,p_pin:pin});
+  if(result.error)throw result.error;
+  if(result.data?.ok===true)return {ok:true,admin:false};
+  return {
+    ok:false,
+    error:clean(result.data?.error,40)||'pin_invalid',
+    status:clean(result.data?.error,40)==='pin_locked'?423:403,
+    remaining:result.data?.remaining,
+    retry_after:result.data?.retry_after,
+  };
+}
+
 async function resolveCustomer(value:string){
   const slug=publicSlug(value);
   if(!slug)return null;
@@ -180,6 +213,10 @@ Deno.serve(async(req:Request)=>{
     const url=new URL(req.url);
     const customerSlug=clean(url.searchParams.get('kh'),160);
     if(!customerSlug)return json({ok:false,error:'link_required'},400);
+    const access=await authorizeCustomerSlug(req,customerSlug);
+    if(!access.ok)return json({
+      ok:false,error:access.error,remaining:access.remaining,retry_after:access.retry_after
+    },access.status||403);
     const customer=await resolveCustomer(customerSlug);
     if(!customer)return json({ok:false,error:'not_found'},404);
 
