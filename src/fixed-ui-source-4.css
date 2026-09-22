@@ -737,31 +737,43 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   font-size:11px;
   font-weight:750;
 }
-.public-share-pin-row{
+.public-share-pin-boxes{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:8px;
-  margin-top:6px;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:7px;
+  margin-top:7px;
 }
-.public-share-pin-row input{
+.public-share-pin-digit{
+  width:100%;
   min-width:0;
-  height:44px;
+  height:46px;
   border:1px solid #d1d5db;
-  border-radius:12px;
-  padding:0 12px;
+  border-radius:11px;
+  padding:0;
   outline:none;
   background:#fff;
   color:#111827;
-  font-size:15px;
-  font-weight:750;
-  letter-spacing:.08em;
+  text-align:center;
+  font-size:19px;
+  font-weight:800;
+  line-height:1;
+  caret-color:#111827;
 }
-.public-share-pin-row input:focus{
+.public-share-pin-digit:focus{
   border-color:#111827;
+  box-shadow:0 0 0 2px rgba(17,24,39,.08);
 }
-.public-share-pin-row button{
-  min-width:92px;
+.public-share-pin-boxes[data-invalid="true"] .public-share-pin-digit{
+  border-color:#f04438;
+  background:#fffafa;
+}
+.public-share-pin-boxes[data-complete="true"] .public-share-pin-digit{
+  border-color:#98a2b3;
+}
+.public-share-pin-save{
+  width:100%;
   height:44px;
+  margin-top:9px;
   border:0;
   border-radius:12px;
   padding:0 14px;
@@ -771,8 +783,13 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   font-weight:800;
   -webkit-tap-highlight-color:transparent;
 }
-.public-share-pin-row button:disabled{
-  opacity:.55;
+.public-share-pin-save:disabled{
+  opacity:.42;
+  cursor:default;
+}
+@media(max-width:340px){
+  .public-share-pin-boxes{gap:5px}
+  .public-share-pin-digit{height:43px;font-size:18px}
 }
 .public-share-help{
   min-height:31px;
