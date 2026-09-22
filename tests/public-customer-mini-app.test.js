@@ -7,16 +7,18 @@ const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.
 const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8').toLowerCase();
 const runtime=fs.readFileSync(new URL('../src/fixed-ui-runtime-4.js',import.meta.url),'utf8').toLowerCase();
 const css=fs.readFileSync(new URL('../src/fixed-ui-source-4.css',import.meta.url),'utf8').toLowerCase();
-const pinRpc=fs.readFileSync(new URL('../supabase/migrations/20260923021000_public_user_pin_rpc.sql',import.meta.url),'utf8').toLowerCase();
+const optionalPin=fs.readFileSync(new URL('../supabase/migrations/20260922184409_public_link_optional_self_pin.sql',import.meta.url),'utf8').toLowerCase();
 const gateway=fs.readFileSync(new URL('../supabase/migrations/20260923020000_public_user_ui_gateway.sql',import.meta.url),'utf8').toLowerCase();
 
-test('customer link is only a PIN gateway into the existing User UI',()=>{
+test('customer link offers self-created PIN, skip, and account login',()=>{
   for(const needle of [
-    'taphoa_public_pin_check',
+    'taphoa_public_gate_state',
+    'taphoa_public_pin_create',
     "sessionstorage.setitem(store",
-    "location.replace(rooturl())",
-    'pin gồm 6 chữ số',
-    'nhập mã pin'
+    'tạo pin',
+    'bỏ qua',
+    'đăng nhập',
+    'chưa được bảo vệ bằng pin'
   ])assert.ok(gate.includes(needle),needle);
 
   for(const forbidden of [
@@ -34,17 +36,19 @@ test('customer link is only a PIN gateway into the existing User UI',()=>{
 test('public customer access reuses the production bridge and existing User screens',()=>{
   for(const needle of [
     'async function openpubliclink',
-    "taphoa_public_bootstrap_by_pin",
-    "taphoa_public_domains_by_pin",
-    "taphoa_public_save_pending_by_pin",
-    "taphoa_public_delete_pending_by_pin",
-    "taphoa_public_order_detail_by_pin",
-    "taphoa_public_debt_ledger_by_pin",
+    "taphoa_public_bootstrap_access",
+    "taphoa_public_domains_access",
+    "taphoa_public_save_pending_access",
+    "taphoa_public_delete_pending_access",
+    "taphoa_public_order_detail_access",
+    "taphoa_public_debt_ledger_access",
     "getaccessmode:()=>publicaccess?'public-link':'account'"
   ])assert.ok(bridge.includes(needle),needle);
 
   for(const needle of [
     'openpublicuserfromsession',
+    'const restored=await backend().restore()',
+    "backend().openpubliclink(q.kh,'')",
     "setauthrole('user')",
     'showappscreen()',
     'applypublicdeeplink()',
@@ -75,16 +79,19 @@ test('bought suggested and employee modes are thin filters on the existing produ
   ])assert.ok(css.includes(needle),needle);
 });
 
-test('PIN wrappers are the public security boundary for User data and draft mutations',()=>{
+test('optional PIN access keeps link possession open until PIN is created and lets account auth bypass it',()=>{
   for(const needle of [
-    'taphoa_public_customer_id_by_pin',
-    'taphoa_public_bootstrap_by_pin',
-    'taphoa_public_domains_by_pin',
-    'taphoa_public_save_pending_by_pin',
-    'taphoa_public_delete_pending_by_pin',
-    'taphoa_public_employee_link_by_pin',
-    'taphoa_public_employee_snapshot_by_pin'
-  ])assert.ok(pinRpc.includes(needle),needle);
+    'pin_hash bytea',
+    'taphoa_public_gate_state',
+    'taphoa_public_pin_create',
+    'taphoa_public_customer_id_for_access',
+    "v_account.role='admin'",
+    'v_account.id=v_link.customer_account_id',
+    'if v_link.pin_hash is null then',
+    'extensions.digest',
+    'taphoa_public_bootstrap_access',
+    'taphoa_public_save_pending_access'
+  ])assert.ok(optionalPin.includes(needle),needle);
 
   for(const needle of [
     'taphoa_public_bootstrap_for_customer',

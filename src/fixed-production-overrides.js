@@ -275,8 +275,12 @@
   function publicStoredAccess(){
     try{
       const value=JSON.parse(sessionStorage.getItem(PUBLIC_LINK_SESSION_KEY)||'null');
-      if(!value?.kh||!value?.pin)return null;
-      return {kh:String(value.kh).toLowerCase(),pin:String(value.pin)};
+      if(!value?.kh)return null;
+      return {
+        kh:String(value.kh).toLowerCase(),
+        pin:String(value.pin||''),
+        mode:String(value.mode||'pin')
+      };
     }catch{return null;}
   }
 
@@ -477,9 +481,35 @@
     };
   }
 
+  async function enterPublicUser(info){
+    setAuthRole('user');
+    syncSelfCustomer(info);
+    showAppScreen();
+    await refreshFixedSheets();
+    installPublicSwitchTracking();
+    applyPublicDeepLink();
+    startPublicEmployeeSync();
+  }
+
   async function openPublicUserFromSession(){
     const q=publicQuery();
     if(!q.kh)return false;
+
+    try{
+      const restored=await backend().restore();
+      if(restored){
+        try{
+          const info=await backend().openPublicLink(q.kh,'');
+          await enterPublicUser(info);
+          return true;
+        }catch(error){
+          console.warn('public account bypass',error);
+        }
+      }
+    }catch(error){
+      console.warn('public account restore',error);
+    }
+
     const stored=publicStoredAccess();
     if(!stored||stored.kh!==q.kh){
       location.replace(publicGateUrl());
@@ -487,13 +517,7 @@
     }
     try{
       const info=await backend().openPublicLink(stored.kh,stored.pin);
-      setAuthRole('user');
-      syncSelfCustomer(info);
-      showAppScreen();
-      await refreshFixedSheets();
-      installPublicSwitchTracking();
-      applyPublicDeepLink();
-      startPublicEmployeeSync();
+      await enterPublicUser(info);
       return true;
     }catch(error){
       sessionStorage.removeItem(PUBLIC_LINK_SESSION_KEY);

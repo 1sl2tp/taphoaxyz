@@ -34,11 +34,11 @@ function currentUid(){return text(identity?.uid);}
 function saveSnapshot(){const uid=currentUid();if(uid&&!publicAccess)snapshot.save(uid,appState.get());}
 
 async function publicRpc(name,args={}){
-  if(!publicAccess?.slug||!publicAccess?.pin)throw new Error('public_access_required');
+  if(!publicAccess?.slug)throw new Error('public_access_required');
   const client=await auth.getClient();
   const {data,error}=await client.rpc(name,{
     p_public_slug:publicAccess.slug,
-    p_pin:publicAccess.pin,
+    p_pin:publicAccess.pin||null,
     ...args
   });
   if(error){
@@ -212,7 +212,7 @@ async function bootstrap({force=false}={}){
     throw new Error('Chưa có dữ liệu đã lưu cho tài khoản này');
   }
   const data=publicAccess
-    ?await publicRpc('taphoa_public_bootstrap_by_pin')
+    ?await publicRpc('taphoa_public_bootstrap_access')
     :await business.bootstrap();
   appState.setBootstrap(data||{});bootstrapped=true;saveSnapshot();
   return appState.get();
@@ -222,7 +222,7 @@ async function refresh(domains=[]){
   const list=[...new Set((domains||[]).map(String))];
   if(!list.length)return appState.get();
   const data=publicAccess
-    ?await publicRpc('taphoa_public_domains_by_pin',{p_domains:list})
+    ?await publicRpc('taphoa_public_domains_access',{p_domains:list})
     :await business.domains(list);
   appState.mergeDomains(data||{});bootstrapped=true;saveSnapshot();
   return appState.get();
@@ -234,7 +234,7 @@ async function syncOnce(){
   syncInFlight=(async()=>{
     const before=appState.get();
     const meta=publicAccess
-      ?await publicRpc('taphoa_public_domains_by_pin',{p_domains:[]})
+      ?await publicRpc('taphoa_public_domains_access',{p_domains:[]})
       :await business.meta();
     const changed=changedDomains(before.revisions,meta?.revisions||{});
     const nextPermissions=meta?.permissions||before.permissions;
@@ -278,7 +278,7 @@ async function restore(){
 async function openPublicLink(slug,pin){
   publicAccess={slug:String(slug||'').trim().toLowerCase(),pin:String(pin||'').trim()};
   bootstrapped=false;
-  const data=await publicRpc('taphoa_public_bootstrap_by_pin');
+  const data=await publicRpc('taphoa_public_bootstrap_access');
   appState.setBootstrap(data||{});
   const user=data?.user||{};
   identity={
@@ -309,12 +309,12 @@ async function logout(){
 }
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
 async function debtLedger(customerId){
-  if(publicAccess)return publicRpc('taphoa_public_debt_ledger_by_pin',{p_before_at:null,p_before_id:null,p_limit:50});
+  if(publicAccess)return publicRpc('taphoa_public_debt_ledger_access',{p_before_at:null,p_before_id:null,p_limit:50});
   return business.debtLedger(customerId);
 }
 async function saveOrder(payload){
   const result=publicAccess
-    ?await publicRpc('taphoa_public_save_pending_by_pin',{p_order:orderRpcPayload({...payload,status:'pending'}),p_command_id:crypto.randomUUID()})
+    ?await publicRpc('taphoa_public_save_pending_access',{p_order:orderRpcPayload({...payload,status:'pending'}),p_command_id:crypto.randomUUID()})
     :await business.saveOrder(payload);
   await refresh(['orders','debt']);
   return result;
@@ -329,7 +329,7 @@ async function reverseOrder(id,reason='Hoàn đơn'){
 }
 async function deletePending(id){
   const result=publicAccess
-    ?await publicRpc('taphoa_public_delete_pending_by_pin',{p_order_id:String(id||''),p_command_id:crypto.randomUUID()})
+    ?await publicRpc('taphoa_public_delete_pending_access',{p_order_id:String(id||''),p_command_id:crypto.randomUUID()})
     :await business.deletePending(id);
   await refresh(['orders']);return result;
 }
@@ -342,15 +342,15 @@ async function debtTransaction(customerId,type,amount,note=''){
   const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;
 }
 async function stockCheckLinks(customerId){
-  if(publicAccess)return publicRpc('taphoa_public_employee_link_by_pin');
+  if(publicAccess)return publicRpc('taphoa_public_employee_link_access');
   return business.stockCheckLinks(customerId);
 }
 async function employeeSnapshot(){
   if(!publicAccess)return null;
-  return publicRpc('taphoa_public_employee_snapshot_by_pin');
+  return publicRpc('taphoa_public_employee_snapshot_access');
 }
 async function orderDetail(id){
-  if(publicAccess)return publicRpc('taphoa_public_order_detail_by_pin',{p_order_id:String(id||'')});
+  if(publicAccess)return publicRpc('taphoa_public_order_detail_access',{p_order_id:String(id||'')});
   return business.orderDetail(id);
 }
 async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}

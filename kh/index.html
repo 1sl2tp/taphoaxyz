@@ -8,74 +8,218 @@
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f3f4f6}
 *{box-sizing:border-box}html,body{height:100%;margin:0}body{display:grid;place-items:center;padding:20px;background:#f3f4f6}
-.pin{width:min(360px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:24px;box-shadow:0 12px 36px rgba(15,23,42,.08)}
-h1{margin:0;font-size:20px}p{margin:7px 0 18px;color:#667085;font-size:13px;line-height:1.45}
-input{width:100%;height:52px;border:1px solid #d0d5dd;border-radius:14px;text-align:center;font-size:22px;font-weight:800;letter-spacing:.28em;padding-left:.28em;outline:none}
-input:focus{border-color:#171717}button{width:100%;height:48px;margin-top:12px;border:0;border-radius:14px;background:#171717;color:#fff;font-size:14px;font-weight:800}
-button:disabled{opacity:.55}.error{min-height:18px;margin-top:10px;color:#b42318;font-size:12px;text-align:center}
+.card{width:min(380px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:24px;box-shadow:0 12px 36px rgba(15,23,42,.08)}
+h1{margin:0;font-size:20px}p{margin:7px 0 18px;color:#667085;font-size:13px;line-height:1.5}
+input{width:100%;height:50px;border:1px solid #d0d5dd;border-radius:14px;font-size:16px;font-weight:650;padding:0 14px;outline:none;background:#fff}
+#pin{text-align:center;font-size:22px;font-weight:800;letter-spacing:.28em;padding-left:.28em}input:focus{border-color:#171717}
+button{width:100%;height:48px;margin-top:12px;border:0;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer}
+button:disabled{opacity:.55;cursor:default}.primary{background:#171717;color:#fff}.secondary{background:#f3f4f6;color:#171717}.login{background:#fff;color:#344054;border:1px solid #d0d5dd}
+.error{min-height:18px;margin-top:10px;color:#b42318;font-size:12px;text-align:center}.warning{margin:0 0 14px;padding:11px 12px;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px;line-height:1.45}
+.divider{display:flex;align-items:center;gap:10px;margin:17px 0 2px;color:#98a2b3;font-size:11px}.divider:before,.divider:after{content:"";height:1px;background:#eaecf0;flex:1}
+.login-panel{margin-top:12px;padding-top:4px}.login-panel input+input{margin-top:10px}.hidden{display:none!important}
+.back{height:auto;margin-top:10px;background:transparent;color:#667085;font-weight:650}
 </style>
 </head>
 <body>
-<form class="pin" id="pinForm">
-  <h1>TAPHOA</h1>
-  <p>Nhập mã PIN để mở thông tin của bạn.</p>
-  <input id="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" aria-label="Mã PIN" placeholder="••••••" autofocus>
-  <button id="submit" type="submit">Tiếp tục</button>
+<section class="card" aria-live="polite">
+  <h1 id="title">TAPHOA</h1>
+  <p id="description">Đang kiểm tra liên kết…</p>
+  <div class="warning hidden" id="warning">Liên kết của bạn chưa được bảo vệ bằng PIN. Nên tạo PIN để người chỉ có link không thể xem thông tin.</div>
+
+  <div id="pinPanel">
+    <input id="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" aria-label="Mã PIN" placeholder="••••••">
+    <button id="submit" class="primary" type="button">Tiếp tục</button>
+    <button id="skip" class="secondary hidden" type="button">Bỏ qua</button>
+  </div>
+
+  <div class="divider"><span>hoặc</span></div>
+  <button id="showLogin" class="login" type="button">Đăng nhập</button>
+
+  <div id="loginPanel" class="login-panel hidden">
+    <input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tài khoản">
+    <input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu">
+    <button id="loginButton" class="primary" type="button">Đăng nhập</button>
+    <button id="backButton" class="back" type="button">Quay lại</button>
+  </div>
+
   <div class="error" id="error"></div>
-</form>
-<script>
-(()=>{
-'use strict';
+</section>
+
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.112.3?standalone';
+
 const SUPABASE='https://gcnoahqsrquxkwkjbuxy.supabase.co';
 const KEY='sb_publishable_UY3gfQ9MsntDFCUJ_uV0UA__eTYXz_w';
 const STORE='taphoa.public.link.v1';
+const AUTH_STORE='taphoa.xyz.auth.v2';
 const params=new URLSearchParams(location.search);
 const kh=String(params.get('kh')||'').trim().toLowerCase();
-const form=document.getElementById('pinForm');
-const input=document.getElementById('pin');
-const button=document.getElementById('submit');
+const skipKey='taphoa.public.pin.skips.v1:'+kh;
+const client=createClient(SUPABASE,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storage:localStorage,storageKey:AUTH_STORE}});
+
+const title=document.getElementById('title');
+const description=document.getElementById('description');
+const warning=document.getElementById('warning');
+const pinPanel=document.getElementById('pinPanel');
+const pinInput=document.getElementById('pin');
+const submit=document.getElementById('submit');
+const skip=document.getElementById('skip');
+const showLogin=document.getElementById('showLogin');
+const loginPanel=document.getElementById('loginPanel');
+const username=document.getElementById('username');
+const password=document.getElementById('password');
+const loginButton=document.getElementById('loginButton');
+const backButton=document.getElementById('backButton');
 const error=document.getElementById('error');
 
-function rootUrl(){
-  return '/?'+params.toString();
+let pinConfigured=false;
+
+function rootUrl(){return '/?'+params.toString();}
+function readSkipCount(){try{return Math.max(0,Number(localStorage.getItem(skipKey))||0)}catch{return 0}}
+function writeSkipCount(value){try{localStorage.setItem(skipKey,String(Math.max(0,value||0)))}catch{}}
+function clearSkipCount(){try{localStorage.removeItem(skipKey)}catch{}}
+function saveAccess(pin,mode){sessionStorage.setItem(STORE,JSON.stringify({kh,pin:String(pin||''),mode:String(mode||'pin')}));}
+function setError(message=''){error.textContent=message;}
+function setBusy(button,busy,label){
+  if(!button)return;
+  if(!button.dataset.idle)button.dataset.idle=button.textContent;
+  button.disabled=busy;
+  button.textContent=busy?label:(button.dataset.idle||button.textContent);
 }
-function stored(){
-  try{return JSON.parse(sessionStorage.getItem(STORE)||'null')}catch{return null}
+function normalizePin(){
+  pinInput.value=String(pinInput.value||'').replace(/\D/g,'').slice(0,6);
+  return pinInput.value;
 }
-const old=stored();
-if(kh&&old?.kh===kh&&old?.pin){
+async function rpc(name,args={}){
+  const {data,error:rpcError}=await client.rpc(name,args);
+  if(rpcError)throw rpcError;
+  return data||{};
+}
+function enter(){
   location.replace(rootUrl());
-  return;
 }
-if(!kh){
-  error.textContent='Liên kết không hợp lệ.';
-  input.disabled=true;button.disabled=true;
-  return;
+function showLoginPanel(){
+  setError('');
+  pinPanel.classList.add('hidden');
+  showLogin.classList.add('hidden');
+  loginPanel.classList.remove('hidden');
+  setTimeout(()=>username.focus(),0);
 }
-input.addEventListener('input',()=>{input.value=String(input.value||'').replace(/\D/g,'').slice(0,6);error.textContent='';});
-form.addEventListener('submit',async event=>{
-  event.preventDefault();
-  const pin=String(input.value||'').trim();
-  if(!/^\d{6}$/.test(pin)){error.textContent='PIN gồm 6 chữ số.';return;}
-  button.disabled=true;button.textContent='Đang kiểm tra…';error.textContent='';
+function hideLoginPanel(){
+  setError('');
+  loginPanel.classList.add('hidden');
+  pinPanel.classList.remove('hidden');
+  showLogin.classList.remove('hidden');
+  setTimeout(()=>pinInput.focus(),0);
+}
+function renderGate(state){
+  pinConfigured=state?.pin_configured===true;
+  if(pinConfigured){
+    title.textContent='Nhập mã PIN';
+    description.textContent='Liên kết này đã được bảo vệ. Nhập PIN để tiếp tục.';
+    submit.textContent='Tiếp tục';
+    submit.dataset.idle='Tiếp tục';
+    skip.classList.add('hidden');
+    warning.classList.add('hidden');
+  }else{
+    title.textContent='Bảo vệ liên kết';
+    description.textContent='Tạo PIN 6 số để người chỉ có link không thể xem thông tin của bạn.';
+    submit.textContent='Tạo PIN';
+    submit.dataset.idle='Tạo PIN';
+    skip.classList.remove('hidden');
+    warning.classList.toggle('hidden',readSkipCount()<2);
+  }
+  pinInput.value='';
+  setTimeout(()=>pinInput.focus(),0);
+}
+async function loadGate(){
+  if(!kh){
+    title.textContent='Liên kết không hợp lệ';
+    description.textContent='Không tìm thấy thông tin khách hàng.';
+    pinPanel.classList.add('hidden');
+    showLogin.classList.add('hidden');
+    return;
+  }
   try{
-    const response=await fetch(SUPABASE+'/rest/v1/rpc/taphoa_public_pin_check',{
-      method:'POST',
-      headers:{'content-type':'application/json','apikey':KEY},
-      body:JSON.stringify({p_public_slug:kh,p_pin:pin})
-    });
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok||data?.ok!==true)throw new Error(String(data?.error||'pin_invalid'));
-    sessionStorage.setItem(STORE,JSON.stringify({kh,pin}));
-    location.replace(rootUrl());
+    const state=await rpc('taphoa_public_gate_state',{p_public_slug:kh});
+    if(state?.ok!==true)throw new Error('not_found');
+    if(state?.authenticated_bypass===true){enter();return;}
+    renderGate(state);
+  }catch{
+    title.textContent='Không mở được liên kết';
+    description.textContent='Liên kết không hợp lệ hoặc đã hết hiệu lực.';
+    pinPanel.classList.add('hidden');
+    showLogin.classList.add('hidden');
+  }
+}
+
+pinInput.addEventListener('input',()=>{normalizePin();setError('');});
+pinInput.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();submit.click();}});
+submit.addEventListener('click',async()=>{
+  const pin=normalizePin();
+  if(!/^\d{6}$/.test(pin)){setError('PIN gồm 6 chữ số.');return;}
+  setBusy(submit,true,pinConfigured?'Đang kiểm tra…':'Đang tạo…');
+  setError('');
+  try{
+    if(pinConfigured){
+      const data=await rpc('taphoa_public_pin_check',{p_public_slug:kh,p_pin:pin});
+      if(data?.ok!==true){
+        if(data?.error==='pin_locked')throw new Error('locked');
+        throw new Error('invalid');
+      }
+    }else{
+      const data=await rpc('taphoa_public_pin_create',{p_public_slug:kh,p_pin:pin});
+      if(data?.ok!==true){
+        if(data?.error==='pin_already_set'){await loadGate();return;}
+        throw new Error(data?.error||'create_failed');
+      }
+      clearSkipCount();
+    }
+    saveAccess(pin,'pin');
+    enter();
   }catch(err){
     const code=String(err?.message||'');
-    error.textContent=code.includes('locked')?'PIN đang tạm khóa. Thử lại sau.':'PIN không đúng.';
-    button.disabled=false;button.textContent='Tiếp tục';
-    input.select();
+    setError(code.includes('locked')?'PIN đang tạm khóa. Thử lại sau.':pinConfigured?'PIN không đúng.':'Không tạo được PIN. Vui lòng thử lại.');
+    pinInput.select();
+  }finally{
+    setBusy(submit,false,'');
   }
 });
-})();
+
+skip.addEventListener('click',()=>{
+  writeSkipCount(readSkipCount()+1);
+  saveAccess('','skip');
+  enter();
+});
+
+showLogin.addEventListener('click',showLoginPanel);
+backButton.addEventListener('click',hideLoginPanel);
+password.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();loginButton.click();}});
+loginButton.addEventListener('click',async()=>{
+  const user=String(username.value||'').trim().toLowerCase();
+  const pass=String(password.value||'');
+  if(!user||!pass){setError('Nhập tài khoản và mật khẩu.');return;}
+  setBusy(loginButton,true,'Đang đăng nhập…');
+  setError('');
+  try{
+    const {error:loginError}=await client.auth.signInWithPassword({email:user+'@taphoa.chat',password:pass});
+    if(loginError)throw loginError;
+    const state=await rpc('taphoa_public_gate_state',{p_public_slug:kh});
+    if(state?.authenticated_bypass!==true){
+      await client.auth.signOut({scope:'local'}).catch(()=>{});
+      setError('Tài khoản này không thuộc liên kết.');
+      return;
+    }
+    sessionStorage.removeItem(STORE);
+    enter();
+  }catch{
+    setError('Sai tài khoản hoặc mật khẩu.');
+  }finally{
+    setBusy(loginButton,false,'');
+  }
+});
+
+loadGate();
 </script>
 </body>
 </html>
