@@ -167,7 +167,7 @@ test('saved market comparison rows align and preserve source link',async()=>{
 test('product media comparison assets bypass stale PWA cache',async()=>{
   const [index,sw]=await Promise.all([read('index.html'),read('sw.js')]);
   assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
-  assert.match(index,/fixed-ui-product-media\.js\?v=compare-fit-20260920/);
+  assert.match(index,/fixed-ui-product-media\.js\?v=literal-business-money-20260922/);
   assert.match(sw,/taphoa-runtime-v36/);
 });
 
@@ -439,4 +439,14 @@ test('mobile supermarket thumbnail override cannot shrink below the shared 64px 
   assert.match(index,/fixed-ui-product-media\.css\?v=visible-thumb-v2-20260921/);
   assert.match(index,/fixed-ui-source-4\.css\?v=order-empty-state-20260922/);
   assert.match(sw,/taphoa-runtime-v36/);
+});
+
+
+test('own prices stay literal while supermarket source prices keep their source values',async()=>{
+  const media=await read('src/fixed-ui-product-media.js');
+  assert.match(media,/function ownPriceValue\(value\)/);
+  assert.doesNotMatch(media,/amount\*1000/);
+  assert.match(media,/function formatBusinessPrice\(value\)/);
+  assert.match(media,/maximumFractionDigits:3/);
+  assert.match(media,/priceFormatter=label==='MÌNH'\?formatBusinessPrice:formatComparePrice/);
 });
