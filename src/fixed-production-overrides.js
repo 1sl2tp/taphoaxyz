@@ -345,6 +345,12 @@
       button.classList.toggle('is-active',active);
       button.setAttribute('aria-pressed',String(active));
     }
+    const employeeButton=document.getElementById('publicToolEmployee');
+    if(employeeButton){
+      employeeButton.textContent=employee?'Chủ':'Nhân viên';
+      employeeButton.setAttribute('aria-label',employee?'Quay lại chế độ chủ':'Chuyển sang chế độ nhân viên');
+      employeeButton.title=employee?'Quay lại chế độ chủ':'Chuyển sang chế độ nhân viên';
+    }
   }
 
   function setPublicSegment(value){
