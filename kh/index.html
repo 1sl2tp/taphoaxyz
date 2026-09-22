@@ -59,6 +59,7 @@ const kh=p.get('kh')||'';
 const stockToken=p.get('t')||'';
 const requestedTab=p.get('tab')||'hang';
 let tab=['hang','don','no'].includes(requestedTab)?requestedTab:'hang';
+const legacyStockTab=requestedTab==='kiemhang';
 let source=p.get('nguon')||'all';
 let segment=['tat-ca','da-mua','goi-y'].includes(p.get('muc'))?p.get('muc'):'tat-ca';
 const directOrder=(p.get('don')||'').toUpperCase();
@@ -294,7 +295,9 @@ function closeSheet(){sheet.dataset.open='false';sheet.setAttribute('aria-hidden
 function render(){if(tab==='hang')renderHang();else if(tab==='don')renderDon();else renderNo();}
 document.querySelector('.bottom').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;updateUrl();render();});
 document.getElementById('sheet-close').addEventListener('click',closeSheet);sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet();});
-if(!kh){fail('Liên kết không hợp lệ');return;}nav();render();
+if(!kh){fail('Liên kết không hợp lệ');return;}
+if(legacyStockTab)updateUrl();
+nav();render();
 })();
 </script>
 </body>
