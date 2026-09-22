@@ -23,36 +23,103 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
   });
 
+  async function customerIdFromSlug(slug:string){
+    const { data, error } = await db.from("v21_customer_public_links")
+      .select("customer_account_id")
+      .eq("public_slug", slug)
+      .is("revoked_at", null)
+      .maybeSingle();
+    if (error) throw error;
+    const id = String(data?.customer_account_id || "").trim();
+    if (!id) throw new Error("customer_not_found");
+    return id;
+  }
+
+  async function ensureStockLinks(customerId:string){
+    const read = async() => {
+      const { data, error } = await db.from("taphoa_stock_check_links")
+        .select("link_role,token")
+        .eq("customer_account_id", customerId)
+        .eq("is_active", true);
+      if (error) throw error;
+      const out:any = {};
+      for (const row of (data || [])) out[String(row.link_role)] = String(row.token || "");
+      return out;
+    };
+
+    let links = await read();
+    if (links.owner && links.employee) return links;
+
+    const { data: admin, error: adminError } = await db.from("v21_accounts")
+      .select("id")
+      .eq("role", "admin")
+      .is("deleted_at", null)
+      .is("locked_at", null)
+      .order("created_at", { ascending:true })
+      .limit(1)
+      .maybeSingle();
+    if (adminError) throw adminError;
+    const adminId = String(admin?.id || "").trim();
+    if (!adminId) throw new Error("admin_not_found");
+
+    const missing = ["owner","employee"].filter(role => !links[role]).map(role => ({
+      customer_account_id: customerId,
+      link_role: role,
+      created_by_account_id: adminId,
+      is_active: true
+    }));
+    if (missing.length) {
+      const { error } = await db.from("taphoa_stock_check_links")
+        .upsert(missing, { onConflict:"customer_account_id,link_role" });
+      if (error) throw error;
+    }
+    links = await read();
+    if (!links.owner || !links.employee) throw new Error("stock_check_link_invalid");
+    return links;
+  }
+
   try {
     if (req.method === "GET") {
       const token = String(url.searchParams.get("t") || "").trim();
+      const slug = String(url.searchParams.get("kh") || "").trim();
+
+      if (slug) {
+        const customerId = await customerIdFromSlug(slug);
+        const links = await ensureStockLinks(customerId);
+        const { data, error } = await db.rpc("taphoa_stock_check_snapshot", { p_token: links.owner });
+        if (error) throw error;
+        const snapshot:any = data || { ok:false, error:"empty_snapshot" };
+        if (snapshot?.ok) {
+          snapshot.employee_url = `https://app.taphoa.xyz/kiemhang/?t=${links.employee}`;
+          snapshot.owner_url = `https://app.taphoa.xyz/kh/?kh=${encodeURIComponent(slug)}&tab=hang`;
+        }
+        return json(snapshot);
+      }
+
       if (!token) return json({ ok:false, error:"token_required" }, 400);
       const { data, error } = await db.rpc("taphoa_stock_check_snapshot", { p_token: token });
       if (error) throw error;
       const snapshot:any = data || { ok:false, error:"empty_snapshot" };
       if (snapshot?.ok && snapshot?.role === "owner" && snapshot?.customer_id) {
-        const [employeeLink, publicLink] = await Promise.all([
-          db.from("taphoa_stock_check_links")
-            .select("token")
-            .eq("customer_account_id", String(snapshot.customer_id))
-            .eq("link_role", "employee")
-            .eq("is_active", true)
-            .maybeSingle(),
-          db.rpc("v21_customer_public_link_info_get_or_create", { p_customer_id: String(snapshot.customer_id) })
-        ]);
-        const employeeToken = String(employeeLink.data?.token || "").trim();
+        const publicLink = await db.rpc("v21_customer_public_link_info_get_or_create", { p_customer_id: String(snapshot.customer_id) });
         const slug = String(publicLink.data?.public_slug || "").trim();
-        if (employeeToken) snapshot.employee_url = `https://app.taphoa.xyz/kiemhang/?t=${employeeToken}`;
-        if (slug) snapshot.owner_url = `https://app.taphoa.xyz/kh/?kh=${encodeURIComponent(slug)}&tab=hang&t=${encodeURIComponent(token)}`;
+        if (slug) snapshot.owner_url = `https://app.taphoa.xyz/kh/?kh=${encodeURIComponent(slug)}&tab=hang`;
       }
       return json(snapshot);
     }
 
     if (req.method === "POST") {
       const body = await req.json().catch(() => ({}));
-      const token = String(body?.token || "").trim();
+      let token = String(body?.token || "").trim();
+      const slug = String(body?.kh || "").trim();
       const action = String(body?.action || "save").trim().toLowerCase();
       const items = Array.isArray(body?.items) ? body.items : [];
+
+      if (!token && slug) {
+        const customerId = await customerIdFromSlug(slug);
+        const links = await ensureStockLinks(customerId);
+        token = String(links.owner || "");
+      }
       if (!token) return json({ ok:false, error:"token_required" }, 400);
       if (items.length > 1000) return json({ ok:false, error:"too_many_items" }, 400);
 
@@ -64,7 +131,7 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await db.rpc("taphoa_stock_check_submit", {
         p_token: token,
         p_items: normalized,
-        p_action: action
+        p_action: slug ? "update" : action
       });
       if (error) throw error;
       return json(data || { ok:true });
