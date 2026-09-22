@@ -74,9 +74,19 @@ test('bought suggested and employee modes are thin filters on the existing produ
 
   for(const needle of [
     '.public-user-tools',
+    'border-radius:16px',
+    '-webkit-tap-highlight-color:transparent',
+    'background:rgba(255,255,255,.14)',
     'body[data-employee-mode="true"] #headerquicktotal',
     'body[data-employee-mode="true"] #btnopencartmobile'
   ])assert.ok(css.includes(needle),needle);
+
+  for(const needle of [
+    'function syncpublictoolstate()',
+    "bar.dataset.publictoolview='hang'",
+    "bar.dataset.publictoolview!=='hang'",
+    'requestanimationframe(()=>renderproductlist())'
+  ])assert.ok(overrides.includes(needle),needle);
 });
 
 test('optional PIN access keeps link possession open until PIN is created and lets account auth bypass it',()=>{
