@@ -687,6 +687,7 @@
     }
     try{
       const info=await backend().openEmployeeLink(stored.token,stored.pin);
+      sessionStorage.removeItem(EMPLOYEE_LINK_SESSION_KEY);
       await enterEmployeeLink(info);
       return true;
     }catch(error){
