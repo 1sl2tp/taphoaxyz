@@ -408,22 +408,53 @@
         '</div>'+
         '<div class="public-share-warning">Đây là liên kết truy cập nhanh, không phải app đầy đủ. Nên đặt PIN trước khi gửi và không chia sẻ link ra bên ngoài.</div>'+
         '<div class="public-share-status"><span>Trạng thái PIN</span><strong id="publicSharePinStatus"></strong></div>'+
-        '<label class="public-share-label" for="publicSharePinInput">Mã PIN 6 số</label>'+
-        '<div class="public-share-pin-row">'+
-          '<input id="publicSharePinInput" inputmode="numeric" autocomplete="new-password" maxlength="6" placeholder="Nhập PIN mới">'+
-          '<button type="button" id="publicShareSavePin"></button>'+
+        '<div class="public-share-label">Mã PIN 6 số</div>'+
+        '<div class="public-share-pin-boxes" id="publicSharePinBoxes" data-invalid="false" data-complete="false" aria-label="Mã PIN 6 số">'+
+          '<input class="public-share-pin-digit" data-share-pin-digit inputmode="numeric" autocomplete="new-password" maxlength="1" aria-label="Số PIN 1">'+
+          '<input class="public-share-pin-digit" data-share-pin-digit inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Số PIN 2">'+
+          '<input class="public-share-pin-digit" data-share-pin-digit inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Số PIN 3">'+
+          '<input class="public-share-pin-digit" data-share-pin-digit inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Số PIN 4">'+
+          '<input class="public-share-pin-digit" data-share-pin-digit inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Số PIN 5">'+
+          '<input class="public-share-pin-digit" data-share-pin-digit inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Số PIN 6">'+
         '</div>'+
+        '<button type="button" class="public-share-pin-save" id="publicShareSavePin" disabled></button>'+
         '<div class="public-share-help" id="publicShareHelp"></div>'+
         '<button type="button" class="public-share-copy" id="publicShareCopy">Sao chép link nhân viên</button>'+
       '</section>';
     document.body.appendChild(wrap);
 
     let hasPin=Boolean(pinConfigured);
+    let savingPin=false;
     const status=wrap.querySelector('#publicSharePinStatus');
-    const input=wrap.querySelector('#publicSharePinInput');
+    const pinBoxes=wrap.querySelector('#publicSharePinBoxes');
+    const pinInputs=[...wrap.querySelectorAll('[data-share-pin-digit]')];
     const save=wrap.querySelector('#publicShareSavePin');
     const help=wrap.querySelector('#publicShareHelp');
     const copy=wrap.querySelector('#publicShareCopy');
+
+    const getPin=()=>pinInputs.map(input=>String(input.value||'').replace(/\D/g,'').slice(-1)).join('');
+    const updatePinState=()=>{
+      const value=getPin();
+      pinBoxes.dataset.complete=String(value.length===6);
+      if(value.length)pinBoxes.dataset.invalid='false';
+      save.disabled=savingPin||value.length!==6;
+    };
+    const clearPin=(invalid=false)=>{
+      pinInputs.forEach(input=>{input.value='';});
+      pinBoxes.dataset.invalid=String(invalid);
+      updatePinState();
+    };
+    const focusPin=(index=0)=>setTimeout(()=>pinInputs[Math.max(0,Math.min(5,index))]?.focus(),0);
+    const fillPin=(digits,startIndex=0)=>{
+      const values=String(digits||'').replace(/\D/g,'');
+      if(!values)return;
+      const start=values.length>=6?0:startIndex;
+      for(let i=0;i<values.length&&start+i<pinInputs.length;i++)pinInputs[start+i].value=values[i];
+      help.dataset.error='false';
+      help.dataset.success='false';
+      updatePinState();
+      focusPin(Math.min(start+values.length,pinInputs.length-1));
+    };
 
     const render=()=>{
       status.textContent=hasPin?'Đã bảo vệ':'Chưa tạo PIN';
@@ -435,29 +466,55 @@
     };
     render();
 
-    input.addEventListener('input',()=>{
-      input.value=String(input.value||'').replace(/\D/g,'').slice(0,6);
-      help.dataset.error='false';
-    });
-    input.addEventListener('keydown',event=>{
-      if(event.key==='Enter'){event.preventDefault();save.click();}
+    pinInputs.forEach((input,index)=>{
+      input.addEventListener('input',()=>{
+        const digits=String(input.value||'').replace(/\D/g,'');
+        input.value=digits.slice(-1);
+        pinBoxes.dataset.invalid='false';
+        help.dataset.error='false';
+        help.dataset.success='false';
+        updatePinState();
+        if(input.value&&index<pinInputs.length-1)pinInputs[index+1].focus();
+      });
+      input.addEventListener('keydown',event=>{
+        if(event.key==='Backspace'&&!input.value&&index>0){
+          event.preventDefault();
+          pinInputs[index-1].value='';
+          pinInputs[index-1].focus();
+          updatePinState();
+        }else if(event.key==='ArrowLeft'&&index>0){
+          event.preventDefault();pinInputs[index-1].focus();
+        }else if(event.key==='ArrowRight'&&index<pinInputs.length-1){
+          event.preventDefault();pinInputs[index+1].focus();
+        }else if(event.key==='Enter'&&getPin().length===6){
+          event.preventDefault();save.click();
+        }
+      });
+      input.addEventListener('paste',event=>{
+        const digits=String(event.clipboardData?.getData('text')||'').replace(/\D/g,'');
+        if(!digits)return;
+        event.preventDefault();
+        fillPin(digits,index);
+      });
     });
     save.addEventListener('click',async()=>{
-      const pin=String(input.value||'').trim();
+      const pin=getPin();
       if(!/^\d{6}$/.test(pin)){
         help.textContent='PIN phải gồm đúng 6 chữ số.';
         help.dataset.error='true';
-        input.focus();
+        pinBoxes.dataset.invalid='true';
+        focusPin();
         return;
       }
       const old=save.textContent;
-      save.disabled=true;
+      savingPin=true;
       save.textContent='Đang lưu…';
+      updatePinState();
       help.dataset.error='false';
       try{
         await backend().setPublicPin(pin);
         hasPin=true;
-        input.value='';
+        clearPin(false);
         render();
         help.textContent='Đã lưu PIN mới. Nhân viên phải dùng PIN này.';
         help.dataset.success='true';
@@ -465,9 +522,11 @@
         console.warn('set public pin',error);
         help.textContent='Không đổi được PIN. Hãy mở lại link chủ và thử lại.';
         help.dataset.error='true';
+        pinBoxes.dataset.invalid='true';
       }finally{
-        save.disabled=false;
+        savingPin=false;
         if(save.textContent==='Đang lưu…')save.textContent=old;
+        updatePinState();
       }
     });
     copy.addEventListener('click',async()=>{
