@@ -33,7 +33,7 @@ test('typing 4611 is displayed as 4.611 while submit parsing returns 4611',()=>{
 });
 
 
-test('production override parses formatted debt input as whole thousand units',()=>{
+test('production override parses formatted debt input as the literal whole number',()=>{
   const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
   assert.match(overrides,/typeof parseDebtAmountValue==='function'/);
   assert.match(overrides,/parseDebtAmountValue\(amountStr\)/);
@@ -51,5 +51,5 @@ test('backend rejects fractional debt amounts from stale formatted clients',()=>
   const end=sql.indexOf('$$;',start);
   const fn=sql.slice(start,end+3);
   assert.match(fn,/p_amount<>trunc\(p_amount\)/);
-  assert.match(fn,/amount_must_be_whole_thousand/);
+  assert.match(fn,/amount_must_be_whole_number/);
 });
