@@ -152,9 +152,12 @@ function renderSummary(){
  if(snapshot.role==='owner'){els.summaryMoney.hidden=false;els.summaryMoney.textContent=money(totalMoney);}
  else{els.summaryMoney.hidden=true;els.summaryMoney.textContent='';}
 }
-function setQty(code,value){
+function setQty(code,value,{syncInput=true}={}){
  const n=int(value);if(n>0)qty.set(code,n);else qty.delete(code);
- const row=els.list.querySelector(`[data-code="${CSS.escape(code)}"]`);const input=row?.querySelector('input');if(input&&String(input.value)!==String(n))input.value=String(n);
+ if(syncInput){
+   const row=els.list.querySelector(`[data-code="${CSS.escape(code)}"]`);const input=row?.querySelector('input');
+   if(input&&String(input.value)!==String(n))input.value=String(n);
+ }
  renderSummary();
 }
 async function submit(){
@@ -191,7 +194,22 @@ function init(){
 els.tabs.addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;active=String(b.dataset.tab);renderTabs();renderList();});
 els.search.addEventListener('input',renderList);
 els.list.addEventListener('click',e=>{const b=e.target.closest('[data-delta]');if(!b)return;const row=b.closest('[data-code]');if(!row)return;const code=String(row.dataset.code);setQty(code,(qty.get(code)||0)+Number(b.dataset.delta||0));});
-els.list.addEventListener('input',e=>{if(e.target.tagName!=='INPUT')return;const row=e.target.closest('[data-code]');if(!row)return;setQty(String(row.dataset.code),e.target.value);});
+els.list.addEventListener('focusin',e=>{if(e.target.tagName!=='INPUT')return;setTimeout(()=>e.target.select(),0);});
+els.list.addEventListener('input',e=>{
+ if(e.target.tagName!=='INPUT')return;
+ const row=e.target.closest('[data-code]');if(!row)return;
+ const code=String(row.dataset.code);
+ const raw=String(e.target.value||'').replace(/\D/g,'');
+ if(e.target.value!==raw)e.target.value=raw;
+ if(raw===''){qty.delete(code);renderSummary();return;}
+ setQty(code,raw,{syncInput:false});
+});
+els.list.addEventListener('focusout',e=>{
+ if(e.target.tagName!=='INPUT')return;
+ const row=e.target.closest('[data-code]');if(!row)return;
+ const code=String(row.dataset.code);
+ setQty(code,e.target.value===''?0:e.target.value);
+});
 els.send.addEventListener('click',submit);
 if(!token){fail();return;}
 fetch(`${API}?t=${encodeURIComponent(token)}`,{cache:'no-store'})
