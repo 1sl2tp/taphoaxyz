@@ -263,6 +263,7 @@ async function reverseOrder(id,reason='Hoàn đơn'){const result=await business
 async function deletePending(id){const result=await business.deletePending(id);await refresh(['orders']);return result;}
 async function batchOrders(action,ids){const result=await business.batchOrders(action,ids);await refresh(['orders','debt']);return result;}
 async function debtTransaction(customerId,type,amount,note=''){const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;}
+async function stockCheckLinks(customerId){return business.stockCheckLinks(customerId);}
 async function orderDetail(id){return business.orderDetail(id);}
 async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}
 async function marketSearch(query,limit=60,source='',offset=0){return business.marketSearch(query,limit,source,offset);}
@@ -292,7 +293,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
-  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,orderDetail,
+  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get()
