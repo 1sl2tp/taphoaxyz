@@ -34,6 +34,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
+    'font:800 13px inherit',
     'data-product-count',
     ' sản phẩm</div></div></div>',
     'data-tab="kiemhang"',
