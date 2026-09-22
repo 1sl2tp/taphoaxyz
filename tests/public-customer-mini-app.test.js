@@ -35,4 +35,6 @@ test('customer mini app keeps products orders and debt in one shell, with stock 
 
   assert.ok(edge.includes('&tab=hang&t='));
   assert.equal(edge.includes('&tab=kiemhang&t='),false);
+  assert.ok(low.includes("const legacystocktab=requestedtab==='kiemhang';"));
+  assert.ok(low.includes('if(legacystocktab)updateurl();'));
 });
