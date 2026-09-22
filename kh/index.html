@@ -16,10 +16,10 @@ button,input{font:inherit}.app{width:min(920px,100%);height:100dvh;margin:0 auto
 .bottom{display:flex;gap:0;border-top:1px solid #e5e7eb;background:#fff;padding-bottom:env(safe-area-inset-bottom)}.nav{flex:1;height:56px;border:0;background:#fff;color:#6b7280;font-weight:650;font-size:13px}.nav[data-active="true"]{color:#111827;background:#f8fafc}
 .toolbar{position:sticky;top:-12px;z-index:5;background:#f6f7f8;padding:0 0 9px}.search{width:100%;height:42px;border:1px solid #d5d9df;border-radius:11px;padding:0 12px;background:#fff;outline:none}.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 0;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chip{height:34px;flex:0 0 auto;border:1px solid #d8dde4;border-radius:999px;padding:0 12px;background:#fff;color:#4b5563;font-weight:650;font-size:12px;white-space:nowrap}.chip[data-active="true"]{background:#171717;color:#fff;border-color:#171717}
 .product-list{display:grid;gap:6px}.product{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:10px;row-gap:3px;align-items:center;padding:8px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:11px}.product-name{min-width:0;font-size:14px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-price{grid-column:2;grid-row:1;text-align:right;font-size:14px;font-weight:800;white-space:nowrap}.product-meta{grid-column:1;grid-row:2;min-width:0;font-size:10px;color:#6b7280;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-stock{grid-column:2;grid-row:2;display:flex;justify-content:flex-end;align-items:center}.tag{display:inline-flex;align-items:center;height:20px;margin-right:5px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:#4b5563;font-size:10px;font-weight:700}
-.section-title{margin:4px 2px 9px;font-size:13px;font-weight:750;color:#4b5563}.empty{padding:28px 12px;text-align:center;color:#6b7280}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 2px 9px}.section-title{margin:0;font-size:13px;font-weight:750;color:#4b5563}.employee-share{flex:0 0 auto;border:0;background:transparent;padding:3px 0;color:#4b5563;font-size:11px;font-weight:750}.empty{padding:28px 12px;text-align:center;color:#6b7280}
 .order-list,.timeline{display:grid;gap:8px}.card{width:100%;border:1px solid #e5e7eb;border-radius:13px;background:#fff;padding:12px 13px;text-align:left;color:inherit}.card-top{display:flex;justify-content:space-between;gap:12px}.card-title{font-size:14px;font-weight:750}.card-money{font-size:14px;font-weight:800;white-space:nowrap}.card-meta{margin-top:5px;font-size:11px;color:#6b7280}.card-foot{margin-top:8px;padding-top:8px;border-top:1px solid #f0f1f2;font-size:11px;color:#6b7280}
 .balance{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px}.balance-label{font-size:12px;color:#6b7280}.balance-value{margin-top:4px;font-size:28px;font-weight:800;letter-spacing:-.03em}.balance-value[data-state="debt"]{color:#b42318}.balance-value[data-state="credit"]{color:#087a55}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.stat{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}.stat span{display:block;font-size:11px;color:#6b7280}.stat strong{display:block;margin-top:3px;font-size:15px}
-.stock-actions{display:grid;grid-template-columns:1fr;gap:6px;margin:0 0 10px}.stock-action{height:40px;border:1px solid #d1d5db;border-radius:11px;background:#fff;color:#374151;font-weight:700;font-size:12px}.stock-note{margin:0 0 9px;padding:10px 11px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;color:#4b5563;font-size:12px;line-height:1.4}.stock-list{display:grid;gap:7px}.stock-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 10px 10px 12px}.stock-name{font-size:14px;font-weight:700;line-height:1.3}.stock-meta{margin-top:3px;font-size:10px;color:#9ca3af}.stock-price{margin-top:3px;font-size:12px;font-weight:750;color:#166534}.stock-qty{display:grid;grid-template-columns:30px 38px 30px;height:32px;border:1px solid #d1d5db;border-radius:9px;overflow:hidden;background:#fff}.stock-qty button{border:0;background:#f9fafb;font-size:18px;color:#374151;padding:0}.stock-qty input{width:38px;height:100%;border:0;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;text-align:center;font:800 13px inherit;outline:none;background:#fff;padding:0}.stock-qty input:focus{background:#f0fdf4}.stock-footer{position:sticky;bottom:-24px;z-index:6;margin:10px -12px -24px;padding:8px 12px max(10px,env(safe-area-inset-bottom));border-top:1px solid #e5e7eb;background:rgba(255,255,255,.98);box-shadow:0 -8px 22px rgba(15,23,42,.05)}.stock-summary{display:flex;align-items:center;justify-content:space-between;gap:12px}.stock-summary-main{font-size:13px;font-weight:800}.stock-summary-sub{margin-top:1px;font-size:10px;color:#6b7280}.stock-summary-money{font-size:15px;font-weight:850;color:#15803d;white-space:nowrap}.stock-footer-actions{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:7px;margin-top:7px}.stock-reset,.stock-save{height:40px;border-radius:11px;font-weight:800;font-size:12px}.stock-reset{border:1px solid #d1d5db;background:#fff;color:#4b5563}.stock-save{border:0;background:#16a34a;color:#fff}.stock-reset:disabled,.stock-save:disabled{opacity:.45}
+.stock-qty{display:grid;grid-template-columns:30px 38px 30px;height:32px;border:1px solid #d1d5db;border-radius:9px;overflow:hidden;background:#fff}.stock-qty button{border:0;background:#f9fafb;font-size:18px;color:#374151;padding:0}.stock-qty input{width:38px;height:100%;border:0;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;text-align:center;font:800 13px inherit;outline:none;background:#fff;padding:0}.stock-qty input:focus{background:#f0fdf4}.stock-footer{position:sticky;bottom:-24px;z-index:6;margin:10px -12px -24px;padding:8px 12px max(10px,env(safe-area-inset-bottom));border-top:1px solid #e5e7eb;background:rgba(255,255,255,.98);box-shadow:0 -8px 22px rgba(15,23,42,.05)}.stock-summary{display:flex;align-items:center;justify-content:space-between;gap:12px}.stock-summary-main{font-size:13px;font-weight:800}.stock-summary-sub{margin-top:1px;font-size:10px;color:#6b7280}.stock-summary-money{font-size:15px;font-weight:850;color:#15803d;white-space:nowrap}.stock-footer-actions{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:7px;margin-top:7px}.stock-reset,.stock-save{height:40px;border-radius:11px;font-weight:800;font-size:12px}.stock-reset{border:1px solid #d1d5db;background:#fff;color:#4b5563}.stock-save{border:0;background:#16a34a;color:#fff}.stock-reset:disabled,.stock-save:disabled{opacity:.45}
 .sheet{position:fixed;inset:0;z-index:40;display:none;align-items:flex-end;background:rgba(17,24,39,.46)}.sheet[data-open="true"]{display:flex}.sheet-card{width:100%;height:min(85dvh,760px);background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden}.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid #eef0f2}.sheet-title{font-size:16px;font-weight:800}.close{width:34px;height:34px;border:0;border-radius:999px;background:#f3f4f6;font-size:22px}.sheet-meta{padding:10px 16px;background:#f8fafc;font-size:12px;color:#6b7280}.order-table{flex:1;min-height:0;overflow-y:auto}.orow{display:grid;grid-template-columns:minmax(0,1fr) 6ch 4ch 7ch;gap:8px;padding:9px 14px;border-bottom:1px solid #f1f2f3;font-size:12px}.orow.head{position:sticky;top:0;background:#fff;color:#9ca3af;font-size:10px;font-weight:750}.orow .n{font-weight:700}.orow .r{text-align:right;white-space:nowrap}.sheet-summary{display:flex;justify-content:space-between;gap:12px;padding:13px 16px;border-top:1px solid #edf0f2}.sheet-summary small{display:block;color:#9ca3af}.sheet-summary strong{display:block;margin-top:3px}.sheet-summary .sum{text-align:right}
 [hidden]{display:none!important}
 @media(min-width:760px){body{padding:18px}.app{height:calc(100dvh - 36px);border:1px solid #e5e7eb;border-radius:20px;box-shadow:0 14px 40px rgba(15,23,42,.08)}.panel{padding:16px 18px 28px}.toolbar{top:-16px;padding-top:0}.sheet{align-items:center;justify-content:center}.sheet-card{width:min(720px,calc(100vw - 48px));border-radius:22px}}
@@ -56,10 +56,10 @@ const DEBT='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-public-
 const STOCK='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-stock-check';
 const p=new URLSearchParams(location.search);
 const kh=p.get('kh')||'';
-const stockToken=p.get('t')||'';
 const requestedTab=p.get('tab')||'hang';
 let tab=['hang','don','no'].includes(requestedTab)?requestedTab:'hang';
 const legacyStockTab=requestedTab==='kiemhang';
+const legacyStockToken=p.has('t');
 let source=p.get('nguon')||'all';
 let segment=['tat-ca','da-mua','goi-y'].includes(p.get('muc'))?p.get('muc'):'tat-ca';
 const directOrder=(p.get('don')||'').toUpperCase();
@@ -76,7 +76,6 @@ const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').repl
 const when=v=>{if(!v)return'';try{return new Date(v).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'});}catch{return'';}};
 function updateUrl(){
   const x=new URLSearchParams();x.set('kh',kh);x.set('tab',tab);
-  if(stockToken)x.set('t',stockToken);
   if(tab==='hang'){if(source!=='all')x.set('nguon',source);if(segment!=='tat-ca')x.set('muc',segment);}
   history.replaceState(null,'','?'+x.toString());
 }
@@ -84,9 +83,7 @@ function nav(){
   document.querySelectorAll('[data-tab]').forEach(b=>b.dataset.active=String(b.dataset.tab===tab));
   if(tab==='hang'){
     title.textContent='Hàng';
-    sub.textContent=stockToken
-      ? 'Kiểm hàng: chọn số lượng và cập nhật ngay tại đây.'
-      : 'Xem giá, hàng đã mua và gợi ý.';
+    sub.textContent='Xem giá · đã mua · gợi ý · nhập số lượng khi cần.';
   }else if(tab==='don'){
     title.textContent='Đơn';
     sub.textContent='Xem đơn đã giao và chi tiết từng đơn.';
@@ -106,8 +103,8 @@ function productSegment(item){return Number(item.purchase_orders)>0?'da-mua':Num
 function renderHang(){
   nav();
   if(!quoteData){panel.innerHTML='<div class="state">Đang tải hàng…</div>';loadQuote();return;}
-  if(stockToken&&!stockData){panel.innerHTML='<div class="state">Đang tải kiểm hàng…</div>';loadStockForHang();return;}
-  if(stockToken)hydrateStockQty();
+  if(!stockData){panel.innerHTML='<div class="state">Đang tải hàng…</div>';loadStockForHang();return;}
+  hydrateStockQty();
 
   const sources=[['all','Tất cả nguồn'],...sourceRows()];
   if(source!=='all'&&!sources.some(x=>x[0]===source))source='all';
@@ -124,18 +121,11 @@ function renderHang(){
     return rank(as)-rank(bs);
   });
 
-  const stockHead=stockToken
-    ? '<div class="stock-actions">'+
-        '<button type="button" class="stock-action" data-stock-share '+(stockData?.employee_url?'':'disabled')+'>Gửi nhân viên kiểm hàng</button>'+
-      '</div>'+
-      '<div class="stock-note"><strong>Rà soát hàng:</strong> chọn số lượng ngay trên danh sách Hàng rồi cập nhật.<br><span>Nhân viên chỉ nhập số lượng, không thấy giá.</span></div>'
-    : '';
-
-  panel.innerHTML=stockHead+
+  panel.innerHTML=
     '<div class="toolbar"><input class="search" id="search" type="search" placeholder="Tìm sản phẩm" value="'+esc(query)+'">'+
     '<div class="chips" id="segments">'+[['tat-ca','Tất cả'],['da-mua','Đã mua'],['goi-y','Gợi ý']].map(x=>'<button class="chip" data-segment="'+x[0]+'" data-active="'+String(segment===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
     '<div class="chips" id="sources">'+sources.map(x=>'<button class="chip" data-source="'+esc(x[0])+'" data-active="'+String(source===x[0])+'">'+esc(x[1])+'</button>').join('')+'</div></div>'+
-    '<div class="section-title">'+esc(source==='all'?'Tất cả nguồn':sourceName(source))+' · '+items.length+' sản phẩm</div>'+
+    '<div class="section-head"><div class="section-title">'+esc(source==='all'?'Tất cả nguồn':sourceName(source))+' · '+items.length+' sản phẩm</div><button type="button" class="employee-share" data-stock-share '+(stockData?.employee_url?'':'disabled')+'>Gửi NV</button></div>'+
     '<div class="product-list">'+(items.map(item=>{
       const seg=productSegment(item),tag=seg==='da-mua'?'Đã mua':seg==='goi-y'?'Gợi ý':'Báo giá';
       const meta=[pack(item)];
@@ -143,39 +133,33 @@ function renderHang(){
       if(seg==='goi-y'&&Number(item.market_customers)>0)meta.push(Number(item.market_customers)+' khách đang lấy');
       const code=String(item.product_code||'');
       const n=stockQty.get(code)||0;
-      const stockControl=stockToken
-        ? '<div class="product-stock" data-stock-code="'+esc(code)+'"><div class="stock-qty"><button type="button" data-stock-delta="-1">−</button><input inputmode="numeric" value="'+(n||'')+'" placeholder="0" aria-label="Số lượng"><button type="button" data-stock-delta="1">+</button></div></div>'
-        : '';
+      const stockControl='<div class="product-stock" data-stock-code="'+esc(code)+'"><div class="stock-qty"><button type="button" data-stock-delta="-1">−</button><input inputmode="numeric" value="'+(n||'')+'" placeholder="0" aria-label="Số lượng"><button type="button" data-stock-delta="1">+</button></div></div>';
       return '<article class="product"><div class="product-name">'+esc(item.product_name)+'</div><div class="product-price">'+money(item.display_price_vnd)+'</div><div class="product-meta"><span class="tag">'+tag+'</span>'+esc(meta.filter(Boolean).join(' · '))+'</div>'+stockControl+'</article>';
     }).join('')||'<div class="empty">Không có sản phẩm trong mục này.</div>')+'</div>'+
-    (stockToken
-      ? '<div class="stock-footer"><div class="stock-summary"><div><div class="stock-summary-main" data-stock-summary-main></div><div class="stock-summary-sub" data-stock-summary-sub></div></div><div class="stock-summary-money" data-stock-summary-money></div></div><div class="stock-footer-actions"><button type="button" class="stock-reset" data-stock-reset>Xóa / nhập lại</button><button type="button" class="stock-save" data-stock-save>Cập nhật</button></div></div>'
-      : '');
+    '<div class="stock-footer" data-stock-footer hidden><div class="stock-summary"><div><div class="stock-summary-main" data-stock-summary-main></div><div class="stock-summary-sub" data-stock-summary-sub></div></div><div class="stock-summary-money" data-stock-summary-money></div></div><div class="stock-footer-actions"><button type="button" class="stock-reset" data-stock-reset>Xóa / nhập lại</button><button type="button" class="stock-save" data-stock-save>Cập nhật</button></div></div>';
 
   panel.querySelector('#search')?.addEventListener('input',e=>{query=e.target.value;renderHang();});
   panel.querySelector('#segments')?.addEventListener('click',e=>{const b=e.target.closest('[data-segment]');if(!b)return;segment=b.dataset.segment;updateUrl();renderHang();});
   panel.querySelector('#sources')?.addEventListener('click',e=>{const b=e.target.closest('[data-source]');if(!b)return;source=b.dataset.source;updateUrl();renderHang();});
 
-  if(stockToken){
-    renderStockSummary();
-    panel.querySelector('[data-stock-share]')?.addEventListener('click',shareEmployeeLink);
-    panel.querySelector('.product-list')?.addEventListener('click',e=>{
-      const b=e.target.closest('[data-stock-delta]');if(!b)return;
-      const row=b.closest('[data-stock-code]');if(!row)return;
-      const code=String(row.dataset.stockCode||'');
-      setStockQty(code,(stockQty.get(code)||0)+Number(b.dataset.stockDelta||0));
-      const input=row.querySelector('input');if(input)input.value=stockQty.get(code)||'';
-    });
-    panel.querySelector('.product-list')?.addEventListener('input',e=>{
-      if(e.target.tagName!=='INPUT')return;
-      const row=e.target.closest('[data-stock-code]');if(!row)return;
-      const raw=String(e.target.value||'').replace(/\D/g,'');
-      if(e.target.value!==raw)e.target.value=raw;
-      setStockQty(String(row.dataset.stockCode||''),raw);
-    });
-    panel.querySelector('[data-stock-reset]')?.addEventListener('click',resetStockQty);
-    panel.querySelector('[data-stock-save]')?.addEventListener('click',submitStock);
-  }
+  renderStockSummary();
+  panel.querySelector('[data-stock-share]')?.addEventListener('click',shareEmployeeLink);
+  panel.querySelector('.product-list')?.addEventListener('click',e=>{
+    const b=e.target.closest('[data-stock-delta]');if(!b)return;
+    const row=b.closest('[data-stock-code]');if(!row)return;
+    const code=String(row.dataset.stockCode||'');
+    setStockQty(code,(stockQty.get(code)||0)+Number(b.dataset.stockDelta||0));
+    const input=row.querySelector('input');if(input)input.value=stockQty.get(code)||'';
+  });
+  panel.querySelector('.product-list')?.addEventListener('input',e=>{
+    if(e.target.tagName!=='INPUT')return;
+    const row=e.target.closest('[data-stock-code]');if(!row)return;
+    const raw=String(e.target.value||'').replace(/\D/g,'');
+    if(e.target.value!==raw)e.target.value=raw;
+    setStockQty(String(row.dataset.stockCode||''),raw);
+  });
+  panel.querySelector('[data-stock-reset]')?.addEventListener('click',resetStockQty);
+  panel.querySelector('[data-stock-save]')?.addEventListener('click',submitStock);
 }
 async function loadQuote(){
   try{const r=await fetch(QUOTE+'?kh='+encodeURIComponent(kh)+'&mini=1',{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!Array.isArray(d.items))throw 0;quoteData=d;renderHang();}catch{fail('Không mở được hàng');}
@@ -216,6 +200,8 @@ function renderStockSummary(){
   if(moneyEl)moneyEl.textContent=money(t.totalMoney);
   const reset=panel.querySelector('[data-stock-reset]');
   if(reset)reset.disabled=t.total<=0;
+  const footer=panel.querySelector('[data-stock-footer]');
+  if(footer)footer.hidden=t.total<=0;
 }
 function resetStockQty(){
   if(!stockQty.size)return;
@@ -243,11 +229,11 @@ async function shareEmployeeLink(){
 }
 async function loadStockForHang(){
   try{
-    const r=await fetch(STOCK+'?t='+encodeURIComponent(stockToken),{cache:'no-store'});
+    const r=await fetch(STOCK+'?kh='+encodeURIComponent(kh),{cache:'no-store'});
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d?.ok||d.role!=='owner')throw 0;
     stockData=d;renderHang();
-  }catch{fail('Không mở được kiểm hàng');}
+  }catch{fail('Không mở được hàng');}
 }
 async function submitStock(){
   if(stockBusy)return;
@@ -255,7 +241,7 @@ async function submitStock(){
   const items=[...stockQty].filter(([,n])=>Number(n)>0).map(([product_code,n])=>({product_code,qty:Math.max(0,Math.trunc(Number(n)||0))}));
   stockBusy=true;if(button){button.disabled=true;button.textContent='Đang cập nhật…';}
   try{
-    const r=await fetch(STOCK,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:stockToken,action:'update',items})});
+    const r=await fetch(STOCK,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kh,action:'update',items})});
     const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw 0;
     if(button)button.textContent='Đã cập nhật';
     setTimeout(()=>{if(button?.isConnected){button.disabled=false;button.textContent='Cập nhật';}},1400);
@@ -296,7 +282,7 @@ function render(){if(tab==='hang')renderHang();else if(tab==='don')renderDon();e
 document.querySelector('.bottom').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;updateUrl();render();});
 document.getElementById('sheet-close').addEventListener('click',closeSheet);sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet();});
 if(!kh){fail('Liên kết không hợp lệ');return;}
-if(legacyStockTab)updateUrl();
+if(legacyStockTab||legacyStockToken)updateUrl();
 nav();render();
 })();
 </script>
