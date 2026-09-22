@@ -94,8 +94,8 @@ test('bought suggested and employee modes are thin filters on the existing produ
 
   for(const needle of [
     'function syncpublictoolstate()',
-    "bar.dataset.publictoolview='hang'",
-    "bar.dataset.publictoolview!=='hang'",
+    "const view=employeelink?'employee-hang':'owner-hang'",
+    'bar.dataset.publictoolview!==view',
     'requestanimationframe(()=>renderproductlist())',
     'function openpublicsharepanel',
     'gửi link nhân viên',
