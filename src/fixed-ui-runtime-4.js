@@ -525,8 +525,19 @@
             }
             if(!appData.sanpham || appData.sanpham.length <= 1) return;
             const query = document.getElementById('searchProductInput')?.value || '';
-            const filtered = getFilteredProductsFromSearchIndex(query);
-            const renderKey = [currentFilter, normalizeSearchText(query)].join('|');
+            const baseFiltered = getFilteredProductsFromSearchIndex(query);
+            const segment = String(window.TAPHOA_PRODUCT_SEGMENT || 'all');
+            const signalRows = window.TAPHOA_PRODUCTION?.getState?.()?.signals || [];
+            const signalMap = new Map(signalRows.map(row => [String(row?.product_code || ''), row]));
+            const filtered = segment === 'bought'
+                ? baseFiltered.filter(r => Number(signalMap.get(String(r?.[0] || ''))?.order_count || 0) > 0)
+                : segment === 'suggested'
+                    ? baseFiltered.filter(r => {
+                        const sig = signalMap.get(String(r?.[0] || '')) || {};
+                        return Number(sig.order_count || 0) <= 0 && Number(sig.market_customer_count || 0) > 0;
+                    })
+                    : baseFiltered;
+            const renderKey = [currentFilter, segment, String(Boolean(window.TAPHOA_EMPLOYEE_MODE)), normalizeSearchText(query)].join('|');
             if (renderKey !== ownProductRenderKey) {
                 ownProductRenderKey = renderKey;
                 ownProductVisibleLimit = PRODUCT_PAGE_SIZE;
@@ -541,9 +552,12 @@
                 let maSp = r[0]; let tenSp = r[1]; let giaBan = Number(r[3]) || 0; let giaLe = Number(r[7]) || 0; let qty = cart[maSp] ? cart[maSp].qty : 0; let lineNote = String(cart[maSp]?.note || '');
                 const marketCartonPrice = getSelectedMarketCartonPriceForSale(maSp);
                 const marketIsLower = marketCartonPrice > 0 && giaBan > 0 && marketCartonPrice < giaBan;
-                const salePriceHtml = marketIsLower
-                    ? `<span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span><span class="text-[12px] font-normal text-gray-800 line-through decoration-1 tabular-nums">${marketCartonPrice.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`
-                    : `<span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span>`;
+                const employeeMode = Boolean(window.TAPHOA_EMPLOYEE_MODE);
+                const salePriceHtml = employeeMode
+                    ? ''
+                    : marketIsLower
+                        ? `<span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span><span class="text-[12px] font-normal text-gray-800 line-through decoration-1 tabular-nums">${marketCartonPrice.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>`
+                        : `<span class="text-[13px] font-bold text-primary tabular-nums">${giaBan.toLocaleString('vi-VN')}</span>`;
                 const selectedImage = String(r?.[5] || '').trim();
                 const imageTag = `<img src="${getProductImageSrc(r)}" alt="${escapeProductEditorValue(tenSp)}" class="product-thumb shrink-0" loading="lazy" decoding="async">`;
                 const imageHtml = productViewMode === 'image'
@@ -558,9 +572,9 @@
                             ${imageHtml}
                             <div class="min-w-0 flex-1">
                                 <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
-                                <div class="mt-1 flex items-baseline gap-2 min-w-0">
+                                <div class="mt-1 flex items-baseline gap-2 min-w-0 ${employeeMode ? 'hidden' : ''}">
                                     ${salePriceHtml}
-                                    ${giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
+                                    ${!employeeMode && giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -572,7 +586,7 @@
                             </div>
                         </div>
                     </div>
-                    <div data-product-note-wrap="${escapeProductEditorValue(maSp)}" class="product-line-note-wrap mt-2 ${qty > 0 ? '' : 'hidden'}">
+                    <div data-product-note-wrap="${escapeProductEditorValue(maSp)}" class="product-line-note-wrap mt-2 ${qty > 0 && !employeeMode ? '' : 'hidden'}">
                         <input type="text" value="${escapeProductEditorValue(lineNote)}" data-line-note-id="${escapeProductEditorValue(maSp)}" oninput="previewProductLineNote(this)" placeholder="Ghi chú màu / loại..." autocomplete="off" class="w-full h-8 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[12px] text-gray-700 outline-none focus:border-primary">
                     </div>
                 </div>`;
