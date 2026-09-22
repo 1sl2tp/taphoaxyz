@@ -73,13 +73,16 @@ language sql
 immutable
 set search_path=public
 as $$
-  select encode(digest(
-    upper(btrim(coalesce(p_code,''))) || '|' ||
-    btrim(coalesce(p_name,'')) || '|' ||
-    coalesce(p_input_price_vnd::text,'') || '|' ||
-    coalesce(p_sale_price_vnd::text,''),
-    'sha256'
-  ),'hex');
+  select encode(
+    extensions.digest(
+      upper(btrim(coalesce(p_code,''))) || '|' ||
+      btrim(coalesce(p_name,'')) || '|' ||
+      coalesce(p_input_price_vnd::text,'') || '|' ||
+      coalesce(p_sale_price_vnd::text,''),
+      'sha256'
+    ),
+    'hex'
+  );
 $$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_apply_product_delta(p_products jsonb, p_source_codes jsonb, p_modified_time timestamp with time zone, p_total_rows integer)
