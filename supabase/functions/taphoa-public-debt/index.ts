@@ -145,7 +145,7 @@ async function orderDetail(customer:any,orderId:string,displayCodeValue:string='
   const publicItems=items.map((item:any)=>{
     const qty=Number(item?.qty)||0;
     const price=Number(item?.unit_price_vnd)||0;
-    const line=Math.round(qty*price);
+    const line=qty*price;
     total+=line;
     const code=clean(item?.product_code,100);
     return {
