@@ -1,5 +1,5 @@
--- Canonical TAPHOA money model: keep literal business values from the management sheet.
--- Dots are presentation-only thousands separators; no implicit x1000 or /1000.
+-- Canonical TAPHOA money model: preserve literal business values from the management sheet.
+-- A dot is only a thousands separator in presentation; no implicit x1000 or /1000.
 
 alter table public.taphoa_products
   alter column input_price_vnd type numeric using input_price_vnd::numeric/1000,
@@ -32,19 +32,24 @@ $$;
 
 create or replace function public.taphoa_chat_money(p_amount_vnd numeric)
 returns text
-language sql
+language plpgsql
 immutable
 set search_path=public
-as $
-  select case
-    when abs(coalesce(p_amount_vnd,0)) = trunc(abs(coalesce(p_amount_vnd,0)))
-      then replace(to_char(abs(coalesce(p_amount_vnd,0)),'FM999,999,999,999,990'),',','.')
-    else replace(
-      regexp_replace(to_char(abs(coalesce(p_amount_vnd,0)),'FM999,999,999,999,990.999'),'0+,''),
-      ',','.'
-    )
-  end;
-$;
+as $$
+declare
+  v_abs numeric := abs(coalesce(p_amount_vnd,0));
+  v_int numeric;
+  v_int_text text;
+  v_frac text;
+begin
+  v_int := trunc(v_abs);
+  v_int_text := replace(to_char(v_int,'FM999,999,999,999,990'),',','.');
+  if v_abs=v_int then return v_int_text; end if;
+  v_frac := regexp_replace(to_char(v_abs-v_int,'FM0.999'),'0+$','');
+  v_frac := ltrim(v_frac,'0.');
+  return v_int_text || ',' || v_frac;
+end;
+$$;
 
 create or replace function public.taphoa_chat_balance_label(p_balance_vnd numeric,p_before boolean default false)
 returns text
@@ -376,7 +381,7 @@ begin
   -- Collection messages keep only movement + resulting balance + time + link.
   if v_client_id like 'taphoa:%:collection' then
     v_amount_text := btrim(regexp_replace(split_part(v_body,E'\n',1),'^Đã thu[[:space:]]+','','i'));
-    if v_amount_text='' then v_amount_text := '0đ'; end if;
+    if v_amount_text='' then v_amount_text := '0'; end if;
     v_balance := public.taphoa_chat_customer_balance_value(p_customer_id);
     v_link := public.v21_customer_public_link_info_get_or_create(p_customer_id);
     v_slug := nullif(v_link->>'public_slug','');
@@ -821,9 +826,7 @@ begin
       'taphoa:' || p_command_id::text || ':deliver',
       public.taphoa_chat_order_receipt(
         v_order_json,
-        'Đơn ' || v_display_code || ' đã giao',
-        v_balance_after
-      )
+        'Đơn ' || v_display_code || ' đã giao', null::bigint)
     );
   end if;
 
@@ -1178,9 +1181,7 @@ begin
       if v_status='delivered' then
         v_notice := public.taphoa_chat_order_receipt(
           v_order_json,
-          'Đơn ' || v_display_code || ' đã giao',
-          null
-        );
+          'Đơn ' || v_display_code || ' đã giao', null::bigint);
       else
         v_notice := public.taphoa_chat_order_receipt(
           v_order_json,
@@ -1191,9 +1192,7 @@ begin
     elsif v_old_status='pending' and v_status='delivered' then
       v_notice := public.taphoa_chat_order_receipt(
         v_order_json,
-        'Đơn ' || v_display_code || ' đã giao',
-        v_balance_after
-      );
+        'Đơn ' || v_display_code || ' đã giao', null::bigint);
     else
       v_diff := public.taphoa_chat_order_diff(v_old_order_json,v_order_json,6);
       v_old_total_vnd := coalesce(nullif(v_old_order_json->>'tongTien','')::numeric,0);
