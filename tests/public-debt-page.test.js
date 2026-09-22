@@ -33,3 +33,9 @@ test('public debt order detail stays inside the debt page',()=>{
 assert.equal(low.includes("params.get('k')"),false);
 assert.equal(low.includes('legacykey'),false);
 assert.equal(low.includes('publicparam'),false);
+
+
+test('public debt page never renders reversal labels',()=>{
+  assert.equal(low.includes('hoàn đơn'),false);
+  assert.equal(low.includes("entry_type==='reversal'"),false);
+});
