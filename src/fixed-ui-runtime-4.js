@@ -458,10 +458,36 @@
             return labels[key] || raw;
         }
 
+        function getSourceDisplayRank(src) {
+            const raw = String(src || '').trim();
+            if (raw === '#') return 50;
+            const key = normalizeSearchText(raw);
+            const ranks = {
+                'hang thuong': 10,
+                'thuong': 10,
+                'thuoc la': 20,
+                'sua': 30,
+                'hang u': 40
+            };
+            return ranks[key] ?? 100;
+        }
+
         function renderSourceTags() {
             if(!appData.sanpham || appData.sanpham.length <= 1) return;
-            let rows = appData.sanpham.slice(1); let sources = new Set(); rows.forEach(r => { if(r[4]) sources.add(r[4].trim()); });
-            let html = ['Tất cả', ...Array.from(sources)].map(src => {
+            const rows = appData.sanpham.slice(1);
+            const sourceMap = new Map();
+            rows.forEach(r => {
+                const src = String(r?.[4] || '').trim();
+                if(!src) return;
+                const key = normalizeSearchText(src);
+                if(!sourceMap.has(key)) sourceMap.set(key,src);
+            });
+            const orderedSources = [...sourceMap.values()].sort((a,b) => {
+                const rankDiff = getSourceDisplayRank(a) - getSourceDisplayRank(b);
+                if(rankDiff) return rankDiff;
+                return String(a).localeCompare(String(b),'vi');
+            });
+            const html = ['Tất cả', ...orderedSources].map(src => {
                 let activeClass = (src === currentFilter) ? 'bg-primary text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:bg-gray-50';
                 const mobileLabel = getMobileSourceLabel(src);
                 return `<button onclick="filterSource('${src}')" class="source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}"><span class="source-tag-label-full">${src}</span><span class="source-tag-label-mobile">${mobileLabel}</span></button>`;
