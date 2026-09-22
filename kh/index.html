@@ -81,7 +81,7 @@ const directOrder=(p.get('don')||'').toUpperCase();
 const panel=document.getElementById('panel'),title=document.getElementById('title'),sub=document.getElementById('sub'),shareTop=document.getElementById('share-nv');
 const sheet=document.getElementById('sheet'),sheetTitle=document.getElementById('sheet-title'),sheetMeta=document.getElementById('sheet-meta'),sheetBody=document.getElementById('sheet-body'),sheetQty=document.getElementById('sheet-qty'),sheetTotal=document.getElementById('sheet-total');
 let quoteData=null,debtData=null,query='',directOrderOpened=false;
-let stockData=null,stockBusy=false,hangLoading=false;
+let stockData=null,stockBusy=false,hangLoading=false,ownerDirty=false,stockSyncTimer=0;
 const stockQty=new Map();
 const sourceFallback={'hang-thuong':'Hàng thường','hang-u':'Hàng U','sua':'Sữa','thuoc-la':'Thuốc lá','masan':'Masan'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -194,20 +194,61 @@ async function loadHangData(){
     quoteData=quoteJson;
     stockData=stockJson;
     renderHang();
+    startStockSync();
   }catch{
     fail('Không mở được hàng');
   }finally{
     hangLoading=false;
   }
 }
+function stockItemsSignature(data){
+  return JSON.stringify((data?.items||[]).map(row=>[
+    String(row.product_code||''),
+    Number(row.employee_qty)||0,
+    row.owner_qty===null||row.owner_qty===undefined?null:Number(row.owner_qty)||0
+  ]));
+}
+function applyRemoteStock(data){
+  stockData={...stockData,session:data?.session||null,items:Array.isArray(data?.items)?data.items:[],_qtyHydrated:true};
+  replaceStockQty(stockData);
+  panel.querySelectorAll('[data-stock-code]').forEach(row=>{
+    const code=String(row.dataset.stockCode||'');
+    const input=row.querySelector('input');
+    if(input)input.value=stockQty.get(code)||'';
+  });
+  renderStockSummary();
+}
+async function refreshEmployeeStock(){
+  if(tab!=='hang'||stockBusy||ownerDirty||!stockData)return;
+  try{
+    const r=await fetch(STOCK+'?kh='+encodeURIComponent(kh)+'&sync=1',{cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d?.ok)return;
+    if(stockItemsSignature(d)===stockItemsSignature(stockData))return;
+    applyRemoteStock(d);
+  }catch{}
+}
+function startStockSync(){
+  if(stockSyncTimer)return;
+  stockSyncTimer=setInterval(()=>void refreshEmployeeStock(),2000);
+}
 
-function hydrateStockQty(){
-  if(stockData?._qtyHydrated)return;
-  for(const row of stockData?.items||[]){
-    const value=row.owner_qty!==null&&row.owner_qty!==undefined?row.owner_qty:row.employee_qty;
-    const n=Math.max(0,Math.trunc(Number(value)||0));
+function rowStockValue(row,data=stockData){
+  const status=String(data?.session?.status||'');
+  if(status==='owner_reviewed'&&row.owner_qty!==null&&row.owner_qty!==undefined)return row.owner_qty;
+  if(row.employee_qty!==null&&row.employee_qty!==undefined)return row.employee_qty;
+  return row.owner_qty;
+}
+function replaceStockQty(data){
+  stockQty.clear();
+  for(const row of data?.items||[]){
+    const n=Math.max(0,Math.trunc(Number(rowStockValue(row,data))||0));
     if(n>0)stockQty.set(String(row.product_code),n);
   }
+}
+function hydrateStockQty(){
+  if(stockData?._qtyHydrated)return;
+  replaceStockQty(stockData);
   stockData._qtyHydrated=true;
 }
 function stockTotals(){
@@ -224,6 +265,7 @@ function stockTotals(){
 function setStockQty(code,value){
   const n=Math.max(0,Math.trunc(Number(value)||0));
   if(n>0)stockQty.set(code,n);else stockQty.delete(code);
+  ownerDirty=true;
   renderStockSummary();
 }
 function renderStockSummary(){
@@ -254,6 +296,7 @@ async function resetStockQty(){
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d?.ok)throw 0;
     stockQty.clear();
+    ownerDirty=false;
     stockData=null;
     await loadStockForHang();
   }catch{
@@ -297,6 +340,7 @@ async function submitStock(){
   try{
     const r=await fetch(STOCK,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kh,action:'update',items})});
     const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw 0;
+    ownerDirty=false;
     if(button)button.textContent='Đã cập nhật';
     setTimeout(()=>{if(button?.isConnected){button.disabled=false;button.textContent='Cập nhật';}},1400);
   }catch{
