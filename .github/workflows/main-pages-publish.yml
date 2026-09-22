@@ -10,6 +10,7 @@ on:
       - 'sw.js'
       - 'package.json'
       - 'src/**'
+      - 'no/**'
       - 'scripts/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
