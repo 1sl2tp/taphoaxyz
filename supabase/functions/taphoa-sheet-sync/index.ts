@@ -196,10 +196,10 @@ function mapManagerRow(sourceKey:string,row:unknown[],rowNo:number,modifiedTime:
   const inputSheet=num(row?.[2]);const saleSheet=num(row?.[3]);
   const unitsSheet=layout.unitsIndex>=0?num(row?.[layout.unitsIndex]):null;
   const retailSheet=layout.retailIndex>=0?num(row?.[layout.retailIndex]):null;
-  const input=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;
-  const sale=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
+  const input=inputSheet!==null&&inputSheet>0?inputSheet:null;
+  const sale=saleSheet!==null&&saleSheet>0?saleSheet:null;
   const units=unitsSheet!==null&&unitsSheet>0?unitsSheet:null;
-  const retail=retailSheet!==null&&retailSheet>0?Math.round(retailSheet*1000):null;
+  const retail=retailSheet!==null&&retailSheet>0?retailSheet:null;
   return {product_code:code,source_key:sourceKey,source_row:rowNo,product_name:name,input_price_vnd:input,input_price_basis:"carton",
     expected_profit_percent:null,applied_profit_vnd:input!==null&&sale!==null?Math.max(0,sale-input):0,sale_price_vnd:sale,carton_price_vnd:sale,
     retail_price_vnd:retail,units_per_carton:units,retail_unit:retail!==null?"lẻ":"",stock_status:sale!==null?"available":"no_price",stock_label:sale!==null?"":"Chưa có giá",
@@ -296,7 +296,7 @@ async function allocateBlankSheetRows(caches:Map<number,TabCache>){
     for(let i=1;i<cache.rows.length;i++){
       const row=cache.rows[i]||[];const code=clean(row[0]);const name=clean(row[1]);if(code||!name)continue;
       const assigned=await reserveSheetCode(cache,caches);const inputSheet=num(row[2]),saleSheet=num(row[3]);
-      const input=inputSheet!==null&&inputSheet>0?Math.round(inputSheet*1000):null;const sale=saleSheet!==null&&saleSheet>0?Math.round(saleSheet*1000):null;
+      const input=inputSheet!==null&&inputSheet>0?inputSheet:null;const sale=saleSheet!==null&&saleSheet>0?saleSheet:null;
       const hash=await sha256(canonicalText(assigned,name,input,sale));
       await writeRanges([
         {range:`${quotedSheet(cache.meta.title)}!A${i+1}`,values:[[assigned]]},
