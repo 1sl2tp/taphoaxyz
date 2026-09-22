@@ -14,6 +14,10 @@ test('employee link is only a PIN gate that hands off to the real app UI',()=>{
     'x-employee-pin',
     "sessionstorage.setitem(store,json.stringify({token,pin:value}))",
     "location.replace('/?employee=1&t='",
+    'class="pin-grid"',
+    'data-pin-digit',
+    'function fillpindigits',
+    'event.clipboarddata'
   ])assert.ok(gate.includes(needle),needle);
 
   for(const forbidden of [
