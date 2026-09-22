@@ -8,7 +8,7 @@ const low=html.toLowerCase();
 test('customer mini app keeps products orders and debt in one shell',()=>{
   for(const needle of [
     'data-tab="hang"','data-tab="don"','data-tab="no"',
-    "params.get('nguon')","p.get('muc')","p.get('don')",
+    "p.get('nguon')","p.get('muc')","p.get('don')",
     'tất cả','đã mua','gợi ý',
     'v21-quote','taphoa-public-debt',
     'mini=1','data-order',
