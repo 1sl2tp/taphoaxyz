@@ -249,7 +249,14 @@ els.send.addEventListener('click',submit);
 if(!token){fail();return;}
 fetch(`${API}?t=${encodeURIComponent(token)}`,{cache:'no-store'})
  .then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error('load_failed');return d;})
- .then(d=>{snapshot=d;init();})
+ .then(d=>{
+   snapshot=d;
+   if(snapshot.role==='owner'&&snapshot.owner_url&&new URLSearchParams(location.search).get('legacy')!=='1'){
+     location.replace(String(snapshot.owner_url));
+     return;
+   }
+   init();
+ })
  .catch(()=>fail());
 })();
 </script>
