@@ -24,7 +24,7 @@ test('customer mini app keeps products orders and debt in one shell, with stock 
   for(const forbidden of [
     'data-tab="kiemhang"',
     'xem trước nhân viên',
-    'sao chép link nhân viên',
+    'data-stock-copy',
     '<div class="brand">taphoa</div>',
     'signin','login','localstorage','document.cookie'
   ])assert.equal(low.includes(forbidden),false,forbidden);
