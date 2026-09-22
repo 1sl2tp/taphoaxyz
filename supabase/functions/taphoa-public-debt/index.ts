@@ -75,7 +75,7 @@ async function summary(customer:any){
   let delivered=0;
   let collected=0;
   const allEntries=rows.map((row:any)=>{
-    const amount=Math.trunc(Number(row?.amount_vnd)||0);
+    const amount=Number(row?.amount_vnd)||0;
     balance+=amount;
     if(row?.entry_type==='sale'&&amount>0)delivered+=amount;
     if(row?.entry_type==='collection'&&amount<0)collected+=Math.abs(amount);
@@ -144,7 +144,7 @@ async function orderDetail(customer:any,orderId:string,displayCodeValue:string='
   let total=0;
   const publicItems=items.map((item:any)=>{
     const qty=Number(item?.qty)||0;
-    const price=Math.trunc(Number(item?.unit_price_vnd)||0);
+    const price=Number(item?.unit_price_vnd)||0;
     const line=Math.round(qty*price);
     total+=line;
     const code=clean(item?.product_code,100);
