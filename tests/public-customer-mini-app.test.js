@@ -36,7 +36,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     "localecompare(string(b.product_name||''),'vi',{sensitivity:'base',numeric:true})",
     '.nav[data-active="true"]::after{background:#111827}',
     'background:#1e293b',
-    'class="status-foot"','border:1px solid #111827',
+    'class="status-foot"','border:0;border-radius:18px',
     'width:min(428px,100vw)',
     'id="app-modal"',
     "appconfirm({title:'nhập lại số lượng?'",
