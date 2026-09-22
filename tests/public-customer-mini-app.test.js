@@ -37,6 +37,10 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     '.nav[data-active="true"]::after{background:#111827}',
     'background:#1e293b',
     'class="status-foot"','border:1px solid #111827',
+    'width:min(428px,100vw)',
+    'id="app-modal"',
+    "appconfirm({title:'nhập lại số lượng?'",
+    'appinfo({title:\'link kiểm hàng\'',
   ])assert.ok(low.includes(needle),needle);
 
   for(const forbidden of [
@@ -55,6 +59,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     '<div class="product-meta"><span class="tag">',
     'xem chi tiết đơn</div></button>',
     "query=e.target.value;renderhang();",
+    'window.confirm(','alert(','window.prompt(',
     'signin','login','localstorage','document.cookie'
   ])assert.equal(low.includes(forbidden),false,forbidden);
 
