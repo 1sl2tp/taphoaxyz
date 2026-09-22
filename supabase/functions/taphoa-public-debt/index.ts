@@ -108,7 +108,7 @@ async function summary(customer:any){
     generated_at:new Date().toISOString(),
   };
 }
-async function orderDetail(customer:any,orderId:string,displayCode:string=''){
+async function orderDetail(customer:any,orderId:string,displayCodeValue:string=''){
   let orderQuery=db.from('taphoa_orders')
     .select('id,note,created_at,updated_at,delivered_at,display_prefix,display_no')
     .eq('customer_account_id',customer.id);
@@ -116,7 +116,7 @@ async function orderDetail(customer:any,orderId:string,displayCode:string=''){
     if(!/^[0-9a-f-]{36}$/i.test(orderId))return null;
     orderQuery=orderQuery.eq('id',orderId);
   }else{
-    const match=/^(DG|DT)(\d+)$/i.exec(clean(displayCode,32));
+    const match=/^(DG|DT)(\d+)$/i.exec(clean(displayCodeValue,32));
     if(!match)return null;
     orderQuery=orderQuery
       .eq('display_prefix',match[1].toUpperCase())
