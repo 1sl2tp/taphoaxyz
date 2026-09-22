@@ -47,3 +47,13 @@ test('public debt endpoint excludes reversal entries from public history while k
   assert.ok(src.includes("entry.entry_type!=='reversal'"));
   assert.equal(src.includes('reversed_at'),false);
 });
+
+
+test('public order code links resolve inside the same read-only endpoint',()=>{
+  for(const needle of [
+    "url.searchparams.get('don')",
+    "eq('display_prefix'",
+    "eq('display_no'",
+    "/^(dg|dt)",
+  ])assert.ok(src.includes(needle),needle);
+});
