@@ -41,7 +41,7 @@ test('dedicated delivery mutation emits exactly one detailed delivered receipt',
   const fn=latestFunction('taphoa_deliver_order');
   assert.match(fn,/customer_account_id\s+is\s+not\s+null/i);
   assert.match(fn,/taphoa_chat_order_receipt\([\s\S]*?'Đơn '\s*\|\|\s*v_display_code\s*\|\|\s*' đã giao'/);
-  assert.match(fn,/taphoa_chat_customer_balance_vnd\(o\.customer_account_id\)/);
+  assert.match(fn,/taphoa_chat_customer_balance_value\(o\.customer_account_id\)/);
   assert.equal((fn.match(/taphoa_chat_notify_customer/g)||[]).length,1);
   assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':deliver'/);
 });
