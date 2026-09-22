@@ -65,7 +65,7 @@ async function summary(customer:any){
   const orderMap=new Map<string,any>();
   if(orderIds.length){
     const orders=await db.from('taphoa_orders')
-      .select('id,status,note,created_at,updated_at,delivered_at,reversed_at,display_prefix,display_no')
+      .select('id,note,created_at,updated_at,delivered_at,display_prefix,display_no')
       .in('id',orderIds);
     if(orders.error)throw orders.error;
     for(const order of (orders.data||[]))orderMap.set(String(order.id),order);
@@ -74,7 +74,7 @@ async function summary(customer:any){
   let balance=0;
   let delivered=0;
   let collected=0;
-  const entries=rows.map((row:any)=>{
+  const allEntries=rows.map((row:any)=>{
     const amount=Math.trunc(Number(row?.amount_vnd)||0);
     balance+=amount;
     if(row?.entry_type==='sale'&&amount>0)delivered+=amount;
@@ -90,13 +90,12 @@ async function summary(customer:any){
       order:order?{
         id:String(order.id),
         display_code:displayCode(order),
-        status:clean(order.status,30),
         note:clean(order.note,240),
         delivered_at:order.delivered_at||null,
-        reversed_at:order.reversed_at||null,
       }:null,
     };
   });
+  const entries=allEntries.filter((entry:any)=>entry.entry_type!=='reversal');
 
   return {
     ok:true,
@@ -112,7 +111,7 @@ async function summary(customer:any){
 async function orderDetail(customer:any,orderId:string){
   if(!/^[0-9a-f-]{36}$/i.test(orderId))return null;
   const orderResult=await db.from('taphoa_orders')
-    .select('id,status,note,created_at,updated_at,delivered_at,reversed_at,display_prefix,display_no')
+    .select('id,note,created_at,updated_at,delivered_at,display_prefix,display_no')
     .eq('id',orderId)
     .eq('customer_account_id',customer.id)
     .maybeSingle();
@@ -157,11 +156,9 @@ async function orderDetail(customer:any,orderId:string){
     order:{
       id:String(order.id),
       display_code:displayCode(order),
-      status:clean(order.status,30),
       note:clean(order.note,240),
       created_at:order.created_at||null,
       delivered_at:order.delivered_at||null,
-      reversed_at:order.reversed_at||null,
       total_vnd:total,
       items:publicItems,
     },
