@@ -339,11 +339,11 @@
   }
 
   function productMarketDetailOwnState(product){
-    const saleVnd=ownPriceValue(product?.sale_price_vnd,true)||ownPriceValue(product?.gia??product?.price??product?.unit_price);
+    const saleVnd=ownPriceValue(product?.sale_price_vnd)||ownPriceValue(product?.gia??product?.price??product?.unit_price);
     const sourceQc=Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
     const overrideQc=Number(product?.ownCompareUnitsPerCarton)||0;
     const qc=overrideQc>0?overrideQc:sourceQc;
-    let retailVnd=ownPriceValue(product?.retail_price_vnd,true)||ownPriceValue(product?.giaLe??product?.retail_price);
+    let retailVnd=ownPriceValue(product?.retail_price_vnd)||ownPriceValue(product?.giaLe??product?.retail_price);
     if(overrideQc>0&&saleVnd>0)retailVnd=saleVnd/overrideQc;
     else if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
     return {kind:qc>1?'carton':'retail',qc,carton:saleVnd,retail:retailVnd};
@@ -379,8 +379,9 @@
 
   function productMarketDetailRow(label,state){
     const kind=state?.kind==='carton'?'Thùng':'Lẻ';
-    const carton=Number(state?.carton)>0?formatComparePrice(state.carton):'—';
-    const retail=Number(state?.retail)>0?formatComparePrice(state.retail):'—';
+    const priceFormatter=label==='MÌNH'?formatBusinessPrice:formatComparePrice;
+    const carton=Number(state?.carton)>0?priceFormatter(state.carton):'—';
+    const retail=Number(state?.retail)>0?priceFormatter(state.retail):'—';
     const qc=Number(state?.qc)>0?Number(state.qc).toLocaleString('vi-VN',{maximumFractionDigits:2}):'—';
     return `<div class="product-market-detail-row">
       <div class="product-market-detail-side">${esc(label)}</div>
@@ -464,18 +465,22 @@
     }).join('');
   }
 
-  function ownPriceValue(value,isVnd=false){
+  function ownPriceValue(value){
     const amount=Number(value)||0;
-    if(amount<=0)return 0;
-    return isVnd?amount:amount*1000;
+    return amount>0?amount:0;
+  }
+
+  function formatBusinessPrice(value){
+    const amount=Number(value)||0;
+    return amount>0?amount.toLocaleString('vi-VN',{maximumFractionDigits:3}):'';
   }
 
   function ownProductPriceSummary(product){
-    const saleVnd=ownPriceValue(product?.sale_price_vnd,true)||ownPriceValue(product?.gia??product?.price??product?.unit_price);
+    const saleVnd=ownPriceValue(product?.sale_price_vnd)||ownPriceValue(product?.gia??product?.price??product?.unit_price);
     const sourceQc=Number(product?.quyCach??product?.quyDoiThung??product?.units_per_carton)||0;
     const overrideQc=Number(product?.ownCompareUnitsPerCarton)||0;
     const qc=overrideQc>0?overrideQc:sourceQc;
-    let retailVnd=ownPriceValue(product?.retail_price_vnd,true)||ownPriceValue(product?.giaLe??product?.retail_price);
+    let retailVnd=ownPriceValue(product?.retail_price_vnd)||ownPriceValue(product?.giaLe??product?.retail_price);
     if(overrideQc>0&&saleVnd>0)retailVnd=saleVnd/overrideQc;
     else if(retailVnd<=0&&saleVnd>0&&qc>1)retailVnd=saleVnd/qc;
     if(saleVnd<=0&&!retailVnd)return '';
@@ -484,9 +489,9 @@
     return `<span class="product-image-compare-label">MÌNH</span>
       <span class="product-image-compare-source product-image-compare-source-own">—</span>
       <span class="product-image-compare-kind">${saleLabel}</span>
-      <span class="product-image-compare-price product-image-compare-price-own">${saleVnd>0?formatComparePrice(saleVnd):'—'}</span>
+      <span class="product-image-compare-price product-image-compare-price-own">${saleVnd>0?formatBusinessPrice(saleVnd):'—'}</span>
       <label class="product-image-compare-qc product-image-compare-qc-edit"><span>QC</span><input aria-label="Quy cách của mình" data-own-qc-input inputmode="decimal" min="0" placeholder="?" step="any" type="number" value="${esc(qcValue)}"></label>
-      <span class="product-image-compare-retail">${retailVnd>0?`<span>Lẻ</span> ${formatComparePrice(retailVnd)}`:'—'}</span>
+      <span class="product-image-compare-retail">${retailVnd>0?`<span>Lẻ</span> ${formatBusinessPrice(retailVnd)}`:'—'}</span>
       <span class="product-image-compare-link"></span>`;
   }
 
