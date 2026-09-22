@@ -60,7 +60,7 @@ const status=document.getElementById('status');
 const order=document.getElementById('order');
 const els={title:document.getElementById('title'),code:document.getElementById('code'),customer:document.getElementById('customer'),time:document.getElementById('time'),note:document.getElementById('note'),items:document.getElementById('items'),codes:document.getElementById('codes'),qty:document.getElementById('qty'),total:document.getElementById('total')};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const money=v=>new Intl.NumberFormat('vi-VN').format(Math.abs(Math.round(Number(v)||0)));
+const money=v=>new Intl.NumberFormat('vi-VN',{maximumFractionDigits:3}).format(Math.abs(Number(v)||0)/1000);
 const qty=v=>{const n=Number(v)||0;return Number.isInteger(n)?String(n):String(n).replace(/0+$/,'').replace(/\.$/,'');};
 function when(v){
   if(!v)return'--';
