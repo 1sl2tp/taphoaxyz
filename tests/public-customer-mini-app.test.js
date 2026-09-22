@@ -14,7 +14,7 @@ test('customer mini app stays compact and keeps products, quantities, orders and
     'tất cả','đã mua','gợi ý',
     'v21-quote','taphoa-public-debt','taphoa-stock-check',
     'mini=1','data-order','<span>gửi kiểm hàng</span>','id="share-nv"',
-    'font-size:18px;font-weight:700','font-size:15px;font-weight:400',
+    'font-size:16px;font-weight:700','font-size:15px;font-weight:400',
     "action:'update'",
     'xóa / nhập lại',
     '.product-stock{grid-column:2;grid-row:1 / span 2',
