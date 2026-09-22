@@ -38,6 +38,7 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
     reverseOrder:(id,reason='Hoàn đơn')=>gateway.rpc('taphoa_reverse_order',{p_order_id:String(id||''),p_reason:String(reason||'Hoàn đơn'),p_command_id:commandId()}),
     deletePending:id=>gateway.rpc('taphoa_delete_pending_order',{p_order_id:String(id||''),p_command_id:commandId()}),
     batchOrders:(action,ids)=>gateway.rpc('taphoa_batch_orders',{p_action:String(action||''),p_ids:(ids||[]).map(String),p_command_id:commandId()}),
+    stockCheckLinks:customerId=>gateway.rpc('taphoa_stock_check_links_for_customer',{p_customer_id:String(customerId||'')}),
     debtTransaction:(maKH,type,amount,note='')=>gateway.rpc('taphoa_debt_transaction',{
       p_customer_id:String(maKH||''),p_type:String(type)==='thu_tien'?'collection':'payment',p_amount:num(amount),p_note:String(note||''),p_command_id:commandId()
     }),
