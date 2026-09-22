@@ -17,7 +17,7 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.98);border-
 main{width:min(760px,100%);margin:0 auto;padding:10px 12px 0}.status{padding:34px 14px;text-align:center;color:#6b7280}
 .note{margin-bottom:9px;padding:10px 12px;border:1px solid #e5e7eb;background:#fff;border-radius:13px;font-size:12px;line-height:1.45;color:#4b5563}.note strong{color:#111827}
 .list{display:grid;gap:7px}.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:13px;padding:10px 10px 10px 12px}.name{font-size:14px;font-weight:700;line-height:1.3}.meta{margin-top:3px;font-size:10px;color:#9ca3af}.price{margin-top:3px;font-size:11px;color:#166534;font-weight:700}
-.qty{display:grid;grid-template-columns:34px 48px 34px;height:34px;border:1px solid #d1d5db;border-radius:10px;overflow:hidden;background:#fff}.qty button{border:0;background:#f9fafb;font-size:20px;color:#374151}.qty input{width:48px;border:0;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;text-align:center;font:800 14px inherit;outline:none;background:#fff}.qty input:focus{background:#f0fdf4}
+.qty{display:grid;grid-template-columns:34px 72px 34px;height:36px;border:1px solid #d1d5db;border-radius:10px;overflow:hidden;background:#fff}.qty>button{border:0;background:#f9fafb;font-size:20px;color:#374151}.qty-entry{position:relative;height:100%;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;background:#fff}.qty input{width:72px;height:100%;border:0;padding:0 24px 0 8px;text-align:center;font:800 14px inherit;outline:none;background:#fff;caret-color:#16a34a}.qty input:focus{background:#f0fdf4;box-shadow:inset 0 0 0 2px #86efac}.qty input::placeholder{color:#9ca3af;font-weight:600}.qty-clear{position:absolute;right:2px;top:50%;width:22px;height:22px;transform:translateY(-50%);border:0!important;border-radius:50%;background:transparent!important;color:#9ca3af!important;font:700 15px/22px Arial!important;padding:0}.qty-clear:hover,.qty-clear:focus{background:#eef2f7!important;color:#374151!important}.qty-clear[hidden]{display:none}
 .empty{padding:26px 12px;text-align:center;color:#9ca3af;background:#fff;border:1px dashed #d1d5db;border-radius:14px}
 .footer{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.98);border-top:1px solid #e5e7eb;padding:9px 12px max(10px,env(safe-area-inset-bottom));box-shadow:0 -8px 25px rgba(15,23,42,.06)}.footer-inner{width:min(760px,100%);margin:0 auto}.summary{display:flex;align-items:center;justify-content:space-between;gap:10px}.summary-main{font-size:13px;font-weight:800}.summary-sub{margin-top:2px;font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65vw}.summary-money{font-size:15px;font-weight:850;color:#15803d;white-space:nowrap}.send{width:100%;height:43px;margin-top:8px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 14px inherit}.send:disabled{opacity:.55}
 .toast{position:fixed;left:50%;bottom:122px;z-index:30;transform:translateX(-50%) translateY(8px);opacity:0;pointer-events:none;transition:.2s;background:#111827;color:#fff;border-radius:999px;padding:9px 13px;font-size:12px;white-space:nowrap}.toast[data-show="true"]{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -133,7 +133,10 @@ function renderList(){
      <div class="copy"><div class="name">${esc(p.product_name)}</div><div class="meta">${esc(sourceName(p.source_key))}${meta?' · '+esc(meta):''}</div>${price}</div>
      <div class="qty">
        <button type="button" data-delta="-1" aria-label="Giảm">−</button>
-       <input type="text" inputmode="numeric" autocomplete="off" value="${n}" aria-label="Số lượng">
+       <div class="qty-entry">
+         <input type="text" inputmode="numeric" autocomplete="off" value="${n||''}" placeholder="0" aria-label="Nhập số lượng">
+         <button type="button" class="qty-clear" data-clear aria-label="Xóa số lượng" ${n>0?'':'hidden'}>×</button>
+       </div>
        <button type="button" data-delta="1" aria-label="Tăng">+</button>
      </div>
    </article>`;
@@ -152,11 +155,16 @@ function renderSummary(){
  if(snapshot.role==='owner'){els.summaryMoney.hidden=false;els.summaryMoney.textContent=money(totalMoney);}
  else{els.summaryMoney.hidden=true;els.summaryMoney.textContent='';}
 }
+function syncQtyClear(input){
+ const clear=input?.closest('.qty-entry')?.querySelector('[data-clear]');
+ if(clear)clear.hidden=!String(input.value||'').trim()||int(input.value)<=0;
+}
 function setQty(code,value,{syncInput=true}={}){
  const n=int(value);if(n>0)qty.set(code,n);else qty.delete(code);
  if(syncInput){
    const row=els.list.querySelector(`[data-code="${CSS.escape(code)}"]`);const input=row?.querySelector('input');
-   if(input&&String(input.value)!==String(n))input.value=String(n);
+   if(input&&String(input.value)!==String(n))input.value=n>0?String(n):'';
+   syncQtyClear(input);
  }
  renderSummary();
 }
@@ -193,7 +201,18 @@ function init(){
 }
 els.tabs.addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;active=String(b.dataset.tab);renderTabs();renderList();});
 els.search.addEventListener('input',renderList);
-els.list.addEventListener('click',e=>{const b=e.target.closest('[data-delta]');if(!b)return;const row=b.closest('[data-code]');if(!row)return;const code=String(row.dataset.code);setQty(code,(qty.get(code)||0)+Number(b.dataset.delta||0));});
+els.list.addEventListener('click',e=>{
+ const clear=e.target.closest('[data-clear]');
+ if(clear){
+   const row=clear.closest('[data-code]');if(!row)return;
+   const code=String(row.dataset.code);const input=row.querySelector('input');
+   qty.delete(code);if(input){input.value='';syncQtyClear(input);input.focus();}
+   renderSummary();return;
+ }
+ const b=e.target.closest('[data-delta]');if(!b)return;
+ const row=b.closest('[data-code]');if(!row)return;
+ const code=String(row.dataset.code);setQty(code,(qty.get(code)||0)+Number(b.dataset.delta||0));
+});
 els.list.addEventListener('focusin',e=>{if(e.target.tagName!=='INPUT')return;setTimeout(()=>e.target.select(),0);});
 els.list.addEventListener('input',e=>{
  if(e.target.tagName!=='INPUT')return;
@@ -201,6 +220,7 @@ els.list.addEventListener('input',e=>{
  const code=String(row.dataset.code);
  const raw=String(e.target.value||'').replace(/\D/g,'');
  if(e.target.value!==raw)e.target.value=raw;
+ syncQtyClear(e.target);
  if(raw===''){qty.delete(code);renderSummary();return;}
  setQty(code,raw,{syncInput:false});
 });
