@@ -406,6 +406,7 @@
           '<div><div class="public-share-title" id="publicShareTitle">Gửi link nhân viên</div><div class="public-share-sub">PIN bảo vệ link nhân viên của cửa hàng.</div></div>'+
           '<button type="button" class="public-share-close" aria-label="Đóng">×</button>'+
         '</div>'+
+        '<div class="public-share-warning">Đây là liên kết truy cập nhanh, không phải app đầy đủ. Nên đặt PIN trước khi gửi và không chia sẻ link ra bên ngoài.</div>'+
         '<div class="public-share-status"><span>Trạng thái PIN</span><strong id="publicSharePinStatus"></strong></div>'+
         '<label class="public-share-label" for="publicSharePinInput">Mã PIN 6 số</label>'+
         '<div class="public-share-pin-row">'+
