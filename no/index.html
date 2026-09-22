@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <title>Công nợ TAPHOA</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f6f7f8;font-size:16px}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f6f7f8;font-size:16px;--order-stt-cap:3.4ch;--order-price-cap:5.4ch;--order-qty-cap:3.4ch;--order-money-cap:6.4ch;--order-col-gap:8px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#f6f7f8;color:#171717}
 body{padding:0 0 max(20px,env(safe-area-inset-bottom))}
 main{width:min(760px,100%);margin:0 auto;padding:14px}
@@ -26,12 +26,12 @@ main{width:min(760px,100%);margin:0 auto;padding:14px}
 .grab-wrap{height:26px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}.grab{width:48px;height:6px;border-radius:999px;background:#e5e7eb}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;flex:none;background:#fff}.sheet-head-title{display:flex;align-items:center;gap:8px;min-width:0}.receipt-icon{width:31px;height:31px;border-radius:9px;background:#ecfdf3;color:#16a34a;display:flex;align-items:center;justify-content:center;flex:none}.receipt-icon svg{width:18px;height:18px;display:block}.sheet-head h3{margin:0;font-size:16px;line-height:1.25;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sheet-close{width:32px;height:32px;border:0;border-radius:999px;background:#f8fafc;color:#64748b;font-size:22px;line-height:32px;text-align:center;padding:0;flex:none}
 .order-detail-content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:#fff}.order-meta{padding:12px 20px;background:#f8fafc;border-bottom:1px solid #f1f5f9;flex:none}.order-code{margin:0;font-size:11px;font-weight:600;color:#9ca3af}.order-customer{margin:4px 0 0;font-size:14px;line-height:1.3;font-weight:750;color:#1f2937}.order-time{margin:4px 0 0;font-size:11px;color:#6b7280}
-.order-detail-grid{display:grid;grid-template-columns:28px minmax(0,1fr) 52px 38px 60px;column-gap:8px;align-items:center;min-width:0}.order-detail-grid>*{min-width:0}.order-head{padding:8px 14px;border-bottom:1px solid #f3f4f6;background:#fff;color:#9ca3af;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.04em;flex:none}.order-stt{text-align:center;font-variant-numeric:tabular-nums}.order-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.order-price,.order-qty,.order-total{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.order-items{flex:1;min-height:0;overflow-y:auto;padding:0 14px;-webkit-overflow-scrolling:touch}.order-row{min-height:42px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151}.order-row:last-child{border-bottom:0}.order-row .order-stt{font-weight:700;color:#9ca3af}.order-row .order-name{font-weight:750;color:#111827;line-height:1.3}.order-row .order-price{font-weight:600}.order-row .order-qty{font-weight:700}.order-row .order-total{font-weight:800;color:#111827}.order-line-note{margin-top:2px;font-size:10px;line-height:1.25;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-table-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff}.order-detail-grid{display:grid;width:100%;grid-template-columns:var(--order-stt-cap) minmax(0,1fr) var(--order-price-cap) var(--order-qty-cap) var(--order-money-cap);column-gap:var(--order-col-gap);align-items:center;min-width:0}.order-detail-grid>*{min-width:0}.order-head{position:sticky;top:0;z-index:2;padding:8px 14px;border-bottom:1px solid #f3f4f6;background:#fff;color:#9ca3af;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.04em}.order-stt{text-align:center;font-variant-numeric:tabular-nums}.order-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.order-price,.order-qty,.order-total{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.order-items{padding:0 14px}.order-row{min-height:42px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151}.order-row:last-child{border-bottom:0}.order-row .order-stt{font-weight:700;color:#9ca3af}.order-row .order-name{font-weight:750;color:#111827;line-height:1.3}.order-row .order-price{font-weight:600}.order-row .order-qty{font-weight:700}.order-row .order-total{font-weight:800;color:#111827}.order-line-note{margin-top:2px;font-size:10px;line-height:1.25;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .order-summary{padding:14px 20px 16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex:none;background:#fff}.summary-label{font-size:12px;font-weight:500;color:#9ca3af}.summary-value{margin-top:3px;font-size:15px;font-weight:750;color:#111827}.summary-total{text-align:right}.summary-total .summary-value{font-size:20px;font-weight:850;color:#16a34a;font-variant-numeric:tabular-nums;white-space:nowrap}.order-detail-error{padding:24px 10px;text-align:center;color:#6b7280;font-size:13px}
 .loading{padding:28px;text-align:center;color:#6b7280}
 [hidden]{display:none!important}
-@media (min-width:760px){main{padding:24px}.sheet{align-items:center;justify-content:center}.sheet-card{width:min(720px,calc(100vw - 48px));height:min(760px,82vh);max-height:82vh;border-radius:24px}.title{font-size:28px}.order-detail-grid{grid-template-columns:32px minmax(0,1fr) 72px 44px 84px;column-gap:12px}.order-head,.order-items{padding-left:18px;padding-right:18px}}
+@media (min-width:760px){main{padding:24px}.sheet{align-items:center;justify-content:center}.sheet-card{width:min(720px,calc(100vw - 48px));height:min(760px,82vh);max-height:82vh;border-radius:24px}.title{font-size:28px}.order-head,.order-items{padding-left:18px;padding-right:18px}}
 </style>
 </head>
 <body>
@@ -79,14 +79,16 @@ main{width:min(760px,100%);margin:0 auto;padding:14px}
         <p class="order-customer" id="sheet-customer">Khách hàng</p>
         <p class="order-time" id="sheet-meta">Thời gian: --</p>
       </div>
-      <div class="order-detail-grid order-head">
-        <div class="order-stt">#</div>
-        <div class="order-name">TÊN SP</div>
-        <div class="order-price">Đ.GIÁ</div>
-        <div class="order-qty">SL</div>
-        <div class="order-total">T.TIỀN</div>
+      <div class="order-table-scroll">
+        <div class="order-detail-grid order-head">
+          <div class="order-stt">#</div>
+          <div class="order-name">TÊN SP</div>
+          <div class="order-price">Đ.GIÁ</div>
+          <div class="order-qty">SL</div>
+          <div class="order-total">T.TIỀN</div>
+        </div>
+        <div class="order-items" id="sheet-body"></div>
       </div>
-      <div class="order-items" id="sheet-body"></div>
       <div class="order-summary">
         <div>
           <div class="summary-label">Số lượng</div>
