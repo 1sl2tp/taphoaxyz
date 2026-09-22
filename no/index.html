@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f8">
+<meta property="og:title" content="Công nợ TAPHOA">
+<meta property="og:type" content="website">
+<title>Công nợ TAPHOA</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f6f7f8;font-size:16px}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#f6f7f8;color:#171717}
+body{padding:0 0 max(20px,env(safe-area-inset-bottom))}
+main{width:min(760px,100%);margin:0 auto;padding:14px}
+.head{padding:4px 2px 12px}.brand{font-size:12px;font-weight:700;letter-spacing:.08em;color:#6b7280}.title{margin:6px 0 2px;font-size:24px;line-height:1.2}.customer{font-size:15px;color:#4b5563}
+.balance{margin-top:10px;background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:18px;box-shadow:0 4px 18px rgba(15,23,42,.04)}
+.balance-label{font-size:13px;color:#6b7280}.balance-value{margin-top:4px;font-size:30px;line-height:1.1;font-weight:750;letter-spacing:-.03em}.balance-value[data-state="debt"]{color:#b42318}.balance-value[data-state="credit"]{color:#087a55}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.stat{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:13px}.stat span{display:block;font-size:12px;color:#6b7280}.stat strong{display:block;margin-top:4px;font-size:17px}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 2px 9px}.section-head h2{margin:0;font-size:16px}.updated{font-size:11px;color:#9ca3af}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:0 0 10px}.filter{flex:0 0 auto;border:1px solid #d8dde4;background:#fff;color:#4b5563;border-radius:999px;height:34px;padding:0 12px;font:600 12px inherit}.filter[data-active="true"]{background:#171717;color:#fff;border-color:#171717}
+.timeline{display:grid;gap:8px}.entry{width:100%;text-align:left;border:1px solid #e5e7eb;background:#fff;border-radius:14px;padding:12px 13px;color:inherit;font:inherit}.entry[disabled]{cursor:default}.entry-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}.entry-title{font-size:15px;font-weight:650;line-height:1.3}.entry-amount{font-size:15px;font-weight:700;white-space:nowrap}.entry-meta{margin-top:4px;font-size:12px;color:#6b7280}.entry-bottom{display:flex;justify-content:space-between;gap:10px;margin-top:9px;padding-top:9px;border-top:1px solid #f0f1f2;font-size:12px;color:#6b7280}.entry-balance{font-weight:650;color:#374151}.entry[data-clickable="true"]{cursor:pointer}.entry[data-clickable="true"]:active{transform:scale(.995)}
+.empty,.error{margin-top:24px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:22px;text-align:center;color:#6b7280}.error strong{display:block;color:#111827;margin-bottom:7px}
+.sheet{position:fixed;inset:0;z-index:20;display:none;align-items:flex-end;background:rgba(15,23,42,.36);backdrop-filter:blur(2px)}.sheet[data-open="true"]{display:flex}.sheet-card{width:100%;max-height:84dvh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:8px 14px max(20px,env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(15,23,42,.16)}.grab{width:36px;height:4px;border-radius:999px;background:#d1d5db;margin:2px auto 12px}.sheet-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.sheet-head h3{margin:0;font-size:19px}.sheet-close{width:36px;height:36px;border:0;border-radius:999px;background:#f1f3f5;font-size:24px;line-height:1}.sheet-meta{margin-top:4px;font-size:12px;color:#6b7280}.order-total{margin:14px 0 8px;padding:12px;border-radius:12px;background:#f7f8fa;display:flex;justify-content:space-between;gap:12px;font-weight:700}.items{display:grid;gap:0}.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:11px 2px;border-bottom:1px solid #eef0f2}.item:last-child{border-bottom:0}.item-name{font-size:14px;font-weight:600}.item-sub{margin-top:3px;font-size:12px;color:#6b7280}.item-total{font-size:14px;font-weight:700;white-space:nowrap}.order-note{margin-top:10px;font-size:13px;color:#4b5563;background:#fafafa;border-radius:10px;padding:10px}
+.loading{padding:28px;text-align:center;color:#6b7280}
+[hidden]{display:none!important}
+@media (min-width:760px){main{padding:24px}.sheet{align-items:center;justify-content:center}.sheet-card{width:min(620px,calc(100vw - 48px));max-height:78vh;border-radius:20px;padding:10px 18px 18px}.title{font-size:28px}}
+</style>
+</head>
+<body>
+<main>
+  <header class="head" id="head" hidden>
+    <div class="brand">TAPHOA · CÔNG NỢ</div>
+    <h1 class="title">Công nợ</h1>
+    <div class="customer" id="customer"></div>
+    <section class="balance">
+      <div class="balance-label" id="balance-label">Số tiền còn nợ</div>
+      <div class="balance-value" id="balance-value"></div>
+    </section>
+    <section class="stats">
+      <div class="stat"><span>Đã giao</span><strong id="total-delivered"></strong></div>
+      <div class="stat"><span>Đã thu</span><strong id="total-collected"></strong></div>
+    </section>
+  </header>
+  <section id="content">
+    <div class="loading" id="loading">Đang tải công nợ…</div>
+    <div class="error" id="error" hidden><strong>Không mở được công nợ</strong><span>Kiểm tra lại liên kết được gửi từ TAPHOA.</span></div>
+    <div id="history" hidden>
+      <div class="section-head"><h2>Lịch sử giao dịch</h2><span class="updated" id="updated"></span></div>
+      <div class="filters">
+        <button class="filter" type="button" data-filter="all" data-active="true">Tất cả</button>
+        <button class="filter" type="button" data-filter="orders">Đơn hàng</button>
+        <button class="filter" type="button" data-filter="collections">Thu tiền</button>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </section>
+</main>
+<section class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Chi tiết đơn">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div><h3 id="sheet-title">Chi tiết đơn</h3><div class="sheet-meta" id="sheet-meta"></div></div>
+      <button class="sheet-close" id="sheet-close" type="button" aria-label="Đóng">×</button>
+    </div>
+    <div id="sheet-body"></div>
+  </div>
+</section>
+<script>
+(function(){
+'use strict';
+var API='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-public-debt';
+var handle=new URLSearchParams(location.search).get('k')||'';
+var els={
+  head:document.getElementById('head'),customer:document.getElementById('customer'),
+  balanceLabel:document.getElementById('balance-label'),balanceValue:document.getElementById('balance-value'),
+  delivered:document.getElementById('total-delivered'),collected:document.getElementById('total-collected'),
+  loading:document.getElementById('loading'),error:document.getElementById('error'),history:document.getElementById('history'),
+  updated:document.getElementById('updated'),timeline:document.getElementById('timeline'),
+  sheet:document.getElementById('sheet'),sheetTitle:document.getElementById('sheet-title'),
+  sheetMeta:document.getElementById('sheet-meta'),sheetBody:document.getElementById('sheet-body'),sheetClose:document.getElementById('sheet-close')
+};
+var data=null,activeFilter='all';
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function money(v){return new Intl.NumberFormat('vi-VN').format(Math.abs(Math.round(Number(v)||0)))+'đ';}
+function time(v){if(!v)return'';try{return new Date(v).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'});}catch(e){return'';}}
+function qty(v){var n=Number(v)||0;return Number.isInteger(n)?String(n):String(n).replace(/0+$/,'').replace(/\.$/,'');}
+function balanceText(v){var n=Math.round(Number(v)||0);if(n>0)return{label:'Còn nợ',text:money(n),state:'debt'};if(n<0)return{label:'Còn dư',text:money(n),state:'credit'};return{label:'Đã hết nợ',text:'0đ',state:'zero'};}
+function typeLabel(row){if(row.entry_type==='sale')return row.order&&row.order.display_code?'Đơn '+row.order.display_code+' đã giao':'Đơn đã giao';if(row.entry_type==='collection')return'Đã thu tiền';if(row.entry_type==='reversal')return row.order&&row.order.display_code?'Hoàn đơn '+row.order.display_code:'Hoàn đơn';if(row.entry_type==='payment')return'Thanh toán';return'Điều chỉnh công nợ';}
+function visible(row){if(activeFilter==='orders')return['sale','reversal'].includes(row.entry_type);if(activeFilter==='collections')return row.entry_type==='collection';return true;}
+function render(){
+  if(!data)return;
+  var b=balanceText(data.balance_vnd);
+  els.customer.textContent=(data.customer&&data.customer.display_name)||'Khách hàng';
+  els.balanceLabel.textContent=b.label;els.balanceValue.textContent=b.text;els.balanceValue.dataset.state=b.state;
+  els.delivered.textContent=money(data.total_delivered_vnd);els.collected.textContent=money(data.total_collected_vnd);
+  els.updated.textContent=data.generated_at?'Cập nhật '+time(data.generated_at):'';
+  document.title='Công nợ '+((data.customer&&data.customer.display_name)||'')+' · TAPHOA';
+  var rows=(data.entries||[]).filter(visible);
+  els.timeline.innerHTML=rows.map(function(row){
+    var clickable=!!(row.order&&row.order.id&&row.entry_type==='sale');
+    var rb=balanceText(row.balance_after_vnd);
+    var amount=row.entry_type==='collection'?'-'+money(row.amount_vnd):(row.amount_vnd>0?'+'+money(row.amount_vnd):'-'+money(row.amount_vnd));
+    return '<button class="entry" type="button" '+(clickable?'data-clickable="true" data-order="'+esc(row.order.id)+'"':'disabled')+'>'+
+      '<div class="entry-top"><div><div class="entry-title">'+esc(typeLabel(row))+'</div><div class="entry-meta">'+esc(time(row.created_at))+(row.note?' · '+esc(row.note):'')+'</div></div><div class="entry-amount">'+esc(amount)+'</div></div>'+
+      '<div class="entry-bottom"><span>'+(clickable?'Xem chi tiết đơn':'')+'</span><span class="entry-balance">'+esc(rb.label)+': '+esc(rb.text)+'</span></div></button>';
+  }).join('')||'<div class="empty">Chưa có giao dịch trong mục này.</div>';
+}
+function fail(){els.loading.hidden=true;els.head.hidden=true;els.history.hidden=true;els.error.hidden=false;}
+function closeSheet(){els.sheet.dataset.open='false';els.sheet.setAttribute('aria-hidden','true');els.sheetBody.innerHTML='';}
+async function openOrder(orderId,sourceRow){
+  els.sheet.dataset.open='true';els.sheet.setAttribute('aria-hidden','false');
+  els.sheetTitle.textContent=sourceRow&&sourceRow.order&&sourceRow.order.display_code?'Đơn '+sourceRow.order.display_code:'Chi tiết đơn';
+  els.sheetMeta.textContent='Đang tải…';els.sheetBody.innerHTML='';
+  try{
+    var res=await fetch(API+'?k='+encodeURIComponent(handle)+'&order='+encodeURIComponent(orderId),{cache:'no-store'});
+    if(!res.ok)throw new Error('load_failed');
+    var detail=await res.json(),o=detail.order;
+    els.sheetTitle.textContent=o.display_code?'Đơn '+o.display_code:'Chi tiết đơn';els.sheetMeta.textContent=time(o.delivered_at||o.created_at);
+    var rb=balanceText(sourceRow&&sourceRow.balance_after_vnd);
+    var items=(o.items||[]).map(function(item){return '<div class="item"><div><div class="item-name">'+esc(item.product_name)+'</div><div class="item-sub">'+esc(qty(item.qty))+' × '+esc(money(item.unit_price_vnd))+(item.note?' · '+esc(item.note):'')+'</div></div><div class="item-total">'+esc(money(item.line_total_vnd))+'</div></div>';}).join('');
+    els.sheetBody.innerHTML='<div class="order-total"><span>Tổng đơn</span><span>'+esc(money(o.total_vnd))+'</span></div><div class="items">'+items+'</div><div class="order-note">'+esc(rb.label)+' sau đơn: <strong>'+esc(rb.text)+'</strong>'+(o.note?'<br>Ghi chú: '+esc(o.note):'')+'</div>';
+  }catch(e){els.sheetMeta.textContent='';els.sheetBody.innerHTML='<div class="error"><strong>Không tải được chi tiết đơn</strong></div>';}
+}
+els.sheetClose.addEventListener('click',closeSheet);
+els.sheet.addEventListener('click',function(e){if(e.target===els.sheet)closeSheet();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet();});
+document.querySelector('.filters').addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-filter]');if(!b)return;activeFilter=b.dataset.filter||'all';document.querySelectorAll('[data-filter]').forEach(function(x){x.dataset.active=String(x===b);});render();});
+els.timeline.addEventListener('click',function(e){var row=e.target.closest&&e.target.closest('[data-order]');if(!row)return;var source=(data&&data.entries||[]).find(function(x){return String(x.order&&x.order.id||'')===String(row.dataset.order||'')&&x.entry_type==='sale';});openOrder(row.dataset.order,source);});
+if(!handle){fail();return;}
+fetch(API+'?k='+encodeURIComponent(handle),{cache:'no-store'})
+  .then(function(r){if(!r.ok)throw new Error('load_failed');return r.json();})
+  .then(function(payload){if(!payload||!payload.ok||!payload.customer)throw new Error('invalid');data=payload;els.loading.hidden=true;els.error.hidden=true;els.head.hidden=false;els.history.hidden=false;render();})
+  .catch(fail);
+})();
+</script>
+</body>
+</html>
