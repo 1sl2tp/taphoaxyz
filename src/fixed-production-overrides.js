@@ -373,14 +373,109 @@
     requestAnimationFrame(()=>renderProductList());
   }
 
+  function closePublicSharePanel(){
+    document.getElementById('publicSharePanel')?.remove();
+  }
+
+  function openPublicSharePanel(employeeUrl,pinConfigured){
+    closePublicSharePanel();
+    const wrap=document.createElement('div');
+    wrap.id='publicSharePanel';
+    wrap.className='public-share-panel';
+    wrap.innerHTML=
+      '<button type="button" class="public-share-backdrop" aria-label="Đóng"></button>'+
+      '<section class="public-share-card" role="dialog" aria-modal="true" aria-labelledby="publicShareTitle">'+
+        '<div class="public-share-head">'+
+          '<div><div class="public-share-title" id="publicShareTitle">Gửi link nhân viên</div><div class="public-share-sub">PIN bảo vệ link nhân viên của cửa hàng.</div></div>'+
+          '<button type="button" class="public-share-close" aria-label="Đóng">×</button>'+
+        '</div>'+
+        '<div class="public-share-status"><span>Trạng thái PIN</span><strong id="publicSharePinStatus"></strong></div>'+
+        '<label class="public-share-label" for="publicSharePinInput">Mã PIN 6 số</label>'+
+        '<div class="public-share-pin-row">'+
+          '<input id="publicSharePinInput" inputmode="numeric" autocomplete="new-password" maxlength="6" placeholder="Nhập PIN mới">'+
+          '<button type="button" id="publicShareSavePin"></button>'+
+        '</div>'+
+        '<div class="public-share-help" id="publicShareHelp"></div>'+
+        '<button type="button" class="public-share-copy" id="publicShareCopy">Sao chép link nhân viên</button>'+
+      '</section>';
+    document.body.appendChild(wrap);
+
+    let hasPin=Boolean(pinConfigured);
+    const status=wrap.querySelector('#publicSharePinStatus');
+    const input=wrap.querySelector('#publicSharePinInput');
+    const save=wrap.querySelector('#publicShareSavePin');
+    const help=wrap.querySelector('#publicShareHelp');
+    const copy=wrap.querySelector('#publicShareCopy');
+
+    const render=()=>{
+      status.textContent=hasPin?'Đã bảo vệ':'Chưa tạo PIN';
+      status.dataset.active=String(hasPin);
+      save.textContent=hasPin?'Đổi PIN':'Tạo PIN';
+      help.textContent=hasPin
+        ?'PIN cũ không hiển thị. Nhập 6 số mới nếu muốn đổi.'
+        :'Nhân viên cần PIN này để mở link. Bạn có thể tạo ngay hoặc gửi link trước.';
+    };
+    render();
+
+    input.addEventListener('input',()=>{
+      input.value=String(input.value||'').replace(/\D/g,'').slice(0,6);
+      help.dataset.error='false';
+    });
+    input.addEventListener('keydown',event=>{
+      if(event.key==='Enter'){event.preventDefault();save.click();}
+    });
+    save.addEventListener('click',async()=>{
+      const pin=String(input.value||'').trim();
+      if(!/^\d{6}$/.test(pin)){
+        help.textContent='PIN phải gồm đúng 6 chữ số.';
+        help.dataset.error='true';
+        input.focus();
+        return;
+      }
+      const old=save.textContent;
+      save.disabled=true;
+      save.textContent='Đang lưu…';
+      help.dataset.error='false';
+      try{
+        await backend().setPublicPin(pin);
+        hasPin=true;
+        input.value='';
+        render();
+        help.textContent='Đã lưu PIN mới. Nhân viên phải dùng PIN này.';
+        help.dataset.success='true';
+      }catch(error){
+        console.warn('set public pin',error);
+        help.textContent='Không đổi được PIN. Hãy mở lại link chủ và thử lại.';
+        help.dataset.error='true';
+      }finally{
+        save.disabled=false;
+        if(save.textContent==='Đang lưu…')save.textContent=old;
+      }
+    });
+    copy.addEventListener('click',async()=>{
+      const ok=await copyPublicText(employeeUrl,'Đã copy link NV');
+      if(ok){
+        copy.textContent='Đã sao chép link nhân viên';
+        setTimeout(()=>{if(copy.isConnected)copy.textContent='Sao chép link nhân viên';},1400);
+      }
+    });
+    wrap.querySelector('.public-share-backdrop')?.addEventListener('click',closePublicSharePanel);
+    wrap.querySelector('.public-share-close')?.addEventListener('click',closePublicSharePanel);
+    setTimeout(()=>input.focus(),0);
+  }
+
   async function sharePublicMode(){
     try{
       const self=backend()?.getState?.()?.selfCustomer||{};
-      const links=await backend().stockCheckLinks(String(self.id||self.maKH||''));
+      const [links,state]=await Promise.all([
+        backend().stockCheckLinks(String(self.id||self.maKH||'')),
+        backend().publicPinState()
+      ]);
       const url=String(links?.employee_url||'');
       if(!url)throw 0;
-      await copyPublicText(url,'Đã copy link NV');
-    }catch{
+      openPublicSharePanel(url,state?.pin_configured===true);
+    }catch(error){
+      console.warn('open employee share',error);
       showAlertPopup('Không lấy được link nhân viên','Vui lòng thử lại.');
     }
   }
