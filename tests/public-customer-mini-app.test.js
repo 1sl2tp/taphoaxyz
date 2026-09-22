@@ -2,82 +2,94 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const html=fs.readFileSync(new URL('../kh/index.html',import.meta.url),'utf8');
-const edge=fs.readFileSync(new URL('../supabase/functions/taphoa-stock-check/index.ts',import.meta.url),'utf8');
-const draftMigration=fs.readFileSync(new URL('../supabase/migrations/20260923010000_stock_check_pending_order.sql',import.meta.url),'utf8');
-const low=html.toLowerCase();
-const edgeLow=edge.toLowerCase();
+const gate=fs.readFileSync(new URL('../kh/index.html',import.meta.url),'utf8').toLowerCase();
+const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.meta.url),'utf8').toLowerCase();
+const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8').toLowerCase();
+const runtime=fs.readFileSync(new URL('../src/fixed-ui-runtime-4.js',import.meta.url),'utf8').toLowerCase();
+const css=fs.readFileSync(new URL('../src/fixed-ui-source-4.css',import.meta.url),'utf8').toLowerCase();
+const pinRpc=fs.readFileSync(new URL('../supabase/migrations/20260923021000_public_user_pin_rpc.sql',import.meta.url),'utf8').toLowerCase();
+const gateway=fs.readFileSync(new URL('../supabase/migrations/20260923020000_public_user_ui_gateway.sql',import.meta.url),'utf8').toLowerCase();
 
-test('customer mini app stays compact and keeps products, quantities, orders and debt in one shell',()=>{
+test('customer link is only a PIN gateway into the existing User UI',()=>{
   for(const needle of [
-    'data-tab="hang"','data-tab="don"','data-tab="no"',
-    "p.get('nguon')","p.get('muc')","p.get('don')",
-    'tất cả','đã mua','gợi ý',
-    'v21-quote','taphoa-public-debt','taphoa-stock-check',
-    'mini=1','data-order','<span>gửi kiểm hàng</span>','id="share-nv"',
-    'font-size:16px;font-weight:700','font-size:15px;font-weight:400',
-    "action:'update'",
-    '>xóa</button>','>cập nhật</button>','>tạo đơn tạm</button>',
-    '.product-stock{grid-column:2;grid-row:1 / span 2',
-    'data-stock-footer hidden',
-    "stock+'?kh='+encodeuricomponent(kh)",
-    "json.stringify({kh,action:'update',items})",
-    "json.stringify({kh,action:'update',items:[]})",
-    "const [quoteresponse,stockresponse]=await promise.all([",
-    "if(!quotedata||!stockdata)",
-    "&sync=1",
-    "ownerdirty=true",
-    "setinterval(()=>void refreshemployeestock(),2000)",
-    "if(row.employee_qty!==null&&row.employee_qty!==undefined)return row.employee_qty",
-    'max-height:min(72dvh,620px)',
-    'width:min(428px,100%)',
-    '.list-scroll{flex:1 1 auto',
-    "row.hidden=!show",
-    "const sources=[['all','tất cả'],...sourcerows()]",
-    "localecompare(string(b.product_name||''),'vi',{sensitivity:'base',numeric:true})",
-    '.nav[data-active="true"]::after{background:#111827}',
-    'background:#1e293b',
-    'class="status-foot"','border:0;border-radius:18px',
-    'width:min(428px,100vw)',
-    'id="app-modal"',
-    "appconfirm({title:'nhập lại số lượng?'",
-    'appinfo({title:\'link kiểm hàng\'',
-    "action:'save_pending_order'",
-    'data-stock-order',
-    "draft?'xem '+(draft.code||'đơn tạm'):'tạo đơn tạm'",
-  ])assert.ok(low.includes(needle),needle);
+    'taphoa_public_pin_check',
+    "sessionstorage.setitem(store",
+    "location.replace(rooturl())",
+    'pin gồm 6 chữ số',
+    'nhập mã pin'
+  ])assert.ok(gate.includes(needle),needle);
 
   for(const forbidden of [
-    'font:800 13px inherit',
-    'async function loadquote()',
-    'data-product-count',
-    ' sản phẩm</div></div></div>',
-    'data-tab="kiemhang"',
-    'xem trước nhân viên',
-    'data-stock-copy',
-    '<div class="brand">taphoa</div>',
-    'const stocktoken=',
-    'xem giá · đã mua · gợi ý · nhập số lượng khi cần',
-    'xem đơn đã giao và chi tiết từng đơn',
-    'xem số còn nợ/còn dư và lịch sử giao dịch',
-    '<div class="product-meta"><span class="tag">',
-    'xem chi tiết đơn</div></button>',
-    "query=e.target.value;renderhang();",
-    'window.confirm(','alert(','window.prompt(',
-    'signin','login','localstorage','document.cookie'
-  ])assert.equal(low.includes(forbidden),false,forbidden);
+    'v21-quote',
+    'taphoa-public-debt',
+    'data-stock-footer',
+    'data-stock-order',
+    'data-tab="hang"',
+    'data-tab="don"',
+    'data-tab="no"',
+    'gửi kiểm hàng'
+  ])assert.equal(gate.includes(forbidden),false,forbidden);
+});
 
-  assert.ok(edgeLow.includes('url.searchparams.get("kh")'));
-  assert.ok(edgeLow.includes('body?.kh'));
-  assert.ok(edgeLow.includes('save_pending_order'));
-  assert.ok(edgeLow.includes('taphoa_public_save_stock_draft'));
-  assert.ok(draftMigration.includes('pending_order_id uuid'));
-  assert.ok(draftMigration.includes('taphoa_public_save_stock_draft'));
-  assert.ok(edge.includes('&tab=hang'));
-  assert.equal(edge.includes('&tab=hang&t='),false);
-  assert.equal(edge.includes('&tab=kiemhang&t='),false);
+test('public customer access reuses the production bridge and existing User screens',()=>{
+  for(const needle of [
+    'async function openpubliclink',
+    "taphoa_public_bootstrap_by_pin",
+    "taphoa_public_domains_by_pin",
+    "taphoa_public_save_pending_by_pin",
+    "taphoa_public_delete_pending_by_pin",
+    "taphoa_public_order_detail_by_pin",
+    "taphoa_public_debt_ledger_by_pin",
+    "getaccessmode:()=>publicaccess?'public-link':'account'"
+  ])assert.ok(bridge.includes(needle),needle);
 
-  assert.ok(low.includes("const legacystocktab=requestedtab==='kiemhang';"));
-  assert.ok(low.includes("const legacystocktoken=p.has('t');"));
-  assert.ok(low.includes('if(legacystocktab||legacystocktoken)updateurl();'));
+  for(const needle of [
+    'openpublicuserfromsession',
+    "setauthrole('user')",
+    'showappscreen()',
+    'applypublicdeeplink()',
+    'public-user-tool',
+    '>đã mua</button>',
+    '>gợi ý</button>',
+    '>nhân viên</button>',
+    '>gửi link</button>',
+    'startpublicemployeesync',
+    'backend().employeesnapshot()'
+  ])assert.ok(overrides.includes(needle),needle);
+});
+
+test('bought suggested and employee modes are thin filters on the existing product renderer',()=>{
+  for(const needle of [
+    "window.taphoa_product_segment",
+    "segment === 'bought'",
+    "segment === 'suggested'",
+    'market_customer_count',
+    'window.taphoa_employee_mode',
+    "const employeemode = boolean(window.taphoa_employee_mode)"
+  ])assert.ok(runtime.includes(needle),needle);
+
+  for(const needle of [
+    '.public-user-tools',
+    'body[data-employee-mode="true"] #headerquicktotal',
+    'body[data-employee-mode="true"] #btnopencartmobile'
+  ])assert.ok(css.includes(needle),needle);
+});
+
+test('PIN wrappers are the public security boundary for User data and draft mutations',()=>{
+  for(const needle of [
+    'taphoa_public_customer_id_by_pin',
+    'taphoa_public_bootstrap_by_pin',
+    'taphoa_public_domains_by_pin',
+    'taphoa_public_save_pending_by_pin',
+    'taphoa_public_delete_pending_by_pin',
+    'taphoa_public_employee_link_by_pin',
+    'taphoa_public_employee_snapshot_by_pin'
+  ])assert.ok(pinRpc.includes(needle),needle);
+
+  for(const needle of [
+    'taphoa_public_bootstrap_for_customer',
+    'taphoa_public_domains_for_customer',
+    'taphoa_public_save_pending_order',
+    'taphoa_public_delete_pending_order'
+  ])assert.ok(gateway.includes(needle),needle);
 });
