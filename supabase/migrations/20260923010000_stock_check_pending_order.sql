@@ -68,7 +68,7 @@ begin
     for update;
   end if;
 
-  if not found then
+  if v_order.id is null then
     insert into public.taphoa_orders(
       customer_account_id,status,note,created_by_account_id,
       display_prefix,display_no
