@@ -7,7 +7,9 @@ const src=fs.readFileSync(new URL('../supabase/functions/taphoa-public-debt/inde
 test('public debt endpoint resolves only a valid customer public handle',()=>{
   for(const needle of [
     'v21_customer_public_links',
-    "lastindexof('~')",\n    "public_slug",\n    "url.searchparams.get('kh')",
+    "lastindexof('~')",
+    "public_slug",
+    "url.searchparams.get('kh')",
     "is('revoked_at',null)",
     "eq('role','user')",
     "eq('contact_group','customer')",
