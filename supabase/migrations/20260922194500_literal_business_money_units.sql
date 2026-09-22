@@ -90,7 +90,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_apply_product_delta(p_products jsonb, p
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $$
 declare v_upserted integer:=0; v_deactivated integer:=0; v_revision bigint:=0;
 begin
   if jsonb_typeof(p_products)<>'array' then raise exception 'taphoa_products_delta_invalid'; end if;
@@ -139,7 +139,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_apply_product_sync(p_sources jsonb, p_p
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $$
 declare
   v_imported integer := 0;
   v_deactivated integer := 0;
@@ -259,38 +259,38 @@ begin
     'revision',v_revision
   );
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_customer_balance_vnd(p_customer_id uuid)
  RETURNS bigint
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $
+AS $$
   select round(coalesce(sum(l.amount_vnd),0))::bigint
   from public.taphoa_debt_ledger l
   where l.customer_account_id=p_customer_id;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_money(p_amount_vnd bigint)
  RETURNS text
  LANGUAGE sql
  IMMUTABLE
  SET search_path TO 'public'
-AS $
+AS $$
   select replace(
     to_char(abs(coalesce(p_amount_vnd,0)),'FM999,999,999,999,990'),
     ',',
     '.'
   );
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_balance_label(p_balance_vnd bigint, p_before boolean DEFAULT false)
  RETURNS text
  LANGUAGE plpgsql
  IMMUTABLE
  SET search_path TO 'public'
-AS $
+AS $$
 begin
   if coalesce(p_balance_vnd,0)>0 then
     return (case when p_before then 'Nợ trước: ' else 'Còn nợ: ' end)
@@ -301,14 +301,14 @@ begin
   end if;
   return case when p_before then 'Trước giao dịch: 0' else 'Đã hết nợ: 0' end;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_notify_customer(p_customer_id uuid, p_sender_account_id uuid, p_client_id text, p_body text)
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $$
 declare
   v_member_a uuid;
   v_member_b uuid;
@@ -450,14 +450,14 @@ begin
 
   return v_message_id;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_order_diff(p_old jsonb, p_new jsonb, p_limit integer DEFAULT 6)
  RETURNS text
  LANGUAGE sql
  IMMUTABLE
  SET search_path TO 'public'
-AS $
+AS $$
   with old_items as (
     select
       coalesce(nullif(item->>'product_id',''),nullif(item->>'maSP','')) as product_id,
@@ -514,14 +514,14 @@ AS $
           then E'\n+' || (counts.total-greatest(coalesce(p_limit,6),1))::text || ' thay đổi khác'
           else '' end
   from counts;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_order_receipt(p_order_json jsonb, p_heading text, p_balance_vnd bigint DEFAULT NULL::bigint)
  RETURNS text
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $$
 declare
   v_total_vnd numeric := coalesce(nullif(p_order_json->>'tongTien','')::numeric,0);
   v_codes text := coalesce(nullif(p_order_json->>'tongMa',''),'0');
@@ -571,14 +571,14 @@ begin
 
   return v_body;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_debt_ledger_page(p_customer_id uuid, p_before_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_before_id bigint DEFAULT NULL::bigint, p_limit integer DEFAULT 50)
  RETURNS jsonb
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   customer_row public.v21_accounts;
@@ -651,14 +651,14 @@ begin
     'transactions',transactions
   );
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_debt_summary_frontend_json(p_ctx jsonb)
  RETURNS jsonb
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $$
   select coalesce(jsonb_agg(
     jsonb_build_object(
       'id',a.id::text,
@@ -690,14 +690,14 @@ AS $
       p_ctx->>'taphoa_role'='admin'
       or a.id=nullif(p_ctx->>'account_id','')::uuid
     );
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_debt_transaction(p_customer_id uuid, p_type text, p_amount numeric, p_note text, p_command_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -775,14 +775,14 @@ begin
   values(p_command_id,'debt_transaction',v_result);
   return v_result;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_deliver_order(p_order_id uuid, p_command_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -842,14 +842,14 @@ begin
   insert into public.taphoa_command_log(command_id,operation,result) values(p_command_id,'deliver_order',v_result);
   return v_result;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_order_frontend_json(o taphoa_orders)
  RETURNS jsonb
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $$
   with lines as (
     select
       coalesce(jsonb_agg(
@@ -918,14 +918,14 @@ AS $
   from lines l
   cross join code
   left join public.v21_accounts c on c.id=o.customer_account_id;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_products_frontend_json()
  RETURNS jsonb
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
-AS $
+AS $$
   select coalesce(jsonb_agg(
     jsonb_build_object(
       'id',p.product_code,
@@ -970,14 +970,14 @@ AS $
   join public.taphoa_sources s on s.source_key=p.source_key
   left join public.taphoa_product_media m on m.product_code=p.product_code
   where p.is_active and s.active;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_product_row_hash(p_code text, p_name text, p_input_price_vnd bigint, p_sale_price_vnd bigint)
  RETURNS text
  LANGUAGE sql
  IMMUTABLE
  SET search_path TO 'public'
-AS $
+AS $$
   select encode(
     extensions.digest(
       upper(btrim(coalesce(p_code,''))) || '|' ||
@@ -988,14 +988,14 @@ AS $
     ),
     'hex'
   );
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_reverse_order(p_order_id uuid, p_reason text, p_command_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -1028,14 +1028,14 @@ begin
   insert into public.taphoa_command_log(command_id,operation,result) values(p_command_id,'reverse_order',v_result);
   return v_result;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_save_order(p_order jsonb, p_command_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -1249,14 +1249,14 @@ begin
   insert into public.taphoa_command_log(command_id,operation,result) values(p_command_id,'save_order',v_result);
   return v_result;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_update_product_from_web(p_product jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   current_row public.taphoa_products;
@@ -1351,6 +1351,6 @@ begin
   update public.taphoa_revisions set revision=revision+1,updated_at=now() where domain='products';
   return jsonb_build_object('ok',true,'created',false,'changed',true,'product_code',v_requested_code,'row_hash',v_hash);
 end;
-$;
+$$;
 
 revoke all on function public.taphoa_chat_customer_balance_value(uuid) from public,anon,authenticated;
