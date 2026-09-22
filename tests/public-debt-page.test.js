@@ -15,7 +15,6 @@ test('public debt page is login-free and shows customer debt history',()=>{
     'taphoa-public-debt',
     "new urlsearchparams(location.search)",
     "params.get('kh')",
-    "params.get('k')",
     'xem chi tiết đơn',
     'còn nợ',
     'còn dư',
@@ -30,3 +29,7 @@ test('public debt order detail stays inside the debt page',()=>{
   assert.ok(low.includes('tổng đơn'));
   assert.ok(low.includes('sau đơn'));
 });
+
+assert.equal(low.includes("params.get('k')"),false);
+assert.equal(low.includes('legacykey'),false);
+assert.equal(low.includes('publicparam'),false);
