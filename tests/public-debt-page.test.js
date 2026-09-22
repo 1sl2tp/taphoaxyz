@@ -61,3 +61,16 @@ test('public debt order detail mirrors the legacy order-detail viewer',()=>{
   ])assert.ok(low.includes(needle),needle);
   assert.equal(low.includes('còn nợ')&&low.includes('sau đơn'),false,'order detail must not add debt balance inside legacy-style viewer');
 });
+
+
+test('order detail header shares the exact scroll geometry with rows',()=>{
+  for(const needle of [
+    'order-table-scroll',
+    'position:sticky',
+    '--order-stt-cap:3.4ch',
+    '--order-price-cap:5.4ch',
+    '--order-qty-cap:3.4ch',
+    '--order-money-cap:6.4ch',
+    'grid-template-columns:var(--order-stt-cap) minmax(0,1fr) var(--order-price-cap) var(--order-qty-cap) var(--order-money-cap)',
+  ])assert.ok(low.includes(needle),needle);
+});
