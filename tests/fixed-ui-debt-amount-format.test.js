@@ -31,3 +31,11 @@ test('typing 4611 is displayed as 4.611 while submit parsing returns 4611',()=>{
   assert.equal(format('4611'),'4.611');
   assert.equal(parse('4.611'),4611);
 });
+
+
+test('production override parses formatted debt input as whole thousand units',()=>{
+  const overrides=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
+  assert.match(overrides,/typeof parseDebtAmountValue==='function'/);
+  assert.match(overrides,/parseDebtAmountValue\(amountStr\)/);
+  assert.doesNotMatch(overrides,/const amount=Number\(amountStr\)\|\|0;/);
+});
