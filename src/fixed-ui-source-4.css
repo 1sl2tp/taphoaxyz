@@ -558,41 +558,83 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 
 /* PUBLIC CUSTOMER LINK: reuse the production User UI; the bottom bar owns supplemental tools. */
 .public-user-tools{
-  min-height:44px;
+  min-height:48px;
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
   align-items:stretch;
-  gap:1px;
-  padding:0;
+  gap:3px;
+  width:auto !important;
+  margin:4px 6px 6px;
+  padding:4px;
+  overflow:hidden;
+  isolation:isolate;
+  border-radius:16px;
   background:#1e293b;
   color:#fff;
+  box-shadow:0 4px 16px rgba(15,23,42,.16);
 }
 .public-user-tool{
   min-width:0;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   border:0;
+  border-radius:12px;
+  appearance:none;
+  -webkit-appearance:none;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  outline:none;
   background:transparent;
   color:#cbd5e1;
   font-size:11px;
   font-weight:700;
+  line-height:1;
   padding:0 6px;
+  cursor:pointer;
+  transition:background-color .14s ease,color .14s ease,transform .08s ease,box-shadow .14s ease;
 }
 .public-user-tool.is-active{
-  background:#fff;
-  color:#111827;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.public-user-tool:active{
+  transform:scale(.985);
+  background:rgba(255,255,255,.10);
+}
+.public-user-tool.is-active:active{
+  background:rgba(255,255,255,.18);
+}
+.public-user-tool:focus,
+.public-user-tool:focus-visible{
+  outline:none;
+}
+@media (hover:hover){
+  .public-user-tool:hover{
+    background:rgba(255,255,255,.08);
+    color:#fff;
+  }
+  .public-user-tool.is-active:hover{
+    background:rgba(255,255,255,.16);
+  }
 }
 .public-user-tool-share{
   color:#fff;
 }
 .public-user-tool-status{
   grid-column:1/-1;
+  min-height:40px;
   display:flex;
   align-items:center;
   justify-content:center;
   gap:7px;
+  border-radius:12px;
   font-size:11px;
   font-weight:650;
 }
-.public-user-tool-status i{color:#16a34a;}
+.public-user-tool-status i{color:#4ade80;}
 
 body[data-employee-mode="true"] #topNav .tab-btn:not(:first-child){
   display:none !important;
