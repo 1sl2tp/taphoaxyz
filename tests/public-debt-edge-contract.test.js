@@ -57,3 +57,10 @@ test('public order code links resolve inside the same read-only endpoint',()=>{
     "/^(dg|dt)",
   ])assert.ok(src.includes(needle),needle);
 });
+
+
+test('order detail display-code lookup must not shadow the displayCode helper',()=>{
+  assert.ok(src.includes("async function orderdetail(customer:any,orderid:string,displaycodevalue:string='')"));
+  assert.ok(src.includes("display_code:displaycode(order)"));
+  assert.equal(src.includes("async function orderdetail(customer:any,orderid:string,displaycode:string='')"),false);
+});
