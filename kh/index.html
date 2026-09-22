@@ -81,7 +81,7 @@ const directOrder=(p.get('don')||'').toUpperCase();
 const panel=document.getElementById('panel'),title=document.getElementById('title'),sub=document.getElementById('sub'),shareTop=document.getElementById('share-nv');
 const sheet=document.getElementById('sheet'),sheetTitle=document.getElementById('sheet-title'),sheetMeta=document.getElementById('sheet-meta'),sheetBody=document.getElementById('sheet-body'),sheetQty=document.getElementById('sheet-qty'),sheetTotal=document.getElementById('sheet-total');
 let quoteData=null,debtData=null,query='',directOrderOpened=false;
-let stockData=null,stockBusy=false;
+let stockData=null,stockBusy=false,hangLoading=false;
 const stockQty=new Map();
 const sourceFallback={'hang-thuong':'Hàng thường','hang-u':'Hàng U','sua':'Sữa','thuoc-la':'Thuốc lá','masan':'Masan'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -113,8 +113,11 @@ function pack(item){const a=[];if(item.primary_packaging)a.push(item.primary_pac
 function productSegment(item){return Number(item.purchase_orders)>0?'da-mua':Number(item.market_customers)>0?'goi-y':'khac';}
 function renderHang(){
   nav();
-  if(!quoteData){panel.innerHTML='<div class="state">Đang tải hàng…</div>';loadQuote();return;}
-  if(!stockData){panel.innerHTML='<div class="state">Đang tải hàng…</div>';loadStockForHang();return;}
+  if(!quoteData||!stockData){
+    panel.innerHTML='<div class="state">Đang tải…</div>';
+    if(!hangLoading)void loadHangData();
+    return;
+  }
   hydrateStockQty();
 
   const sources=[['all','Tất cả'],...sourceRows()];
@@ -174,8 +177,28 @@ function renderHang(){
   panel.querySelector('[data-stock-reset]')?.addEventListener('click',resetStockQty);
   panel.querySelector('[data-stock-save]')?.addEventListener('click',submitStock);
 }
-async function loadQuote(){
-  try{const r=await fetch(QUOTE+'?kh='+encodeURIComponent(kh)+'&mini=1',{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!Array.isArray(d.items))throw 0;quoteData=d;renderHang();}catch{fail('Không mở được hàng');}
+async function loadHangData(){
+  if(hangLoading)return;
+  hangLoading=true;
+  try{
+    const [quoteResponse,stockResponse]=await Promise.all([
+      fetch(QUOTE+'?kh='+encodeURIComponent(kh)+'&mini=1',{cache:'no-store'}),
+      fetch(STOCK+'?kh='+encodeURIComponent(kh),{cache:'no-store'})
+    ]);
+    if(!quoteResponse.ok||!stockResponse.ok)throw 0;
+    const [quoteJson,stockJson]=await Promise.all([
+      quoteResponse.json(),
+      stockResponse.json().catch(()=>({}))
+    ]);
+    if(!quoteJson?.ok||!Array.isArray(quoteJson.items)||!stockJson?.ok||stockJson.role!=='owner')throw 0;
+    quoteData=quoteJson;
+    stockData=stockJson;
+    renderHang();
+  }catch{
+    fail('Không mở được hàng');
+  }finally{
+    hangLoading=false;
+  }
 }
 
 function hydrateStockQty(){
@@ -262,7 +285,8 @@ async function loadStockForHang(){
     const r=await fetch(STOCK+'?kh='+encodeURIComponent(kh),{cache:'no-store'});
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d?.ok||d.role!=='owner')throw 0;
-    stockData=d;renderHang();
+    stockData=d;
+    renderHang();
   }catch{fail('Không mở được hàng');}
 }
 async function submitStock(){
