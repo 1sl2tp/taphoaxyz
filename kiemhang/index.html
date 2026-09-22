@@ -131,7 +131,7 @@ function renderList(){
  if(!rows.length){els.list.innerHTML='<div class="empty">Không có sản phẩm phù hợp.</div>';return;}
  els.list.innerHTML=rows.map(p=>{
    const code=String(p.product_code);const n=qty.get(code)||0;const meta=rowMeta(p);
-   const price=snapshot.role==='owner'&&Number(p.sale_price_vnd)>0?`<div class="price">${money(p.sale_price_vnd)}</div>`:'';
+   const price='';
    return `<article class="row" data-code="${esc(code)}">
      <div class="copy"><div class="name">${esc(p.product_name)}</div><div class="meta">${esc(sourceName(p.source_key))}${meta?' · '+esc(meta):''}</div>${price}</div>
      <div class="qty-wrap">
@@ -157,8 +157,7 @@ function renderSummary(){
  for(const [k,x] of map){codes+=x.codes;total+=x.qty;totalMoney+=x.money;parts.push(`${sourceName(k)}: ${x.qty}`);}
  els.summaryMain.textContent=`${codes} mã · ${total} sản phẩm`;
  els.summarySub.textContent=parts.length?parts.join(' · '):'Chưa chọn hàng';
- if(snapshot.role==='owner'){els.summaryMoney.hidden=false;els.summaryMoney.textContent=money(totalMoney);}
- else{els.summaryMoney.hidden=true;els.summaryMoney.textContent='';}
+ els.summaryMoney.hidden=true;els.summaryMoney.textContent='';
  els.reset.disabled=total<=0;
 }
 function syncQtyClear(input){
@@ -187,13 +186,13 @@ async function submit(){
  const items=[...qty].filter(([,n])=>int(n)>0).map(([product_code,n])=>({product_code,qty:int(n)}));
  saveBusy=true;els.send.disabled=true;const old=els.send.textContent;els.send.textContent='Đang gửi…';
  try{
-   const action=snapshot.role==='owner'?'update':'submit';
+   const action='submit';
    const res=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,action,items})});
    const data=await res.json().catch(()=>({}));
    if(!res.ok||!data?.ok)throw new Error('save_failed');
-   if(snapshot.role==='owner'){els.send.textContent='Đã cập nhật';els.note.innerHTML='<strong>Đã cập nhật.</strong> TAPHOA đã nhận được bản chủ cửa hàng rà soát.';}
-   else{els.send.textContent='Đã gửi';els.note.innerHTML='<strong>Đã gửi kiểm hàng.</strong> Chủ cửa hàng có thể mở link riêng để rà soát và cập nhật.';}
-   showToast(snapshot.role==='owner'?'Đã cập nhật kiểm hàng':'Đã gửi kiểm hàng');
+   els.send.textContent='Đã gửi';
+   els.note.innerHTML='<strong>Đã gửi kiểm hàng.</strong> Chủ cửa hàng sẽ rà soát và cập nhật.';
+   showToast('Đã gửi kiểm hàng');
    setTimeout(()=>{els.send.textContent=old;},1600);
  }catch(_){els.send.textContent=old;showToast('Chưa gửi được, thử lại');}
  finally{saveBusy=false;els.send.disabled=false;}
@@ -202,12 +201,9 @@ function init(){
  const customer=String(snapshot.customer_name||'Khách hàng');
  document.title=`Kiểm hàng · ${customer}`;
  els.title.textContent=customer;
- const employee=snapshot.role==='employee';
- els.role.textContent=employee?'Nhân viên kiểm số lượng · không hiển thị giá/tiền':'Chủ cửa hàng rà soát số lượng và cập nhật';
- els.note.innerHTML=employee
-  ?'<strong>Kiểm nhanh:</strong> chọn số lượng cần lấy bằng − / + hoặc chạm vào số để nhập trực tiếp.'
-  :'<strong>Rà soát:</strong> số nhân viên đã nhập được giữ sẵn. Có thể sửa, thêm/bớt mặt hàng rồi cập nhật.';
- els.send.textContent=employee?'Gửi kiểm hàng':'Cập nhật kiểm hàng';
+ els.role.textContent='Nhân viên kiểm số lượng · không hiển thị giá/tiền';
+ els.note.innerHTML='<strong>Kiểm nhanh:</strong> chọn số lượng cần lấy bằng − / + hoặc chạm vào số để nhập trực tiếp.';
+ els.send.textContent='Gửi kiểm hàng';
  hydrateQty();
  active=favorites().length?'fav':'suggest';
  renderTabs();renderList();renderSummary();
@@ -251,10 +247,12 @@ fetch(`${API}?t=${encodeURIComponent(token)}`,{cache:'no-store'})
  .then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error('load_failed');return d;})
  .then(d=>{
    snapshot=d;
-   if(snapshot.role==='owner'&&snapshot.owner_url&&new URLSearchParams(location.search).get('legacy')!=='1'){
-     location.replace(String(snapshot.owner_url));
+   if(snapshot.role==='owner'){
+     if(snapshot.owner_url)location.replace(String(snapshot.owner_url));
+     else fail('Link chủ cửa hàng đã chuyển sang trang Hàng.');
      return;
    }
+   if(snapshot.role!=='employee'){fail();return;}
    init();
  })
  .catch(()=>fail());
