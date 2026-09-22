@@ -40,3 +40,10 @@ test('public debt endpoint is read only',()=>{
 assert.equal(src.includes("url.searchparams.get('k')"),false);
 assert.equal(src.includes("lastindexof('~')"),false);
 assert.equal(src.includes("access_key"),false);
+
+
+test('public debt endpoint excludes reversal entries from public history while keeping ledger balance accounting',()=>{
+  assert.ok(src.includes("const allentries=rows.map"));
+  assert.ok(src.includes("entry.entry_type!=='reversal'"));
+  assert.equal(src.includes('reversed_at'),false);
+});
