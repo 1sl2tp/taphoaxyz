@@ -554,3 +554,62 @@ body[data-force-pc="1"] #orderTimeCustomCard{
   font-size:22px;
   line-height:1;
 }
+
+
+/* PUBLIC CUSTOMER LINK: reuse the production User UI; the bottom bar owns supplemental tools. */
+.public-user-tools{
+  min-height:44px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:stretch;
+  gap:1px;
+  padding:0;
+  background:#1e293b;
+  color:#fff;
+}
+.public-user-tool{
+  min-width:0;
+  border:0;
+  background:transparent;
+  color:#cbd5e1;
+  font-size:11px;
+  font-weight:700;
+  padding:0 6px;
+}
+.public-user-tool.is-active{
+  background:#fff;
+  color:#111827;
+}
+.public-user-tool-share{
+  color:#fff;
+}
+.public-user-tool-status{
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  font-size:11px;
+  font-weight:650;
+}
+.public-user-tool-status i{color:#16a34a;}
+
+body[data-employee-mode="true"] #topNav .tab-btn:not(:first-child){
+  display:none !important;
+}
+body[data-employee-mode="true"] #topNav .tab-btn:first-child{
+  width:100% !important;
+  max-width:none !important;
+}
+body[data-employee-mode="true"] #saleCustomerTrigger{
+  pointer-events:none;
+}
+body[data-employee-mode="true"] #headerQuickTotal,
+body[data-employee-mode="true"] #salesSearchModeToggle,
+body[data-employee-mode="true"] #btnOpenCartMobile,
+body[data-employee-mode="true"] .product-line-note-wrap{
+  display:none !important;
+}
+body[data-employee-mode="true"] #searchProductInput{
+  padding-left:1rem !important;
+}
