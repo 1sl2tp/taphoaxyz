@@ -86,8 +86,8 @@ function money(v){return new Intl.NumberFormat('vi-VN').format(Math.abs(Math.rou
 function time(v){if(!v)return'';try{return new Date(v).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'});}catch(e){return'';}}
 function qty(v){var n=Number(v)||0;return Number.isInteger(n)?String(n):String(n).replace(/0+$/,'').replace(/\.$/,'');}
 function balanceText(v){var n=Math.round(Number(v)||0);if(n>0)return{label:'Còn nợ',text:money(n),state:'debt'};if(n<0)return{label:'Còn dư',text:money(n),state:'credit'};return{label:'Đã hết nợ',text:'0đ',state:'zero'};}
-function typeLabel(row){if(row.entry_type==='sale')return row.order&&row.order.display_code?'Đơn '+row.order.display_code+' đã giao':'Đơn đã giao';if(row.entry_type==='collection')return'Đã thu tiền';if(row.entry_type==='reversal')return row.order&&row.order.display_code?'Hoàn đơn '+row.order.display_code:'Hoàn đơn';if(row.entry_type==='payment')return'Thanh toán';return'Điều chỉnh công nợ';}
-function visible(row){if(activeFilter==='orders')return['sale','reversal'].includes(row.entry_type);if(activeFilter==='collections')return row.entry_type==='collection';return true;}
+function typeLabel(row){if(row.entry_type==='sale')return row.order&&row.order.display_code?'Đơn '+row.order.display_code+' đã giao':'Đơn đã giao';if(row.entry_type==='collection')return'Đã thu tiền';if(row.entry_type==='payment')return'Thanh toán';return'Điều chỉnh công nợ';}
+function visible(row){if(activeFilter==='orders')return row.entry_type==='sale';if(activeFilter==='collections')return row.entry_type==='collection';return true;}
 function render(){
   if(!data)return;
   var b=balanceText(data.balance_vnd);
