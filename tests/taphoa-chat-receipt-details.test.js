@@ -27,8 +27,8 @@ test('order receipt is compact, shows code counts preview time and direct app li
     /taphoa_chat_money\(v_total_vnd\)/,
     /taphoa_chat_order_lines\(p_order_json,2\)/,
     /taphoa_chat_when\(v_at\)/,
-    /https:\/\/app\.taphoa\.xyz\/d\/\?kh=/,
-    /'&don='/,
+    /taphoa_customer_mini_link\(v_customer,'don',null,null,v_code\)/,
+    /Xem đơn:/,
   ])assert.match(fn,pattern);
   assert.doesNotMatch(fn,/taphoa_chat_balance_label\(p_balance_vnd,false\)/);
 });
@@ -56,6 +56,15 @@ test('cash collection is one compact line plus weekday time and app debt link',(
   assert.match(fn,/taphoa_chat_when\(now\(\)\)/);
   assert.match(fn,/https:\/\/app\.taphoa\.xyz\/no\/\?kh=/);
   assert.doesNotMatch(fn,/Nợ trước:/);
+});
+
+test('customer links use one mini app shell and deep-link the active function',()=>{
+  const helper=latestFunction('taphoa_customer_mini_link');
+  assert.match(helper,/https:\/\/app\.taphoa\.xyz\/kh\/\?kh=/);
+  assert.match(helper,/'&tab=' \|\| v_tab/);
+  assert.match(helper,/'&nguon='/);
+  assert.match(helper,/'&muc='/);
+  assert.match(helper,/'&don='/);
 });
 
 test('weekday formatter is fixed to Vietnam time',()=>{
