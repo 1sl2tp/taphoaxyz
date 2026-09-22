@@ -10,6 +10,9 @@ test('standalone stock check page is employee-only and never shows money',()=>{
     'location.replace(string(snapshot.owner_url))',
     "snapshot.role!=='employee'",
     "const action='submit'",
+    "action:'save'",
+    'settimeout(()=>void persistdraft(),280)',
+    'await draftchain.catch(()=>{})',
     'nhân viên kiểm số lượng · không hiển thị giá/tiền',
     'gửi kiểm hàng',
   ])assert.ok(html.includes(needle),needle);
