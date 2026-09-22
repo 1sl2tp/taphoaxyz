@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta property="og:title" content="TAPHOA">
+<meta property="og:type" content="website">
+<title>TAPHOA</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#171717;background:#f6f7f8;font-size:16px}
+*{box-sizing:border-box}html,body{height:100%;height:100dvh;overflow:hidden}body{margin:0;background:#f6f7f8;color:#171717}
+button,input{font:inherit}.app{width:min(920px,100%);height:100dvh;margin:0 auto;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:#fff;overflow:hidden}
+.top{padding:12px 14px 10px;border-bottom:1px solid #edf0f2;background:#fff}.brand{font-size:11px;font-weight:750;letter-spacing:.08em;color:#9ca3af}.title{margin:3px 0 0;font-size:20px;line-height:1.2}.sub{margin-top:3px;font-size:12px;color:#6b7280}
+.view{min-height:0;overflow:hidden;background:#f6f7f8}.panel{height:100%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 24px}.state{padding:28px 14px;text-align:center;color:#6b7280}.error{margin:20px auto;max-width:520px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;text-align:center;color:#6b7280}.error strong{display:block;color:#111827;margin-bottom:7px}
+.bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid #e5e7eb;background:#fff;padding-bottom:env(safe-area-inset-bottom)}.nav{height:56px;border:0;background:#fff;color:#6b7280;font-weight:650;font-size:13px}.nav[data-active="true"]{color:#111827;background:#f8fafc}
+.toolbar{position:sticky;top:-12px;z-index:5;background:#f6f7f8;padding:0 0 9px}.search{width:100%;height:42px;border:1px solid #d5d9df;border-radius:11px;padding:0 12px;background:#fff;outline:none}.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 0;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chip{height:34px;flex:0 0 auto;border:1px solid #d8dde4;border-radius:999px;padding:0 12px;background:#fff;color:#4b5563;font-weight:650;font-size:12px;white-space:nowrap}.chip[data-active="true"]{background:#171717;color:#fff;border-color:#171717}
+.product-list{display:grid;gap:7px}.product{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:11px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px}.product-name{font-size:14px;font-weight:700;line-height:1.35}.product-price{text-align:right;font-size:14px;font-weight:800;white-space:nowrap}.product-meta{grid-column:1/-1;font-size:11px;color:#6b7280;line-height:1.4}.tag{display:inline-flex;align-items:center;height:20px;margin-right:5px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:#4b5563;font-size:10px;font-weight:700}
+.section-title{margin:4px 2px 9px;font-size:13px;font-weight:750;color:#4b5563}.empty{padding:28px 12px;text-align:center;color:#6b7280}
+.order-list,.timeline{display:grid;gap:8px}.card{width:100%;border:1px solid #e5e7eb;border-radius:13px;background:#fff;padding:12px 13px;text-align:left;color:inherit}.card-top{display:flex;justify-content:space-between;gap:12px}.card-title{font-size:14px;font-weight:750}.card-money{font-size:14px;font-weight:800;white-space:nowrap}.card-meta{margin-top:5px;font-size:11px;color:#6b7280}.card-foot{margin-top:8px;padding-top:8px;border-top:1px solid #f0f1f2;font-size:11px;color:#6b7280}
+.balance{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px}.balance-label{font-size:12px;color:#6b7280}.balance-value{margin-top:4px;font-size:28px;font-weight:800;letter-spacing:-.03em}.balance-value[data-state="debt"]{color:#b42318}.balance-value[data-state="credit"]{color:#087a55}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.stat{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}.stat span{display:block;font-size:11px;color:#6b7280}.stat strong{display:block;margin-top:3px;font-size:15px}
+.sheet{position:fixed;inset:0;z-index:40;display:none;align-items:flex-end;background:rgba(17,24,39,.46)}.sheet[data-open="true"]{display:flex}.sheet-card{width:100%;height:min(85dvh,760px);background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden}.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid #eef0f2}.sheet-title{font-size:16px;font-weight:800}.close{width:34px;height:34px;border:0;border-radius:999px;background:#f3f4f6;font-size:22px}.sheet-meta{padding:10px 16px;background:#f8fafc;font-size:12px;color:#6b7280}.order-table{flex:1;min-height:0;overflow-y:auto}.orow{display:grid;grid-template-columns:minmax(0,1fr) 6ch 4ch 7ch;gap:8px;padding:9px 14px;border-bottom:1px solid #f1f2f3;font-size:12px}.orow.head{position:sticky;top:0;background:#fff;color:#9ca3af;font-size:10px;font-weight:750}.orow .n{font-weight:700}.orow .r{text-align:right;white-space:nowrap}.sheet-summary{display:flex;justify-content:space-between;gap:12px;padding:13px 16px;border-top:1px solid #edf0f2}.sheet-summary small{display:block;color:#9ca3af}.sheet-summary strong{display:block;margin-top:3px}.sheet-summary .sum{text-align:right}
+[hidden]{display:none!important}
+@media(min-width:760px){body{padding:18px}.app{height:calc(100dvh - 36px);border:1px solid #e5e7eb;border-radius:20px;box-shadow:0 14px 40px rgba(15,23,42,.08)}.panel{padding:16px 18px 28px}.toolbar{top:-16px;padding-top:0}.sheet{align-items:center;justify-content:center}.sheet-card{width:min(720px,calc(100vw - 48px));border-radius:22px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">TAPHOA</div>
+    <h1 class="title" id="title">Hàng</h1>
+    <div class="sub" id="sub"></div>
+  </header>
+  <main class="view">
+    <section class="panel" id="panel"><div class="state">Đang tải…</div></section>
+  </main>
+  <nav class="bottom" aria-label="Điều hướng">
+    <button class="nav" data-tab="hang">Hàng</button>
+    <button class="nav" data-tab="don">Đơn</button>
+    <button class="nav" data-tab="no">Công nợ</button>
+  </nav>
+</div>
+<section class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Chi tiết đơn">
+    <div class="sheet-head"><div class="sheet-title" id="sheet-title">Chi tiết đơn</div><button class="close" id="sheet-close" type="button">×</button></div>
+    <div class="sheet-meta" id="sheet-meta"></div>
+    <div class="order-table" id="sheet-body"></div>
+    <div class="sheet-summary"><div><small>Số lượng</small><strong id="sheet-qty">0</strong></div><div class="sum"><small>Tổng thanh toán</small><strong id="sheet-total">0</strong></div></div>
+  </div>
+</section>
+<script>
+(()=>{
+'use strict';
+const QUOTE='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/v21-quote';
+const DEBT='https://gcnoahqsrquxkwkjbuxy.supabase.co/functions/v1/taphoa-public-debt';
+const p=new URLSearchParams(location.search);
+const kh=p.get('kh')||'';
+let tab=['hang','don','no'].includes(p.get('tab'))?p.get('tab'):'hang';
+let source=p.get('nguon')||'all';
+let segment=['tat-ca','da-mua','goi-y'].includes(p.get('muc'))?p.get('muc'):'tat-ca';
+const directOrder=(p.get('don')||'').toUpperCase();
+const panel=document.getElementById('panel'),title=document.getElementById('title'),sub=document.getElementById('sub');
+const sheet=document.getElementById('sheet'),sheetTitle=document.getElementById('sheet-title'),sheetMeta=document.getElementById('sheet-meta'),sheetBody=document.getElementById('sheet-body'),sheetQty=document.getElementById('sheet-qty'),sheetTotal=document.getElementById('sheet-total');
+let quoteData=null,debtData=null,query='',directOrderOpened=false;
+const sourceFallback={'hang-thuong':'Hàng thường','hang-u':'Hàng U','sua':'Sữa','thuoc-la':'Thuốc lá','masan':'Masan'};
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>new Intl.NumberFormat('vi-VN',{maximumFractionDigits:3}).format(Math.abs(Number(v)||0));
+const qty=v=>{const n=Number(v)||0;return Number.isInteger(n)?String(n):String(n).replace(/0+$/,'').replace(/\.$/,'');};
+const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
+const when=v=>{if(!v)return'';try{return new Date(v).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'});}catch{return'';}};
+function updateUrl(){
+  const x=new URLSearchParams();x.set('kh',kh);x.set('tab',tab);
+  if(tab==='hang'){if(source!=='all')x.set('nguon',source);if(segment!=='tat-ca')x.set('muc',segment);}
+  history.replaceState(null,'','?'+x.toString());
+}
+function nav(){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.dataset.active=String(b.dataset.tab===tab));
+  title.textContent=tab==='hang'?'Hàng':tab==='don'?'Đơn':'Công nợ';
+}
+function fail(text='Không tải được dữ liệu'){panel.innerHTML='<div class="error"><strong>'+esc(text)+'</strong>Kiểm tra lại liên kết được gửi từ TAPHOA.</div>';}
+function sourceRows(){
+  const rows=Array.isArray(quoteData?.sources)?quoteData.sources:[];
+  return rows.map(r=>[String(r.source_key||''),String(r.source_name||sourceFallback[r.source_key]||r.source_key||'')]).filter(x=>x[0]);
+}
+function sourceName(key){return sourceRows().find(x=>x[0]===key)?.[1]||sourceFallback[key]||key||'Khác';}
+function pack(item){const a=[];if(item.primary_packaging)a.push(item.primary_packaging);if(Number(item.units_per_carton)>0&&item.retail_unit)a.push(Number(item.units_per_carton)+' '+item.retail_unit);return a.join(' · ');}
+function productSegment(item){return Number(item.purchase_orders)>0?'da-mua':Number(item.market_customers)>0?'goi-y':'khac';}
+function renderHang(){
+  nav();sub.textContent=quoteData?.customer_name||'';
+  if(!quoteData){panel.innerHTML='<div class="state">Đang tải hàng…</div>';loadQuote();return;}
+  const sources=[['all','Tất cả nguồn'],...sourceRows()];
+  if(source!=='all'&&!sources.some(x=>x[0]===source))source='all';
+  let items=Array.isArray(quoteData.items)?quoteData.items:[];
+  if(source!=='all')items=items.filter(x=>x.source_key===source);
+  if(segment==='da-mua')items=items.filter(x=>productSegment(x)==='da-mua');
+  if(segment==='goi-y')items=items.filter(x=>productSegment(x)==='goi-y');
+  const q=norm(query).trim();if(q)items=items.filter(x=>norm(x.product_name+' '+sourceName(x.source_key)).includes(q));
+  items=[...items].sort((a,b)=>{
+    const as=productSegment(a),bs=productSegment(b);
+    if(segment==='goi-y')return (Number(b.market_customers)||0)-(Number(a.market_customers)||0)||(Number(b.market_qty)||0)-(Number(a.market_qty)||0);
+    if(segment==='da-mua')return Date.parse(b.last_bought_at||0)-Date.parse(a.last_bought_at||0)||(Number(b.purchase_orders)||0)-(Number(a.purchase_orders)||0);
+    const rank=x=>x==='da-mua'?0:x==='goi-y'?1:2;
+    return rank(as)-rank(bs);
+  });
+  panel.innerHTML='<div class="toolbar"><input class="search" id="search" type="search" placeholder="Tìm sản phẩm" value="'+esc(query)+'">'+
+    '<div class="chips" id="segments">'+[['tat-ca','Tất cả'],['da-mua','Đã mua'],['goi-y','Gợi ý']].map(x=>'<button class="chip" data-segment="'+x[0]+'" data-active="'+String(segment===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
+    '<div class="chips" id="sources">'+sources.map(x=>'<button class="chip" data-source="'+esc(x[0])+'" data-active="'+String(source===x[0])+'">'+esc(x[1])+'</button>').join('')+'</div></div>'+
+    '<div class="section-title">'+esc(source==='all'?'Tất cả nguồn':sourceName(source))+' · '+items.length+' sản phẩm</div>'+
+    '<div class="product-list">'+(items.map(item=>{
+      const seg=productSegment(item),tag=seg==='da-mua'?'Đã mua':seg==='goi-y'?'Gợi ý':'Báo giá';
+      const meta=[pack(item)];
+      if(seg==='da-mua'&&item.last_bought_at)meta.push('Lần gần nhất '+when(item.last_bought_at));
+      if(seg==='goi-y'&&Number(item.market_customers)>0)meta.push(Number(item.market_customers)+' khách đang lấy');
+      return '<article class="product"><div class="product-name">'+esc(item.product_name)+'</div><div class="product-price">'+money(item.display_price_vnd)+'</div><div class="product-meta"><span class="tag">'+tag+'</span>'+esc(meta.filter(Boolean).join(' · '))+'</div></article>';
+    }).join('')||'<div class="empty">Không có sản phẩm trong mục này.</div>')+'</div>';
+  panel.querySelector('#search')?.addEventListener('input',e=>{query=e.target.value;renderHang();});
+  panel.querySelector('#segments')?.addEventListener('click',e=>{const b=e.target.closest('[data-segment]');if(!b)return;segment=b.dataset.segment;updateUrl();renderHang();});
+  panel.querySelector('#sources')?.addEventListener('click',e=>{const b=e.target.closest('[data-source]');if(!b)return;source=b.dataset.source;updateUrl();renderHang();});
+}
+async function loadQuote(){
+  try{const r=await fetch(QUOTE+'?kh='+encodeURIComponent(kh)+'&mini=1',{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!Array.isArray(d.items))throw 0;quoteData=d;renderHang();}catch{fail('Không mở được hàng');}
+}
+function balanceInfo(v){const n=Math.round(Number(v)||0);if(n>0)return['Còn nợ',money(n),'debt'];if(n<0)return['Còn dư',money(n),'credit'];return['Đã hết nợ','0','zero'];}
+function saleEntries(){return (debtData?.entries||[]).filter(x=>x.entry_type==='sale'&&x.order);}
+function renderDon(){
+  nav();sub.textContent=debtData?.customer?.display_name||'';
+  if(!debtData){panel.innerHTML='<div class="state">Đang tải đơn…</div>';loadDebt();return;}
+  const rows=saleEntries();
+  panel.innerHTML='<div class="section-title">Đơn đã giao · '+rows.length+'</div><div class="order-list">'+(rows.map(row=>'<button class="card" type="button" data-order="'+esc(row.order.id)+'"><div class="card-top"><div class="card-title">'+esc(row.order.display_code||'Đơn hàng')+'</div><div class="card-money">'+money(row.amount_vnd)+'</div></div><div class="card-meta">'+esc(when(row.created_at))+'</div><div class="card-foot">Xem chi tiết đơn</div></button>').join('')||'<div class="empty">Chưa có đơn đã giao.</div>')+'</div>';
+  panel.addEventListener('click',e=>{const b=e.target.closest('[data-order]');if(b)openOrder({id:b.dataset.order,code:''});},{once:false});
+  if(directOrder&&!directOrderOpened){directOrderOpened=true;openOrder({id:'',code:directOrder});}
+}
+function typeLabel(row){if(row.entry_type==='sale')return row.order?.display_code?'Đơn '+row.order.display_code+' đã giao':'Đơn đã giao';if(row.entry_type==='collection')return'Đã thu tiền';if(row.entry_type==='payment')return'Thanh toán';return'Điều chỉnh';}
+function renderNo(){
+  nav();sub.textContent=debtData?.customer?.display_name||'';
+  if(!debtData){panel.innerHTML='<div class="state">Đang tải công nợ…</div>';loadDebt();return;}
+  const b=balanceInfo(debtData.balance_vnd);
+  panel.innerHTML='<section class="balance"><div class="balance-label">'+b[0]+'</div><div class="balance-value" data-state="'+b[2]+'">'+b[1]+'</div></section>'+
+    '<section class="stats"><div class="stat"><span>Đã giao</span><strong>'+money(debtData.total_delivered_vnd)+'</strong></div><div class="stat"><span>Đã thu</span><strong>'+money(debtData.total_collected_vnd)+'</strong></div></section>'+
+    '<div class="section-title" style="margin-top:18px">Lịch sử giao dịch</div><div class="timeline">'+((debtData.entries||[]).map(row=>{const b2=balanceInfo(row.balance_after_vnd);return '<button class="card" type="button" '+(row.entry_type==='sale'&&row.order?'data-order="'+esc(row.order.id)+'"':'disabled')+'><div class="card-top"><div class="card-title">'+esc(typeLabel(row))+'</div><div class="card-money">'+(row.entry_type==='collection'?'-':'+')+money(row.amount_vnd)+'</div></div><div class="card-meta">'+esc(when(row.created_at))+(row.note?' · '+esc(row.note):'')+'</div><div class="card-foot">'+(row.entry_type==='sale'&&row.order?'Xem chi tiết đơn · ':'')+esc(b2[0])+': '+esc(b2[1])+'</div></button>';}).join('')||'<div class="empty">Chưa có giao dịch.</div>')+'</div>';
+  panel.addEventListener('click',e=>{const b=e.target.closest('[data-order]');if(b)openOrder({id:b.dataset.order,code:''});},{once:false});
+}
+async function loadDebt(){
+  try{const r=await fetch(DEBT+'?kh='+encodeURIComponent(kh),{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();if(!d?.ok||!d.customer)throw 0;debtData=d;render();}catch{fail(tab==='don'?'Không mở được đơn':'Không mở được công nợ');}
+}
+async function openOrder({id='',code=''}) {
+  sheet.dataset.open='true';sheet.setAttribute('aria-hidden','false');sheetTitle.textContent=code||'Chi tiết đơn';sheetMeta.textContent='Đang tải…';sheetBody.innerHTML='<div class="state">Đang tải chi tiết đơn…</div>';sheetQty.textContent='0';sheetTotal.textContent='0';
+  try{const suffix=id?'&order='+encodeURIComponent(id):'&don='+encodeURIComponent(code);const r=await fetch(DEBT+'?kh='+encodeURIComponent(kh)+suffix,{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json(),o=d.order||{},rows=Array.isArray(o.items)?o.items:[];let tq=0;sheetTitle.textContent=o.display_code||code||'Chi tiết đơn';sheetMeta.textContent=((d.customer?.display_name)||'Khách hàng')+' · '+when(o.delivered_at||o.created_at);sheetBody.innerHTML='<div class="orow head"><div>Tên SP</div><div class="r">Đ.Giá</div><div class="r">SL</div><div class="r">T.Tiền</div></div>'+rows.map(x=>{tq+=Number(x.qty)||0;return '<div class="orow"><div class="n">'+esc(x.product_name||x.product_code||'Sản phẩm')+'</div><div class="r">'+money(x.unit_price_vnd)+'</div><div class="r">'+qty(x.qty)+'</div><div class="r">'+money(x.line_total_vnd)+'</div></div>';}).join('');sheetQty.textContent=rows.length+' mã · '+qty(tq)+' SP';sheetTotal.textContent=money(o.total_vnd);}catch{sheetBody.innerHTML='<div class="error"><strong>Không tải được chi tiết đơn</strong></div>';}
+}
+function closeSheet(){sheet.dataset.open='false';sheet.setAttribute('aria-hidden','true');}
+function render(){if(tab==='hang')renderHang();else if(tab==='don')renderDon();else renderNo();}
+document.querySelector('.bottom').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;updateUrl();render();});
+document.getElementById('sheet-close').addEventListener('click',closeSheet);sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet();});
+if(!kh){fail('Liên kết không hợp lệ');return;}nav();render();
+})();
+</script>
+</body>
+</html>
