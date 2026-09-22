@@ -61,11 +61,12 @@ test('public customer access reuses the production bridge and existing User scre
     '>gợi ý</button>',
     '>nhân viên</button>',
     '>gửi link</button>',
-    'startpublicemployeesync',
+    'installsharedcartquantitysync()',
+    'startsharedcartsync()',
     'backend().employeesnapshot()',
     'cart=nextcart',
-    "publicemployeesignature=''",
-    'applyemployeesnapshot(await backend().employeesnapshot())'
+    "sharedcartsignature=''",
+    'applysharedcartsnapshot(await backend().employeesnapshot(),{force:true})'
   ])assert.ok(overrides.includes(needle),needle);
 });
 
