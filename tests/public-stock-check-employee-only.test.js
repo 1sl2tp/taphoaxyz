@@ -42,9 +42,9 @@ test('real app has a scoped employee-link access mode with no owner privilege pa
     'async function enteremployeelink(info)',
     "window.taphoa_employee_mode=true",
     "document.body.dataset.employeelink='true'",
-    'installemployeelinkquantitysync()',
-    'scheduleemployeelinksave()',
-    'backend().saveemployeequantities(items)',
+    'installsharedcartquantitysync()',
+    'schedulesharedcartsave()',
+    'backend().savesharedquantities(items)',
     'sessionstorage.removeitem(employee_link_session_key)'
   ])assert.ok(overrides.includes(needle),needle);
 
