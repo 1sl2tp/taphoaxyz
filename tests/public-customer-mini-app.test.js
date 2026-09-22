@@ -77,7 +77,14 @@ test('bought suggested and employee modes are thin filters on the existing produ
     "segment === 'suggested'",
     'market_customer_count',
     'window.taphoa_employee_mode',
-    "const employeemode = boolean(window.taphoa_employee_mode)"
+    "const employeemode = boolean(window.taphoa_employee_mode)",
+    'function getsourcedisplayrank(src)',
+    "'hang thuong': 10",
+    "'thuoc la': 20",
+    "'sua': 30",
+    "'hang u': 40",
+    'if (raw === \'#\') return 50',
+    'const orderedsources = [...sourcemap.values()].sort'
   ])assert.ok(runtime.includes(needle),needle);
 
   for(const needle of [
