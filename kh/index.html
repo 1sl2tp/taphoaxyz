@@ -132,8 +132,7 @@ function renderHang(){
     '<div class="tab-shell"><div class="tab-tools">'+
     '<div class="toolbar"><input class="search" id="search" type="search" placeholder="Tìm sản phẩm">'+
     '<div class="chips segment-chips" id="segments">'+[['tat-ca','Tất cả'],['da-mua','Đã mua'],['goi-y','Gợi ý']].map(x=>'<button class="chip" data-segment="'+x[0]+'" data-active="'+String(segment===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
-    '<div class="chips" id="sources">'+sources.map(x=>'<button class="chip" data-source="'+esc(x[0])+'" data-active="'+String(source===x[0])+'">'+esc(x[1])+'</button>').join('')+'</div></div>'+
-    '<div class="section-head"><div class="section-title" data-product-count>'+items.length+' sản phẩm</div></div></div>'+
+    '<div class="chips" id="sources">'+sources.map(x=>'<button class="chip" data-source="'+esc(x[0])+'" data-active="'+String(source===x[0])+'">'+esc(x[1])+'</button>').join('')+'</div></div></div>'+
     '<div class="list-scroll"><div class="product-list">'+(items.map(item=>{
       const code=String(item.product_code||'');
       const n=stockQty.get(code)||0;
@@ -151,8 +150,7 @@ function renderHang(){
       row.hidden=!show;
       if(show)visible++;
     });
-    const count=panel.querySelector('[data-product-count]');
-    if(count)count.textContent=visible+' sản phẩm';
+    void visible;
   });
   panel.querySelector('#segments')?.addEventListener('click',e=>{const b=e.target.closest('[data-segment]');if(!b)return;segment=b.dataset.segment;updateUrl();renderHang();});
   panel.querySelector('#sources')?.addEventListener('click',e=>{const b=e.target.closest('[data-source]');if(!b)return;source=b.dataset.source;updateUrl();renderHang();});
@@ -218,11 +216,28 @@ function renderStockSummary(){
   const footer=panel.querySelector('[data-stock-footer]');
   if(footer)footer.hidden=t.total<=0;
 }
-function resetStockQty(){
-  if(!stockQty.size)return;
+async function resetStockQty(){
+  if(stockBusy||!stockQty.size)return;
   if(!window.confirm('Xóa toàn bộ số lượng đã nhập để nhập lại?'))return;
-  stockQty.clear();
-  renderHang();
+  const button=panel.querySelector('[data-stock-reset]');
+  stockBusy=true;
+  if(button){button.disabled=true;button.textContent='Đang xóa…';}
+  try{
+    const r=await fetch(STOCK,{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({kh,action:'update',items:[]})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d?.ok)throw 0;
+    stockQty.clear();
+    stockData=null;
+    await loadStockForHang();
+  }catch{
+    if(button?.isConnected){button.disabled=false;button.textContent='Xóa / nhập lại';}
+  }finally{
+    stockBusy=false;
+  }
 }
 async function shareEmployeeLink(){
   const url=String(stockData?.employee_url||'');
