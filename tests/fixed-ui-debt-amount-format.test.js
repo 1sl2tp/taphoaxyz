@@ -39,3 +39,17 @@ test('production override parses formatted debt input as whole thousand units',(
   assert.match(overrides,/parseDebtAmountValue\(amountStr\)/);
   assert.doesNotMatch(overrides,/const amount=Number\(amountStr\)\|\|0;/);
 });
+
+
+test('backend rejects fractional debt amounts from stale formatted clients',()=>{
+  const migrationsDir=new URL('../supabase/migrations/',import.meta.url);
+  const names=fs.readdirSync(migrationsDir).filter(name=>name.endsWith('.sql')).sort();
+  const sql=names.map(name=>fs.readFileSync(new URL(name,migrationsDir),'utf8')).join('\n\n').toLowerCase();
+  const marker='create or replace function public.taphoa_debt_transaction';
+  const start=sql.lastIndexOf(marker);
+  assert.notEqual(start,-1);
+  const end=sql.indexOf('$$;',start);
+  const fn=sql.slice(start,end+3);
+  assert.match(fn,/p_amount<>trunc\(p_amount\)/);
+  assert.match(fn,/amount_must_be_whole_thousand/);
+});
