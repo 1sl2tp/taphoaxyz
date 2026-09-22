@@ -39,3 +39,25 @@ test('public debt page never renders reversal labels',()=>{
   assert.equal(low.includes('hoàn đơn'),false);
   assert.equal(low.includes("entry_type==='reversal'"),false);
 });
+
+
+test('public debt order detail mirrors the legacy order-detail viewer',()=>{
+  for(const needle of [
+    'mã đơn: --',
+    'tên sp',
+    'đ.giá',
+    'sl',
+    't.tiền',
+    'số lượng',
+    'tổng thanh toán',
+    'sheet-line-count',
+    'sheet-total-qty',
+    'sheet-total',
+    'order-detail-grid',
+    'order-stt',
+    'order-price',
+    'order-qty',
+    'order-total',
+  ])assert.ok(low.includes(needle),needle);
+  assert.equal(low.includes('còn nợ')&&low.includes('sau đơn'),false,'order detail must not add debt balance inside legacy-style viewer');
+});
