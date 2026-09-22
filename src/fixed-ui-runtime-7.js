@@ -62,11 +62,50 @@
             finally { hideLoading(); }
         }
 
+        function debtAmountDigits(value) {
+            return String(value ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+        }
+
+        function formatDebtAmountValue(value) {
+            const digits = debtAmountDigits(value);
+            return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+        }
+
+        function parseDebtAmountValue(value) {
+            const digits = debtAmountDigits(value);
+            return digits ? Number(digits) : 0;
+        }
+
+        function formatDebtAmountInput(input) {
+            if (!input) return;
+            const formatted = formatDebtAmountValue(input.value);
+            if (input.value === formatted) return;
+            input.value = formatted;
+            try {
+                input.setSelectionRange(formatted.length, formatted.length);
+            } catch (_) {}
+        }
+
+        function bindDebtAmountFormatter(input) {
+            if (!input || input.dataset.debtAmountFormatter === '1') return;
+            input.dataset.debtAmountFormatter = '1';
+            input.addEventListener('input', () => formatDebtAmountInput(input));
+            input.addEventListener('paste', () => setTimeout(() => formatDebtAmountInput(input), 0));
+            formatDebtAmountInput(input);
+        }
+
+        function initDebtAmountFormatters() {
+            bindDebtAmountFormatter(document.getElementById('quickDebtAmount'));
+            bindDebtAmountFormatter(document.getElementById('popupDebtAmount'));
+        }
+
+        initDebtAmountFormatters();
+
         async function submitQuickDebt(type, targetMaKh = null, targetAmount = null) {
             if (!hasPermission('canMutateDebt')) return denyPermission('Tài khoản này chỉ được xem Công nợ, không được Thu tiền/Ghi nợ.');
             let maKh = targetMaKh || document.getElementById('quickDebtCustomer').value;
             let amountStr = targetAmount !== null ? String(targetAmount) : document.getElementById('quickDebtAmount').value.trim();
-            let amount = Number(amountStr) || 0;
+            let amount = parseDebtAmountValue(amountStr);
 
             if (!maKh) { showAlertPopup("Chưa chọn khách", "Vui lòng chọn khách hàng!"); return; }
             if (amount <= 0) { showAlertPopup("Số tiền không hợp lệ", "Vui lòng nhập số tiền lớn hơn 0!"); return; }
