@@ -374,19 +374,15 @@
   }
 
   async function sharePublicMode(){
-    if(window.TAPHOA_EMPLOYEE_MODE){
-      try{
-        const self=backend()?.getState?.()?.selfCustomer||{};
-        const links=await backend().stockCheckLinks(String(self.id||self.maKH||''));
-        const url=String(links?.employee_url||'');
-        if(!url)throw 0;
-        await copyPublicText(url,'Đã copy');
-      }catch{
-        showAlertPopup('Không lấy được link nhân viên','Vui lòng thử lại.');
-      }
-      return;
+    try{
+      const self=backend()?.getState?.()?.selfCustomer||{};
+      const links=await backend().stockCheckLinks(String(self.id||self.maKH||''));
+      const url=String(links?.employee_url||'');
+      if(!url)throw 0;
+      await copyPublicText(url,'Đã copy link NV');
+    }catch{
+      showAlertPopup('Không lấy được link nhân viên','Vui lòng thử lại.');
     }
-    await copyPublicText(publicCustomerLink(),'Đã copy');
   }
 
   function renderPublicTools(){
