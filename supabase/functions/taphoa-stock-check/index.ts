@@ -29,7 +29,23 @@ Deno.serve(async (req: Request) => {
       if (!token) return json({ ok:false, error:"token_required" }, 400);
       const { data, error } = await db.rpc("taphoa_stock_check_snapshot", { p_token: token });
       if (error) throw error;
-      return json(data || { ok:false, error:"empty_snapshot" });
+      const snapshot:any = data || { ok:false, error:"empty_snapshot" };
+      if (snapshot?.ok && snapshot?.role === "owner" && snapshot?.customer_id) {
+        const [employeeLink, publicLink] = await Promise.all([
+          db.from("taphoa_stock_check_links")
+            .select("token")
+            .eq("customer_account_id", String(snapshot.customer_id))
+            .eq("link_role", "employee")
+            .eq("is_active", true)
+            .maybeSingle(),
+          db.rpc("v21_customer_public_link_info_get_or_create", { p_customer_id: String(snapshot.customer_id) })
+        ]);
+        const employeeToken = String(employeeLink.data?.token || "").trim();
+        const slug = String(publicLink.data?.public_slug || "").trim();
+        if (employeeToken) snapshot.employee_url = `https://app.taphoa.xyz/kiemhang/?t=${employeeToken}`;
+        if (slug) snapshot.owner_url = `https://app.taphoa.xyz/kh/?kh=${encodeURIComponent(slug)}&tab=kiemhang&t=${encodeURIComponent(token)}`;
+      }
+      return json(snapshot);
     }
 
     if (req.method === "POST") {
