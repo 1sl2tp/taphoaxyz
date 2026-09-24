@@ -335,7 +335,10 @@ function stopSync(){if(syncTimer){clearInterval(syncTimer);syncTimer=null;}syncI
 function startSync(){
   stopSync();
   const seconds=Math.max(10,Number(appState.get().syncSeconds)||30);
-  syncTimer=setInterval(()=>syncOnce().catch(error=>console.warn('taphoa sync',error)),seconds*1000);
+  syncTimer=setInterval(()=>{
+    if(document.hidden)return;
+    syncOnce().catch(error=>console.warn('taphoa sync',error));
+  },seconds*1000);
 }
 
 async function attachSession(info){
