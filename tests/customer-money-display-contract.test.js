@@ -33,3 +33,13 @@ test('customer chat money formatter keeps literal values and omits the currency 
   assert.doesNotMatch(money,/\|\|\s*'đ'/);
   assert.doesNotMatch(balance,/0đ/);
 });
+
+test('public debt ledger keeps literal admin money units for balance and transactions',()=>{
+  const ledger=latestFunction('taphoa_public_debt_ledger_for_customer');
+  assert.doesNotMatch(ledger,/amount_vnd\s*::?\s*numeric\s*\/\s*1000/i);
+  assert.doesNotMatch(ledger,/balance_after\s*::?\s*numeric\s*\/\s*1000/i);
+  assert.doesNotMatch(ledger,/current_balance\s*\/\s*1000/i);
+  assert.match(ledger,/'soTien',abs\(amount_vnd\)/);
+  assert.match(ledger,/'bienDong',amount_vnd/);
+  assert.match(ledger,/'soDu',current_balance/);
+});
