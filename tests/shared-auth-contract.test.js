@@ -6,7 +6,8 @@ const config=fs.readFileSync(new URL('../src/core/config.js',import.meta.url),'u
 const auth=fs.readFileSync(new URL('../src/core/auth.js',import.meta.url),'utf8');
 
 test('TAPHOA runtime uses the shared V21 Supabase project with its own auth storage',()=>{
-  assert.match(config,/https:\/\/vtqhbhrkdxirqeqkgylo\.supabase\.co/);\n  assert.doesNotMatch(config,/gcnoahqsrquxkwkjbuxy\.supabase\.co/);
+  assert.match(config,/https:\/\/vtqhbhrkdxirqeqkgylo\.supabase\.co/);
+  assert.doesNotMatch(config,/gcnoahqsrquxkwkjbuxy\.supabase\.co/);
   assert.match(config,/sb_publishable_/);
   assert.match(config,/authStorageKey\s*:\s*['"]taphoa\.xyz\.auth\.v2['"]/);
   assert.match(config,/identityStorageKey\s*:\s*['"]taphoa\.identity\.v2['"]/);
