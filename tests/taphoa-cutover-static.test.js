@@ -19,7 +19,7 @@ function readRuntime(dir){
 const runtime=readRuntime(root);
 
 test('runtime is fully cut over to the shared TAPHOA project and namespace',()=>{
-  assert.match(runtime,/gcnoahqsrquxkwkjbuxy\.supabase\.co/);
+  assert.match(runtime,/vtqhbhrkdxirqeqkgylo\.supabase\.co/);\n  assert.doesNotMatch(runtime,/gcnoahqsrquxkwkjbuxy\.supabase\.co/);
   assert.match(runtime,/taphoa_access_context/);
   assert.match(runtime,/taphoa_app_bootstrap/);
   assert.match(runtime,/taphoa_save_order/);
