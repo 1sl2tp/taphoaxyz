@@ -24,7 +24,8 @@ jobs:
           grep -q 'TAPHOA_GEMINI_100_SAMPLE_FIXED' dist/index.html
           grep -q 'fixed-production-bridge.js' dist/index.html
           ! grep -q 'src/app.js' dist/index.html
-          grep -q 'gcnoahqsrquxkwkjbuxy.supabase.co' dist/src/core/config.js
+          grep -q 'vtqhbhrkdxirqeqkgylo.supabase.co' dist/src/core/config.js
+          ! grep -R -q 'gcnoahqsrquxkwkjbuxy.supabase.co' dist/index.html dist/src
           grep -q 'taphoa.xyz.auth.v2' dist/src/core/config.js
           grep -q 'signInWithPassword' dist/src/core/auth.js
           grep -q 'taphoa_access_context' dist/src/core/auth.js
