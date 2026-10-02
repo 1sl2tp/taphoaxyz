@@ -126,8 +126,29 @@ function managerPriceValue(value:unknown){
   const parsed=num(value);
   return parsed!==null&&Number.isFinite(parsed)&&parsed>0?parsed:null;
 }
+function managerHeaderKey(value:unknown){
+  return clean(value).replace(/\s+/g," ").toLocaleLowerCase("vi-VN");
+}
+function managerHistoryColumns(header:unknown[]){
+  const keys=header.map(managerHeaderKey);
+  const columns=["Vốn 1","Vốn 2","Vốn 3","Vốn 4"].map(label=>keys.indexOf(managerHeaderKey(label)));
+  return columns.every(index=>index>=0)?columns:null;
+}
+function a1Column(index:number){
+  let n=index+1,out="";
+  while(n>0){const r=(n-1)%26;out=String.fromCharCode(65+r)+out;n=Math.floor((n-1)/26);}
+  return out;
+}
+function nextManagerHistory(row:unknown[],columns:number[],next:number|null){
+  if(next===null)return null;
+  const values=columns.map(index=>managerPriceValue(row[index])).filter((value):value is number=>value!==null);
+  const last=values.length?values[values.length-1]:null;
+  if(last===next)return null;
+  const updated=values.length<4?[...values,next]:[...values.slice(-3),next];
+  return columns.map((_,index)=>updated[index]??"");
+}
 async function syncNccPricesToManager(meta:SheetMeta[]){
-  let changedRows=0,matchedRows=0,ignoredCodes=0,invalidPrices=0,duplicateCodes=0;
+  let changedRows=0,matchedRows=0,ignoredCodes=0,invalidPrices=0,duplicateCodes=0,historyChangedRows=0;
   const errors:Array<{sourceKey:string;error:string}>=[];
   const writes:Array<{range:string;values:unknown[][]}>=[];
   for(const source of NCC_PRICE_SOURCES){
@@ -136,8 +157,13 @@ async function syncNccPricesToManager(meta:SheetMeta[]){
       if(!managerMeta){errors.push({sourceKey:source.sourceKey,error:"manager_sheet_missing"});continue;}
       const [nccRows,managerRows]=await Promise.all([
         readSpreadsheetValues(source.fileId,source.sheetName,"A:C"),
-        readSpreadsheetValues(MANAGEMENT_FILE_ID,managerMeta.title,"A:C")
+        readSpreadsheetValues(MANAGEMENT_FILE_ID,managerMeta.title,"A:R")
       ]);
+      const historyColumns=managerHistoryColumns(managerRows[0]||[]);
+      if(!historyColumns){
+        errors.push({sourceKey:source.sourceKey,error:"manager_price_history_columns_missing"});
+        continue;
+      }
       const sourcePrices=new Map<string,number|null>();
       const duplicate=new Set<string>();
       for(let i=1;i<nccRows.length;i++){
@@ -157,9 +183,20 @@ async function syncNccPricesToManager(meta:SheetMeta[]){
         matchedRows++;
         const next=sourcePrices.get(code)??null;
         const current=managerPriceValue(row[2]);
-        if(current===next)continue;
-        writes.push({range:`${quotedSheet(managerMeta.title)}!C${i+1}`,values:[[next===null?"":next]]});
-        changedRows++;
+        const history=nextManagerHistory(row,historyColumns,next);
+        let rowChanged=false;
+        if(current!==next){
+          writes.push({range:`${quotedSheet(managerMeta.title)}!C${i+1}`,values:[[next===null?"":next]]});
+          rowChanged=true;
+        }
+        if(history){
+          historyColumns.forEach((column,index)=>{
+            writes.push({range:`${quotedSheet(managerMeta.title)}!${a1Column(column)}${i+1}`,values:[[history[index]]]});
+          });
+          historyChangedRows++;
+          rowChanged=true;
+        }
+        if(rowChanged)changedRows++;
       }
       for(const code of sourcePrices.keys())if(!managerCodes.has(code))ignoredCodes++;
     }catch(error){
@@ -169,7 +206,7 @@ async function syncNccPricesToManager(meta:SheetMeta[]){
     }
   }
   await writeRanges(writes);
-  return {changedRows,matchedRows,ignoredCodes,invalidPrices,duplicateCodes,errors};
+  return {changedRows,historyChangedRows,matchedRows,ignoredCodes,invalidPrices,duplicateCodes,errors};
 }
 async function ensureTrackingColumns(meta:SheetMeta){
   if(meta.columnCount<TRACKING_COLUMN_COUNT){
