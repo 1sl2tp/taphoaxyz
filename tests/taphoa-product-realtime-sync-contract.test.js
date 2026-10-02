@@ -91,3 +91,13 @@ test('TAPHOA imports only the Manager file after Drive modifiedTime changes',()=
   assert.match(worker,/metadataOnly:true[\s\S]*const meta=await spreadsheetMeta\(\)/);
   assert.match(worker,/readSpreadsheetValues\(MANAGEMENT_FILE_ID/);
 });
+
+
+test('TAPHOA sale price follows the value visibly formatted in Manager Sheet',()=>{
+  assert.match(worker,/function viDisplayNumber/);
+  assert.match(worker,/valueRenderOption","FORMATTED_VALUE"/);
+  assert.match(worker,/values:batchGet/);
+  assert.match(worker,/!D:D/);
+  assert.match(worker,/cache\.rows\[i\]\[3\]=viDisplayNumber\(display\)/);
+  assert.match(worker,/s\.replace\(\/\\\.\/g,""\)\.replace\(","\."\)/);
+});
