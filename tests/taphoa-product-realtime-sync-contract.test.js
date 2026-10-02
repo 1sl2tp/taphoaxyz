@@ -6,7 +6,7 @@ const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/in
 const business=fs.readFileSync(new URL('../src/core/business.js',import.meta.url),'utf8');
 const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.meta.url),'utf8');
 const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const cron=fs.readFileSync(new URL('../supabase/migrations/20260915040000_taphoa_sheet_sync_cron.sql',import.meta.url),'utf8');
+const cron=fs.readFileSync(new URL('../supabase/migrations/20261002144500_taphoa_drive_watch_sync.sql',import.meta.url),'utf8');
 const lock=fs.readFileSync(new URL('../supabase/migrations/20260917131000_taphoa_sync_lock_and_sheet_source.sql',import.meta.url),'utf8');
 
 test('management Sheet remains the one-way product authority',()=>{
@@ -65,26 +65,29 @@ test('production web exposes product data as read-only',()=>{
   }
 });
 
-test('automatic manager sync stays scheduled every minute',()=>{
-  assert.match(cron,/taphoa_sheet_sync_every_minute/);
-  assert.match(cron,/'\* \* \* \* \*'/);
-  assert.match(cron,/taphoa-sheet-sync/);
+test('Drive watch wakes manager sync without periodic product polling',()=>{
+  assert.match(cron,/taphoa_sheet_watch_channels/);
+  assert.match(cron,/taphoa-sheet-watch-renew/);
+  assert.match(cron,/'7 \*\/12 \* \* \*'/);
+  assert.match(cron,/taphoa-sheet-sync\/register-watch/);
+  assert.match(worker,/async function ensureDriveWatch/);
+  assert.match(worker,/async function handleDriveWebhook/);
+  assert.match(worker,/\/register-watch/);
+  assert.match(worker,/\/webhook/);
+  assert.match(worker,/driveModifiedTime/);
+  assert.doesNotMatch(cron,/select cron\.schedule\([\s\S]*taphoa_sheet_sync_every_minute[\s\S]*'\* \* \* \* \*'/);
 });
 
-
-test('NCC cost prices are bridged into Manager by product code before the manager gate',()=>{
-  for(const id of [
+test('TAPHOA imports only the Manager file after Drive modifiedTime changes',()=>{
+  for(const retiredNccId of [
     '15A3wy0YXlVajFWTTeLXCUh580QhwIlwaBIyn9RdR2XU',
     '1gzTLCx575q6pFtpIU5RU8D8SUmxCMft6_jrBOVRDIY8',
     '1dKwYp6LAR8Lb9YLy4xnf5CP2FA_VyENfZ9-1rEc3wa8',
     '1i1ge5hOPmWi7oxjE5F5hD96f9Zvvp_0HQzwgawZiFgs'
-  ]) assert.ok(worker.includes(id),`missing NCC file ${id}`);
-  assert.match(worker,/async function syncNccPricesToManager/);
-  assert.match(worker,/readSpreadsheetValues\(source\.fileId,source\.sheetName,"A:C"\)/);
-  assert.match(worker,/managerMeta\.title,"A:C"/);
-  assert.match(worker,/!C\$\{i\+1\}/);
-  assert.match(worker,/const ncc=await syncNccPricesToManager\(meta\);[\s\S]*const modifiedTime=await driveModifiedTime/);
-  assert.match(worker,/ncc\.changedRows===0[\s\S]*metadataOnly/);
-  assert.doesNotMatch(worker,/writes\.push\(\{range:[^\n]*!A\$\{i\+1\}/);
-  assert.doesNotMatch(worker,/writes\.push\(\{range:[^\n]*!B\$\{i\+1\}/);
+  ]) assert.ok(!worker.includes(retiredNccId),`retired NCC polling remains: ${retiredNccId}`);
+  assert.doesNotMatch(worker,/syncNccPricesToManager/);
+  assert.match(worker,/const modifiedTime=await driveModifiedTime\(\);const syncState=await readSyncState\(\);/);
+  assert.match(worker,/if\(!force&&syncState\?\.last_drive_modified_time[\s\S]*metadataOnly:true/);
+  assert.match(worker,/metadataOnly:true[\s\S]*const meta=await spreadsheetMeta\(\)/);
+  assert.match(worker,/readSpreadsheetValues\(MANAGEMENT_FILE_ID/);
 });
