@@ -2,6 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { JWT } from "npm:google-auth-library@9.15.1";
 
+declare const EdgeRuntime:{waitUntil(promise:Promise<unknown>):void};
+
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE_ROLE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const MANAGEMENT_FILE_ID="1hGqAzIEqTMmULIeh5sCmed2R3XaiA9QZavtGRdNvyyU";
@@ -15,13 +17,6 @@ const TRACKING_ID_INDEX=50;
 const TRACKING_HASH_INDEX=51;
 const TRACKING_COLUMN_COUNT=52;
 const CORE_KEYS=new Set(["hang-u","thuoc-la","sua","hang-thuong"]);
-const NCC_PRICE_SOURCES=Object.freeze([
-  {sourceKey:"sua",fileId:"15A3wy0YXlVajFWTTeLXCUh580QhwIlwaBIyn9RdR2XU",sheetName:"Sữa",managementSheetId:1822935945},
-  {sourceKey:"hang-u",fileId:"1gzTLCx575q6pFtpIU5RU8D8SUmxCMft6_jrBOVRDIY8",sheetName:"Hàng U",managementSheetId:305224020},
-  {sourceKey:"thuoc-la",fileId:"1dKwYp6LAR8Lb9YLy4xnf5CP2FA_VyENfZ9-1rEc3wa8",sheetName:"Thuốc lá",managementSheetId:583030487},
-  {sourceKey:"hang-thuong",fileId:"1i1ge5hOPmWi7oxjE5F5hD96f9Zvvp_0HQzwgawZiFgs",sheetName:"Hàng thường",managementSheetId:1330446015},
-]);
-
 const admin=createClient(SUPABASE_URL,SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 let googleJwt:JWT|null=null;
 
@@ -115,99 +110,6 @@ async function batchUpdate(requests:Record<string,unknown>[]){
   const url=`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(MANAGEMENT_FILE_ID)}:batchUpdate`;
   await googleFetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({requests})});
 }
-function nccPriceValue(value:unknown){
-  if(value===null||value===undefined||clean(value)==="")return {valid:true,value:null as number|null};
-  if(typeof value!=="number"&&!/\d/.test(clean(value)))return {valid:false,value:null as number|null};
-  const parsed=num(value);
-  if(parsed===null||!Number.isFinite(parsed)||parsed<0)return {valid:false,value:null as number|null};
-  return {valid:true,value:parsed>0?parsed:null as number|null};
-}
-function managerPriceValue(value:unknown){
-  const parsed=num(value);
-  return parsed!==null&&Number.isFinite(parsed)&&parsed>0?parsed:null;
-}
-function managerHeaderKey(value:unknown){
-  return clean(value).replace(/\s+/g," ").toLocaleLowerCase("vi-VN");
-}
-function managerHistoryColumns(header:unknown[]){
-  const keys=header.map(managerHeaderKey);
-  const columns=["Vốn 1","Vốn 2","Vốn 3","Vốn 4"].map(label=>keys.indexOf(managerHeaderKey(label)));
-  return columns.every(index=>index>=0)?columns:null;
-}
-function a1Column(index:number){
-  let n=index+1,out="";
-  while(n>0){const r=(n-1)%26;out=String.fromCharCode(65+r)+out;n=Math.floor((n-1)/26);}
-  return out;
-}
-function nextManagerHistory(row:unknown[],columns:number[],next:number|null){
-  if(next===null)return null;
-  const values=columns.map(index=>managerPriceValue(row[index])).filter((value):value is number=>value!==null);
-  const last=values.length?values[values.length-1]:null;
-  if(last===next)return null;
-  const updated=values.length<4?[...values,next]:[...values.slice(-3),next];
-  return columns.map((_,index)=>updated[index]??"");
-}
-async function syncNccPricesToManager(meta:SheetMeta[]){
-  let changedRows=0,matchedRows=0,ignoredCodes=0,invalidPrices=0,duplicateCodes=0,historyChangedRows=0;
-  const errors:Array<{sourceKey:string;error:string}>=[];
-  const writes:Array<{range:string;values:unknown[][]}>=[];
-  for(const source of NCC_PRICE_SOURCES){
-    try{
-      const managerMeta=meta.find(sheet=>sheet.sheetId===source.managementSheetId);
-      if(!managerMeta){errors.push({sourceKey:source.sourceKey,error:"manager_sheet_missing"});continue;}
-      const [nccRows,managerRows]=await Promise.all([
-        readSpreadsheetValues(source.fileId,source.sheetName,"A:C"),
-        readSpreadsheetValues(MANAGEMENT_FILE_ID,managerMeta.title,"A:R")
-      ]);
-      const historyColumns=managerHistoryColumns(managerRows[0]||[]);
-      if(!historyColumns){
-        errors.push({sourceKey:source.sourceKey,error:"manager_price_history_columns_missing"});
-        continue;
-      }
-      const sourcePrices=new Map<string,number|null>();
-      const duplicate=new Set<string>();
-      for(let i=1;i<nccRows.length;i++){
-        const row=nccRows[i]||[];const code=clean(row[0]).toUpperCase();
-        if(!code)continue;
-        const parsed=nccPriceValue(row[2]);
-        if(!parsed.valid){invalidPrices++;continue;}
-        if(sourcePrices.has(code)){duplicate.add(code);duplicateCodes++;continue;}
-        sourcePrices.set(code,parsed.value);
-      }
-      const managerCodes=new Set<string>();
-      for(let i=1;i<managerRows.length;i++){
-        const row=managerRows[i]||[];const code=clean(row[0]).toUpperCase();
-        if(!code)continue;
-        managerCodes.add(code);
-        if(!sourcePrices.has(code)||duplicate.has(code))continue;
-        matchedRows++;
-        const next=sourcePrices.get(code)??null;
-        const current=managerPriceValue(row[2]);
-        const history=nextManagerHistory(row,historyColumns,next);
-        let rowChanged=false;
-        if(current!==next){
-          writes.push({range:`${quotedSheet(managerMeta.title)}!C${i+1}`,values:[[next===null?"":next]]});
-          rowChanged=true;
-        }
-        if(history){
-          historyColumns.forEach((column,index)=>{
-            writes.push({range:`${quotedSheet(managerMeta.title)}!${a1Column(column)}${i+1}`,values:[[history[index]]]});
-          });
-          historyChangedRows++;
-          rowChanged=true;
-        }
-        if(rowChanged)changedRows++;
-      }
-      for(const code of sourcePrices.keys())if(!managerCodes.has(code))ignoredCodes++;
-    }catch(error){
-      const message=String((error as Error)?.message??error).slice(0,500);
-      errors.push({sourceKey:source.sourceKey,error:message});
-      console.warn("taphoa_ncc_price_sync_failed",source.sourceKey,message);
-    }
-  }
-  await writeRanges(writes);
-  return {changedRows,historyChangedRows,matchedRows,ignoredCodes,invalidPrices,duplicateCodes,errors};
-}
 async function ensureTrackingColumns(meta:SheetMeta){
   if(meta.columnCount<TRACKING_COLUMN_COUNT){
     await batchUpdate([{appendDimension:{sheetId:meta.sheetId,dimension:"COLUMNS",length:TRACKING_COLUMN_COUNT-meta.columnCount}}]);
@@ -278,6 +180,113 @@ async function reserveSheetCode(cache:TabCache,caches:Map<number,TabCache>){
   }
   const assigned=allocateSheetCode(cache,caches,lastIssued,prefix);const parsed=parseCode(assigned);if(!parsed)throw new Error("sheet_code_parse_failed");
   await writeRanges([{range:`'__SYNC'!P${rowNo}`,values:[[parsed.n]]}]);return assigned;
+}
+
+
+const WATCH_EXPIRATION_MS=23*60*60*1000;
+const WATCH_RENEW_BEFORE_MS=12*60*60*1000;
+
+function watchCallbackUrl(){
+  return clean(SUPABASE_URL).replace(/\/$/,"")+"/functions/v1/taphoa-sheet-sync/webhook";
+}
+async function stopDriveWatch(channelId:string,resourceId:string){
+  if(!channelId||!resourceId)return;
+  try{
+    await googleFetch("https://www.googleapis.com/drive/v3/channels/stop",{
+      method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({id:channelId,resourceId})
+    });
+  }catch{
+    // Expired/stale channels can be left for Google to expire.
+  }
+}
+async function registerDriveWatch(){
+  const channelId=crypto.randomUUID();
+  const channelToken=crypto.randomUUID().replace(/-/g,"")+crypto.randomUUID().replace(/-/g,"");
+  const expiration=Date.now()+WATCH_EXPIRATION_MS;
+  const url="https://www.googleapis.com/drive/v3/files/"+
+    encodeURIComponent(MANAGEMENT_FILE_ID)+"/watch?supportsAllDrives=true";
+  const response=await googleFetch(url,{
+    method:"POST",
+    headers:{"content-type":"application/json"},
+    body:JSON.stringify({
+      id:channelId,
+      type:"web_hook",
+      address:watchCallbackUrl(),
+      token:channelToken,
+      expiration
+    })
+  });
+  const body=await response.json();
+  const expiresAt=body?.expiration
+    ?new Date(Number(body.expiration)).toISOString()
+    :new Date(expiration).toISOString();
+  const {error}=await admin.from("taphoa_sheet_watch_channels").insert({
+    channel_id:channelId,
+    file_id:MANAGEMENT_FILE_ID,
+    channel_token:channelToken,
+    resource_id:clean(body?.resourceId),
+    resource_uri:clean(body?.resourceUri),
+    expires_at:expiresAt,
+    active:true,
+    created_at:new Date().toISOString(),
+    updated_at:new Date().toISOString()
+  });
+  if(error)throw error;
+  return {channelId,expiresAt};
+}
+async function ensureDriveWatch(force=false){
+  const {data,error}=await admin.from("taphoa_sheet_watch_channels")
+    .select("*").eq("file_id",MANAGEMENT_FILE_ID).eq("active",true)
+    .order("expires_at",{ascending:false});
+  if(error)throw error;
+  const active=Array.isArray(data)?data:[];
+  const renewBefore=Date.now()+WATCH_RENEW_BEFORE_MS;
+  const valid=active.find((row:any)=>Date.parse(String(row?.expires_at||""))>renewBefore);
+  if(valid&&!force)return {ok:true,kept:true,expiresAt:valid.expires_at};
+
+  for(const row of active){
+    await stopDriveWatch(clean(row?.channel_id),clean(row?.resource_id));
+  }
+  if(active.length){
+    const ids=active.map((row:any)=>clean(row?.channel_id)).filter(Boolean);
+    if(ids.length){
+      const {error:updateError}=await admin.from("taphoa_sheet_watch_channels")
+        .update({active:false,updated_at:new Date().toISOString()}).in("channel_id",ids);
+      if(updateError)throw updateError;
+    }
+  }
+  const registered=await registerDriveWatch();
+  return {ok:true,kept:false,...registered};
+}
+async function handleDriveWebhook(req:Request){
+  const channelId=clean(req.headers.get("x-goog-channel-id"));
+  const channelToken=clean(req.headers.get("x-goog-channel-token"));
+  const resourceId=clean(req.headers.get("x-goog-resource-id"));
+  const resourceState=clean(req.headers.get("x-goog-resource-state")).toLowerCase();
+  if(!channelId||!channelToken)return new Response(null,{status:204});
+
+  const {data,error}=await admin.from("taphoa_sheet_watch_channels")
+    .select("*").eq("channel_id",channelId).eq("active",true).maybeSingle();
+  if(error||!data)return new Response(null,{status:204});
+  if(clean(data.channel_token)!==channelToken)return new Response(null,{status:204});
+  if(clean(data.resource_id)&&resourceId&&clean(data.resource_id)!==resourceId)return new Response(null,{status:204});
+
+  await admin.from("taphoa_sheet_watch_channels").update({
+    last_notified_at:new Date().toISOString(),
+    last_resource_state:resourceState||null,
+    updated_at:new Date().toISOString()
+  }).eq("channel_id",channelId);
+
+  if(resourceState&&resourceState!=="sync"){
+    EdgeRuntime.waitUntil(
+      synchronize(false).catch(error=>
+        console.error("taphoa_drive_watch_sync_failed",String((error as Error)?.message??error))
+      )
+    );
+  }
+  return new Response(null,{status:204});
 }
 
 async function authorized(req:Request){
@@ -383,20 +392,19 @@ async function synchronize(force=false){
   try{
     await setSyncState({last_sync_status:"running",last_error:""});
     try{
-      const meta=await spreadsheetMeta();
-      const ncc=await syncNccPricesToManager(meta);
       const modifiedTime=await driveModifiedTime();const syncState=await readSyncState();
-      if(!force&&ncc.changedRows===0&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
+      if(!force&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
         await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
-        return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0),metadataOnly:true,ncc};
+        return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0),metadataOnly:true};
       }
+      const meta=await spreadsheetMeta();
       await reconcileSources(meta);let caches=await loadCaches(meta);
       const allocated=await allocateBlankSheetRows(caches);if(allocated)caches=await loadCaches(meta);
       const scanModifiedTime=allocated?await driveModifiedTime():modifiedTime;
       const inbound=await inboundScan(caches,scanModifiedTime);
       const finalModifiedTime=await driveModifiedTime();
       await setSyncState({last_drive_modified_time:finalModifiedTime,last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:"",last_imported_row_count:inbound.totalRows});
-      return {ok:true,changed:ncc.changedRows>0||allocated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,ncc,allocated,...inbound};
+      return {ok:true,changed:allocated>0||inbound.changedRows>0,modifiedTime:finalModifiedTime,allocated,...inbound};
     }catch(error){
       const message=String((error as Error)?.message??error).slice(0,1500);await setSyncState({last_sync_status:"error",last_error:message}).catch(()=>{});throw error;
     }
@@ -412,9 +420,16 @@ async function synchronize(force=false){
 
 Deno.serve(async req=>{
   try{
+    const url=new URL(req.url);
+    if(req.method==="POST"&&url.pathname.endsWith("/webhook")){
+      return await handleDriveWebhook(req);
+    }
     if(req.method!=="GET"&&req.method!=="POST")return json({error:"method_not_allowed"},405);
     if(!await authorized(req))return json({error:"unauthorized"},401);
     const body=req.method==="POST"?await req.json().catch(()=>({})):{};
+    if(url.pathname.endsWith("/register-watch")){
+      return json(await ensureDriveWatch(body?.force===true));
+    }
     return json(await synchronize(body?.force===true));
   }catch(error){return json({ok:false,error:String((error as Error)?.message??error)},500);}
 });
