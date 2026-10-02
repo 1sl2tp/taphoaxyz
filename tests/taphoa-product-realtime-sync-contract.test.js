@@ -99,5 +99,5 @@ test('TAPHOA sale price follows the value visibly formatted in Manager Sheet',()
   assert.match(worker,/values:batchGet/);
   assert.match(worker,/!D:D/);
   assert.match(worker,/cache\.rows\[i\]\[3\]=viDisplayNumber\(display\)/);
-  assert.match(worker,/s\.replace\(\/\\\.\/g,""\)\.replace\(","\."\)/);
+  assert.match(worker,/s=s\.replace\(\/\\\.\/g,""\)\.replace\(","\."\)/);
 });
