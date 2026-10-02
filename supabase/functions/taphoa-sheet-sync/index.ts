@@ -43,6 +43,20 @@ export function num(v:unknown):number|null{
   const parsed=Number(s.replace(/[^0-9.-]/g,""));
   return Number.isFinite(parsed)?parsed:null;
 }
+export function viDisplayNumber(v:unknown):number|null{
+  if(v===null||v===undefined||clean(v)==="")return null;
+  if(typeof v==="number")return Number.isFinite(v)?v:null;
+  let s=clean(v).replace(/\s+/g,"").replace(/[^0-9,.-]/g,"");
+  if(!s)return null;
+  const negative=s.startsWith("-");s=s.replace(/^[+-]/,"");
+  if(s.includes(",")){
+    s=s.replace(/\./g,"").replace(",",".");
+  }else if(/^\d{1,3}(?:\.\d{3})+$/.test(s)){
+    s=s.replace(/\./g,"");
+  }
+  const parsed=Number((negative?"-":"")+s);
+  return Number.isFinite(parsed)?parsed:null;
+}
 
 
 function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});}
@@ -99,6 +113,18 @@ async function readSpreadsheetValues(spreadsheetId:string,tab:string,columns="A:
 }
 async function readManagerTab(tab:string){
   return readSpreadsheetValues(MANAGEMENT_FILE_ID,tab,"A:AZ");
+}
+async function readManagerSaleDisplay(tabs:string[]){
+  const out=new Map<string,unknown[][]>();if(!tabs.length)return out;
+  const params=new URLSearchParams();
+  for(const tab of tabs)params.append("ranges",`${quotedSheet(tab)}!D:D`);
+  params.set("majorDimension","ROWS");
+  params.set("valueRenderOption","FORMATTED_VALUE");
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(MANAGEMENT_FILE_ID)}/values:batchGet?${params.toString()}`;
+  const data=await (await googleFetch(url)).json();
+  const ranges=Array.isArray(data?.valueRanges)?data.valueRanges:[];
+  for(let i=0;i<tabs.length;i++)out.set(tabs[i],Array.isArray(ranges[i]?.values)?ranges[i].values:[]);
+  return out;
 }
 async function writeRanges(data:Array<{range:string;values:unknown[][]}>,valueInputOption="RAW"){
   if(!data.length)return;
@@ -329,9 +355,20 @@ async function loadCaches(meta:SheetMeta[]){
   const sources=await loadSources();const sourceBySheet=new Map<number,SourceRow>();
   for(const s of sources)if(s.management_sheet_id!==null&&s.active&&s.sync_status==="active")sourceBySheet.set(Number(s.management_sheet_id),s);
   const caches=new Map<number,TabCache>();
-  for(const sheet of meta.filter(isEligibleTab)){
-    const source=sourceBySheet.get(sheet.sheetId);if(!source)continue;
+  const eligible=meta.filter(isEligibleTab).filter(sheet=>sourceBySheet.has(sheet.sheetId));
+  for(const sheet of eligible){
+    const source=sourceBySheet.get(sheet.sheetId)!;
     const rows=await ensureTrackingColumns(sheet);caches.set(sheet.sheetId,{meta:sheet,source,rows});
+  }
+  const displayedSales=await readManagerSaleDisplay(eligible.map(sheet=>sheet.title));
+  for(const sheet of eligible){
+    const cache=caches.get(sheet.sheetId);if(!cache)continue;
+    const displayRows=displayedSales.get(sheet.title)||[];
+    for(let i=1;i<cache.rows.length;i++){
+      const display=displayRows[i]?.[0];
+      if(display===undefined)continue;
+      cache.rows[i][3]=viDisplayNumber(display);
+    }
   }
   return caches;
 }
