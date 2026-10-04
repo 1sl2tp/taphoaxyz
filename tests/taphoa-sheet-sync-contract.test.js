@@ -6,6 +6,7 @@ const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/in
 const cron=fs.readFileSync(new URL('../supabase/migrations/20260915040000_taphoa_sheet_sync_cron.sql',import.meta.url),'utf8');
 const realtime=fs.readFileSync(new URL('../supabase/migrations/20260917020000_taphoa_product_realtime_sheet_sync.sql',import.meta.url),'utf8');
 const authority=fs.readFileSync(new URL('../supabase/migrations/20260917130000_taphoa_sheet_authoritative_identity.sql',import.meta.url),'utf8');
+const driveWatch=fs.readFileSync(new URL('../supabase/migrations/20261002144500_taphoa_drive_watch_sync.sql',import.meta.url),'utf8');
 
 test('worker owns the exact management file and discovers product sources dynamically by sheetId',()=>{
   assert.match(worker,/1hGqAzIEqTMmULIeh5sCmed2R3XaiA9QZavtGRdNvyyU/);
@@ -46,7 +47,7 @@ test('manager business mapping stays A:D and sync metadata is isolated in hidden
   assert.doesNotMatch(worker,/saleSheet\*1000/);
 });
 
-test('sync remains TAPHOA-only and never touches GETLINK or NCC pairing',()=>{
+test('TAPHOA owns the shared Drive watch while business writes stay TAPHOA-only',()=>{
   assert.match(worker,/taphoa_apply_product_delta/);
   assert.match(worker,/taphoa_product_sheet_state/);
   assert.match(worker,/taphoa_sources/);
@@ -54,6 +55,9 @@ test('sync remains TAPHOA-only and never touches GETLINK or NCC pairing',()=>{
   assert.match(authority,/taphoa_revisions/);
   assert.doesNotMatch(worker,/getlink_supplier_products|getlink_supplier_pair_state|getlink_canonical/i);
   assert.doesNotMatch(worker,/writePairToNcc|writePairToManager/i);
+  assert.match(worker,/getlink-sheet-sync\/manager-change/);
+  assert.match(worker,/source:"taphoa-drive-watch"/);
+  assert.match(worker,/modified_time:modifiedTime/);
 });
 
 test('worker skips unchanged Drive versions and Sheet delta can tombstone missing product codes',()=>{
@@ -69,12 +73,14 @@ test('worker skips unchanged Drive versions and Sheet delta can tombstone missin
   assert.match(realtime,/taphoa_product_sheet_state/);
 });
 
-test('cron is TAPHOA-owned and runs once per minute',()=>{
+test('Drive push watch is the active owner and legacy minute polling is retired',()=>{
   assert.match(cron,/taphoa_sheet_sync_every_minute/);
-  assert.match(cron,/\* \* \* \* \*/);
-  assert.match(cron,/functions\/v1\/taphoa-sheet-sync/);
-  assert.match(cron,/x-taphoa-cron/);
-  assert.doesNotMatch(cron,/getlink-sheet-sync|getlink-api/);
+  assert.match(driveWatch,/No periodic product polling/i);
+  assert.match(driveWatch,/cron\.unschedule/);
+  assert.match(driveWatch,/taphoa_sheet_sync_every_minute/);
+  assert.match(driveWatch,/taphoa-sheet-watch-renew/);
+  assert.match(driveWatch,/register-watch/);
+  assert.doesNotMatch(driveWatch,/getlink-sheet-sync|getlink-api/);
 });
 
 test('sheet sync never mutates manual market price history K:N',()=>{
