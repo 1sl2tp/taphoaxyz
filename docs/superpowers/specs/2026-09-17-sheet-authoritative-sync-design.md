@@ -1,3 +1,9 @@
+> **HISTORICAL / SUPERSEDED — KHÔNG TRIỂN KHAI THEO TÀI LIỆU NÀY.**
+>
+> Kiến trúc multi-directional / Sheet-authoritative trong tài liệu này đã bị thay thế.
+> Rule hiện hành: Supabase `1sl2tpvn` là canonical business data; Google Sheet là source document một chiều; TAPHOA là Drive watch owner duy nhất.
+> Xem `docs/PRODUCT_EDITOR_SYNC_RULES.md` và `1sl2tp/infrastructure/rules/02-EXTERNAL-DATA-SINGLE-SOURCE-OF-TRUTH.md`.
+>
 # Sheet-Authoritative Product & Source Sync Design
 
 ## Goal
