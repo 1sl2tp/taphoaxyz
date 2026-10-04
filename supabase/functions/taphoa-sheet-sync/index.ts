@@ -286,6 +286,41 @@ async function ensureDriveWatch(force=false){
   const registered=await registerDriveWatch();
   return {ok:true,kept:false,...registered};
 }
+async function wakeGetlinkManagerConsumer(modifiedTime:string|null){
+  const {data,error}=await admin.from("getlink_update_settings")
+    .select("cron_secret").eq("id",1).maybeSingle();
+  if(error)throw error;
+  const secret=clean(data?.cron_secret);
+  if(!secret)throw new Error("getlink_internal_wake_secret_missing");
+
+  const url=clean(SUPABASE_URL).replace(/\/$/,"")+
+    "/functions/v1/getlink-sheet-sync/manager-change";
+  const response=await fetch(url,{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-getlink-cron":secret
+    },
+    body:JSON.stringify({
+      source:"taphoa-drive-watch",
+      modified_time:modifiedTime||null
+    })
+  });
+  if(!response.ok){
+    throw new Error("getlink_manager_wake_http_"+response.status+":"+(await response.text()).slice(0,500));
+  }
+}
+
+async function processManagerDriveChange(){
+  const result=await synchronize(false);
+  const modifiedTime=clean((result as any)?.modifiedTime)||null;
+  try{
+    await wakeGetlinkManagerConsumer(modifiedTime);
+  }catch(error){
+    console.error("getlink_manager_consumer_wake_failed",String((error as Error)?.message??error));
+  }
+}
+
 async function handleDriveWebhook(req:Request){
   const channelId=clean(req.headers.get("x-goog-channel-id"));
   const channelToken=clean(req.headers.get("x-goog-channel-token"));
@@ -307,7 +342,7 @@ async function handleDriveWebhook(req:Request){
 
   if(resourceState&&resourceState!=="sync"){
     EdgeRuntime.waitUntil(
-      synchronize(false).catch(error=>
+      processManagerDriveChange().catch(error=>
         console.error("taphoa_drive_watch_sync_failed",String((error as Error)?.message??error))
       )
     );
