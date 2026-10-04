@@ -14,8 +14,13 @@ test('browser suggestions are disabled across TAPHOA editable fields', () => {
   assert.match(behavior, /setAttribute\('autocapitalize', 'off'\)/);
   assert.match(behavior, /setAttribute\('spellcheck', 'false'\)/);
   assert.match(behavior, /new MutationObserver\(/);
-  assert.match(markup1, /id=\\?"searchProductInput\\?"[^\n]*autocomplete=\\?"off\\?"/i);
-  assert.match(markup1, /searchProductInput[^\n]*autocorrect=\\?"off\\?"/i);
-  assert.match(markup5, /customerSearchInput[^\n]*autocorrect=\\?"off\\?"/i);
+  const productSearchTag = markup1.match(/<input[^>]*id=\\?"searchProductInput\\?"[^>]*>/i)?.[0] || '';
+  const customerSearchTag = markup5.match(/<input[^>]*id=\\?"customerSearchInput\\?"[^>]*>/i)?.[0] || '';
+  assert.match(productSearchTag, /autocomplete=\\?"off\\?"/i);
+  assert.match(productSearchTag, /autocorrect=\\?"off\\?"/i);
+  assert.match(productSearchTag, /autocapitalize=\\?"off\\?"/i);
+  assert.match(productSearchTag, /spellcheck=\\?"false\\?"/i);
+  assert.match(customerSearchTag, /autocomplete=\\?"off\\?"/i);
+  assert.match(customerSearchTag, /autocorrect=\\?"off\\?"/i);
   assert.match(index, /fixed-ui-behavior\.js\?v=no-browser-suggestions-20261004/);
 });
