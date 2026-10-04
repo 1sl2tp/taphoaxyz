@@ -1,25 +1,83 @@
-name: Verify
+name: Verify TAPHOA
 
 on:
   pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "backups/**"
   push:
-    branches:
-      - main
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "backups/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: taphoa-verify-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run tests
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Run all contracts
         run: npm test
+
       - name: Build production
-        run: npm run build
+        run: npm run build:production
+
+      - name: Parse application modules
+        run: find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Reject old business Supabase runtime refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD='gcnoahqsrquxkwkjbuxy'
+          if git grep -n "$OLD" --             ':!supabase/migrations/**'             ':!docs/**'             ':!tests/**'             ':!**/*.md'             ':!.github/workflows/**'
+          then
+            echo "::error::Old Supabase project ref found in active runtime/deploy code."
+            exit 1
+          fi
+          echo "OK: active runtime/deploy code has no old Supabase project ref."
+
+      - name: Verify production security contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -f dist/src/fixed-production-bridge.js
+          test -f dist/src/core/config.js
+          test -f dist/src/core/auth.js
+          test -f dist/src/core/business.js
+          grep -q 'TAPHOA_GEMINI_100_SAMPLE_FIXED' dist/index.html
+          grep -q 'fixed-production-bridge.js' dist/index.html
+          ! grep -q 'src/app.js' dist/index.html
+          grep -q 'vtqhbhrkdxirqeqkgylo.supabase.co' dist/src/core/config.js
+          ! grep -R -q 'gcnoahqsrquxkwkjbuxy.supabase.co' dist/index.html dist/src
+          grep -q 'taphoa.xyz.auth.v2' dist/src/core/config.js
+          grep -q 'signInWithPassword' dist/src/core/auth.js
+          grep -q 'taphoa_access_context' dist/src/core/auth.js
+          grep -q 'taphoa_app_bootstrap' dist/src/core/business.js
+          grep -q 'taphoa_save_order' dist/src/core/business.js
+          ! grep -R -q 'crdbhkdeqyehsbzgggbs' dist/index.html dist/src
+          ! grep -R -E -q 'shop-auth|shop_identities' dist/index.html dist/src
+          ! grep -R -q 'localStorage.getItem("taphoa_session")' dist/index.html dist/src
+          ! grep -R -q 'localStorage.setItem("taphoa_session"' dist/index.html dist/src
