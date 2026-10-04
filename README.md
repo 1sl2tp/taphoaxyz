@@ -24,3 +24,14 @@ Không tách riêng `index.html` khỏi thư mục `src/`, vì source được t
 ## Backend
 
 Frontend sử dụng Supabase backend hiện tại qua các RPC business contract đã có. Repository không chứa service-role key hoặc secret backend.
+
+
+## External data — Single Source of Truth
+
+Quy tắc bắt buộc dùng chung: `1sl2tp/infrastructure/rules/02-EXTERNAL-DATA-SINGLE-SOURCE-OF-TRUTH.md`.
+
+- Supabase mới `1sl2tpvn` là canonical business data của TAPHOA.
+- Google Drive/Sheet là source document và change signal, không phải database runtime thứ hai.
+- TAPHOA là **watch owner duy nhất** của file Quản trị dùng chung.
+- GETLINK không đăng ký watch riêng cho cùng file; TAPHOA gửi một internal wake sau khi Drive báo thay đổi.
+- Web chỉ đọc business state từ Supabase; không merge live Sheet + Supabase.
