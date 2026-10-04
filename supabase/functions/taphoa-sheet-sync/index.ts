@@ -287,13 +287,7 @@ async function ensureDriveWatch(force=false){
   return {ok:true,kept:false,...registered};
 }
 async function processManagerDriveChange(){
-  const result=await synchronize(false);
-  const modifiedTime=clean((result as any)?.modifiedTime)||null;
-  try{
-    await wakeGetlinkManagerConsumer(modifiedTime);
-  }catch(error){
-    console.error("getlink_manager_consumer_wake_failed",String((error as Error)?.message??error));
-  }
+  await synchronize(false);
 }
 
 async function handleDriveWebhook(req:Request){
