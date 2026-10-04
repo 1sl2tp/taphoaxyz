@@ -11,7 +11,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public
-as $function$
+as $
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -123,4 +123,4 @@ begin
 
   return v_result;
 end;
-$function$;
+$;
