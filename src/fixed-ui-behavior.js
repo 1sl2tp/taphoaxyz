@@ -288,3 +288,26 @@ clickOrderFromDebt = function(orderId) {
   window.activeViewingSheet = sheetName;
   showOrderDetailMobile(orderId, sheetName);
 };
+
+/* Global input policy: do not show browser form-history/text suggestions in TAPHOA.
+   This is UI-only; it does not change app search results or backend behavior. */
+function applyTaphoaNoSuggestionPolicy(root) {
+  const nodes = [];
+  if (root instanceof HTMLInputElement || root instanceof HTMLTextAreaElement) nodes.push(root);
+  if (root?.querySelectorAll) nodes.push(...root.querySelectorAll('input, textarea'));
+  nodes.forEach(input => {
+    const type = String(input.getAttribute('type') || 'text').toLowerCase();
+    if (['hidden','file','checkbox','radio','button','submit','reset','password'].includes(type)) return;
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('spellcheck', 'false');
+  });
+}
+
+applyTaphoaNoSuggestionPolicy(document);
+new MutationObserver(records => {
+  records.forEach(record => record.addedNodes.forEach(node => {
+    if (node instanceof Element) applyTaphoaNoSuggestionPolicy(node);
+  }));
+}).observe(document.documentElement, { childList: true, subtree: true });
