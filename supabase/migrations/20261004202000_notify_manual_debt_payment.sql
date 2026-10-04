@@ -123,4 +123,4 @@ begin
 
   return v_result;
 end;
-$;
+$$;
