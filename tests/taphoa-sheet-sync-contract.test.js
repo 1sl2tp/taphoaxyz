@@ -55,9 +55,7 @@ test('TAPHOA owns the shared Drive watch while business writes stay TAPHOA-only'
   assert.match(authority,/taphoa_revisions/);
   assert.doesNotMatch(worker,/getlink_supplier_products|getlink_supplier_pair_state|getlink_canonical/i);
   assert.doesNotMatch(worker,/writePairToNcc|writePairToManager/i);
-  assert.match(worker,/getlink-sheet-sync\/manager-change/);
-  assert.match(worker,/source:"taphoa-drive-watch"/);
-  assert.match(worker,/modified_time:modifiedTime/);
+  assert.doesNotMatch(worker,/getlink-sheet-sync|manager-change|wakeGetlink/i);
 });
 
 test('worker skips unchanged Drive versions and Sheet delta can tombstone missing product codes',()=>{
