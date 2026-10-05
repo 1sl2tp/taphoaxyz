@@ -447,11 +447,12 @@
       $('countText').textContent=total?`Hiển thị ${offset+1}–${Math.min(offset+items.length,total)} / ${total} sản phẩm`:'0 sản phẩm';
     }
 
-    function selectedSalePrice(cost,supplier,basis){
+    function selectedSalePrice(cost,supplier,basis,defaultMarkup){
       if(supplier!==null&&basis==='supplier_1_5')return Math.ceil(supplier*1.015);
       if(supplier!==null)return supplier;
-      if(cost!==null)return Math.ceil(cost*1.015);
-      return null;
+      if(cost===null)return null;
+      if(defaultMarkup!==null)return cost+defaultMarkup;
+      return Math.ceil(cost*1.015);
     }
 
     function updateChoiceState(row,item){
@@ -469,7 +470,8 @@
       const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
       const basis=supplier===null?'auto':(item.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1');
-      const sale=selectedSalePrice(cost,supplier,basis);
+      const defaultMarkup=num(item.default_markup_vnd);
+      const sale=selectedSalePrice(cost,supplier,basis,defaultMarkup);
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
       row.querySelector('.sale-price').textContent=pretty(sale);
@@ -550,7 +552,7 @@
         const result=await rpc('taphoa_update_product_from_web',{p_product:payload});
         item.product_name=payload.name;item.cost=payload.cost;
         item.sale_price_basis=result?.sale_price_basis??payload.sale_price_basis;
-        item.price=result?.price??selectedSalePrice(payload.cost,payload.supplier_price,item.sale_price_basis);
+        item.price=result?.price??selectedSalePrice(payload.cost,payload.supplier_price,item.sale_price_basis,num(item.default_markup_vnd));
         item.supplier_price=payload.supplier_price;
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;item.retail_price=payload.retail_price;item.admin_state=payload.admin_state;
