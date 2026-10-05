@@ -64,7 +64,13 @@
     .supplier-profit{position:absolute;right:7px;bottom:2px;font-size:10px;color:#64748b;pointer-events:none}
     .supplier-profit.pos{color:#15803d}.supplier-profit.neg{color:#dc2626}
     .profit{font-weight:800}.profit.neg{color:var(--red)}.subpct{font-size:10px;color:var(--muted);margin-left:3px}
-    .history-cell{padding:0 7px;text-align:right;color:#64748b}
+    .history-cell{padding:0 6px;text-align:right;color:#475569}
+    .history-stack{height:39px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;line-height:1.05}
+    .hist-cost{font-size:12px;color:#111827}
+    .hist-meta{font-size:9px;color:#64748b;margin-top:2px;white-space:nowrap}
+    .hist-delta.up{color:#dc2626;font-weight:800}
+    .hist-delta.down{color:#15803d;font-weight:800}
+    .hist-delta.same{color:#64748b}
     .history-btn,.delete-btn{border:0;background:transparent;height:32px;padding:0 8px;font-weight:800;color:#475569}
     .history-btn:hover{color:var(--blue)}.delete-btn:hover{color:var(--red)}
     .state-active{color:var(--green)}.state-hidden{color:var(--amber)}.state-discontinued{color:var(--red)}
@@ -160,10 +166,8 @@
                 <th data-col="units_per_carton">SL</th>
                 <th data-col="retail_unit">QC</th>
                 <th data-col="retail_price">Giá lẻ</th>
-                <th data-col="h1">Vốn -1</th>
-                <th data-col="h2">Vốn -2</th>
-                <th data-col="h3">Vốn -3</th>
-                <th data-col="h4">Vốn -4</th>
+                <th data-col="h1">Vốn -1 · ngày · Δ</th>
+                <th data-col="h2">Vốn -2 · ngày · Δ</th>
                 <th data-col="admin_state">Trạng thái</th>
                 <th data-col="history">Nhật ký</th>
                 <th data-col="delete"></th>
@@ -246,7 +250,7 @@
     let selectedSource='';
     let sourceDialogMode='create';
     let saveQueues=new Map();
-    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v5';
+    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v6';
     const COLUMN_DEFS=[
       {id:'name',label:'Tên sản phẩm',width:280,min:150},
       {id:'cost',label:'Giá vốn',width:82,min:58},
@@ -260,10 +264,8 @@
       {id:'units_per_carton',label:'SL',width:62,min:48},
       {id:'retail_unit',label:'QC',width:76,min:54},
       {id:'retail_price',label:'Giá lẻ',width:82,min:58},
-      {id:'h1',label:'Vốn -1',width:82,min:58},
-      {id:'h2',label:'Vốn -2',width:82,min:58},
-      {id:'h3',label:'Vốn -3',width:82,min:58},
-      {id:'h4',label:'Vốn -4',width:82,min:58},
+      {id:'h1',label:'Vốn -1 · ngày · Δ',width:128,min:105},
+      {id:'h2',label:'Vốn -2 · ngày · Δ',width:128,min:105},
       {id:'admin_state',label:'Trạng thái',width:112,min:88},
       {id:'history',label:'Nhật ký',width:70,min:58},
       {id:'delete',label:'Xóa',width:48,min:42}
@@ -411,7 +413,7 @@
     function renderProducts(){
       $('emptyState').classList.toggle('hidden',items.length!==0);
       $('productBody').innerHTML=items.map((item,index)=>{
-        const hist=Array.isArray(item.history_costs)?item.history_costs:[];
+        const hist=Array.isArray(item.cost_history)?item.cost_history:[];
         const stateClass=item.admin_state==='hidden'?'state-hidden':item.admin_state==='discontinued'?'state-discontinued':'state-active';
         return `<tr data-index="${index}" data-code="${esc(item.product_code)}">
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
@@ -429,10 +431,8 @@
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
           <td data-col="retail_unit"><input class="cell-input" data-field="retail_unit" value="${esc(item.retail_unit||'')}"></td>
           <td data-col="retail_price"><input class="cell-input num-input" data-field="retail_price" inputmode="decimal" value="${esc(plain(item.retail_price))}"></td>
-          <td data-col="h1" class="history-cell h1">${pretty(hist[0])}</td>
-          <td data-col="h2" class="history-cell h2">${pretty(hist[1])}</td>
-          <td data-col="h3" class="history-cell h3">${pretty(hist[2])}</td>
-          <td data-col="h4" class="history-cell h4">${pretty(hist[3])}</td>
+          <td data-col="h1" class="history-cell h1"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
+          <td data-col="h2" class="history-cell h2"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
           <td data-col="admin_state"><select class="cell-select state-select ${stateClass}" data-field="admin_state">
             <option value="active" ${item.admin_state==='active'?'selected':''}>Đang bán</option>
             <option value="hidden" ${item.admin_state==='hidden'?'selected':''}>Ẩn</option>
@@ -509,8 +509,27 @@
       const p=row.querySelector('.profit');
       p.innerHTML=profit===null?'':`${pretty(profit)}<span class="subpct">${pretty(pct)}%</span>`;
       p.classList.toggle('neg',profit!==null&&profit<0);
-      const h=Array.isArray(item.history_costs)?item.history_costs:[];
-      ['h1','h2','h3','h4'].forEach((cls,i)=>row.querySelector('.'+cls).textContent=pretty(h[i]));
+      const h=Array.isArray(item.cost_history)?item.cost_history:[];
+      const renderHist=(cls,entry)=>{
+        const cell=row.querySelector('.'+cls);
+        if(!cell)return;
+        const costEl=cell.querySelector('.hist-cost');
+        const metaEl=cell.querySelector('.hist-meta');
+        if(!entry){
+          costEl.textContent='';
+          metaEl.textContent='';
+          return;
+        }
+        costEl.textContent=pretty(entry.cost);
+        const d=entry.changed_at?new Date(entry.changed_at):null;
+        const dateText=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+        const delta=num(entry.delta);
+        const deltaText=delta===null?'':('Δ '+(delta>0?'+':'')+pretty(delta));
+        metaEl.textContent=[dateText,deltaText].filter(Boolean).join(' · ');
+        metaEl.className='hist-meta hist-delta '+(delta>0?'up':delta<0?'down':'same');
+      };
+      renderHist('h1',h[0]);
+      renderHist('h2',h[1]);
     }
 
     function rowPayload(row){
@@ -562,7 +581,12 @@
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;item.retail_price=payload.retail_price;item.admin_state=payload.admin_state;
         if(oldCost!==null&&!same(oldCost,payload.cost)){
-          item.history_costs=[oldCost,...(Array.isArray(item.history_costs)?item.history_costs:[])].slice(0,4);
+          item.cost_history=[{
+            cost:oldCost,
+            new_cost:payload.cost,
+            changed_at:new Date().toISOString(),
+            delta:(payload.cost===null?null:Number(payload.cost)-Number(oldCost))
+          },...(Array.isArray(item.cost_history)?item.cost_history:[])].slice(0,2);
         }
         updateDerived(row,item);
         const st=row.querySelector('.state-select');st.className='cell-select state-select '+(payload.admin_state==='hidden'?'state-hidden':payload.admin_state==='discontinued'?'state-discontinued':'state-active');
