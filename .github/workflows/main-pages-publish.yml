@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'admin-gia.html'
       - 'CNAME'
       - 'version.json'
       - 'manifest.webmanifest'
