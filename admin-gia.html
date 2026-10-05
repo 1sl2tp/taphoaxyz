@@ -72,8 +72,13 @@
     .history-stack{height:39px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;line-height:1.05}
     .hist-cost{font-size:12px;color:#111827}
     .hist-meta{font-size:9px;color:#64748b;margin-top:2px;white-space:nowrap}
-    .hist-delta.up{color:#dc2626;font-weight:800}
-    .hist-delta.down{color:#15803d;font-weight:800}
+    .hist-delta.up{color:#15803d;font-weight:800}
+    .hist-delta.down{color:#dc2626;font-weight:800}
+    .cost-current{position:relative}
+    .cost-current .cell-input{height:25px;padding-top:3px;padding-bottom:1px}
+    .cost-current-meta{position:absolute;right:7px;bottom:2px;font-size:9px;color:#64748b;pointer-events:none;white-space:nowrap}
+    .cost-current-meta.up{color:#15803d;font-weight:800}
+    .cost-current-meta.down{color:#dc2626;font-weight:800}
     .hist-delta.same{color:#64748b}
     .history-btn,.delete-btn{border:0;background:transparent;height:32px;padding:0 8px;font-weight:800;color:#475569}
     .history-btn:hover{color:var(--blue)}.delete-btn:hover{color:var(--red)}
@@ -419,7 +424,10 @@
         const stateClass=item.admin_state==='hidden'?'state-hidden':item.admin_state==='discontinued'?'state-discontinued':'state-active';
         return `<tr data-index="${index}" data-code="${esc(item.product_code)}">
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
-          <td data-col="cost"><input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}"></td>
+          <td data-col="cost" class="cost-current">
+            <input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}">
+            <span class="cost-current-meta"></span>
+          </td>
           <td data-col="price" class="readonly sale-price"><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
           <td data-col="supplier_price" class="price-choice supplier-x1" data-basis="supplier_1">
             <input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}">
@@ -525,12 +533,26 @@
         const d=entry.changed_at?new Date(entry.changed_at):null;
         const dateText=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
         const delta=num(entry.delta);
-        const deltaText=delta===null?'':('Δ '+(delta>0?'+':'')+pretty(delta));
+        const deltaText=delta===null?'':((delta>0?'↑ +':delta<0?'↓ ':'')+pretty(delta));
         metaEl.textContent=[dateText,deltaText].filter(Boolean).join(' · ');
         metaEl.className='hist-meta hist-delta '+(delta>0?'up':delta<0?'down':'same');
       };
       renderHist('h1',h[0]);
       renderHist('h2',h[1]);
+
+      const currentMeta=row.querySelector('.cost-current-meta');
+      const latest=h[0];
+      if(currentMeta&&latest){
+        const d=latest.changed_at?new Date(latest.changed_at):null;
+        const dateText=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}):'';
+        const delta=num(latest.delta);
+        const deltaText=delta===null?'':((delta>0?'↑ +':delta<0?'↓ ':'')+pretty(delta));
+        currentMeta.textContent=[dateText,deltaText].filter(Boolean).join(' · ');
+        currentMeta.className='cost-current-meta '+(delta>0?'up':delta<0?'down':'');
+      }else if(currentMeta){
+        currentMeta.textContent='';
+        currentMeta.className='cost-current-meta';
+      }
     }
 
     function rowPayload(row){
