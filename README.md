@@ -28,10 +28,11 @@ Frontend sử dụng Supabase backend hiện tại qua các RPC business contrac
 
 ## External data — Single Source of Truth
 
-Quy tắc bắt buộc dùng chung: `1sl2tp/infrastructure/rules/02-EXTERNAL-DATA-SINGLE-SOURCE-OF-TRUTH.md`.
+Quy tắc hiện tại của TAPHOA:
 
-- Supabase mới `1sl2tpvn` là canonical business data của TAPHOA.
-- Google Drive/Sheet là source document và change signal, không phải database runtime thứ hai.
-- TAPHOA là **watch owner duy nhất** của file Quản trị dùng chung.
-- GETLINK không có runtime Google Drive/Sheet và không nhận wake từ TAPHOA.
-- Web chỉ đọc business state từ Supabase; không merge live Sheet + Supabase.
+- Supabase là **canonical business data** và là nơi duy nhất web đọc/ghi giá sản phẩm.
+- Trang quản trị giá: `/admin-gia.html`. Chỉ tài khoản admin được phép đọc danh mục quản trị và sửa giá.
+- Google Drive/Google Sheet đã rút khỏi runtime quản trị giá: không Drive Watch, không cron sheet-sync, không outbox đẩy giá về Sheet.
+- Các bảng/cột sync Google cũ chỉ được giữ tạm như cấu trúc lịch sử/rollback; không được dùng làm nguồn sự thật.
+- Web bán hàng nhận thay đổi giá qua revision/realtime của Supabase, không merge dữ liệu Sheet.
+- GETLINK không tham gia luồng quản trị giá TAPHOA.
