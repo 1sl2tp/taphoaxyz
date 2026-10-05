@@ -86,7 +86,7 @@ test('TAPHOA imports only the Manager file after Drive modifiedTime changes',()=
     '1i1ge5hOPmWi7oxjE5F5hD96f9Zvvp_0HQzwgawZiFgs'
   ]) assert.ok(!worker.includes(retiredNccId),`retired NCC polling remains: ${retiredNccId}`);
   assert.doesNotMatch(worker,/syncNccPricesToManager/);
-  assert.match(worker,/const modifiedTime=await driveModifiedTime\(\);const syncState=await readSyncState\(\);/);
+  assert.match(worker,/observedModifiedTime=await driveModifiedTime\(\);[\s\S]*const preflightState=await readSyncState\(\);/);
   assert.match(worker,/if\(!force&&syncState\?\.last_drive_modified_time[\s\S]*metadataOnly:true/);
   assert.match(worker,/metadataOnly:true[\s\S]*const meta=await spreadsheetMeta\(\)/);
   assert.match(worker,/readSpreadsheetValues\(MANAGEMENT_FILE_ID/);
