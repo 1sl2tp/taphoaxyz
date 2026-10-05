@@ -138,11 +138,11 @@
                 <th data-col="name" style="text-align:left">Tên sản phẩm</th>
                 <th data-col="cost">Giá vốn</th>
                 <th data-col="price">Giá bán</th>
-                <th data-col="sale_basis">Cách giá bán</th>
-                <th data-col="supplier_price">Giá NPP</th>
+                <th data-col="supplier_price">NPP ×1</th>
+                <th data-col="supplier15">NPP +1,5%</th>
+                <th data-col="cost15">Vốn +1,5%</th>
+                <th data-col="cost3">Vốn +3%</th>
                 <th data-col="profit">Lãi</th>
-                <th data-col="price15">+1,5%</th>
-                <th data-col="price3">+3%</th>
                 <th data-col="standard_profit_percent">Lãi chuẩn %</th>
                 <th data-col="units_per_carton">SL</th>
                 <th data-col="retail_unit">QC</th>
@@ -189,13 +189,7 @@
           <div class="field wide"><label>Tên sản phẩm</label><input id="newName" required></div>
           <div class="field"><label>Nguồn</label><select id="newSource" required></select></div>
           <div class="field"><label>Giá vốn</label><input id="newCost" inputmode="decimal"></div>
-          <div class="field"><label>Giá bán</label><input id="newPrice" inputmode="decimal"></div>
-          <div class="field"><label>Cách giá bán</label><select id="newSaleBasis">
-            <option value="manual">Nhập tay</option>
-            <option value="supplier_1">NPP ×1</option>
-            <option value="supplier_1_5">NPP +1,5%</option>
-          </select></div>
-          <div class="field"><label>Giá NPP</label><input id="newSupplier" inputmode="decimal"></div>
+          <div class="field"><label>NPP ×1</label><input id="newSupplier" inputmode="decimal"></div>
           <div class="field"><label>Lãi chuẩn %</label><input id="newStandard" inputmode="decimal"></div>
           <div class="field"><label>Số lượng</label><input id="newUnits" inputmode="decimal"></div>
           <div class="field"><label>QC / đơn vị lẻ</label><input id="newRetailUnit" placeholder="chai, gói, hộp…"></div>
@@ -239,16 +233,16 @@
     let selectedSource='';
     let sourceDialogMode='create';
     let saveQueues=new Map();
-    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v3';
+    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v4';
     const COLUMN_DEFS=[
       {id:'name',label:'Tên sản phẩm',width:280,min:150},
       {id:'cost',label:'Giá vốn',width:82,min:58},
       {id:'price',label:'Giá bán',width:82,min:58},
-      {id:'sale_basis',label:'Cách giá bán',width:108,min:92},
-      {id:'supplier_price',label:'Giá NPP',width:82,min:58},
+      {id:'supplier_price',label:'NPP ×1',width:82,min:58},
+      {id:'supplier15',label:'NPP +1,5%',width:86,min:62},
+      {id:'cost15',label:'Vốn +1,5%',width:86,min:62},
+      {id:'cost3',label:'Vốn +3%',width:82,min:58},
       {id:'profit',label:'Lãi',width:92,min:65},
-      {id:'price15',label:'+1,5%',width:82,min:58},
-      {id:'price3',label:'+3%',width:82,min:58},
       {id:'standard_profit_percent',label:'Lãi chuẩn %',width:82,min:65},
       {id:'units_per_carton',label:'SL',width:62,min:48},
       {id:'retail_unit',label:'QC',width:76,min:54},
@@ -409,16 +403,12 @@
         return `<tr data-index="${index}" data-code="${esc(item.product_code)}">
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
           <td data-col="cost"><input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}"></td>
-          <td data-col="price"><input class="cell-input num-input" data-field="price" inputmode="decimal" value="${esc(plain(item.price))}"></td>
-          <td data-col="sale_basis"><select class="cell-select basis-select sale-basis-select" data-field="sale_price_basis">
-            <option value="manual" ${(item.sale_price_basis||'manual')==='manual'?'selected':''}>Nhập tay</option>
-            <option value="supplier_1" ${item.sale_price_basis==='supplier_1'?'selected':''}>NPP ×1</option>
-            <option value="supplier_1_5" ${item.sale_price_basis==='supplier_1_5'?'selected':''}>NPP +1,5%</option>
-          </select></td>
+          <td data-col="price" class="readonly sale-price"></td>
           <td data-col="supplier_price"><input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}"></td>
+          <td data-col="supplier15" class="readonly supplier15"></td>
+          <td data-col="cost15" class="readonly cost15"></td>
+          <td data-col="cost3" class="readonly cost3"></td>
           <td data-col="profit" class="readonly profit"></td>
-          <td data-col="price15" class="readonly price15"></td>
-          <td data-col="price3" class="readonly price3"></td>
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
           <td data-col="retail_unit"><input class="cell-input" data-field="retail_unit" value="${esc(item.retail_unit||'')}"></td>
@@ -441,38 +431,27 @@
       $('countText').textContent=total?`Hiển thị ${offset+1}–${Math.min(offset+items.length,total)} / ${total} sản phẩm`:'0 sản phẩm';
     }
 
-    function applySaleBasis(row){
-      const basis=row.querySelector('[data-field="sale_price_basis"]');
-      const supplierInput=row.querySelector('[data-field="supplier_price"]');
-      const priceInput=row.querySelector('[data-field="price"]');
-      if(!basis||!supplierInput||!priceInput)return;
-      const supplier=num(supplierInput.value);
-      [...basis.options].forEach(option=>{
-        if(option.value==='supplier_1'||option.value==='supplier_1_5')option.disabled=supplier===null;
-      });
-      if(supplier===null&&basis.value!=='manual')basis.value='manual';
-      if(basis.value==='supplier_1'){
-        priceInput.value=plain(supplier);
-        priceInput.readOnly=true;
-      }else if(basis.value==='supplier_1_5'){
-        priceInput.value=plain(Math.ceil(supplier*1.015));
-        priceInput.readOnly=true;
-      }else{
-        priceInput.readOnly=false;
-      }
+    function autoSalePrice(cost,supplier){
+      if(cost===null&&supplier===null)return null;
+      if(supplier!==null&&cost===null)return supplier;
+      if(supplier===null&&cost!==null)return Math.ceil(cost*1.015);
+      if(supplier>=cost)return supplier;
+      return Math.max(Math.ceil(supplier*1.015),Math.ceil(cost*1.015));
     }
 
     function updateDerived(row,item){
-      applySaleBasis(row);
       const cost=num(row.querySelector('[data-field="cost"]')?.value);
-      const sale=num(row.querySelector('[data-field="price"]')?.value);
+      const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
+      const sale=autoSalePrice(cost,supplier);
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
+      row.querySelector('.sale-price').textContent=pretty(sale);
+      row.querySelector('.supplier15').textContent=supplier===null?'':pretty(Math.ceil(supplier*1.015));
+      row.querySelector('.cost15').textContent=cost===null?'':pretty(Math.ceil(cost*1.015));
+      row.querySelector('.cost3').textContent=cost===null?'':pretty(Math.ceil(cost*1.03));
       const p=row.querySelector('.profit');
       p.innerHTML=profit===null?'':`${pretty(profit)}<span class="subpct">${pretty(pct)}%</span>`;
       p.classList.toggle('neg',profit!==null&&profit<0);
-      row.querySelector('.price15').textContent=cost===null?'':pretty(Math.ceil(cost*1.015));
-      row.querySelector('.price3').textContent=cost===null?'':pretty(Math.ceil(cost*1.03));
       const h=Array.isArray(item.history_costs)?item.history_costs:[];
       ['h1','h2','h3','h4'].forEach((cls,i)=>row.querySelector('.'+cls).textContent=pretty(h[i]));
     }
@@ -481,13 +460,12 @@
       const read=field=>row.querySelector(`[data-field="${field}"]`)?.value?.trim()??'';
       const name=read('name');
       if(!name)throw new Error('Tên sản phẩm không được trống');
-      const numeric=['cost','price','supplier_price','standard_profit_percent','units_per_carton','retail_price'];
+      const numeric=['cost','supplier_price','standard_profit_percent','units_per_carton','retail_price'];
       const payload={
         product_code:row.dataset.code,
         name,
         retail_unit:read('retail_unit'),
-        admin_state:read('admin_state'),
-        sale_price_basis:read('sale_price_basis')||'manual'
+        admin_state:read('admin_state')
       };
       for(const key of numeric){
         const raw=read(key);const value=num(raw);
@@ -514,11 +492,8 @@
         try{payload=rowPayload(row);}catch(error){markRow(row,'error');throw error;}
         markRow(row,'saving');
         const result=await rpc('taphoa_update_product_from_web',{p_product:payload});
-        item.product_name=payload.name;item.cost=payload.cost;item.price=result?.price??payload.price;
-        item.sale_price_basis=result?.sale_price_basis??payload.sale_price_basis;
+        item.product_name=payload.name;item.cost=payload.cost;item.price=result?.price??autoSalePrice(payload.cost,payload.supplier_price);
         item.supplier_price=payload.supplier_price;
-        row.querySelector('[data-field="price"]').value=plain(item.price);
-        row.querySelector('[data-field="sale_price_basis"]').value=item.sale_price_basis;
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;item.retail_price=payload.retail_price;item.admin_state=payload.admin_state;
         if(oldCost!==null&&!same(oldCost,payload.cost)){
@@ -585,8 +560,8 @@
       $('productSubmitBtn').disabled=true;
       try{
         await rpc('taphoa_admin_create_product',{p_product:{
-          name,source_key:source,cost:parse('newCost'),price:parse('newPrice'),supplier_price:parse('newSupplier'),
-          sale_price_basis:$('newSaleBasis').value,standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
+          name,source_key:source,cost:parse('newCost'),supplier_price:parse('newSupplier'),
+          standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
           retail_unit:$('newRetailUnit').value.trim(),retail_price:parse('newRetailPrice')
         }});
         $('productDialog').close();$('productForm').reset();selectedSource=source;await loadPage(true);
@@ -633,22 +608,6 @@
     $('sourceForm').addEventListener('submit',e=>{e.preventDefault();submitSource();});
     $('columnSettingsBtn').addEventListener('click',()=>{renderColumnSettings();$('columnDialog').showModal();});
     $('addProductBtn').addEventListener('click',()=>{fillProductSources();$('productDialogMsg').textContent='';$('productDialog').showModal();setTimeout(()=>{$('newName').focus();$('newName').select()},0);});
-    function syncNewProductSale(){
-      const basis=$('newSaleBasis').value;
-      const supplier=num($('newSupplier').value);
-      $('newSaleBasis').querySelectorAll('option').forEach(option=>{
-        if(option.value==='supplier_1'||option.value==='supplier_1_5')option.disabled=supplier===null;
-      });
-      if(supplier===null&&basis!=='manual')$('newSaleBasis').value='manual';
-      const active=$('newSaleBasis').value;
-      if(active==='supplier_1'){
-        $('newPrice').value=plain(supplier);$('newPrice').readOnly=true;
-      }else if(active==='supplier_1_5'){
-        $('newPrice').value=plain(Math.ceil(supplier*1.015));$('newPrice').readOnly=true;
-      }else $('newPrice').readOnly=false;
-    }
-    $('newSupplier').addEventListener('input',syncNewProductSale);
-    $('newSaleBasis').addEventListener('change',syncNewProductSale);
     $('productForm').addEventListener('submit',e=>{e.preventDefault();submitProduct();});
     document.addEventListener('click',e=>{const b=e.target.closest('.dialog-close');if(b){const d=$(b.dataset.dialog);if(d?.open)d.close();}});
     $('historyClose').addEventListener('click',()=>$('historyDialog').close());
@@ -709,9 +668,8 @@
     });
     $('productBody').addEventListener('change',e=>{
       const row=e.target.closest('tr');if(!row)return;
-      if(e.target.matches('.state-select')||e.target.matches('.sale-basis-select')){
+      if(e.target.matches('.state-select')){
         row.dataset.dirty='1';
-        updateDerived(row,items[Number(row.dataset.index)]);
         queueSave(row);
       }
     });
