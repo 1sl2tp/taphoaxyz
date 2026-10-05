@@ -59,6 +59,10 @@
     .candidate-price{font-variant-numeric:tabular-nums}
     .candidate-profit{font-size:10px;color:#64748b;margin-top:2px;white-space:nowrap}
     .candidate-profit.pos{color:#15803d}.candidate-profit.neg{color:#dc2626}
+    .candidate-percent{font-size:9px;color:#64748b;margin-left:3px}
+    .price-choice.recommended,.cost15.recommended,.cost3.recommended{box-shadow:inset 0 -3px 0 #22c55e}
+    .price-choice.selected.recommended{box-shadow:inset 0 0 0 2px #60a5fa,inset 0 -4px 0 #22c55e}
+    .candidate-good{font-size:9px;color:#15803d;font-weight:900;margin-left:3px;white-space:nowrap}
     .supplier-x1 .cell-input{height:25px;padding-top:3px;padding-bottom:1px}
     .supplier-profit{position:absolute;right:7px;bottom:2px;font-size:10px;color:#64748b;pointer-events:none}
     .supplier-profit.pos{color:#15803d}.supplier-profit.neg{color:#dc2626}
@@ -140,7 +144,7 @@
         <div class="summary">
           <span id="countText">Đang tải…</span>
           <span>•</span>
-          <span>Rời ô hoặc Enter = tự lưu</span>
+          <span>Rời ô hoặc Enter = tự lưu · xanh dương = đang bán · gạch xanh = mức hợp lý theo Lãi chuẩn %</span>
         </div>
 
         <div class="sheet-wrap">
@@ -467,33 +471,55 @@
     function updateDerived(row,item){
       const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
+      const standard=num(row.querySelector('[data-field="standard_profit_percent"]')?.value);
       const basis=supplier===null?'auto':(item.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1');
       const sale=selectedSalePrice(cost,supplier,basis);
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
       row.querySelector('.sale-price').textContent=pretty(sale);
 
-      const setProfitText=(el,value)=>{
-        el.textContent=value===null?'':('lãi '+(value>0?'+':'')+pretty(value));
-        el.classList.toggle('pos',value>0);
-        el.classList.toggle('neg',value<0);
+      const profitPct=value=>value===null||cost===null||cost===0?null:(value-cost)/cost*100;
+      const formatCandidate=(profit,price)=>{
+        if(profit===null)return '';
+        const pct=profitPct(price);
+        return 'lãi '+(profit>0?'+':'')+pretty(profit)+(pct===null?'':' · '+pretty(pct)+'%');
       };
+      const setProfitText=(el,profit,price)=>{
+        el.textContent=formatCandidate(profit,price);
+        el.classList.toggle('pos',profit>0);
+        el.classList.toggle('neg',profit<0);
+      };
+
       const supplierProfit=supplier===null||cost===null?null:supplier-cost;
-      setProfitText(row.querySelector('.supplier-profit'),supplierProfit);
+      setProfitText(row.querySelector('.supplier-profit'),supplierProfit,supplier);
 
       const supplier15=supplier===null?null:Math.ceil(supplier*1.015);
       row.querySelector('.supplier15 .candidate-price').textContent=pretty(supplier15);
-      setProfitText(row.querySelector('.supplier15 .candidate-profit'),supplier15===null||cost===null?null:supplier15-cost);
+      setProfitText(row.querySelector('.supplier15 .candidate-profit'),supplier15===null||cost===null?null:supplier15-cost,supplier15);
 
       const cost15=cost===null?null:Math.ceil(cost*1.015);
       row.querySelector('.cost15 .candidate-price').textContent=pretty(cost15);
-      setProfitText(row.querySelector('.cost15 .candidate-profit'),cost15===null||cost===null?null:cost15-cost);
+      setProfitText(row.querySelector('.cost15 .candidate-profit'),cost15===null||cost===null?null:cost15-cost,cost15);
 
       const cost3=cost===null?null:Math.ceil(cost*1.03);
       row.querySelector('.cost3 .candidate-price').textContent=pretty(cost3);
-      setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost);
+      setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost,cost3);
 
       updateChoiceState(row,item);
+
+      const candidates=[
+        {cell:row.querySelector('.supplier-x1'),price:supplier},
+        {cell:row.querySelector('.supplier15'),price:supplier15},
+        {cell:row.querySelector('.cost15'),price:cost15},
+        {cell:row.querySelector('.cost3'),price:cost3}
+      ];
+      for(const x of candidates)x.cell?.classList.remove('recommended');
+      if(standard!==null&&cost!==null&&cost>0){
+        const eligible=candidates
+          .filter(x=>x.cell&&x.price!==null&&profitPct(x.price)!==null&&profitPct(x.price)>=standard)
+          .sort((a,b)=>a.price-b.price);
+        if(eligible[0])eligible[0].cell.classList.add('recommended');
+      }
       const p=row.querySelector('.profit');
       p.innerHTML=profit===null?'':`${pretty(profit)}<span class="subpct">${pretty(pct)}%</span>`;
       p.classList.toggle('neg',profit!==null&&profit<0);
@@ -727,7 +753,7 @@
       const row=e.target.closest('tr');if(!row)return;
       if(e.target.matches('.cell-input')){
         row.dataset.dirty='1';
-        if(['cost','supplier_price'].includes(e.target.dataset.field)){
+        if(['cost','supplier_price','standard_profit_percent'].includes(e.target.dataset.field)){
           const item=items[Number(row.dataset.index)];
           if(e.target.dataset.field==='supplier_price'&&num(e.target.value)===null)item.sale_price_basis='auto';
           updateDerived(row,item);
