@@ -263,18 +263,18 @@
   </dialog>
 
   <dialog id="productDialog">
-    <form id="productForm" method="dialog">
+    <form id="productForm" method="dialog" autocomplete="off">
       <div class="dialog-head"><h3>Thêm sản phẩm</h3><button class="btn dialog-close" type="button" data-dialog="productDialog">×</button></div>
       <div class="dialog-body">
         <div class="form-grid">
-          <div class="field wide"><label>Tên sản phẩm</label><input id="newName" required></div>
-          <div class="field"><label>Nguồn</label><select id="newSource" required></select></div>
-          <div class="field"><label>Giá vốn</label><input id="newCost" inputmode="decimal"></div>
-          <div class="field"><label>NPP ×1</label><input id="newSupplier" inputmode="decimal"></div>
-          <div class="field"><label>Lãi chuẩn %</label><input id="newStandard" inputmode="decimal"></div>
-          <div class="field"><label>Số lượng</label><input id="newUnits" inputmode="decimal"></div>
-          <div class="field"><label>QC / đơn vị lẻ</label><input id="newRetailUnit" placeholder="chai, gói, hộp…"></div>
-          <div class="field"><label>Giá lẻ</label><input value="Tự tính = Giá bán / SL" disabled></div>
+          <div class="field wide"><label>Tên sản phẩm</label><input id="newName" required autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label>Nguồn</label><select id="newSource" required autocomplete="off"></select></div>
+          <div class="field"><label>Giá vốn</label><input id="newCost" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label>NPP ×1</label><input id="newSupplier" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label>Lãi chuẩn %</label><input id="newStandard" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label>Số lượng</label><input id="newUnits" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label>QC / đơn vị lẻ</label><input id="newRetailUnit" placeholder="chai, gói, hộp…" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label>Giá lẻ</label><input id="newRetailPrice" inputmode="decimal" autocomplete="off" placeholder="Tự tính nếu để trống" data-mode="auto"></div>
         </div>
         <div id="productDialogMsg" class="msg"></div>
       </div>
@@ -538,7 +538,7 @@
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
           <td data-col="retail_unit"><input class="cell-input" data-field="retail_unit" value="${esc(item.retail_unit||'')}"></td>
-          <td data-col="retail_price" class="readonly retail-price-value"></td>
+          <td data-col="retail_price"><input class="cell-input num-input retail-price-input" data-field="retail_price_override" inputmode="decimal" autocomplete="off" value="${esc(plain(item.retail_price))}" data-mode="${item.retail_price_override===null||item.retail_price_override===undefined?'auto':'manual'}" title="${item.retail_price_override===null||item.retail_price_override===undefined?'Tự tính = Giá bán / SL':'Giá lẻ nhập tay'}"></td>
           <td data-col="h1" class="history-cell h1"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
           <td data-col="h2" class="history-cell h2"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
           <td data-col="admin_state"><select class="cell-select state-select ${stateClass}" data-field="admin_state">
@@ -628,9 +628,15 @@
       setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost,cost3);
 
       const units=num(row.querySelector('[data-field="units_per_carton"]')?.value);
-      const retail=sale===null||units===null||units<=0?null:Math.round((sale/units)*10)/10;
-      const retailEl=row.querySelector('.retail-price-value');
-      if(retailEl)retailEl.textContent=pretty(retail);
+      const autoRetail=sale===null||units===null||units<=0?null:Math.round((sale/units)*10)/10;
+      const retailInput=row.querySelector('[data-field="retail_price_override"]');
+      const override=num(item.retail_price_override);
+      const retail=override===null?autoRetail:override;
+      if(retailInput&&retailInput.dataset.editing!=='1'){
+        retailInput.value=plain(retail);
+        retailInput.dataset.mode=override===null?'auto':'manual';
+        retailInput.title=override===null?'Tự tính = Giá bán / SL':'Giá lẻ nhập tay';
+      }
       item.retail_price=retail;
 
       updateChoiceState(row,item);
@@ -678,10 +684,15 @@
       const numeric=['cost','supplier_price','standard_profit_percent','units_per_carton'];
       const item=items[Number(row.dataset.index)];
       const supplier=num(read('supplier_price'));
+      const retailInput=row.querySelector('[data-field="retail_price_override"]');
+      const retailRaw=retailInput?.value?.trim()??'';
+      const retailOverride=retailInput?.dataset.mode==='manual'?num(retailRaw):null;
+      if(retailInput?.dataset.mode==='manual'&&retailRaw!==''&&retailOverride===null)throw new Error('Giá lẻ không hợp lệ');
       const payload={
         product_code:row.dataset.code,
         name,
         retail_unit:read('retail_unit'),
+        retail_price_override:retailOverride,
         admin_state:read('admin_state'),
         sale_price_basis:supplier===null?'auto':(item?.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1')
       };
@@ -719,9 +730,12 @@
         item.supplier_price=payload.supplier_price;
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;
+        item.retail_price_override=result?.retail_price_override??payload.retail_price_override;
         item.retail_price=result?.retail_price??(
-          item.price!==null&&payload.units_per_carton!==null&&payload.units_per_carton>0
-            ?Math.round((item.price/payload.units_per_carton)*10)/10:null
+          item.retail_price_override!==null&&item.retail_price_override!==undefined
+            ?item.retail_price_override
+            :(item.price!==null&&payload.units_per_carton!==null&&payload.units_per_carton>0
+              ?Math.round((item.price/payload.units_per_carton)*10)/10:null)
         );
         item.admin_state=payload.admin_state;
         if(oldCost!==null&&!same(oldCost,payload.cost)){
@@ -807,7 +821,8 @@
         await rpc('taphoa_admin_create_product',{p_product:{
           name,source_key:source,cost:parse('newCost'),supplier_price:parse('newSupplier'),
           standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
-          retail_unit:$('newRetailUnit').value.trim()
+          retail_unit:$('newRetailUnit').value.trim(),
+          retail_price_override:$('newRetailPrice').dataset.mode==='manual'?parse('newRetailPrice'):null
         }});
         $('productDialog').close();$('productForm').reset();selectedSource=source;await loadPage(true);
       }catch(error){$('productDialogMsg').textContent=error?.message||'Không thêm được sản phẩm';$('productDialogMsg').className='msg error';}
@@ -879,8 +894,35 @@
         if(!$('supplierFeedbackBody').querySelector('tr'))$('supplierFeedbackEmpty').classList.remove('hidden');
       }catch(error){alert(error?.message||'Không xóa được');}
     });
-    $('addProductBtn').addEventListener('click',()=>{fillProductSources();$('productDialogMsg').textContent='';$('productDialog').showModal();setTimeout(()=>{$('newName').focus();$('newName').select()},0);});
+    function updateNewRetailPreview(){
+      const input=$('newRetailPrice');
+      if(!input||input.dataset.mode==='manual')return;
+      const cost=num($('newCost').value);
+      const supplier=num($('newSupplier').value);
+      const units=num($('newUnits').value);
+      const source=$('newSource').value;
+      const sale=selectedSalePrice(cost,supplier,supplier===null?'auto':'supplier_1',source,null);
+      const retail=sale===null||units===null||units<=0?null:Math.round((sale/units)*10)/10;
+      input.value=plain(retail);
+      input.title='Tự tính = Giá bán / SL';
+    }
+
+    $('addProductBtn').addEventListener('click',()=>{
+      fillProductSources();$('productDialogMsg').textContent='';
+      $('productForm').reset();
+      $('newRetailPrice').dataset.mode='auto';
+      updateNewRetailPreview();
+      $('productDialog').showModal();
+      setTimeout(()=>{$('newName').focus();$('newName').select()},0);
+    });
     $('productForm').addEventListener('submit',e=>{e.preventDefault();submitProduct();});
+    ['newCost','newSupplier','newUnits','newSource'].forEach(id=>{
+      $(id).addEventListener(id==='newSource'?'change':'input',updateNewRetailPreview);
+    });
+    $('newRetailPrice').addEventListener('input',e=>{
+      e.target.dataset.mode=e.target.value.trim()===''?'auto':'manual';
+      if(e.target.dataset.mode==='auto')updateNewRetailPreview();
+    });
     document.addEventListener('click',e=>{const b=e.target.closest('.dialog-close');if(b){const d=$(b.dataset.dialog);if(d?.open)d.close();}});
     $('historyClose').addEventListener('click',()=>$('historyDialog').close());
     $('resetColumnsBtn').addEventListener('click',()=>{
@@ -923,7 +965,10 @@
     $('nextBtn').addEventListener('click',()=>{if(offset+PAGE_SIZE<total){offset+=PAGE_SIZE;loadPage(false)}});
 
     $('productBody').addEventListener('focusin',e=>{
-      if(e.target.matches('.cell-input'))e.target.select();
+      if(e.target.matches('.cell-input')){
+        e.target.select();
+        if(e.target.dataset.field==='retail_price_override')e.target.dataset.editing='1';
+      }
     });
     $('productBody').addEventListener('click',e=>{
       if(e.target.matches('.cell-input'))e.target.select();
@@ -949,7 +994,10 @@
       const row=e.target.closest('tr');if(!row)return;
       if(e.target.matches('.cell-input')){
         row.dataset.dirty='1';
-        if(['cost','supplier_price'].includes(e.target.dataset.field)){
+        if(e.target.dataset.field==='retail_price_override'){
+          e.target.dataset.mode=e.target.value.trim()===''?'auto':'manual';
+        }
+        if(['cost','supplier_price','units_per_carton'].includes(e.target.dataset.field)){
           const item=items[Number(row.dataset.index)];
           if(e.target.dataset.field==='supplier_price'&&num(e.target.value)===null)item.sale_price_basis='auto';
           updateDerived(row,item);
@@ -964,7 +1012,9 @@
       }
     });
     $('productBody').addEventListener('focusout',e=>{
-      const row=e.target.closest('tr');if(row&&e.target.matches('.cell-input'))queueSave(row);
+      const row=e.target.closest('tr');
+      if(e.target.dataset.field==='retail_price_override')e.target.dataset.editing='0';
+      if(row&&e.target.matches('.cell-input'))queueSave(row);
     });
     $('productBody').addEventListener('keydown',e=>{
       if(e.key==='Enter'&&e.target.matches('.cell-input')){e.preventDefault();e.target.blur();}
