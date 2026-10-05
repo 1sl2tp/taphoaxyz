@@ -175,7 +175,7 @@
         <div class="summary">
           <span id="countText">Đang tải…</span>
           <span>•</span>
-          <span>Rời ô hoặc Enter = tự lưu · xanh dương = mức đang dùng làm Giá bán</span>
+          <span>Rời ô hoặc Enter = tự lưu · xanh dương = bậc NPP hệ thống đang dùng</span>
         </div>
 
         <div class="sheet-wrap">
@@ -187,6 +187,7 @@
                 <th data-col="price">Giá bán · Lãi</th>
                 <th data-col="supplier_price">NPP ×1</th>
                 <th data-col="supplier15">NPP +1,5%</th>
+                <th data-col="supplier3">NPP +3%</th>
                 <th data-col="cost15">Vốn +1,5%</th>
                 <th data-col="cost3">Vốn +3%</th>
                 <th data-col="standard_profit_percent">Lãi chuẩn %</th>
@@ -227,6 +228,7 @@
                 <th style="width:110px">Giá bán · Lãi</th>
                 <th style="width:82px">NPP ×1</th>
                 <th style="width:86px">NPP +1,5%</th>
+                <th style="width:82px">NPP +3%</th>
                 <th style="width:86px">Vốn +1,5%</th>
                 <th style="width:82px">Vốn +3%</th>
               </tr>
@@ -317,7 +319,7 @@
     let selectedSource='';
     let sourceDialogMode='create';
     let saveQueues=new Map();
-    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v7';
+    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v8';
     const COLUMN_DEFS=[
       {id:'name',label:'Tên sản phẩm',width:280,min:150},
       {id:'cost',label:'Giá vốn',width:82,min:58},
@@ -326,6 +328,7 @@
       {id:'h2',label:'Vốn -2 · ngày · Δ',width:128,min:105},
       {id:'supplier_price',label:'NPP ×1',width:82,min:58},
       {id:'supplier15',label:'NPP +1,5%',width:86,min:62},
+      {id:'supplier3',label:'NPP +3%',width:82,min:58},
       {id:'cost15',label:'Vốn +1,5%',width:86,min:62},
       {id:'cost3',label:'Vốn +3%',width:82,min:58},
       {id:'standard_profit_percent',label:'Lãi chuẩn %',width:82,min:65},
@@ -493,6 +496,7 @@
         const pct=profit===null||!cost?null:profit/cost*100;
         const npp=num(item.supplier_price);
         const npp15=npp===null?null:Math.ceil(npp*1.015);
+        const npp3=npp===null?null:Math.ceil(npp*1.03);
         const cost15=cost===null?null:Math.ceil(cost*1.015);
         const cost3=cost===null?null:Math.ceil(cost*1.03);
         return `<tr>
@@ -502,6 +506,7 @@
           <td class="compare-num compare-sale">${esc(pretty(sale))}${profit===null?'':`<span class="compare-profit">lãi ${profit>0?'+':''}${esc(pretty(profit))} · ${esc(pretty(pct))}%</span>`}</td>
           <td class="compare-num">${esc(pretty(npp))}</td>
           <td class="compare-num">${esc(pretty(npp15))}</td>
+          <td class="compare-num">${esc(pretty(npp3))}</td>
           <td class="compare-num">${esc(pretty(cost15))}</td>
           <td class="compare-num">${esc(pretty(cost3))}</td>
         </tr>`;
@@ -552,11 +557,12 @@
             <span class="cost-current-meta"></span>
           </td>
           <td data-col="price" class="readonly sale-price"><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
-          <td data-col="supplier_price" class="price-choice supplier-x1" data-basis="supplier_1">
+          <td data-col="supplier_price" class="supplier-x1">
             <input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}">
             <span class="supplier-profit"></span>
           </td>
           <td data-col="supplier15" class="readonly supplier15 price-choice" data-basis="supplier_1_5"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
+          <td data-col="supplier3" class="readonly supplier3 price-choice" data-basis="supplier_3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="cost15" class="readonly cost15"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="cost3" class="readonly cost3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
@@ -589,9 +595,7 @@
       return Math.round((g*g+a*a+b*b)/den);
     }
 
-    function selectedSalePrice(cost,supplier,basis,sourceKey,oldProfit){
-      if(supplier!==null&&basis==='supplier_1_5')return Math.ceil(supplier*1.015);
-      if(supplier!==null)return supplier;
+    function costTargetSale(cost,sourceKey,oldProfit){
       if(cost===null)return null;
       if(sourceKey==='thuoc-la')return cost+1;
       if(['hang-thuong','sua','hang-u','sheet-1150410221'].includes(sourceKey)){
@@ -601,12 +605,32 @@
       return cost;
     }
 
+    function autoSaleBasis(cost,supplier,sourceKey,oldProfit){
+      const target=costTargetSale(cost,sourceKey,oldProfit);
+      if(supplier===null)return 'cost';
+      if(target===null)return 'supplier_1_5';
+      if(supplier<=target)return 'cost';
+      const supplier15=Math.ceil(supplier*1.015);
+      const cost3=cost===null?null:Math.ceil(cost*1.03);
+      return cost3!==null&&supplier15<cost3?'supplier_3':'supplier_1_5';
+    }
+
+    function selectedSalePrice(cost,supplier,basis,sourceKey,oldProfit){
+      const target=costTargetSale(cost,sourceKey,oldProfit);
+      const autoBasis=autoSaleBasis(cost,supplier,sourceKey,oldProfit);
+      if(autoBasis==='supplier_1_5')return Math.ceil(supplier*1.015);
+      if(autoBasis==='supplier_3')return Math.ceil(supplier*1.03);
+      return target;
+    }
+
     function updateChoiceState(row,item){
+      const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
-      const x1=row.querySelector('.supplier-x1');
+      const basis=autoSaleBasis(cost,supplier,item.source_key,item.legacy_profit_vnd);
+      item.sale_price_basis=basis;
       const x15=row.querySelector('.supplier15');
-      const basis=supplier===null?'auto':(item.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1');
-      [x1,x15].forEach(cell=>{
+      const x3=row.querySelector('.supplier3');
+      [x15,x3].forEach(cell=>{
         cell.classList.toggle('disabled',supplier===null);
         cell.classList.toggle('selected',supplier!==null&&cell.dataset.basis===basis);
       });
@@ -615,7 +639,8 @@
     function updateDerived(row,item){
       const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
-      const basis=supplier===null?'auto':(item.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1');
+      const basis=autoSaleBasis(cost,supplier,item.source_key,item.legacy_profit_vnd);
+      item.sale_price_basis=basis;
       const sale=selectedSalePrice(cost,supplier,basis,item.source_key,item.legacy_profit_vnd);
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
@@ -642,6 +667,10 @@
       const supplier15=supplier===null?null:Math.ceil(supplier*1.015);
       row.querySelector('.supplier15 .candidate-price').textContent=pretty(supplier15);
       setProfitText(row.querySelector('.supplier15 .candidate-profit'),supplier15===null||cost===null?null:supplier15-cost,supplier15);
+
+      const supplier3=supplier===null?null:Math.ceil(supplier*1.03);
+      row.querySelector('.supplier3 .candidate-price').textContent=pretty(supplier3);
+      setProfitText(row.querySelector('.supplier3 .candidate-profit'),supplier3===null||cost===null?null:supplier3-cost,supplier3);
 
       const cost15=cost===null?null:Math.ceil(cost*1.015);
       row.querySelector('.cost15 .candidate-price').textContent=pretty(cost15);
@@ -718,7 +747,9 @@
         retail_unit:read('retail_unit'),
         retail_price_override:retailOverride,
         admin_state:read('admin_state'),
-        sale_price_basis:supplier===null?'auto':(item?.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1')
+        sale_price_basis:autoSaleBasis(
+          num(read('cost')),supplier,item?.source_key,item?.legacy_profit_vnd
+        )
       };
       for(const key of numeric){
         const raw=read(key);const value=num(raw);
@@ -1034,20 +1065,7 @@
     $('productBody').addEventListener('click',e=>{
       if(e.target.matches('.cell-input'))e.target.select();
       const row=e.target.closest('tr');if(!row)return;
-      const choice=e.target.closest('.price-choice');
-      if(choice){
-        const item=items[Number(row.dataset.index)];
-        const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
-        if(item&&supplier!==null){
-          const nextBasis=choice.dataset.basis;
-          if(nextBasis&&item.sale_price_basis!==nextBasis){
-            item.sale_price_basis=nextBasis;
-            row.dataset.dirty='1';
-            updateDerived(row,item);
-            queueSave(row);
-          }else updateChoiceState(row,item);
-        }
-      }
+      // NPP tier is selected automatically from the profit-protection rule.
       if(e.target.closest('.history-btn'))showHistory(row);
       if(e.target.closest('.delete-btn'))deleteProduct(row);
     });
@@ -1060,7 +1078,6 @@
         }
         if(['cost','supplier_price','units_per_carton'].includes(e.target.dataset.field)){
           const item=items[Number(row.dataset.index)];
-          if(e.target.dataset.field==='supplier_price'&&num(e.target.value)===null)item.sale_price_basis='auto';
           updateDerived(row,item);
         }
       }
