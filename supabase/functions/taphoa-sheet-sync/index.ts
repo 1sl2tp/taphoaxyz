@@ -137,18 +137,22 @@ async function batchUpdate(requests:Record<string,unknown>[]){
   await googleFetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({requests})});
 }
 async function ensureTrackingColumns(meta:SheetMeta){
+  let trackingLayoutChanged=false;
   if(meta.columnCount<TRACKING_COLUMN_COUNT){
     await batchUpdate([{appendDimension:{sheetId:meta.sheetId,dimension:"COLUMNS",length:TRACKING_COLUMN_COUNT-meta.columnCount}}]);
     meta.columnCount=TRACKING_COLUMN_COUNT;
+    trackingLayoutChanged=true;
   }
   const rows=await readManagerTab(meta.title);const header=rows[0]||[];
   if(clean(header[TRACKING_ID_INDEX])!==TRACKING_ID_HEADER||clean(header[TRACKING_HASH_INDEX])!==TRACKING_HASH_HEADER){
     await writeRanges([{range:`${quotedSheet(meta.title)}!${TRACKING_ID_COL}1:${TRACKING_HASH_COL}1`,values:[[TRACKING_ID_HEADER,TRACKING_HASH_HEADER]]}]);
+    trackingLayoutChanged=true;
   }
-  await batchUpdate([{updateDimensionProperties:{range:{sheetId:meta.sheetId,dimension:"COLUMNS",startIndex:50,endIndex:52},properties:{hiddenByUser:true},fields:"hiddenByUser"}}]);
+  if(trackingLayoutChanged){
+    await batchUpdate([{updateDimensionProperties:{range:{sheetId:meta.sheetId,dimension:"COLUMNS",startIndex:50,endIndex:52},properties:{hiddenByUser:true},fields:"hiddenByUser"}}]);
+  }
   return rows;
 }
-
 type RetailLayout={unitsIndex:number;retailIndex:number};
 function normalizeHeader(v:unknown){return clean(v).toLocaleLowerCase("vi-VN").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/\s+/g," ").trim();}
 function managerRetailLayout(header:unknown[]):RetailLayout{
