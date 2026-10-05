@@ -103,3 +103,10 @@ test('avoids no-op source row updates',()=>{
   assert.match(worker,/lastSeenMs<Date\.now\(\)-24\*60\*60\*1000/);
   assert.match(worker,/if\(source\.active\|\|source\.sync_status!==status\)\{/);
 });
+
+test('only upserts changed product sheet state',()=>{
+  assert.match(worker,/const stateChanged=hashChanged\|\|rowMoved\|\|sourceMoved/);
+  assert.match(worker,/if\(stateChanged\)\{[\s\S]*stateUpserts\.push/);
+  const inbound=worker.slice(worker.indexOf('async function inboundScan'),worker.indexOf('async function synchronize'));
+  assert.equal((inbound.match(/stateUpserts\.push/g)||[]).length,1);
+});
