@@ -160,18 +160,18 @@
 
   <dialog id="sourceDialog">
     <form id="sourceForm" method="dialog">
-      <div class="dialog-head"><h3 id="sourceDialogTitle">Thêm nguồn</h3><button class="btn" value="cancel">×</button></div>
+      <div class="dialog-head"><h3 id="sourceDialogTitle">Thêm nguồn</h3><button class="btn dialog-close" type="button" data-dialog="sourceDialog">×</button></div>
       <div class="dialog-body">
         <div class="field"><label>Tên nguồn</label><input id="sourceNameInput" required></div>
         <div id="sourceDialogMsg" class="msg"></div>
       </div>
-      <div class="dialog-actions"><button class="btn" value="cancel">Hủy</button><button id="sourceSubmitBtn" class="btn primary" value="default">Lưu</button></div>
+      <div class="dialog-actions"><button class="btn dialog-close" type="button" data-dialog="sourceDialog">Hủy</button><button id="sourceSubmitBtn" class="btn primary" type="submit">Lưu</button></div>
     </form>
   </dialog>
 
   <dialog id="productDialog">
     <form id="productForm" method="dialog">
-      <div class="dialog-head"><h3>Thêm sản phẩm</h3><button class="btn" value="cancel">×</button></div>
+      <div class="dialog-head"><h3>Thêm sản phẩm</h3><button class="btn dialog-close" type="button" data-dialog="productDialog">×</button></div>
       <div class="dialog-body">
         <div class="form-grid">
           <div class="field wide"><label>Tên sản phẩm</label><input id="newName" required></div>
@@ -187,7 +187,7 @@
         </div>
         <div id="productDialogMsg" class="msg"></div>
       </div>
-      <div class="dialog-actions"><button class="btn" value="cancel">Hủy</button><button id="productSubmitBtn" class="btn primary" value="default">Thêm</button></div>
+      <div class="dialog-actions"><button class="btn dialog-close" type="button" data-dialog="productDialog">Hủy</button><button id="productSubmitBtn" class="btn primary" type="submit">Thêm</button></div>
     </form>
   </dialog>
 
@@ -447,6 +447,7 @@
     $('sourceForm').addEventListener('submit',e=>{e.preventDefault();submitSource();});
     $('addProductBtn').addEventListener('click',()=>{fillProductSources();$('productDialogMsg').textContent='';$('productDialog').showModal();setTimeout(()=>{$('newName').focus();$('newName').select()},0);});
     $('productForm').addEventListener('submit',e=>{e.preventDefault();submitProduct();});
+    document.addEventListener('click',e=>{const b=e.target.closest('.dialog-close');if(b){const d=$(b.dataset.dialog);if(d?.open)d.close();}});
     $('historyClose').addEventListener('click',()=>$('historyDialog').close());
     $('prevBtn').addEventListener('click',()=>{offset=Math.max(0,offset-PAGE_SIZE);loadPage(false)});
     $('nextBtn').addEventListener('click',()=>{if(offset+PAGE_SIZE<total){offset+=PAGE_SIZE;loadPage(false)}});
