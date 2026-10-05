@@ -140,9 +140,14 @@
                 const row = input.closest('.cart-compact-grid');
                 const totalEl = row?.querySelector('.cart-total');
                 if (totalEl) totalEl.innerText = (qty * meta.price).toLocaleString('vi-VN');
+                refreshCartTotalsOnly();
+            } else {
+                // Product-card quantity edits mutate cart data too. Re-render only
+                // the cart list so newly typed product lines appear immediately;
+                // product cards themselves are left untouched, so there is no
+                // thumbnail/input flicker or focus loss.
+                renderCartUI();
             }
-
-            refreshCartTotalsOnly();
         }
 
         function commitQtyEditor(input) {
@@ -166,9 +171,10 @@
                 const row = input.closest('.cart-compact-grid');
                 const totalEl = row?.querySelector('.cart-total');
                 if (totalEl) totalEl.innerText = (qty * meta.price).toLocaleString('vi-VN');
+                refreshCartTotalsOnly();
+            } else {
+                renderCartUI();
             }
-
-            refreshCartTotalsOnly();
         }
 
         function updateCart(maSp, tenSp, giaBan, change) {
