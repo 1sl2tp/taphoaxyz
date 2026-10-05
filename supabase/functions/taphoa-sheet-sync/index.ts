@@ -21,7 +21,7 @@ const admin=createClient(SUPABASE_URL,SERVICE_ROLE_KEY,{auth:{persistSession:fal
 let googleJwt:JWT|null=null;
 
 type SheetMeta={sheetId:number;title:string;index:number;hidden:boolean;columnCount:number};
-type SourceRow={source_key:string;name:string;sort_order:number;active:boolean;management_sheet_id:number|null;sync_status:string;is_core:boolean};
+type SourceRow={source_key:string;name:string;sort_order:number;active:boolean;management_sheet_id:number|null;sync_status:string;is_core:boolean;last_sheet_seen_at:string|null};
 type ProductRow={
   product_code:string;source_key:string;source_row:number;product_name:string;input_price_vnd:number|null;
   input_price_basis:"carton";expected_profit_percent:null;applied_profit_vnd:number;sale_price_vnd:number|null;
@@ -330,7 +330,7 @@ async function authorized(req:Request){
 async function readSyncState(){const {data,error}=await admin.from("taphoa_sheet_sync_state").select("*").eq("id",1).single();if(error)throw error;return data;}
 async function setSyncState(patch:Record<string,unknown>){const {error}=await admin.from("taphoa_sheet_sync_state").update({...patch,updated_at:new Date().toISOString()}).eq("id",1);if(error)throw error;}
 async function loadSources():Promise<SourceRow[]>{
-  const {data,error}=await admin.from("taphoa_sources").select("source_key,name,sort_order,active,management_sheet_id,sync_status,is_core").order("sort_order");if(error)throw error;return (data||[]) as SourceRow[];
+  const {data,error}=await admin.from("taphoa_sources").select("source_key,name,sort_order,active,management_sheet_id,sync_status,is_core,last_sheet_seen_at").order("sort_order");if(error)throw error;return (data||[]) as SourceRow[];
 }
 
 async function reconcileSources(meta:SheetMeta[]){
@@ -340,8 +340,13 @@ async function reconcileSources(meta:SheetMeta[]){
   for(const sheet of meta.filter(isEligibleTab)){
     const existing=bySheet.get(sheet.sheetId);
     if(existing){
-      if(existing.name!==sheet.title||existing.sort_order!==sheet.index+1||!existing.active||existing.sync_status!=="active")changed=true;
-      const {error}=await admin.from("taphoa_sources").update({name:sheet.title,sort_order:sheet.index+1,active:true,sync_status:"active",deleted_at:null,last_sheet_seen_at:now,updated_at:now}).eq("source_key",existing.source_key);if(error)throw error;
+      const metadataChanged=existing.name!==sheet.title||existing.sort_order!==sheet.index+1||!existing.active||existing.sync_status!=="active";
+      const lastSeenMs=Date.parse(String(existing.last_sheet_seen_at||""));
+      const seenStale=!Number.isFinite(lastSeenMs)||lastSeenMs<Date.now()-24*60*60*1000;
+      if(metadataChanged||seenStale){
+        const {error}=await admin.from("taphoa_sources").update({name:sheet.title,sort_order:sheet.index+1,active:true,sync_status:"active",deleted_at:null,last_sheet_seen_at:now,updated_at:now}).eq("source_key",existing.source_key);if(error)throw error;
+      }
+      if(metadataChanged)changed=true;
     }else{
       const key=`sheet-${sheet.sheetId}`;
       const {error}=await admin.from("taphoa_sources").insert({source_key:key,name:sheet.title,sort_order:sheet.index+1,active:true,management_sheet_id:sheet.sheetId,sync_status:"active",is_core:false,last_sheet_seen_at:now,updated_at:now});
@@ -352,8 +357,10 @@ async function reconcileSources(meta:SheetMeta[]){
   for(const source of sources){
     if(source.management_sheet_id===null||liveIds.has(Number(source.management_sheet_id)))continue;
     const status=(source.is_core||CORE_KEYS.has(source.source_key))?"error":"deleted";
-    if(source.active||source.sync_status!==status)changed=true;
-    const {error}=await admin.from("taphoa_sources").update({active:false,sync_status:status,deleted_at:now,updated_at:now}).eq("source_key",source.source_key);if(error)throw error;
+    if(source.active||source.sync_status!==status){
+      changed=true;
+      const {error}=await admin.from("taphoa_sources").update({active:false,sync_status:status,deleted_at:now,updated_at:now}).eq("source_key",source.source_key);if(error)throw error;
+    }
   }
   if(changed){const {error}=await admin.from("taphoa_revisions").update({revision:(await currentProductRevision())+1,updated_at:now}).eq("domain","products");if(error)throw error;}
 }
