@@ -110,3 +110,17 @@ test('only upserts changed product sheet state',()=>{
   const inbound=worker.slice(worker.indexOf('async function inboundScan'),worker.indexOf('async function synchronize'));
   assert.equal((inbound.match(/stateUpserts\.push/g)||[]).length,1);
 });
+
+
+test('coalesces webhook heartbeat and gates modifiedTime before sync state writes',()=>{
+  assert.match(worker,/WATCH_HEARTBEAT_MS=60\*60_000/);
+  assert.match(worker,/heartbeatDue\|\|resourceStateChanged/);
+  assert.match(worker,/lastNotifiedMs<nowMs-WATCH_HEARTBEAT_MS/);
+  const syncBlock=worker.slice(worker.indexOf('async function synchronize'),worker.indexOf('Deno.serve'));
+  const preflight=syncBlock.indexOf('observedModifiedTime=await driveModifiedTime()');
+  const lock=syncBlock.indexOf('taphoa_acquire_sheet_sync_lock');
+  const running=syncBlock.indexOf('last_sync_status:"running"');
+  assert.ok(preflight>=0&&lock>preflight,'modifiedTime preflight must happen before the lock');
+  assert.ok(running>lock,'running status must only be written after a real changed version wins the lock');
+  assert.doesNotMatch(syncBlock,/last_sync_status:"success",last_success_at:new Date\(\)\.toISOString\(\),last_error:""\}\);\s*return \{ok:true,changed:false/);
+});
