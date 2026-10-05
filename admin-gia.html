@@ -33,7 +33,7 @@
     .summary{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--grid);font-size:12px;color:var(--muted)}
     .sheet-wrap{overflow:auto;max-height:calc(100vh - 215px);background:#fff}
     table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px;table-layout:fixed}
-    th,td{border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);padding:0;height:34px}
+    th,td{border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);padding:0;height:40px}
     th{position:sticky;top:0;z-index:4;background:var(--head);padding:7px 6px;text-align:center;color:#475569;font-size:11px;font-weight:800;white-space:nowrap;user-select:none}
     .col-resizer{position:absolute;right:-3px;top:0;width:7px;height:100%;cursor:col-resize;z-index:8;touch-action:none}
     .col-resizer:hover,.col-resizer.active{background:rgba(37,99,235,.35)}
@@ -42,7 +42,7 @@
     tr.saving td:first-child{box-shadow:inset 3px 0 0 #f59e0b}
     tr.saved td:first-child{box-shadow:inset 3px 0 0 #22c55e}
     tr.error td:first-child{box-shadow:inset 3px 0 0 #ef4444}
-    .cell-input,.cell-select{width:100%;height:33px;border:0;border-radius:0;background:transparent;outline:0;padding:5px 7px;color:inherit}
+    .cell-input,.cell-select{width:100%;height:39px;border:0;border-radius:0;background:transparent;outline:0;padding:5px 7px;color:inherit}
     .cell-input:focus,.cell-select:focus{background:#fff7cc;box-shadow:inset 0 0 0 2px #60a5fa}
     .cell-input[readonly]{background:#f8fafc;color:#475569}
     .basis-select{font-size:11px;font-weight:700;color:#334155}
@@ -50,11 +50,18 @@
     .num-input{text-align:right;font-variant-numeric:tabular-nums}
     .w-price{width:82px;min-width:82px}.w-small{width:68px;min-width:68px}.w-qc{width:76px;min-width:76px}.w-state{width:112px;min-width:112px}
     .readonly{padding:0 7px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-    .price-choice{cursor:pointer;transition:background .12s ease,box-shadow .12s ease,color .12s ease}
+    .price-choice{cursor:pointer;transition:background .12s ease,box-shadow .12s ease,color .12s ease;position:relative}
     .price-choice:hover{background:#eff6ff}
     .price-choice.selected{background:#dbeafe!important;color:#1d4ed8;font-weight:900;box-shadow:inset 0 0 0 2px #60a5fa}
     .price-choice.disabled{cursor:default;color:#94a3b8;background:#f8fafc}
     .price-choice.selected .cell-input{color:#1d4ed8;font-weight:900}
+    .candidate-wrap{height:39px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:2px 7px;line-height:1.05}
+    .candidate-price{font-variant-numeric:tabular-nums}
+    .candidate-profit{font-size:10px;color:#64748b;margin-top:2px;white-space:nowrap}
+    .candidate-profit.pos{color:#15803d}.candidate-profit.neg{color:#dc2626}
+    .supplier-x1 .cell-input{height:25px;padding-top:3px;padding-bottom:1px}
+    .supplier-profit{position:absolute;right:7px;bottom:2px;font-size:10px;color:#64748b;pointer-events:none}
+    .supplier-profit.pos{color:#15803d}.supplier-profit.neg{color:#dc2626}
     .profit{font-weight:800}.profit.neg{color:var(--red)}.subpct{font-size:10px;color:var(--muted);margin-left:3px}
     .history-cell{padding:0 7px;text-align:right;color:#64748b}
     .history-btn,.delete-btn{border:0;background:transparent;height:32px;padding:0 8px;font-weight:800;color:#475569}
@@ -409,10 +416,13 @@
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
           <td data-col="cost"><input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}"></td>
           <td data-col="price" class="readonly sale-price"></td>
-          <td data-col="supplier_price" class="price-choice supplier-x1" data-basis="supplier_1"><input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}"></td>
-          <td data-col="supplier15" class="readonly supplier15 price-choice" data-basis="supplier_1_5"></td>
-          <td data-col="cost15" class="readonly cost15"></td>
-          <td data-col="cost3" class="readonly cost3"></td>
+          <td data-col="supplier_price" class="price-choice supplier-x1" data-basis="supplier_1">
+            <input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}">
+            <span class="supplier-profit"></span>
+          </td>
+          <td data-col="supplier15" class="readonly supplier15 price-choice" data-basis="supplier_1_5"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
+          <td data-col="cost15" class="readonly cost15"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
+          <td data-col="cost3" class="readonly cost3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="profit" class="readonly profit"></td>
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
@@ -462,10 +472,28 @@
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
       row.querySelector('.sale-price').textContent=pretty(sale);
-      row.querySelector('.supplier15').textContent=supplier===null?'':pretty(Math.ceil(supplier*1.015));
+
+      const setProfitText=(el,value)=>{
+        el.textContent=value===null?'':('lãi '+(value>0?'+':'')+pretty(value));
+        el.classList.toggle('pos',value>0);
+        el.classList.toggle('neg',value<0);
+      };
+      const supplierProfit=supplier===null||cost===null?null:supplier-cost;
+      setProfitText(row.querySelector('.supplier-profit'),supplierProfit);
+
+      const supplier15=supplier===null?null:Math.ceil(supplier*1.015);
+      row.querySelector('.supplier15 .candidate-price').textContent=pretty(supplier15);
+      setProfitText(row.querySelector('.supplier15 .candidate-profit'),supplier15===null||cost===null?null:supplier15-cost);
+
+      const cost15=cost===null?null:Math.ceil(cost*1.015);
+      row.querySelector('.cost15 .candidate-price').textContent=pretty(cost15);
+      setProfitText(row.querySelector('.cost15 .candidate-profit'),cost15===null||cost===null?null:cost15-cost);
+
+      const cost3=cost===null?null:Math.ceil(cost*1.03);
+      row.querySelector('.cost3 .candidate-price').textContent=pretty(cost3);
+      setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost);
+
       updateChoiceState(row,item);
-      row.querySelector('.cost15').textContent=cost===null?'':pretty(Math.ceil(cost*1.015));
-      row.querySelector('.cost3').textContent=cost===null?'':pretty(Math.ceil(cost*1.03));
       const p=row.querySelector('.profit');
       p.innerHTML=profit===null?'':`${pretty(profit)}<span class="subpct">${pretty(pct)}%</span>`;
       p.classList.toggle('neg',profit!==null&&profit<0);
