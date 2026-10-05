@@ -24,20 +24,22 @@
     .login{max-width:420px;margin:10vh auto;padding:24px}
     .login h2{margin:0 0 6px}.login p{margin:0 0 18px;color:var(--muted)}
     .field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:12px;font-weight:800;color:#475569}
-    .field input,.field select,.tool input,.tool select,.price-input{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 11px;background:#fff;color:var(--text);outline:none}
-    .field input:focus,.tool input:focus,.tool select:focus,.price-input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+    .field input,.field select,.tool input,.tool select,.price-input,.name-input{border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:var(--text);outline:none}
+    .field input,.field select,.tool input,.tool select{width:100%;padding:10px 11px}
+    .field input:focus,.tool input:focus,.tool select:focus,.price-input:focus,.name-input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
     .msg{min-height:20px;font-size:13px;color:var(--muted)}.msg.error{color:var(--red)}.msg.ok{color:var(--green2)}
     .toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 220px auto;gap:10px;padding:14px;border-bottom:1px solid var(--line)}
     .tool{display:grid;gap:5px}.tool label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
     .summary{display:flex;gap:14px;align-items:center;padding:10px 14px;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}
     .table-wrap{overflow:auto;max-height:calc(100vh - 245px)}
-    table{width:100%;border-collapse:separate;border-spacing:0;min-width:860px}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:650px}
     th{position:sticky;top:0;z-index:2;background:#f8fafc;text-align:left;font-size:12px;color:#475569;padding:10px;border-bottom:1px solid var(--line)}
     td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:middle}
     tr:hover td{background:#fbfdff}
-    .code{font-weight:800;font-size:12px;color:#334155;white-space:nowrap}
-    .name{font-weight:700;min-width:260px}.source{font-size:12px;color:var(--muted);white-space:nowrap}
-    .price-input{min-width:120px;padding:8px 9px;text-align:right;font-weight:700}
+    .name{min-width:300px}
+    .name-input{width:100%;min-width:260px;padding:8px 10px;font-weight:700}
+    .price-cell{width:112px}
+    .price-input{width:96px;padding:8px 9px;text-align:right;font-weight:700}
     .profit{font-weight:800;text-align:right;white-space:nowrap}.profit.negative{color:var(--red)}
     .save-cell{width:92px;text-align:right}
     .row-save{border:0;background:var(--blue);color:#fff;border-radius:9px;padding:8px 11px;font-weight:800}
@@ -84,7 +86,7 @@
         <div class="toolbar">
           <div class="tool">
             <label>Tìm sản phẩm</label>
-            <input id="searchInput" placeholder="Mã hoặc tên sản phẩm…" autocomplete="off">
+            <input id="searchInput" placeholder="Tên sản phẩm…" autocomplete="off">
           </div>
           <div class="tool">
             <label>Nguồn</label>
@@ -106,9 +108,7 @@
           <table>
             <thead>
               <tr>
-                <th>Mã</th>
                 <th>Tên sản phẩm</th>
-                <th>Nguồn</th>
                 <th style="text-align:right">Giá vốn</th>
                 <th style="text-align:right">Giá bán</th>
                 <th style="text-align:right">Lãi</th>
@@ -222,11 +222,9 @@
       body.innerHTML=items.map((item,index)=>{
         const profit=(item.price===null||item.cost===null)?null:Number(item.price)-Number(item.cost);
         return `<tr data-index="${index}" data-code="${esc(item.product_code)}">
-          <td class="code">${esc(item.product_code)}</td>
-          <td class="name">${esc(item.product_name)}</td>
-          <td class="source">${esc(item.source_name||item.source_key)}</td>
-          <td><input class="price-input cost-input" inputmode="decimal" value="${esc(plain(item.cost))}" aria-label="Giá vốn ${esc(item.product_code)}"></td>
-          <td><input class="price-input sale-input" inputmode="decimal" value="${esc(plain(item.price))}" aria-label="Giá bán ${esc(item.product_code)}"></td>
+          <td class="name"><input class="name-input" value="${esc(item.product_name)}" aria-label="Tên sản phẩm"></td>
+          <td class="price-cell"><input class="price-input cost-input" inputmode="decimal" value="${esc(plain(item.cost))}" aria-label="Giá vốn"></td>
+          <td class="price-cell"><input class="price-input sale-input" inputmode="decimal" value="${esc(plain(item.price))}" aria-label="Giá bán"></td>
           <td class="profit ${profit!==null&&profit<0?'negative':''}">${pretty(profit)}</td>
           <td class="save-cell"><button class="row-save" type="button">Lưu</button><div class="row-status"></div></td>
         </tr>`;
@@ -248,18 +246,23 @@
       if(!item)return;
       const button=row.querySelector('.row-save');
       const status=row.querySelector('.row-status');
+      const name=row.querySelector('.name-input').value.trim();
       const costRaw=row.querySelector('.cost-input').value.trim();
       const priceRaw=row.querySelector('.sale-input').value.trim();
       const cost=costRaw===''?null:n(costRaw);
       const price=priceRaw===''?null:n(priceRaw);
+      if(!name){
+        status.textContent='Tên không được trống';status.style.color='#dc2626';return;
+      }
       if((costRaw!==''&&cost===null)||(priceRaw!==''&&price===null)){
         status.textContent='Giá không hợp lệ';status.style.color='#dc2626';return;
       }
       button.disabled=true;button.textContent='Đang lưu…';status.textContent='';
       try{
         const result=await rpc('taphoa_update_product_from_web',{
-          p_product:{product_code:item.product_code,cost,price}
+          p_product:{product_code:item.product_code,name,cost,price}
         });
+        item.product_name=result?.name??name;
         item.cost=result?.cost??cost;
         item.price=result?.price??price;
         const profit=(item.price===null||item.cost===null)?null:Number(item.price)-Number(item.cost);
@@ -301,7 +304,7 @@
       if(button)saveRow(button.closest('tr'));
     });
     $('productBody').addEventListener('keydown',event=>{
-      if(event.key==='Enter'&&event.target.classList.contains('price-input')){
+      if(event.key==='Enter'&&(event.target.classList.contains('price-input')||event.target.classList.contains('name-input'))){
         event.preventDefault();saveRow(event.target.closest('tr'));
       }
     });
