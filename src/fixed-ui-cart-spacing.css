@@ -26,3 +26,17 @@
 .cart-qty{
   justify-self:center;
 }
+
+
+/* Cart row leading index belongs to the product-name line, not to the full
+   name + optional note block. This keeps STT aligned with TÊN SP whether a
+   note exists or not. */
+#cartItemList .cart-left{
+  align-items:start !important;
+}
+
+#cartItemList .cart-stt{
+  align-self:start !important;
+  line-height:1.25 !important;
+  padding-top:0 !important;
+}
