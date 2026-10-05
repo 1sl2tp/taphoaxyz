@@ -274,7 +274,7 @@
           <div class="field"><label>Lãi chuẩn %</label><input id="newStandard" inputmode="decimal"></div>
           <div class="field"><label>Số lượng</label><input id="newUnits" inputmode="decimal"></div>
           <div class="field"><label>QC / đơn vị lẻ</label><input id="newRetailUnit" placeholder="chai, gói, hộp…"></div>
-          <div class="field"><label>Giá lẻ</label><input id="newRetailPrice" inputmode="decimal"></div>
+          <div class="field"><label>Giá lẻ</label><input value="Tự tính = Giá bán / SL" disabled></div>
         </div>
         <div id="productDialogMsg" class="msg"></div>
       </div>
@@ -538,7 +538,7 @@
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
           <td data-col="retail_unit"><input class="cell-input" data-field="retail_unit" value="${esc(item.retail_unit||'')}"></td>
-          <td data-col="retail_price"><input class="cell-input num-input" data-field="retail_price" inputmode="decimal" value="${esc(plain(item.retail_price))}"></td>
+          <td data-col="retail_price" class="readonly retail-price-value"></td>
           <td data-col="h1" class="history-cell h1"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
           <td data-col="h2" class="history-cell h2"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
           <td data-col="admin_state"><select class="cell-select state-select ${stateClass}" data-field="admin_state">
@@ -627,6 +627,12 @@
       row.querySelector('.cost3 .candidate-price').textContent=pretty(cost3);
       setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost,cost3);
 
+      const units=num(row.querySelector('[data-field="units_per_carton"]')?.value);
+      const retail=sale===null||units===null||units<=0?null:Math.round((sale/units)*10)/10;
+      const retailEl=row.querySelector('.retail-price-value');
+      if(retailEl)retailEl.textContent=pretty(retail);
+      item.retail_price=retail;
+
       updateChoiceState(row,item);
       const h=Array.isArray(item.cost_history)?item.cost_history:[];
       const renderHist=(cls,entry)=>{
@@ -669,7 +675,7 @@
       const read=field=>row.querySelector(`[data-field="${field}"]`)?.value?.trim()??'';
       const name=read('name');
       if(!name)throw new Error('Tên sản phẩm không được trống');
-      const numeric=['cost','supplier_price','standard_profit_percent','units_per_carton','retail_price'];
+      const numeric=['cost','supplier_price','standard_profit_percent','units_per_carton'];
       const item=items[Number(row.dataset.index)];
       const supplier=num(read('supplier_price'));
       const payload={
@@ -712,7 +718,12 @@
         );
         item.supplier_price=payload.supplier_price;
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
-        item.retail_unit=payload.retail_unit;item.retail_price=payload.retail_price;item.admin_state=payload.admin_state;
+        item.retail_unit=payload.retail_unit;
+        item.retail_price=result?.retail_price??(
+          item.price!==null&&payload.units_per_carton!==null&&payload.units_per_carton>0
+            ?Math.round((item.price/payload.units_per_carton)*10)/10:null
+        );
+        item.admin_state=payload.admin_state;
         if(oldCost!==null&&!same(oldCost,payload.cost)){
           item.cost_history=[{
             cost:oldCost,
@@ -796,7 +807,7 @@
         await rpc('taphoa_admin_create_product',{p_product:{
           name,source_key:source,cost:parse('newCost'),supplier_price:parse('newSupplier'),
           standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
-          retail_unit:$('newRetailUnit').value.trim(),retail_price:parse('newRetailPrice')
+          retail_unit:$('newRetailUnit').value.trim()
         }});
         $('productDialog').close();$('productForm').reset();selectedSource=source;await loadPage(true);
       }catch(error){$('productDialogMsg').textContent=error?.message||'Không thêm được sản phẩm';$('productDialogMsg').className='msg error';}
