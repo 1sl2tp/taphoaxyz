@@ -12,7 +12,8 @@ const snapshot=createSnapshotStore();
 
 let identity=null;
 let bootstrapped=false;
-let syncTimer=null;
+let syncChannel=null;
+let syncWakeTimer=0;
 let syncInFlight=null;
 let publicAccess=null;
 let employeeAccess=null;
@@ -331,19 +332,47 @@ async function syncOnce(){
   return syncInFlight;
 }
 
-function stopSync(){if(syncTimer){clearInterval(syncTimer);syncTimer=null;}syncInFlight=null;}
-function startSync(){
-  stopSync();
-  const seconds=Math.max(10,Number(appState.get().syncSeconds)||30);
-  syncTimer=setInterval(()=>{
-    if(document.hidden)return;
+function scheduleRevisionWake(){
+  if(document.hidden||navigator.onLine===false||employeeAccess)return;
+  if(syncWakeTimer)return;
+  syncWakeTimer=setTimeout(()=>{
+    syncWakeTimer=0;
     syncOnce().catch(error=>console.warn('taphoa sync',error));
-  },seconds*1000);
+  },180);
+}
+
+function stopSync(){
+  if(syncWakeTimer){clearTimeout(syncWakeTimer);syncWakeTimer=0;}
+  const channel=syncChannel;
+  syncChannel=null;
+  if(channel){
+    auth.getClient()
+      .then(client=>client.removeChannel(channel))
+      .catch(()=>{});
+  }
+  syncInFlight=null;
+}
+
+async function startSync(){
+  stopSync();
+  if(employeeAccess)return;
+  const client=await auth.getClient();
+  const channel=client
+    .channel('taphoa-revisions-v1')
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'taphoa_revisions'},
+      ()=>scheduleRevisionWake()
+    );
+  syncChannel=channel;
+  channel.subscribe(status=>{
+    if(status==='SUBSCRIBED')scheduleRevisionWake();
+  });
 }
 
 async function attachSession(info){
   identity=info?.identity||null;bootstrapped=false;
-  await bootstrap();startSync();
+  await bootstrap();await startSync();
   return {identity,state:appState.get()};
 }
 
@@ -374,7 +403,7 @@ async function openPublicLink(slug,pin){
     active:true
   };
   bootstrapped=true;
-  startSync();
+  await startSync();
   return {identity,state:appState.get()};
 }
 async function openEmployeeLink(token,pin){
