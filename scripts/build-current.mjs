@@ -5,6 +5,7 @@ import path from 'node:path';
 await rm('dist',{recursive:true,force:true});
 await mkdir('dist',{recursive:true});
 await cp('index.html','dist/index.html');
+await cp('admin-gia.html','dist/admin-gia.html');
 await cp('manifest.webmanifest','dist/manifest.webmanifest');
 await cp('version.json','dist/version.json');
 await cp('sw.js','dist/sw.js');
