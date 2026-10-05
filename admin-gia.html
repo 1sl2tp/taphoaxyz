@@ -252,10 +252,10 @@
   </main>
 
   <dialog id="sourceDialog">
-    <form id="sourceForm" method="dialog">
+    <form id="sourceForm" method="dialog" autocomplete="off">
       <div class="dialog-head"><h3 id="sourceDialogTitle">Thêm nguồn</h3><button class="btn dialog-close" type="button" data-dialog="sourceDialog">×</button></div>
       <div class="dialog-body">
-        <div class="field"><label>Tên nguồn</label><input id="sourceNameInput" required></div>
+        <div class="field"><label>Tên nguồn</label><input id="sourceNameInput" required autocomplete="off" spellcheck="false"></div>
         <div id="sourceDialogMsg" class="msg"></div>
       </div>
       <div class="dialog-actions"><button class="btn dialog-close" type="button" data-dialog="sourceDialog">Hủy</button><button id="sourceSubmitBtn" class="btn primary" type="submit">Lưu</button></div>
