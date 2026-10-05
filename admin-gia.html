@@ -63,7 +63,11 @@
     .supplier-x1 .cell-input{height:25px;padding-top:3px;padding-bottom:1px}
     .supplier-profit{position:absolute;right:7px;bottom:2px;font-size:10px;color:#64748b;pointer-events:none}
     .supplier-profit.pos{color:#15803d}.supplier-profit.neg{color:#dc2626}
-    .profit{font-weight:800}.profit.neg{color:var(--red)}.subpct{font-size:10px;color:var(--muted);margin-left:3px}
+    .sale-stack{height:39px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:2px 7px;line-height:1.05}
+    .sale-price-value{font-size:13px;font-weight:900;color:#111827}
+    .sale-profit{font-size:10px;color:#15803d;margin-top:2px;white-space:nowrap}
+    .sale-profit.neg{color:var(--red)}
+    .subpct{font-size:10px;color:inherit;margin-left:3px}
     .history-cell{padding:0 6px;text-align:right;color:#475569}
     .history-stack{height:39px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;line-height:1.05}
     .hist-cost{font-size:12px;color:#111827}
@@ -156,12 +160,11 @@
               <tr>
                 <th data-col="name" style="text-align:left">Tên sản phẩm</th>
                 <th data-col="cost">Giá vốn</th>
-                <th data-col="price">Giá bán</th>
+                <th data-col="price">Giá bán · Lãi</th>
                 <th data-col="supplier_price">NPP ×1</th>
                 <th data-col="supplier15">NPP +1,5%</th>
                 <th data-col="cost15">Vốn +1,5%</th>
                 <th data-col="cost3">Vốn +3%</th>
-                <th data-col="profit">Lãi</th>
                 <th data-col="standard_profit_percent">Lãi chuẩn %</th>
                 <th data-col="units_per_carton">SL</th>
                 <th data-col="retail_unit">QC</th>
@@ -250,18 +253,17 @@
     let selectedSource='';
     let sourceDialogMode='create';
     let saveQueues=new Map();
-    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v6';
+    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v7';
     const COLUMN_DEFS=[
       {id:'name',label:'Tên sản phẩm',width:280,min:150},
       {id:'cost',label:'Giá vốn',width:82,min:58},
-      {id:'price',label:'Giá bán',width:82,min:58},
+      {id:'price',label:'Giá bán · Lãi',width:112,min:92},
       {id:'h1',label:'Vốn -1 · ngày · Δ',width:128,min:105},
       {id:'h2',label:'Vốn -2 · ngày · Δ',width:128,min:105},
       {id:'supplier_price',label:'NPP ×1',width:82,min:58},
       {id:'supplier15',label:'NPP +1,5%',width:86,min:62},
       {id:'cost15',label:'Vốn +1,5%',width:86,min:62},
       {id:'cost3',label:'Vốn +3%',width:82,min:58},
-      {id:'profit',label:'Lãi',width:92,min:65},
       {id:'standard_profit_percent',label:'Lãi chuẩn %',width:82,min:65},
       {id:'units_per_carton',label:'SL',width:62,min:48},
       {id:'retail_unit',label:'QC',width:76,min:54},
@@ -418,7 +420,7 @@
         return `<tr data-index="${index}" data-code="${esc(item.product_code)}">
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
           <td data-col="cost"><input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}"></td>
-          <td data-col="price" class="readonly sale-price"></td>
+          <td data-col="price" class="readonly sale-price"><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
           <td data-col="supplier_price" class="price-choice supplier-x1" data-basis="supplier_1">
             <input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}">
             <span class="supplier-profit"></span>
@@ -426,7 +428,6 @@
           <td data-col="supplier15" class="readonly supplier15 price-choice" data-basis="supplier_1_5"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="cost15" class="readonly cost15"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="cost3" class="readonly cost3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
-          <td data-col="profit" class="readonly profit"></td>
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
           <td data-col="retail_unit"><input class="cell-input" data-field="retail_unit" value="${esc(item.retail_unit||'')}"></td>
@@ -476,7 +477,10 @@
       const sale=selectedSalePrice(cost,supplier,basis,defaultMarkup,defaultMarkupPercent);
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
-      row.querySelector('.sale-price').textContent=pretty(sale);
+      row.querySelector('.sale-price-value').textContent=pretty(sale);
+      const saleProfitEl=row.querySelector('.sale-profit');
+      saleProfitEl.innerHTML=profit===null?'':`lãi ${profit>0?'+':''}${pretty(profit)}<span class="subpct">· ${pretty(pct)}%</span>`;
+      saleProfitEl.classList.toggle('neg',profit!==null&&profit<0);
 
       const profitPct=value=>value===null||cost===null||cost===0?null:(value-cost)/cost*100;
       const formatCandidate=(profit,price)=>{
@@ -506,9 +510,6 @@
       setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost,cost3);
 
       updateChoiceState(row,item);
-      const p=row.querySelector('.profit');
-      p.innerHTML=profit===null?'':`${pretty(profit)}<span class="subpct">${pretty(pct)}%</span>`;
-      p.classList.toggle('neg',profit!==null&&profit<0);
       const h=Array.isArray(item.cost_history)?item.cost_history:[];
       const renderHist=(cls,entry)=>{
         const cell=row.querySelector('.'+cls);
