@@ -2,22 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const worker=fs.readFileSync(new URL('../supabase/functions/taphoa-sheet-sync/index.ts',import.meta.url),'utf8');
 const rules=fs.readFileSync(new URL('../docs/PRODUCT_EDITOR_SYNC_RULES.md',import.meta.url),'utf8');
 const migration=fs.readFileSync(new URL('../supabase/migrations/20261006023000_taphoa_remove_google_sheet_drive_runtime.sql',import.meta.url),'utf8');
+const retiredSyncDir=new URL('../supabase/functions/taphoa-sheet-sync/',import.meta.url);
 
-test('TAPHOA Google Sheet endpoint is an inert tombstone',()=>{
-  assert.match(worker,/taphoa_google_sheet_sync_retired/);
-  assert.match(worker,/status:410/);
-  for(const forbidden of [
-    'googleapis.com',
-    'google-auth-library',
-    'createClient',
-    'taphoa_apply_product_delta',
-    'taphoa_sheet_watch_channels',
-    'taphoa_product_outbox',
-    'fetch('
-  ]) assert.ok(!worker.includes(forbidden),`retired worker still has runtime path: ${forbidden}`);
+test('TAPHOA Google Sheet sync function source is physically absent',()=>{
+  assert.equal(fs.existsSync(retiredSyncDir),false,'taphoa-sheet-sync source directory must not exist');
 });
 
 test('current product rule is Supabase-only',()=>{
@@ -26,6 +16,7 @@ test('current product rule is Supabase-only',()=>{
   assert.match(rules,/No Google Drive push watch/);
   assert.match(rules,/No Sheet → Supabase automatic import/);
   assert.match(rules,/No Supabase → Sheet automatic write-back/);
+  assert.match(rules,/No TAPHOA Google Sheet\/Drive Edge Function/);
 });
 
 test('retirement migration removes cron state queues and mutating RPCs',()=>{
