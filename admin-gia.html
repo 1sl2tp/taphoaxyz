@@ -21,7 +21,7 @@
     .btn:hover{background:#f8fafc}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.danger{color:var(--red)}
     .btn:disabled{opacity:.45;cursor:not-allowed}
     .panel{background:var(--sheet);border:1px solid #cbd5e1;border-radius:10px;overflow:hidden}
-    .searchbar{display:grid;grid-template-columns:minmax(220px,1fr) auto auto auto;gap:8px;padding:10px;border-bottom:1px solid var(--grid);background:#fff}
+    .searchbar{display:grid;grid-template-columns:minmax(220px,1fr) auto auto auto auto;gap:8px;padding:10px;border-bottom:1px solid var(--grid);background:#fff}
     .searchbar input{width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:8px 10px;outline:none}
     .searchbar input:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(37,99,235,.10)}
     .source-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--grid);background:#fbfdff;overflow:auto}
@@ -79,6 +79,17 @@
     .cost-current-meta{position:absolute;right:7px;bottom:2px;font-size:9px;color:#64748b;pointer-events:none;white-space:nowrap}
     .cost-current-meta.up{color:#15803d;font-weight:800}
     .cost-current-meta.down{color:#dc2626;font-weight:800}
+    .cost-feedback-btn{position:absolute;left:4px;bottom:1px;border:0;background:#eef2ff;color:#3156a8;border-radius:4px;padding:1px 4px;font-size:8px;font-weight:900;line-height:15px;display:none}
+    .cost-current.has-history .cost-feedback-btn{display:block}
+    .feedback-panel{position:fixed;right:18px;bottom:18px;width:min(560px,calc(100vw - 28px));max-height:70vh;background:#fff;border:1px solid #cbd5e1;border-radius:12px;box-shadow:0 20px 60px rgba(15,23,42,.26);z-index:30;overflow:hidden}
+    .feedback-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--grid);background:#f8fafc}
+    .feedback-head strong{font-size:14px}.feedback-body{max-height:58vh;overflow:auto}
+    .feedback-table{width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0}
+    .feedback-table th{position:sticky;top:0;z-index:2}.feedback-table td{padding:7px 8px;height:34px}
+    .feedback-name{text-align:left;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .feedback-price{text-align:right;font-variant-numeric:tabular-nums}
+    .feedback-remove{border:0;background:transparent;color:#dc2626;font-weight:900;padding:4px 7px}
+    .feedback-empty{padding:24px;text-align:center;color:var(--muted);font-size:12px}
     .hist-delta.same{color:#64748b}
     .history-btn,.delete-btn{border:0;background:transparent;height:32px;padding:0 8px;font-weight:800;color:#475569}
     .history-btn:hover{color:var(--blue)}.delete-btn:hover{color:var(--red)}
@@ -106,7 +117,7 @@
     .empty{padding:30px;text-align:center;color:var(--muted)}
     @media(max-width:800px){
       .wrap{padding:8px}.top{align-items:flex-start}.top-actions .home{display:none}
-      .searchbar{grid-template-columns:1fr auto auto}.searchbar .status{display:none}
+      .searchbar{grid-template-columns:1fr auto auto auto}.searchbar .status{display:none}
       .source-row{align-items:flex-start;flex-direction:column}.source-actions{margin-left:0}
       .sheet-wrap{max-height:calc(100vh - 260px)}
       .form-grid{grid-template-columns:1fr 1fr}.form-grid .wide,.form-grid .full{grid-column:1/-1}
@@ -139,6 +150,7 @@
         <div class="searchbar">
           <input id="searchInput" placeholder="Tìm tên sản phẩm…" autocomplete="off">
           <button id="columnSettingsBtn" class="btn" type="button">Cột</button>
+          <button id="supplierFeedbackBtn" class="btn" type="button">Phản hồi NCC</button>
           <button id="addProductBtn" class="btn primary" type="button">+ Sản phẩm</button>
           <div class="status"><span id="statusText" class="msg">Supabase trực tiếp</span></div>
         </div>
@@ -194,6 +206,20 @@
       </section>
     </section>
   </main>
+
+  <aside id="supplierFeedbackPanel" class="feedback-panel hidden">
+    <div class="feedback-head">
+      <strong>Phản hồi NCC</strong>
+      <button id="supplierFeedbackClose" class="btn" type="button">×</button>
+    </div>
+    <div class="feedback-body">
+      <table class="feedback-table">
+        <thead><tr><th style="text-align:left">Tên sản phẩm</th><th>Giá cũ</th><th>Giá mới</th><th style="width:42px"></th></tr></thead>
+        <tbody id="supplierFeedbackBody"></tbody>
+      </table>
+      <div id="supplierFeedbackEmpty" class="feedback-empty hidden">Chưa có giá nào cần phản hồi NCC.</div>
+    </div>
+  </aside>
 
   <dialog id="sourceDialog">
     <form id="sourceForm" method="dialog">
@@ -426,6 +452,7 @@
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
           <td data-col="cost" class="cost-current">
             <input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}">
+            <button class="cost-feedback-btn" type="button" title="Lưu giá cũ/mới để phản hồi NCC">NCC</button>
             <span class="cost-current-meta"></span>
           </td>
           <td data-col="price" class="readonly sale-price"><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
@@ -542,6 +569,7 @@
 
       const currentMeta=row.querySelector('.cost-current-meta');
       const latest=h[0];
+      row.querySelector('.cost-current')?.classList.toggle('has-history',Boolean(latest));
       if(currentMeta&&latest){
         const d=latest.changed_at?new Date(latest.changed_at):null;
         const dateText=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}):'';
@@ -688,6 +716,48 @@
       catch(error){alert(error?.message||'Không xóa được sản phẩm');}
     }
 
+    async function loadSupplierFeedback(){
+      $('supplierFeedbackBody').innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center">Đang tải…</td></tr>';
+      $('supplierFeedbackEmpty').classList.add('hidden');
+      try{
+        const data=await rpc('taphoa_admin_supplier_price_feedback');
+        const rows=Array.isArray(data)?data:[];
+        $('supplierFeedbackBody').innerHTML=rows.map(x=>`<tr data-feedback-id="${esc(x.id)}">
+          <td class="feedback-name" title="${esc(x.product_name)}">${esc(x.product_name)}</td>
+          <td class="feedback-price">${esc(pretty(x.old_price))}</td>
+          <td class="feedback-price">${esc(pretty(x.new_price))}</td>
+          <td><button class="feedback-remove" type="button" title="Đã phản hồi xong">×</button></td>
+        </tr>`).join('');
+        $('supplierFeedbackEmpty').classList.toggle('hidden',rows.length!==0);
+      }catch(error){
+        $('supplierFeedbackBody').innerHTML=`<tr><td colspan="4" style="padding:16px;color:#dc2626">${esc(error?.message||'Không tải được')}</td></tr>`;
+      }
+    }
+
+    async function openSupplierFeedback(){
+      $('supplierFeedbackPanel').classList.remove('hidden');
+      await loadSupplierFeedback();
+    }
+
+    async function addSupplierFeedback(row){
+      const item=items[Number(row.dataset.index)];
+      const latest=Array.isArray(item?.cost_history)?item.cost_history[0]:null;
+      if(!item||!latest)return;
+      const oldPrice=num(latest.cost);
+      const newPrice=num(latest.new_cost);
+      if(oldPrice===null||newPrice===null)return;
+      try{
+        await rpc('taphoa_admin_add_supplier_price_feedback',{
+          p_product_code:item.product_code,
+          p_old_price:oldPrice,
+          p_new_price:newPrice
+        });
+        await openSupplierFeedback();
+      }catch(error){
+        alert(error?.message||'Không lưu được phản hồi NCC');
+      }
+    }
+
     async function showHistory(row){
       const item=items[Number(row.dataset.index)];if(!item)return;
       $('historyTitle').textContent='Nhật ký giá · '+item.product_name;
@@ -719,6 +789,17 @@
     $('deleteSourceBtn').addEventListener('click',()=>sourceAction('delete'));
     $('sourceForm').addEventListener('submit',e=>{e.preventDefault();submitSource();});
     $('columnSettingsBtn').addEventListener('click',()=>{renderColumnSettings();$('columnDialog').showModal();});
+    $('supplierFeedbackBtn').addEventListener('click',openSupplierFeedback);
+    $('supplierFeedbackClose').addEventListener('click',()=>$('supplierFeedbackPanel').classList.add('hidden'));
+    $('supplierFeedbackBody').addEventListener('click',async e=>{
+      const b=e.target.closest('.feedback-remove');if(!b)return;
+      const tr=b.closest('tr');const id=Number(tr?.dataset.feedbackId);if(!id)return;
+      try{
+        await rpc('taphoa_admin_delete_supplier_price_feedback',{p_id:id});
+        tr.remove();
+        if(!$('supplierFeedbackBody').querySelector('tr'))$('supplierFeedbackEmpty').classList.remove('hidden');
+      }catch(error){alert(error?.message||'Không xóa được');}
+    });
     $('addProductBtn').addEventListener('click',()=>{fillProductSources();$('productDialogMsg').textContent='';$('productDialog').showModal();setTimeout(()=>{$('newName').focus();$('newName').select()},0);});
     $('productForm').addEventListener('submit',e=>{e.preventDefault();submitProduct();});
     document.addEventListener('click',e=>{const b=e.target.closest('.dialog-close');if(b){const d=$(b.dataset.dialog);if(d?.open)d.close();}});
@@ -768,6 +849,7 @@
     $('productBody').addEventListener('click',e=>{
       if(e.target.matches('.cell-input'))e.target.select();
       const row=e.target.closest('tr');if(!row)return;
+      if(e.target.closest('.cost-feedback-btn')){e.preventDefault();addSupplierFeedback(row);return;}
       const choice=e.target.closest('.price-choice');
       if(choice){
         const item=items[Number(row.dataset.index)];
