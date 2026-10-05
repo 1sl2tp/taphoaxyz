@@ -305,6 +305,8 @@
         event.preventDefault();saveRow(event.target.closest('tr'));
       }
     });
+    $('searchInput').addEventListener('focus',event=>event.target.select());
+    $('searchInput').addEventListener('click',event=>event.target.select());
     $('searchInput').addEventListener('input',()=>{
       clearTimeout(searchTimer);
       searchTimer=setTimeout(()=>loadPage(true),240);
