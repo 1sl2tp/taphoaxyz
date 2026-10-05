@@ -419,12 +419,16 @@ async function inboundScan(caches:Map<number,TabCache>,modifiedTime:string){
       const product=mapManagerRow(cache.source.source_key,cache.rows[i]||[],i+1,modifiedTime,retailLayout);if(!product)continue;
       totalRows++;codes.push(product.product_code);const hash=await rowHash(product);const previous=stateMap.get(product.product_code);
       const rowMoved=!!previous&&previous.sheet_row!==product.source_row;const sourceMoved=!!previous&&previous.source_key!==product.source_key;const hashChanged=!previous||previous.sheet_hash!==hash;
-      if(hashChanged||rowMoved||sourceMoved)changed.push(product);
+      const stateChanged=hashChanged||rowMoved||sourceMoved;
+      if(stateChanged){
+        changed.push(product);
+        stateUpserts.push({product_code:product.product_code,source_key:product.source_key,sheet_row:product.source_row,sheet_hash:hash,last_sheet_modified_time:modifiedTime,updated_at:new Date().toISOString()});
+      }
       const marker=productMarker(product.product_code);
       if(clean(cache.rows[i]?.[TRACKING_ID_INDEX])!==marker||clean(cache.rows[i]?.[TRACKING_HASH_INDEX])!==hash){
         trackingWrites.push({range:`${quotedSheet(cache.meta.title)}!${TRACKING_ID_COL}${i+1}:${TRACKING_HASH_COL}${i+1}`,values:[[marker,hash]]});
       }
-      stateUpserts.push({product_code:product.product_code,source_key:product.source_key,sheet_row:product.source_row,sheet_hash:hash,last_sheet_modified_time:modifiedTime,updated_at:new Date().toISOString()});
+
     }
     sourceCodes.push({source_key:cache.source.source_key,codes});
   }
