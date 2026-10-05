@@ -908,8 +908,8 @@
     }
 
     $('addProductBtn').addEventListener('click',()=>{
-      fillProductSources();$('productDialogMsg').textContent='';
       $('productForm').reset();
+      fillProductSources();$('productDialogMsg').textContent='';
       $('newRetailPrice').dataset.mode='auto';
       updateNewRetailPreview();
       $('productDialog').showModal();
