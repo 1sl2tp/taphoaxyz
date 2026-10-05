@@ -90,9 +90,9 @@ test('sheet sync never mutates manual market price history K:N',()=>{
 });
 
 test('does not rewrite tracking column visibility on every sync',()=>{
-  assert.match(source,/let trackingLayoutChanged=false/);
-  assert.match(source,/trackingLayoutChanged=true/);
-  assert.match(source,/if\(trackingLayoutChanged\)\{/);
-  const ensureBlock=source.slice(source.indexOf('async function ensureTrackingColumns'),source.indexOf('type RetailLayout'));
+  assert.match(worker,/let trackingLayoutChanged=false/);
+  assert.match(worker,/trackingLayoutChanged=true/);
+  assert.match(worker,/if\(trackingLayoutChanged\)\{/);
+  const ensureBlock=worker.slice(worker.indexOf('async function ensureTrackingColumns'),worker.indexOf('type RetailLayout'));
   assert.equal((ensureBlock.match(/updateDimensionProperties/g)||[]).length,1);
 });
