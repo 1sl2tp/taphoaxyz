@@ -96,3 +96,10 @@ test('does not rewrite tracking column visibility on every sync',()=>{
   const ensureBlock=worker.slice(worker.indexOf('async function ensureTrackingColumns'),worker.indexOf('type RetailLayout'));
   assert.equal((ensureBlock.match(/updateDimensionProperties/g)||[]).length,1);
 });
+
+test('avoids no-op source row updates',()=>{
+  assert.match(worker,/last_sheet_seen_at/);
+  assert.match(worker,/metadataChanged\|\|seenStale/);
+  assert.match(worker,/lastSeenMs<Date\.now\(\)-24\*60\*60\*1000/);
+  assert.match(worker,/if\(source\.active\|\|source\.sync_status!==status\)\{/);
+});
