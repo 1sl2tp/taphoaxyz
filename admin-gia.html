@@ -50,6 +50,11 @@
     .num-input{text-align:right;font-variant-numeric:tabular-nums}
     .w-price{width:82px;min-width:82px}.w-small{width:68px;min-width:68px}.w-qc{width:76px;min-width:76px}.w-state{width:112px;min-width:112px}
     .readonly{padding:0 7px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .price-choice{cursor:pointer;transition:background .12s ease,box-shadow .12s ease,color .12s ease}
+    .price-choice:hover{background:#eff6ff}
+    .price-choice.selected{background:#dbeafe!important;color:#1d4ed8;font-weight:900;box-shadow:inset 0 0 0 2px #60a5fa}
+    .price-choice.disabled{cursor:default;color:#94a3b8;background:#f8fafc}
+    .price-choice.selected .cell-input{color:#1d4ed8;font-weight:900}
     .profit{font-weight:800}.profit.neg{color:var(--red)}.subpct{font-size:10px;color:var(--muted);margin-left:3px}
     .history-cell{padding:0 7px;text-align:right;color:#64748b}
     .history-btn,.delete-btn{border:0;background:transparent;height:32px;padding:0 8px;font-weight:800;color:#475569}
@@ -404,8 +409,8 @@
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
           <td data-col="cost"><input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}"></td>
           <td data-col="price" class="readonly sale-price"></td>
-          <td data-col="supplier_price"><input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}"></td>
-          <td data-col="supplier15" class="readonly supplier15"></td>
+          <td data-col="supplier_price" class="price-choice supplier-x1" data-basis="supplier_1"><input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}"></td>
+          <td data-col="supplier15" class="readonly supplier15 price-choice" data-basis="supplier_1_5"></td>
           <td data-col="cost15" class="readonly cost15"></td>
           <td data-col="cost3" class="readonly cost3"></td>
           <td data-col="profit" class="readonly profit"></td>
@@ -431,22 +436,34 @@
       $('countText').textContent=total?`Hiển thị ${offset+1}–${Math.min(offset+items.length,total)} / ${total} sản phẩm`:'0 sản phẩm';
     }
 
-    function autoSalePrice(cost,supplier){
-      if(cost===null&&supplier===null)return null;
-      if(supplier!==null&&cost===null)return supplier;
-      if(supplier===null&&cost!==null)return Math.ceil(cost*1.015);
-      if(supplier>=cost)return supplier;
-      return Math.max(Math.ceil(supplier*1.015),Math.ceil(cost*1.015));
+    function selectedSalePrice(cost,supplier,basis){
+      if(supplier!==null&&basis==='supplier_1_5')return Math.ceil(supplier*1.015);
+      if(supplier!==null)return supplier;
+      if(cost!==null)return Math.ceil(cost*1.015);
+      return null;
+    }
+
+    function updateChoiceState(row,item){
+      const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
+      const x1=row.querySelector('.supplier-x1');
+      const x15=row.querySelector('.supplier15');
+      const basis=supplier===null?'auto':(item.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1');
+      [x1,x15].forEach(cell=>{
+        cell.classList.toggle('disabled',supplier===null);
+        cell.classList.toggle('selected',supplier!==null&&cell.dataset.basis===basis);
+      });
     }
 
     function updateDerived(row,item){
       const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
-      const sale=autoSalePrice(cost,supplier);
+      const basis=supplier===null?'auto':(item.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1');
+      const sale=selectedSalePrice(cost,supplier,basis);
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
       row.querySelector('.sale-price').textContent=pretty(sale);
       row.querySelector('.supplier15').textContent=supplier===null?'':pretty(Math.ceil(supplier*1.015));
+      updateChoiceState(row,item);
       row.querySelector('.cost15').textContent=cost===null?'':pretty(Math.ceil(cost*1.015));
       row.querySelector('.cost3').textContent=cost===null?'':pretty(Math.ceil(cost*1.03));
       const p=row.querySelector('.profit');
@@ -461,11 +478,14 @@
       const name=read('name');
       if(!name)throw new Error('Tên sản phẩm không được trống');
       const numeric=['cost','supplier_price','standard_profit_percent','units_per_carton','retail_price'];
+      const item=items[Number(row.dataset.index)];
+      const supplier=num(read('supplier_price'));
       const payload={
         product_code:row.dataset.code,
         name,
         retail_unit:read('retail_unit'),
-        admin_state:read('admin_state')
+        admin_state:read('admin_state'),
+        sale_price_basis:supplier===null?'auto':(item?.sale_price_basis==='supplier_1_5'?'supplier_1_5':'supplier_1')
       };
       for(const key of numeric){
         const raw=read(key);const value=num(raw);
@@ -492,7 +512,9 @@
         try{payload=rowPayload(row);}catch(error){markRow(row,'error');throw error;}
         markRow(row,'saving');
         const result=await rpc('taphoa_update_product_from_web',{p_product:payload});
-        item.product_name=payload.name;item.cost=payload.cost;item.price=result?.price??autoSalePrice(payload.cost,payload.supplier_price);
+        item.product_name=payload.name;item.cost=payload.cost;
+        item.sale_price_basis=result?.sale_price_basis??payload.sale_price_basis;
+        item.price=result?.price??selectedSalePrice(payload.cost,payload.supplier_price,item.sale_price_basis);
         item.supplier_price=payload.supplier_price;
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;item.retail_price=payload.retail_price;item.admin_state=payload.admin_state;
@@ -656,6 +678,20 @@
     $('productBody').addEventListener('click',e=>{
       if(e.target.matches('.cell-input'))e.target.select();
       const row=e.target.closest('tr');if(!row)return;
+      const choice=e.target.closest('.price-choice');
+      if(choice){
+        const item=items[Number(row.dataset.index)];
+        const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
+        if(item&&supplier!==null){
+          const nextBasis=choice.dataset.basis;
+          if(nextBasis&&item.sale_price_basis!==nextBasis){
+            item.sale_price_basis=nextBasis;
+            row.dataset.dirty='1';
+            updateDerived(row,item);
+            queueSave(row);
+          }else updateChoiceState(row,item);
+        }
+      }
       if(e.target.closest('.history-btn'))showHistory(row);
       if(e.target.closest('.delete-btn'))deleteProduct(row);
     });
@@ -663,7 +699,11 @@
       const row=e.target.closest('tr');if(!row)return;
       if(e.target.matches('.cell-input')){
         row.dataset.dirty='1';
-        if(['cost','price','supplier_price'].includes(e.target.dataset.field))updateDerived(row,items[Number(row.dataset.index)]);
+        if(['cost','supplier_price'].includes(e.target.dataset.field)){
+          const item=items[Number(row.dataset.index)];
+          if(e.target.dataset.field==='supplier_price'&&num(e.target.value)===null)item.sale_price_basis='auto';
+          updateDerived(row,item);
+        }
       }
     });
     $('productBody').addEventListener('change',e=>{
