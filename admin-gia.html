@@ -44,6 +44,8 @@
     tr.error td:first-child{box-shadow:inset 3px 0 0 #ef4444}
     .cell-input,.cell-select{width:100%;height:33px;border:0;border-radius:0;background:transparent;outline:0;padding:5px 7px;color:inherit}
     .cell-input:focus,.cell-select:focus{background:#fff7cc;box-shadow:inset 0 0 0 2px #60a5fa}
+    .cell-input[readonly]{background:#f8fafc;color:#475569}
+    .basis-select{font-size:11px;font-weight:700;color:#334155}
     .name-input{min-width:0;font-weight:700;text-align:left}
     .num-input{text-align:right;font-variant-numeric:tabular-nums}
     .w-price{width:82px;min-width:82px}.w-small{width:68px;min-width:68px}.w-qc{width:76px;min-width:76px}.w-state{width:112px;min-width:112px}
@@ -136,8 +138,8 @@
                 <th data-col="name" style="text-align:left">Tên sản phẩm</th>
                 <th data-col="cost">Giá vốn</th>
                 <th data-col="price">Giá bán</th>
+                <th data-col="sale_basis">Cách giá bán</th>
                 <th data-col="supplier_price">Giá NPP</th>
-                <th data-col="other_price">Giá khác</th>
                 <th data-col="profit">Lãi</th>
                 <th data-col="price15">+1,5%</th>
                 <th data-col="price3">+3%</th>
@@ -188,8 +190,12 @@
           <div class="field"><label>Nguồn</label><select id="newSource" required></select></div>
           <div class="field"><label>Giá vốn</label><input id="newCost" inputmode="decimal"></div>
           <div class="field"><label>Giá bán</label><input id="newPrice" inputmode="decimal"></div>
+          <div class="field"><label>Cách giá bán</label><select id="newSaleBasis">
+            <option value="manual">Nhập tay</option>
+            <option value="supplier_1">NPP ×1</option>
+            <option value="supplier_1_5">NPP +1,5%</option>
+          </select></div>
           <div class="field"><label>Giá NPP</label><input id="newSupplier" inputmode="decimal"></div>
-          <div class="field"><label>Giá khác</label><input id="newOther" inputmode="decimal"></div>
           <div class="field"><label>Lãi chuẩn %</label><input id="newStandard" inputmode="decimal"></div>
           <div class="field"><label>Số lượng</label><input id="newUnits" inputmode="decimal"></div>
           <div class="field"><label>QC / đơn vị lẻ</label><input id="newRetailUnit" placeholder="chai, gói, hộp…"></div>
@@ -205,7 +211,7 @@
     <div class="dialog-head"><h3 id="historyTitle">Nhật ký giá</h3><button id="historyClose" class="btn" type="button">×</button></div>
     <div class="dialog-body" style="overflow:auto;max-height:65vh">
       <table class="history-table">
-        <thead><tr><th>Thời gian</th><th>Vốn</th><th>Bán</th><th>NPP</th><th>Khác</th><th>Lãi chuẩn</th></tr></thead>
+        <thead><tr><th>Thời gian</th><th>Vốn</th><th>Bán</th><th>NPP</th><th>Lãi chuẩn</th></tr></thead>
         <tbody id="historyBody"></tbody>
       </table>
       <div id="historyEmpty" class="empty hidden">Chưa có lần thay đổi giá nào.</div>
@@ -233,13 +239,13 @@
     let selectedSource='';
     let sourceDialogMode='create';
     let saveQueues=new Map();
-    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v2';
+    const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v3';
     const COLUMN_DEFS=[
       {id:'name',label:'Tên sản phẩm',width:280,min:150},
       {id:'cost',label:'Giá vốn',width:82,min:58},
       {id:'price',label:'Giá bán',width:82,min:58},
+      {id:'sale_basis',label:'Cách giá bán',width:108,min:92},
       {id:'supplier_price',label:'Giá NPP',width:82,min:58},
-      {id:'other_price',label:'Giá khác',width:82,min:58},
       {id:'profit',label:'Lãi',width:92,min:65},
       {id:'price15',label:'+1,5%',width:82,min:58},
       {id:'price3',label:'+3%',width:82,min:58},
@@ -404,8 +410,12 @@
           <td data-col="name"><input class="cell-input name-input" data-field="name" value="${esc(item.product_name)}"></td>
           <td data-col="cost"><input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}"></td>
           <td data-col="price"><input class="cell-input num-input" data-field="price" inputmode="decimal" value="${esc(plain(item.price))}"></td>
+          <td data-col="sale_basis"><select class="cell-select basis-select sale-basis-select" data-field="sale_price_basis">
+            <option value="manual" ${(item.sale_price_basis||'manual')==='manual'?'selected':''}>Nhập tay</option>
+            <option value="supplier_1" ${item.sale_price_basis==='supplier_1'?'selected':''}>NPP ×1</option>
+            <option value="supplier_1_5" ${item.sale_price_basis==='supplier_1_5'?'selected':''}>NPP +1,5%</option>
+          </select></td>
           <td data-col="supplier_price"><input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}"></td>
-          <td data-col="other_price"><input class="cell-input num-input" data-field="other_price" inputmode="decimal" value="${esc(plain(item.other_price))}"></td>
           <td data-col="profit" class="readonly profit"></td>
           <td data-col="price15" class="readonly price15"></td>
           <td data-col="price3" class="readonly price3"></td>
@@ -431,7 +441,29 @@
       $('countText').textContent=total?`Hiển thị ${offset+1}–${Math.min(offset+items.length,total)} / ${total} sản phẩm`:'0 sản phẩm';
     }
 
+    function applySaleBasis(row){
+      const basis=row.querySelector('[data-field="sale_price_basis"]');
+      const supplierInput=row.querySelector('[data-field="supplier_price"]');
+      const priceInput=row.querySelector('[data-field="price"]');
+      if(!basis||!supplierInput||!priceInput)return;
+      const supplier=num(supplierInput.value);
+      [...basis.options].forEach(option=>{
+        if(option.value==='supplier_1'||option.value==='supplier_1_5')option.disabled=supplier===null;
+      });
+      if(supplier===null&&basis.value!=='manual')basis.value='manual';
+      if(basis.value==='supplier_1'){
+        priceInput.value=plain(supplier);
+        priceInput.readOnly=true;
+      }else if(basis.value==='supplier_1_5'){
+        priceInput.value=plain(Math.ceil(supplier*1.015));
+        priceInput.readOnly=true;
+      }else{
+        priceInput.readOnly=false;
+      }
+    }
+
     function updateDerived(row,item){
+      applySaleBasis(row);
       const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const sale=num(row.querySelector('[data-field="price"]')?.value);
       const profit=cost===null||sale===null?null:sale-cost;
@@ -449,8 +481,14 @@
       const read=field=>row.querySelector(`[data-field="${field}"]`)?.value?.trim()??'';
       const name=read('name');
       if(!name)throw new Error('Tên sản phẩm không được trống');
-      const numeric=['cost','price','supplier_price','other_price','standard_profit_percent','units_per_carton','retail_price'];
-      const payload={product_code:row.dataset.code,name,retail_unit:read('retail_unit'),admin_state:read('admin_state')};
+      const numeric=['cost','price','supplier_price','standard_profit_percent','units_per_carton','retail_price'];
+      const payload={
+        product_code:row.dataset.code,
+        name,
+        retail_unit:read('retail_unit'),
+        admin_state:read('admin_state'),
+        sale_price_basis:read('sale_price_basis')||'manual'
+      };
       for(const key of numeric){
         const raw=read(key);const value=num(raw);
         if(raw!==''&&value===null)throw new Error('Giá trị không hợp lệ');
@@ -476,8 +514,11 @@
         try{payload=rowPayload(row);}catch(error){markRow(row,'error');throw error;}
         markRow(row,'saving');
         const result=await rpc('taphoa_update_product_from_web',{p_product:payload});
-        item.product_name=payload.name;item.cost=payload.cost;item.price=payload.price;
-        item.supplier_price=payload.supplier_price;item.other_price=payload.other_price;
+        item.product_name=payload.name;item.cost=payload.cost;item.price=result?.price??payload.price;
+        item.sale_price_basis=result?.sale_price_basis??payload.sale_price_basis;
+        item.supplier_price=payload.supplier_price;
+        row.querySelector('[data-field="price"]').value=plain(item.price);
+        row.querySelector('[data-field="sale_price_basis"]').value=item.sale_price_basis;
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;item.retail_price=payload.retail_price;item.admin_state=payload.admin_state;
         if(oldCost!==null&&!same(oldCost,payload.cost)){
@@ -545,7 +586,7 @@
       try{
         await rpc('taphoa_admin_create_product',{p_product:{
           name,source_key:source,cost:parse('newCost'),price:parse('newPrice'),supplier_price:parse('newSupplier'),
-          other_price:parse('newOther'),standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
+          sale_price_basis:$('newSaleBasis').value,standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
           retail_unit:$('newRetailUnit').value.trim(),retail_price:parse('newRetailPrice')
         }});
         $('productDialog').close();$('productForm').reset();selectedSource=source;await loadPage(true);
@@ -563,7 +604,7 @@
     async function showHistory(row){
       const item=items[Number(row.dataset.index)];if(!item)return;
       $('historyTitle').textContent='Nhật ký giá · '+item.product_name;
-      $('historyBody').innerHTML='<tr><td colspan="6" style="padding:18px;text-align:center">Đang tải…</td></tr>';
+      $('historyBody').innerHTML='<tr><td colspan="5" style="padding:18px;text-align:center">Đang tải…</td></tr>';
       $('historyDialog').showModal();
       try{
         const data=await rpc('taphoa_admin_product_history',{p_product_code:item.product_code,p_limit:50});
@@ -574,10 +615,9 @@
           <td>${esc(pretty(h.old_cost))} → ${esc(pretty(h.new_cost))}</td>
           <td>${esc(pretty(h.old_sale))} → ${esc(pretty(h.new_sale))}</td>
           <td>${esc(pretty(h.old_supplier))} → ${esc(pretty(h.new_supplier))}</td>
-          <td>${esc(pretty(h.old_other))} → ${esc(pretty(h.new_other))}</td>
           <td>${esc(pretty(h.old_standard_profit_percent))} → ${esc(pretty(h.new_standard_profit_percent))}</td>
         </tr>`).join('');
-      }catch(error){$('historyBody').innerHTML=`<tr><td colspan="6" style="padding:18px;color:#dc2626">${esc(error?.message||'Không tải được lịch sử')}</td></tr>`;}
+      }catch(error){$('historyBody').innerHTML=`<tr><td colspan="5" style="padding:18px;color:#dc2626">${esc(error?.message||'Không tải được lịch sử')}</td></tr>`;}
     }
 
     $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Đang đăng nhập…';try{await enter(await auth.login($('username').value,$('password').value));$('loginMsg').textContent='';}catch(error){showLogin(error?.message||'Không đăng nhập được');}});
@@ -593,6 +633,22 @@
     $('sourceForm').addEventListener('submit',e=>{e.preventDefault();submitSource();});
     $('columnSettingsBtn').addEventListener('click',()=>{renderColumnSettings();$('columnDialog').showModal();});
     $('addProductBtn').addEventListener('click',()=>{fillProductSources();$('productDialogMsg').textContent='';$('productDialog').showModal();setTimeout(()=>{$('newName').focus();$('newName').select()},0);});
+    function syncNewProductSale(){
+      const basis=$('newSaleBasis').value;
+      const supplier=num($('newSupplier').value);
+      $('newSaleBasis').querySelectorAll('option').forEach(option=>{
+        if(option.value==='supplier_1'||option.value==='supplier_1_5')option.disabled=supplier===null;
+      });
+      if(supplier===null&&basis!=='manual')$('newSaleBasis').value='manual';
+      const active=$('newSaleBasis').value;
+      if(active==='supplier_1'){
+        $('newPrice').value=plain(supplier);$('newPrice').readOnly=true;
+      }else if(active==='supplier_1_5'){
+        $('newPrice').value=plain(Math.ceil(supplier*1.015));$('newPrice').readOnly=true;
+      }else $('newPrice').readOnly=false;
+    }
+    $('newSupplier').addEventListener('input',syncNewProductSale);
+    $('newSaleBasis').addEventListener('change',syncNewProductSale);
     $('productForm').addEventListener('submit',e=>{e.preventDefault();submitProduct();});
     document.addEventListener('click',e=>{const b=e.target.closest('.dialog-close');if(b){const d=$(b.dataset.dialog);if(d?.open)d.close();}});
     $('historyClose').addEventListener('click',()=>$('historyDialog').close());
@@ -646,11 +702,18 @@
     });
     $('productBody').addEventListener('input',e=>{
       const row=e.target.closest('tr');if(!row)return;
-      if(e.target.matches('.cell-input')){row.dataset.dirty='1';if(e.target.dataset.field==='cost'||e.target.dataset.field==='price')updateDerived(row,items[Number(row.dataset.index)]);}
+      if(e.target.matches('.cell-input')){
+        row.dataset.dirty='1';
+        if(['cost','price','supplier_price'].includes(e.target.dataset.field))updateDerived(row,items[Number(row.dataset.index)]);
+      }
     });
     $('productBody').addEventListener('change',e=>{
       const row=e.target.closest('tr');if(!row)return;
-      if(e.target.matches('.state-select')){row.dataset.dirty='1';queueSave(row);}
+      if(e.target.matches('.state-select')||e.target.matches('.sale-basis-select')){
+        row.dataset.dirty='1';
+        updateDerived(row,items[Number(row.dataset.index)]);
+        queueSave(row);
+      }
     });
     $('productBody').addEventListener('focusout',e=>{
       const row=e.target.closest('tr');if(row&&e.target.matches('.cell-input'))queueSave(row);
