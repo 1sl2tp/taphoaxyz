@@ -215,6 +215,7 @@ async function reserveSheetCode(cache:TabCache,caches:Map<number,TabCache>){
 
 const WATCH_EXPIRATION_MS=23*60*60*1000;
 const WATCH_RENEW_BEFORE_MS=12*60*60*1000;
+const WATCH_HEARTBEAT_MS=60*60_000;
 
 function watchCallbackUrl(){
   return clean(SUPABASE_URL).replace(/\/$/,"")+"/functions/v1/taphoa-sheet-sync/webhook";
@@ -307,11 +308,18 @@ async function handleDriveWebhook(req:Request){
   if(clean(data.channel_token)!==channelToken)return new Response(null,{status:204});
   if(clean(data.resource_id)&&resourceId&&clean(data.resource_id)!==resourceId)return new Response(null,{status:204});
 
-  await admin.from("taphoa_sheet_watch_channels").update({
-    last_notified_at:new Date().toISOString(),
-    last_resource_state:resourceState||null,
-    updated_at:new Date().toISOString()
-  }).eq("channel_id",channelId);
+  const nowMs=Date.now();
+  const lastNotifiedMs=Date.parse(clean(data.last_notified_at));
+  const heartbeatDue=!Number.isFinite(lastNotifiedMs)||lastNotifiedMs<nowMs-WATCH_HEARTBEAT_MS;
+  const resourceStateChanged=clean(data.last_resource_state).toLowerCase()!==resourceState;
+  if(heartbeatDue||resourceStateChanged){
+    const now=new Date(nowMs).toISOString();
+    await admin.from("taphoa_sheet_watch_channels").update({
+      last_notified_at:now,
+      last_resource_state:resourceState||null,
+      updated_at:now
+    }).eq("channel_id",channelId);
+  }
 
   if(resourceState&&resourceState!=="sync"){
     EdgeRuntime.waitUntil(
@@ -442,17 +450,24 @@ async function inboundScan(caches:Map<number,TabCache>,modifiedTime:string){
 }
 
 async function synchronize(force=false){
+  let observedModifiedTime:string|null=null;
+  if(!force){
+    observedModifiedTime=await driveModifiedTime();
+    const preflightState=await readSyncState();
+    if(preflightState?.last_drive_modified_time&&new Date(preflightState.last_drive_modified_time).getTime()===new Date(observedModifiedTime).getTime()){
+      return {ok:true,changed:false,modifiedTime:observedModifiedTime,imported:Number(preflightState.last_imported_row_count||0),metadataOnly:true};
+    }
+  }
   const lockToken=crypto.randomUUID();
   const {data:locked,error:lockError}=await admin.rpc("taphoa_acquire_sheet_sync_lock",{p_token:lockToken,p_seconds:120});if(lockError)throw lockError;
   if(locked!==true)return {ok:true,busy:true,changed:false};
   try{
-    await setSyncState({last_sync_status:"running",last_error:""});
     try{
-      const modifiedTime=await driveModifiedTime();const syncState=await readSyncState();
+      const modifiedTime=observedModifiedTime||await driveModifiedTime();const syncState=await readSyncState();
       if(!force&&syncState?.last_drive_modified_time&&new Date(syncState.last_drive_modified_time).getTime()===new Date(modifiedTime).getTime()){
-        await setSyncState({last_sync_status:"success",last_success_at:new Date().toISOString(),last_error:""});
         return {ok:true,changed:false,modifiedTime,imported:Number(syncState.last_imported_row_count||0),metadataOnly:true};
       }
+      await setSyncState({last_sync_status:"running",last_error:""});
       const meta=await spreadsheetMeta();
       await reconcileSources(meta);let caches=await loadCaches(meta);
       const allocated=await allocateBlankSheetRows(caches);if(allocated)caches=await loadCaches(meta);
