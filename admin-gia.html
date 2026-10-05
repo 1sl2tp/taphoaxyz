@@ -273,7 +273,10 @@
           <div class="field"><label>NPP ×1</label><input id="newSupplier" inputmode="decimal" autocomplete="off"></div>
           <div class="field"><label>Lãi chuẩn %</label><input id="newStandard" inputmode="decimal" autocomplete="off"></div>
           <div class="field"><label>Số lượng</label><input id="newUnits" inputmode="decimal" autocomplete="off"></div>
-          <div class="field"><label>QC / đơn vị lẻ</label><input id="newRetailUnit" placeholder="chai, gói, hộp…" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label>QC / đơn vị lẻ</label>
+            <select id="newRetailUnit" autocomplete="off"></select>
+            <input id="newRetailUnitCustom" class="hidden" placeholder="Nhập quy cách khác…" autocomplete="off" spellcheck="false" style="margin-top:6px">
+          </div>
           <div class="field"><label>Giá lẻ</label><input id="newRetailPrice" inputmode="decimal" autocomplete="off" placeholder="Tự tính nếu để trống" data-mode="auto"></div>
         </div>
         <div id="productDialogMsg" class="msg"></div>
@@ -516,6 +519,27 @@
       $('toggleSourceBtn').textContent=s?.active===false?'Hiện nguồn':'Ẩn nguồn';
     }
 
+    const RETAIL_UNIT_OPTIONS={
+      'hang-thuong':['gói','hộp','túi','bịch','chai','lon','can','lọ','kg','tuýp','vỉ','ly'],
+      'sua':['hộp','lon','túi','bịch'],
+      'thuoc-la':['cây'],
+      'hang-u':['gói','hộp','túi','bịch','chai','lon','can','lọ','kg','tuýp','vỉ','bánh'],
+      'sheet-1150410221':['gói','hộp','túi','bịch','chai','lon','can','lọ','kg','tuýp','vỉ']
+    };
+    const GENERIC_RETAIL_UNITS=['gói','hộp','túi','bịch','chai','lon','can','lọ','kg','tuýp','vỉ','ly','bánh','cây'];
+
+    function retailUnitList(sourceKey){
+      return RETAIL_UNIT_OPTIONS[sourceKey]||GENERIC_RETAIL_UNITS;
+    }
+    function retailUnitOptionsHtml(sourceKey,currentValue=''){
+      const current=String(currentValue||'').trim();
+      const values=[...retailUnitList(sourceKey)];
+      if(current&&!values.includes(current))values.unshift(current);
+      const opts=['<option value="">—</option>',...values.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v)}</option>`)];
+      if(sourceKey!=='thuoc-la')opts.push('<option value="__custom__">Khác…</option>');
+      return opts.join('');
+    }
+
     function renderProducts(){
       $('emptyState').classList.toggle('hidden',items.length!==0);
       $('productBody').innerHTML=items.map((item,index)=>{
@@ -537,7 +561,7 @@
           <td data-col="cost3" class="readonly cost3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
-          <td data-col="retail_unit"><input class="cell-input" data-field="retail_unit" value="${esc(item.retail_unit||'')}"></td>
+          <td data-col="retail_unit"><select class="cell-select retail-unit-select" data-field="retail_unit">${retailUnitOptionsHtml(item.source_key,item.retail_unit)}</select></td>
           <td data-col="retail_price"><input class="cell-input num-input retail-price-input" data-field="retail_price_override" inputmode="decimal" autocomplete="off" value="${esc(plain(item.retail_price))}" data-mode="${item.retail_price_override===null||item.retail_price_override===undefined?'auto':'manual'}" title="${item.retail_price_override===null||item.retail_price_override===undefined?'Tự tính = Giá bán / SL':'Giá lẻ nhập tay'}"></td>
           <td data-col="h1" class="history-cell h1"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
           <td data-col="h2" class="history-cell h2"><div class="history-stack"><span class="hist-cost"></span><span class="hist-meta"></span></div></td>
@@ -776,6 +800,34 @@
       const active=sources.filter(s=>s.sync_status!=='deleted');
       $('newSource').innerHTML=active.map(s=>`<option value="${esc(s.source_key)}">${esc(s.name)}${s.active===false?' · ẩn':''}</option>`).join('');
       if(selectedSource&&active.some(s=>s.source_key===selectedSource))$('newSource').value=selectedSource;
+      updateNewRetailUnitOptions();
+    }
+
+    function updateNewRetailUnitOptions(){
+      const source=$('newSource').value;
+      const select=$('newRetailUnit');
+      const custom=$('newRetailUnitCustom');
+      if(!select||!custom)return;
+      select.innerHTML=retailUnitOptionsHtml(source,source==='thuoc-la'?'cây':'');
+      if(source==='thuoc-la'){
+        select.value='cây';
+        select.disabled=true;
+        custom.classList.add('hidden');
+        custom.value='';
+        $('newUnits').value='50';
+        $('newUnits').disabled=true;
+      }else{
+        select.disabled=false;
+        $('newUnits').disabled=false;
+        custom.classList.add('hidden');
+        custom.value='';
+      }
+      updateNewRetailPreview();
+    }
+
+    function getNewRetailUnit(){
+      const value=$('newRetailUnit').value;
+      return value==='__custom__'?$('newRetailUnitCustom').value.trim():value;
     }
 
     function openSourceDialog(mode){
@@ -821,7 +873,7 @@
         await rpc('taphoa_admin_create_product',{p_product:{
           name,source_key:source,cost:parse('newCost'),supplier_price:parse('newSupplier'),
           standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
-          retail_unit:$('newRetailUnit').value.trim(),
+          retail_unit:getNewRetailUnit(),
           retail_price_override:$('newRetailPrice').dataset.mode==='manual'?parse('newRetailPrice'):null
         }});
         $('productDialog').close();$('productForm').reset();selectedSource=source;await loadPage(true);
@@ -916,8 +968,15 @@
       setTimeout(()=>{$('newName').focus();$('newName').select()},0);
     });
     $('productForm').addEventListener('submit',e=>{e.preventDefault();submitProduct();});
-    ['newCost','newSupplier','newUnits','newSource'].forEach(id=>{
-      $(id).addEventListener(id==='newSource'?'change':'input',updateNewRetailPreview);
+    ['newCost','newSupplier','newUnits'].forEach(id=>{
+      $(id).addEventListener('input',updateNewRetailPreview);
+    });
+    $('newSource').addEventListener('change',updateNewRetailUnitOptions);
+    $('newRetailUnit').addEventListener('change',e=>{
+      const custom=e.target.value==='__custom__';
+      $('newRetailUnitCustom').classList.toggle('hidden',!custom);
+      if(custom){$('newRetailUnitCustom').focus();$('newRetailUnitCustom').select();}
+      else $('newRetailUnitCustom').value='';
     });
     $('newRetailPrice').addEventListener('input',e=>{
       e.target.dataset.mode=e.target.value.trim()===''?'auto':'manual';
@@ -1006,6 +1065,22 @@
     });
     $('productBody').addEventListener('change',e=>{
       const row=e.target.closest('tr');if(!row)return;
+      if(e.target.matches('.retail-unit-select')){
+        const item=items[Number(row.dataset.index)];
+        if(e.target.value==='__custom__'){
+          const entered=prompt('Nhập quy cách khác:',item?.retail_unit||'');
+          if(entered===null){
+            e.target.innerHTML=retailUnitOptionsHtml(item.source_key,item.retail_unit);
+            e.target.value=item.retail_unit||'';
+            return;
+          }
+          const value=entered.trim();
+          e.target.innerHTML=retailUnitOptionsHtml(item.source_key,value);
+          e.target.value=value;
+        }
+        row.dataset.dirty='1';
+        queueSave(row);
+      }
       if(e.target.matches('.state-select')){
         row.dataset.dirty='1';
         queueSave(row);
