@@ -43,8 +43,8 @@ Production is valid only when all are true:
 - Active Drive watch count = 0.
 - Google sync secret does not exist.
 - Google sync state/outbox tables and mutating RPCs do not exist.
-- `taphoa-sheet-sync` is an inert HTTP 410 tombstone with no DB/network work.
+- No TAPHOA Google Sheet/Drive Edge Function exists.
 - Product admin writes directly to Supabase.
 - Browser reads products from Supabase revision/bootstrap only.
 
-Historical migrations/docs may describe retired Sheet designs for audit history, but they are not current operating rules and must never be re-enabled.
+Historical migrations/docs may describe retired Sheet designs for audit history, but they are not current operating rules and must never be re-enabled. The old `taphoa-sheet-sync` source directory is deleted and must not be recreated.
