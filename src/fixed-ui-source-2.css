@@ -20,13 +20,19 @@
   display:grid;
   grid-template-columns:28px minmax(0,1fr);
   column-gap:8px;
-  align-items:center;
+  align-items:start;
+}
+.cart-left .cart-stt{
+  align-self:start;
+  line-height:1.25;
+  padding-top:0;
 }
 .cart-left .cart-name{
   min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  line-height:1.25;
 }
 .cart-price,
 .cart-total{
