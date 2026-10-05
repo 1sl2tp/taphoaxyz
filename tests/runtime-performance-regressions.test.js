@@ -54,3 +54,23 @@ test('PWA keeps versioned assets fast without globally forcing no-store',async()
   const networkFirst=sw.match(/async function networkFirst\(request\)\{([\s\S]*?)\n\}/)?.[1]||'';
   assert.doesNotMatch(networkFirst,/cache:'no-store'/);
 });
+
+
+test('TAPHOA revision sync is event-driven with no visible-tab interval poll',async()=>{
+  const [bridge,migration]=await Promise.all([
+    read('src/fixed-production-bridge.js'),
+    read('supabase/migrations/20261005043000_taphoa_revision_realtime_signal.sql')
+  ]);
+
+  assert.match(bridge,/channel\('taphoa-revisions-v1'\)/);
+  assert.match(bridge,/event:'\*',schema:'public',table:'taphoa_revisions'/);
+  assert.match(bridge,/function scheduleRevisionWake\(\)/);
+  assert.match(bridge,/setTimeout\(\(\)=>\{[\s\S]*syncOnce\(\)/);
+  assert.doesNotMatch(bridge,/syncTimer=setInterval/);
+  assert.doesNotMatch(bridge,/setInterval\(\(\)=>\{[\s\S]*syncOnce\(\)/);
+
+  assert.match(migration,/grant select on table public\.taphoa_revisions to anon, authenticated/i);
+  assert.match(migration,/revoke insert, update, delete on table public\.taphoa_revisions from anon, authenticated/i);
+  assert.match(migration,/create policy "taphoa_revisions_signal_read"/i);
+  assert.match(migration,/alter publication supabase_realtime add table public\.taphoa_revisions/i);
+});
