@@ -24,14 +24,12 @@ test('retail price cache bust is wired into production shell',async()=>{
   assert.match(sw,/taphoa-runtime-v36/);
 });
 
-test('sheet sync imports Quy cách and Giá lẻ by header instead of fixed column',async()=>{
-  const sync=await read('supabase/functions/taphoa-sheet-sync/index.ts');
-  assert.match(sync,/managerRetailLayout/);
-  assert.match(sync,/normalized\.indexOf\("quy cach"\)/);
-  assert.match(sync,/normalized\.indexOf\("gia le"\)/);
-  assert.match(sync,/retail_price_vnd:retail/);
-  assert.match(sync,/units_per_carton:units/);
-  assert.match(sync,/product\.units_per_carton,product\.retail_price_vnd/);
+test('Supabase product bridge exposes Quy cách and Giá lẻ without sheet sync',async()=>{
+  const bridge=await read('src/fixed-production-bridge.js');
+  assert.match(bridge,/\['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn','Ảnh','Quy cách','Giá lẻ'\]/);
+  assert.match(bridge,/\['quyCach','units_per_carton'\]/);
+  assert.match(bridge,/\['giaLe','retail_price'\]/);
+  await assert.rejects(read('supabase/functions/taphoa-sheet-sync/index.ts'));
 });
 
 
