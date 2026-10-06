@@ -3,15 +3,19 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const migration=fs.readFileSync(new URL('../supabase/migrations/20261006085500_taphoa_lock_internal_rpc_surface.sql',import.meta.url),'utf8');
+const restoreAccess=fs.readFileSync(new URL('../supabase/migrations/20261006095000_restore_authenticated_taphoa_access_context.sql',import.meta.url),'utf8');
+const auth=fs.readFileSync(new URL('../src/core/auth.js',import.meta.url),'utf8');
 const business=fs.readFileSync(new URL('../src/core/business.js',import.meta.url),'utf8');
 const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.meta.url),'utf8');
 
-test('retired source mutation RPCs and internal access helper are not browser-callable',()=>{
-  assert.match(migration,/revoke execute on function public\.taphoa_access_context\(\) from public, anon, authenticated/i);
+test('TAPHOA access check is authenticated-only while retired source mutation RPCs stay locked',()=>{
+  assert.match(auth,/rpc\('taphoa_access_context'\)/);
+  assert.match(restoreAccess,/revoke execute on function public\.taphoa_access_context\(\) from public, anon/i);
+  assert.match(restoreAccess,/grant execute on function public\.taphoa_access_context\(\) to authenticated, service_role/i);
   assert.match(migration,/revoke execute on function public\.taphoa_create_source_from_web\(text\) from public, anon, authenticated/i);
   assert.match(migration,/revoke execute on function public\.taphoa_delete_source_from_web\(text\) from public, anon, authenticated/i);
-  assert.doesNotMatch(business,/taphoa_access_context|taphoa_create_source_from_web|taphoa_delete_source_from_web/);
-  assert.doesNotMatch(bridge,/taphoa_access_context|taphoa_create_source_from_web|taphoa_delete_source_from_web/);
+  assert.doesNotMatch(business,/taphoa_create_source_from_web|taphoa_delete_source_from_web/);
+  assert.doesNotMatch(bridge,/taphoa_create_source_from_web|taphoa_delete_source_from_web/);
 });
 
 test('core TAPHOA tables remain RPC-only for browser roles',()=>{
