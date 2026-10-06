@@ -39,3 +39,7 @@ test('tobacco keeps the reference basis as its default without a special selecto
   assert.match(migration,/set legacy_profit_vnd=1,[\s\S]*sale_price_basis='cost'[\s\S]*where source_key='thuoc-la'/);
   assert.doesNotMatch(admin,/NPP tier is selected automatically from the profit-protection rule/);
 });
+
+test('migration terminates each generated function definition before the next statement',()=>{
+  assert.doesNotMatch(migration,/\$function\$\n\nCREATE OR REPLACE FUNCTION/);
+});
