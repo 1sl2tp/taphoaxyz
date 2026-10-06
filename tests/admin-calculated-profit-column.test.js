@@ -11,7 +11,7 @@ test('admin shows the calculated reference profit beside the reference profit in
 });
 
 test('calculated reference profit is exactly the reference price minus cost',()=>{
-  assert.match(admin,/const referenceTarget=costTargetSale(cost,item.source_key,legacyProfit)/);
-  assert.match(admin,/const calculatedProfit=referenceTarget===null||cost===null?null:referenceTarget-cost/);
-  assert.match(admin,/row.querySelector('.calculated-profit').textContent=pretty(calculatedProfit)/);
+  assert.ok(admin.includes('const referenceTarget=costTargetSale(cost,item.source_key,legacyProfit);'));
+  assert.ok(admin.includes('const calculatedProfit=referenceTarget===null||cost===null?null:referenceTarget-cost;'));
+  assert.ok(admin.includes("row.querySelector('.calculated-profit').textContent=pretty(calculatedProfit);"));
 });
