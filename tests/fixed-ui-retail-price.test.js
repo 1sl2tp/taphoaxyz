@@ -27,7 +27,7 @@ test('retail price cache bust is wired into production shell',async()=>{
 test('Supabase product bridge exposes Quy cách and Giá lẻ without sheet sync',async()=>{
   const bridge=await read('src/fixed-production-bridge.js');
   assert.match(bridge,/\['Mã','Tên sản phẩm','Vốn','Giá bán','Nguồn','Ảnh','Quy cách','Giá lẻ'\]/);
-  assert.match(bridge,/\['quyCach','units_per_carton'\]/);
+  assert.match(bridge,/\['quyCach','quyDoiThung','units_per_carton'\]/);
   assert.match(bridge,/\['giaLe','retail_price'\]/);
   await assert.rejects(read('supabase/functions/taphoa-sheet-sync/index.ts'));
 });
