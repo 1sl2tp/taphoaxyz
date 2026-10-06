@@ -46,7 +46,7 @@ AS $function$
     when p_basis='supplier_3' and p_supplier is not null then ceil(p_supplier*1.03)
     else public.taphoa_cost_target_sale(p_cost,p_source_key,p_old_profit)
   end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.taphoa_admin_create_product(p_product jsonb)
@@ -149,7 +149,7 @@ begin
     'ok',true,'created',true,'product_code',v_code,'source_key',v_source,'price',v_price
   );
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.taphoa_admin_price_catalog(p_query text DEFAULT ''::text, p_source text DEFAULT ''::text, p_limit integer DEFAULT 100, p_offset integer DEFAULT 0)
@@ -266,7 +266,7 @@ begin
   ) into result;
   return result;
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.taphoa_update_product_from_web(p_product jsonb)
@@ -385,7 +385,7 @@ begin
     'retail_price',v_retail_price,'admin_state',v_admin_state
   );
 end;
-$function$
+$function$;
 
 
 update public.taphoa_revisions
