@@ -17,7 +17,7 @@ test('automatic pricing checks NPP x1 first then paired 1.5 and 3 percent candid
   assert.match(admin,/if\(supplier!==null&&supplier>cost\)return 'supplier_1'/);
   assert.match(admin,/pickNearestAbove\(cost,\[\['supplier_1_5',supplier15\],\['cost_1_5',cost15\]\]\)/);
   assert.match(admin,/pickNearestAbove\(cost,\[\['supplier_3',supplier3\],\['cost_3',cost3\]\]\)/);
-  assert.match(admin,/const reference=costTargetSale\(cost,sourceKey,oldProfit\)/);
+  assert.match(admin,/return 'calculated_profit';/);
 });
 
 test('manual price selection disables auto without adding source-specific rules',()=>{

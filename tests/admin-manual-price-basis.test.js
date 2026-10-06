@@ -8,7 +8,7 @@ const migration=fs.existsSync(migrationUrl)?fs.readFileSync(migrationUrl,'utf8')
 
 test('admin price table exposes the legacy reference profit as a selectable basis',()=>{
   assert.match(admin,/data-col="legacy_profit"[^>]*>Lãi tham chiếu</);
-  assert.match(admin,/data-col="legacy_profit"[^>]*class="[^"]*price-choice[^"]*"[^>]*data-basis="cost"/);
+  assert.match(admin,/data-col="legacy_profit"[^>]*class="[^"]*price-choice[^"]*"[^>]*data-basis="reference"/);
   assert.match(admin,/item\.legacy_profit_vnd/);
 });
 
@@ -52,7 +52,7 @@ test('clicking the editable NPP x1 value selects supplier_1 as the sale basis',(
 });
 
 test('reference profit is editable without silently switching the selected price basis',()=>{
-  assert.match(admin,/data-col="legacy_profit"[^>]*class="[^"]*price-choice[^"]*"[^>]*data-basis="cost"[\s\S]*data-field="legacy_profit"/);
+  assert.match(admin,/data-col="legacy_profit"[^>]*class="[^"]*price-choice[^"]*"[^>]*data-basis="reference"[\s\S]*data-field="legacy_profit"/);
   assert.match(admin,/const editingReference=e\.target\.matches\('\[data-field="legacy_profit"\]'\)/);
   assert.match(admin,/if\(choice&&!choice\.classList\.contains\('disabled'\)&&!editingReference\)/);
   assert.match(admin,/\['cost','supplier_price','legacy_profit','units_per_carton'\]\.includes\(e\.target\.dataset\.field\)/);
