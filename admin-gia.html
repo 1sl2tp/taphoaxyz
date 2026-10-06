@@ -845,13 +845,13 @@
         select.disabled=true;
         custom.classList.add('hidden');
         custom.value='';
-        $('newUnits').value='50';
+        $('newUnits').value='1';
         $('newUnits').disabled=true;
       }else{
         select.disabled=false;
         const wasLocked=$('newUnits').disabled;
         $('newUnits').disabled=false;
-        if(wasLocked&&$('newUnits').value==='50')$('newUnits').value='';
+        if(wasLocked&&$('newUnits').value==='1')$('newUnits').value='';
         custom.classList.add('hidden');
         custom.value='';
       }
