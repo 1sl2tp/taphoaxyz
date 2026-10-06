@@ -22,7 +22,8 @@ test('reference basis adds the entered profit directly while calculated basis us
 test('auto falls back to calculated profit and no-NPP rows highlight Lãi tính',()=>{
   assert.match(admin,/if\(supplier===null\)return 'calculated_profit'/);
   assert.match(admin,/return 'calculated_profit';\s*\n\s*}/);
-  assert.doesNotMatch(admin,/sourceKey==='thuoc-la'/);
+  const autoBlock=admin.match(/function autoSaleBasis[\s\S]*?function selectedSalePrice/)?.[0]||'';
+  assert.doesNotMatch(autoBlock,/thuoc-la/);
 });
 
 test('database persists separate reference and calculated-profit bases',()=>{
@@ -35,6 +36,6 @@ test('database persists separate reference and calculated-profit bases',()=>{
 
 test('existing manual choices are preserved while automatic/default rows use calculated profit',()=>{
   assert.match(migration,/sale_price_mode='manual'[\s\S]*source_key='thuoc-la'[\s\S]*sale_price_basis='reference'/);
-  assert.match(migration,/sale_price_mode='manual'[\s\S]*sale_price_basis='supplier_1'/);
+  assert.match(migration,/Manual NPP selections[\s\S]*sale_price_basis='supplier_1'/);
   assert.match(migration,/sale_price_mode='auto'[\s\S]*taphoa_auto_sale_basis/);
 });

@@ -21,7 +21,7 @@ test('all three NPP tiers can be selected per product',()=>{
 });
 
 test('row save persists the selected basis instead of recomputing it',()=>{
-  assert.match(admin,/sale_price_basis:item\?\.sale_price_basis\?\?'cost'/);
+  assert.match(admin,/sale_price_basis:item\?\.sale_price_basis\?\?'calculated_profit'/);
   assert.doesNotMatch(admin,/sale_price_basis:autoSaleBasis\(/);
 });
 

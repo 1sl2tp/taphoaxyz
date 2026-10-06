@@ -12,7 +12,7 @@ test('admin exposes automatic mode and both cost percentage candidates as select
   assert.match(admin,/data-col="cost3"[^>]*class="[^"]*price-choice[^"]*"[^>]*data-basis="cost_3"/);
 });
 
-test('automatic pricing checks NPP x1 first then paired 1.5 and 3 percent candidates then reference',()=>{
+test('automatic pricing checks NPP x1 first then paired 1.5 and 3 percent candidates then calculated profit',()=>{
   assert.match(admin,/function autoSaleBasis\(cost,supplier,sourceKey,oldProfit\)/);
   assert.match(admin,/if\(supplier!==null&&supplier>cost\)return 'supplier_1'/);
   assert.match(admin,/pickNearestAbove\(cost,\[\['supplier_1_5',supplier15\],\['cost_1_5',cost15\]\]\)/);
@@ -29,7 +29,7 @@ test('manual price selection disables auto without adding source-specific rules'
 
 test('row payload persists auto versus manual mode per product',()=>{
   assert.match(admin,/sale_price_mode:item\?\.sale_price_mode\?\?'auto'/);
-  assert.match(admin,/sale_price_basis:item\?\.sale_price_basis\?\?'cost'/);
+  assert.match(admin,/sale_price_basis:item\?\.sale_price_basis\?\?'calculated_profit'/);
 });
 
 test('database adds sale_price_mode and resolves automatic basis without a tobacco selection rule',()=>{

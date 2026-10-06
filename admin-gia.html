@@ -564,11 +564,11 @@
             <span class="cost-current-meta"></span>
           </td>
           <td data-col="price" class="readonly sale-price"><button class="auto-price-btn" type="button" title="Bật lại giá tự động">AUTO</button><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
-          <td data-col="legacy_profit" class="legacy-profit price-choice" data-basis="cost" title="Sửa lãi tại ô số; bấm dòng giá để chọn Lãi tham chiếu">
+          <td data-col="legacy_profit" class="legacy-profit price-choice" data-basis="reference" title="Sửa lãi tại ô số; bấm dòng giá để chọn Lãi tham chiếu">
             <input class="cell-input num-input reference-profit-input" data-field="legacy_profit" inputmode="decimal" value="${esc(plain(item.legacy_profit_vnd))}">
             <span class="reference-price"></span>
           </td>
-          <td data-col="calculated_profit" class="readonly calculated-profit"></td>
+          <td data-col="calculated_profit" class="readonly calculated-profit price-choice" data-basis="calculated_profit" title="Bấm để chọn giá theo Lãi tính"><div class="candidate-wrap"><span class="calculated-profit-value"></span><span class="candidate-profit calculated-price"></span></div></td>
           <td data-col="supplier_price" class="supplier-x1 price-choice" data-basis="supplier_1" title="Bấm phần trống hoặc dòng lãi để chọn NPP ×1">
             <input class="cell-input num-input" data-field="supplier_price" inputmode="decimal" value="${esc(plain(item.supplier_price))}">
             <span class="supplier-profit"></span>
@@ -607,21 +607,23 @@
       return Math.round((g*g+a*a+b*b)/den);
     }
 
-    function costTargetSale(cost,sourceKey,oldProfit){
+    function referenceSalePrice(cost,oldProfit){
       if(cost===null)return null;
-      if(sourceKey==='thuoc-la')return cost+1;
-      if(['hang-thuong','sua','hang-u','sheet-1150410221'].includes(sourceKey)){
-        const p=balancedProfit(cost,oldProfit);
-        return p===null?null:cost+p;
-      }
-      return cost;
+      return cost+Math.max(num(oldProfit)??0,0);
+    }
+
+    function calculatedSalePrice(cost,oldProfit){
+      if(cost===null)return null;
+      const profit=balancedProfit(cost,oldProfit);
+      return profit===null?null:cost+profit;
     }
 
     function normalizeSaleBasis(basis,supplier){
-      const value=String(basis||'cost');
-      const allowed=['cost','supplier_1','supplier_1_5','supplier_3','cost_1_5','cost_3'];
-      const normalized=allowed.includes(value)?value:'cost';
-      return supplier===null&&normalized.startsWith('supplier_')?'cost':normalized;
+      const value=String(basis||'calculated_profit');
+      const allowed=['reference','calculated_profit','supplier_1','supplier_1_5','supplier_3','cost_1_5','cost_3'];
+      let normalized=value==='cost'?'calculated_profit':value;
+      if(!allowed.includes(normalized))normalized='calculated_profit';
+      return supplier===null&&normalized.startsWith('supplier_')?'calculated_profit':normalized;
     }
 
     function pickNearestAbove(cost,candidates){
@@ -635,8 +637,8 @@
     }
 
     function autoSaleBasis(cost,supplier,sourceKey,oldProfit){
-      if(cost===null)return supplier!==null?'supplier_1':'cost';
-      if(supplier===null)return 'cost';
+      if(cost===null)return supplier!==null?'supplier_1':'calculated_profit';
+      if(supplier===null)return 'calculated_profit';
       if(supplier!==null&&supplier>cost)return 'supplier_1';
 
       const supplier15=Math.ceil(supplier*1.015);
@@ -649,19 +651,20 @@
       const pair3=pickNearestAbove(cost,[['supplier_3',supplier3],['cost_3',cost3]]);
       if(pair3)return pair3;
 
-      const reference=costTargetSale(cost,sourceKey,oldProfit);
-      return reference!==null&&reference>cost?'cost':'cost';
+      return 'calculated_profit';
     }
 
     function selectedSalePrice(cost,supplier,basis,sourceKey,oldProfit){
-      const target=costTargetSale(cost,sourceKey,oldProfit);
+      const calculated=calculatedSalePrice(cost,oldProfit);
       const selected=normalizeSaleBasis(basis,supplier);
+      if(selected==='reference')return referenceSalePrice(cost,oldProfit);
+      if(selected==='calculated_profit')return calculatedSalePrice(cost,oldProfit);
       if(selected==='supplier_1')return supplier;
-      if(selected==='supplier_1_5')return supplier===null?target:Math.ceil(supplier*1.015);
-      if(selected==='supplier_3')return supplier===null?target:Math.ceil(supplier*1.03);
-      if(selected==='cost_1_5')return cost===null?target:Math.ceil(cost*1.015);
-      if(selected==='cost_3')return cost===null?target:Math.ceil(cost*1.03);
-      return target;
+      if(selected==='supplier_1_5')return supplier===null?calculated:Math.ceil(supplier*1.015);
+      if(selected==='supplier_3')return supplier===null?calculated:Math.ceil(supplier*1.03);
+      if(selected==='cost_1_5')return cost===null?calculated:Math.ceil(cost*1.015);
+      if(selected==='cost_3')return cost===null?calculated:Math.ceil(cost*1.03);
+      return calculated;
     }
 
     function updateChoiceState(row,item){
@@ -700,11 +703,13 @@
       saleProfitEl.innerHTML=profit===null?'':`lãi ${profit>0?'+':''}${pretty(profit)}<span class="subpct">· ${pretty(pct)}%</span>`;
       saleProfitEl.classList.toggle('neg',profit!==null&&profit<0);
 
-      const referenceTarget=costTargetSale(cost,item.source_key,legacyProfit);
-      const calculatedProfit=referenceTarget===null||cost===null?null:referenceTarget-cost;
+      const referenceTarget=referenceSalePrice(cost,legacyProfit);
+      const calculatedProfit=balancedProfit(cost,legacyProfit);
+      const calculatedTarget=calculatedSalePrice(cost,legacyProfit);
       const referenceMeta=row.querySelector('.reference-price');
       if(referenceMeta)referenceMeta.textContent=referenceTarget===null?'':'giá '+pretty(referenceTarget);
-      row.querySelector('.calculated-profit').textContent=pretty(calculatedProfit);
+      row.querySelector('.calculated-profit-value').textContent=pretty(calculatedProfit);
+      row.querySelector('.calculated-price').textContent=calculatedTarget===null?'':'giá '+pretty(calculatedTarget);
 
       const profitPct=value=>value===null||cost===null||cost===0?null:(value-cost)/cost*100;
       const formatCandidate=(profit,price)=>{
@@ -805,7 +810,7 @@
         retail_price_override:retailOverride,
         admin_state:read('admin_state'),
         sale_price_mode:item?.sale_price_mode??'auto',
-        sale_price_basis:item?.sale_price_basis??'cost'
+        sale_price_basis:item?.sale_price_basis??'calculated_profit'
       };
       for(const key of numeric){
         const raw=read(key);const value=num(raw);
@@ -1045,7 +1050,8 @@
       const supplier=num($('newSupplier').value);
       const units=num($('newUnits').value);
       const source=$('newSource').value;
-      const sale=selectedSalePrice(cost,supplier,'cost',source,null);
+      const basis=autoSaleBasis(cost,supplier,source,null);
+      const sale=selectedSalePrice(cost,supplier,basis,source,null);
       const retail=sale===null||units===null||units<=0?null:Math.round((sale/units)*10)/10;
       input.value=plain(retail);
       input.title='Tự tính = Giá bán / SL';
