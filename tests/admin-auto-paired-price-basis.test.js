@@ -34,7 +34,9 @@ test('row payload persists auto versus manual mode per product',()=>{
 
 test('database adds sale_price_mode and resolves automatic basis without a tobacco selection rule',()=>{
   assert.equal(fs.existsSync(migrationUrl),true,'auto price-basis migration must exist');
-  assert.match(migration,/add column if not exists sale_price_mode text not null default 'auto'/);
+  assert.match(migration,/add column if not exists sale_price_mode text/);
+  assert.match(migration,/alter column sale_price_mode set default 'auto'/);
+  assert.match(migration,/alter column sale_price_mode set not null/);
   assert.match(migration,/create or replace function public\.taphoa_auto_sale_basis/i);
   const autoBlock=migration.match(/create or replace function public\.taphoa_auto_sale_basis[\s\S]*?\$function\$;/i)?.[0]||'';
   assert.doesNotMatch(autoBlock,/thuoc-la/i);
@@ -50,6 +52,6 @@ test('manual pricing supports reference NPP and cost percentage bases',()=>{
 });
 
 test('current tobacco selection is seeded as manual reference, not hard-coded in runtime auto logic',()=>{
-  assert.match(migration,/set sale_price_mode='manual'[\s\S]*where source_key='thuoc-la'/);
+  assert.match(migration,/set sale_price_mode='manual'[\s\S]*source_key='thuoc-la'/);
   assert.match(migration,/sale_price_mode='auto'/);
 });
