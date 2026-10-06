@@ -1067,7 +1067,7 @@
       if(e.target.matches('.cell-input'))e.target.select();
       const row=e.target.closest('tr');if(!row)return;
       const choice=e.target.closest('.price-choice');
-      if(choice&&!choice.classList.contains('disabled')&&!e.target.matches('.cell-input,.cell-select')){
+      if(choice&&!choice.classList.contains('disabled')){
         const item=items[Number(row.dataset.index)];
         if(item&&choice.dataset.basis){
           item.sale_price_basis=choice.dataset.basis;
