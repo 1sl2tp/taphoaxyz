@@ -36,6 +36,6 @@ test('database pricing respects the stored explicit basis',()=>{
 });
 
 test('tobacco keeps the reference basis as its default without a special selector rule',()=>{
-  assert.match(migration,/where source_key='thuoc-la'[\s\S]*sale_price_basis='cost'/);
+  assert.match(migration,/set legacy_profit_vnd=1,[\s\S]*sale_price_basis='cost'[\s\S]*where source_key='thuoc-la'/);
   assert.doesNotMatch(admin,/NPP tier is selected automatically from the profit-protection rule/);
 });
