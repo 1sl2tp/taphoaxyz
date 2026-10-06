@@ -7,6 +7,7 @@
 
   const backend=()=>window.TAPHOA_PRODUCTION;
   const sheetNames=['sanpham','khachhang','dontam','dongiao','thuchi'];
+  let orderMutationInFlight=false;
   const sheetNamesByDomain=Object.freeze({
     products:['sanpham'],
     customers:['khachhang'],
@@ -29,8 +30,22 @@
   }
 
   function backendOrderIdFor(sheetName,displayId){
-    const row=(appData?.[sheetName]||[]).slice(1).find(r=>String(r?.[0]||'').trim()===String(displayId||'').trim());
-    return String(row?.[7]||displayId||'').trim();
+    const displayKey=String(displayId||'').trim();
+    const row=(appData?.[sheetName]||[]).slice(1).find(r=>String(r?.[0]||'').trim()===displayKey);
+    const rowBackendId=String(row?.[7]||'').trim();
+    if(rowBackendId)return rowBackendId;
+
+    const prod=backend();
+    const state=prod?.getState?.()||{};
+    const match=(state.orders||[]).find(order=>{
+      const code=String(prod?.orderDisplayCode?.(order)||order?.displayCode||order?.display_code||order?.maDon||'').trim();
+      return code===displayKey;
+    });
+    return String(
+      match
+        ?(prod?.backendOrderId?.(match)||match?.backendOrderId||match?.order_id||match?.id||'')
+        :''
+    ).trim();
   }
 
   const uniqueOrderIds=rows=>Array.from(new Set((rows||[]).slice(1).map(r=>String(r?.[7]||r?.[0]||'').trim()).filter(Boolean)));
@@ -53,6 +68,18 @@
 
   async function refreshFixedSheets(names=sheetNames){
     for(const name of names)await SheetDB.read(name);
+  }
+
+  async function refreshOrderUiAfterMutation(){
+    try{
+      await refreshFixedSheets(['dontam','dongiao','thuchi']);
+    }catch(refreshError){
+      console.warn('refresh order UI after successful mutation',refreshError);
+      setTimeout(()=>{
+        refreshFixedSheets(['dontam','dongiao','thuchi'])
+          .catch(error=>console.warn('retry refresh order UI',error));
+      },500);
+    }
   }
 
 
@@ -157,6 +184,7 @@
   };
 
   dayToanBoGioHang=async function(tab){
+    if(orderMutationInFlight)return;
     if(currentAuthRole==='user'&&tab==='dongiao')return denyPermission('User chỉ được tạo Đơn tạm, không được Bán ngay.');
     if(currentAuthRole==='user'&&tab==='dontam'&&editingOrderSheet==='dongiao')return denyPermission('Đơn đã giao chỉ để xem. Hãy quay lại Bán hàng để tạo Đơn tạm mới.');
     if(tab==='dontam'&&!hasPermission('canCreateDraft'))return denyPermission('Tài khoản này không được tạo Đơn tạm.');
@@ -167,22 +195,39 @@
     const isPromotingDraft=Boolean(editingOrderId)&&sourceSheet==='dontam'&&tab==='dongiao';
     const targetSheet=isPromotingDraft?'dongiao':sourceSheet;
     const status=targetSheet==='dongiao'?'done':'pending';
-    const backendEditOrderId=editingOrderId?backendOrderIdFor(sourceSheet,editingOrderId):'';
+    let backendEditOrderId=editingOrderId?backendOrderIdFor(sourceSheet,editingOrderId):'';
     const items=Object.entries(cart).map(([maSP,item],index)=>({
       maSP:String(maSP),sl:Number(item.qty)||0,gia:Number(item.price)||0,lineNo:index+1,ghiChu:String(item.note||'')
     })).filter(item=>item.sl>0);
 
-    showLoading('Đang xử lý đẩy đơn...');
+    orderMutationInFlight=true;
+    showLoading(isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
     try{
-      await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items});
+      if(isPromotingDraft&&!backendEditOrderId){
+        await refreshFixedSheets(['dontam']);
+        backendEditOrderId=backendOrderIdFor(sourceSheet,editingOrderId);
+      }
+      if(isPromotingDraft&&!backendEditOrderId)throw new Error('Không tìm thấy ID database của đơn tạm. Hãy tải lại danh sách đơn.');
+
+      if(isPromotingDraft){
+        const result=await backend().deliverOrder(backendEditOrderId);
+        if(result?.ok!==true)throw new Error('Không thể chuyển đơn tạm sang Đã giao.');
+      }else{
+        const result=await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items});
+        if(result?.ok!==true)throw new Error('Không thể lưu đơn hàng.');
+      }
+
       showToast(isPromotingDraft?'Đã duyệt đơn sang Đã giao!':editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
       resetSaleSession();
       closeCartMobile();
-      await refreshFixedSheets(['dontam','dongiao','thuchi']);
+      await refreshOrderUiAfterMutation();
     }catch(error){
-      console.error('save order',error);
+      console.error(isPromotingDraft?'deliver pending order':'save order',error);
       showAlertPopup('Lỗi',error?.message||'Không thể lưu đơn hàng.');
-    }finally{hideLoading();}
+    }finally{
+      orderMutationInFlight=false;
+      hideLoading();
+    }
   };
 
   submitQuickDebt=async function(type,targetMaKh=null,targetAmount=null){
