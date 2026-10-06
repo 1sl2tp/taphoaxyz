@@ -43,3 +43,10 @@ test('tobacco keeps the reference basis as its default without a special selecto
 test('migration terminates each generated function definition before the next statement',()=>{
   assert.doesNotMatch(migration,/\$function\$\s+CREATE OR REPLACE FUNCTION/);
 });
+
+test('clicking the editable NPP x1 value selects supplier_1 as the sale basis',()=>{
+  assert.match(admin,/const choice=e\.target\.closest\('\.price-choice'\)/);
+  assert.doesNotMatch(admin,/choice&&!choice\.classList\.contains\('disabled'\)&&!e\.target\.matches\('\.cell-input,\.cell-select'\)/);
+  assert.match(admin,/item\.sale_price_basis=choice\.dataset\.basis/);
+  assert.match(admin,/queueSave\(row\)/);
+});
