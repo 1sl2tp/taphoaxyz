@@ -63,7 +63,10 @@
     .supplier-x1 .cell-input,.legacy-profit .cell-input{height:25px;padding-top:3px;padding-bottom:1px}
     .supplier-profit,.reference-price{position:absolute;right:7px;bottom:2px;font-size:10px;color:#64748b;pointer-events:none}
     .supplier-profit.pos{color:#15803d}.supplier-profit.neg{color:#dc2626}
+    .sale-price{position:relative}
     .sale-stack{height:39px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:2px 7px;line-height:1.05}
+    .auto-price-btn{position:absolute;left:3px;top:3px;border:1px solid #cbd5e1;border-radius:5px;background:#fff;color:#64748b;font-size:8px;font-weight:900;padding:2px 4px;line-height:1;z-index:2}
+    .auto-price-btn.active{background:#dbeafe;border-color:#60a5fa;color:#1d4ed8}
     .sale-price-value{font-size:13px;font-weight:900;color:#111827}
     .sale-profit{font-size:10px;color:#15803d;margin-top:2px;white-space:nowrap}
     .sale-profit.neg{color:var(--red)}
@@ -175,7 +178,7 @@
         <div class="summary">
           <span id="countText">Đang tải…</span>
           <span>•</span>
-          <span>Rời ô hoặc Enter = tự lưu · xanh dương = giá bán đang được chọn</span>
+          <span>Rời ô hoặc Enter = tự lưu · AUTO xanh = tự động · ô xanh = giá bán đang dùng</span>
         </div>
 
         <div class="sheet-wrap">
@@ -558,7 +561,7 @@
             <input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}">
             <span class="cost-current-meta"></span>
           </td>
-          <td data-col="price" class="readonly sale-price"><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
+          <td data-col="price" class="readonly sale-price"><button class="auto-price-btn" type="button" title="Bật lại giá tự động">AUTO</button><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
           <td data-col="legacy_profit" class="legacy-profit price-choice" data-basis="cost" title="Sửa lãi tại ô số; bấm dòng giá để chọn Lãi tham chiếu">
             <input class="cell-input num-input reference-profit-input" data-field="legacy_profit" inputmode="decimal" value="${esc(plain(item.legacy_profit_vnd))}">
             <span class="reference-price"></span>
@@ -569,8 +572,8 @@
           </td>
           <td data-col="supplier15" class="readonly supplier15 price-choice" data-basis="supplier_1_5"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="supplier3" class="readonly supplier3 price-choice" data-basis="supplier_3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
-          <td data-col="cost15" class="readonly cost15"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
-          <td data-col="cost3" class="readonly cost3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
+          <td data-col="cost15" class="readonly cost15 price-choice" data-basis="cost_1_5"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
+          <td data-col="cost3" class="readonly cost3 price-choice" data-basis="cost_3"><div class="candidate-wrap"><span class="candidate-price"></span><span class="candidate-profit"></span></div></td>
           <td data-col="standard_profit_percent"><input class="cell-input num-input" data-field="standard_profit_percent" inputmode="decimal" value="${esc(plain(item.standard_profit_percent))}"></td>
           <td data-col="units_per_carton"><input class="cell-input num-input" data-field="units_per_carton" inputmode="decimal" value="${esc(plain(item.units_per_carton))}"></td>
           <td data-col="retail_unit"><select class="cell-select retail-unit-select" data-field="retail_unit">${retailUnitOptionsHtml(item.source_key,item.retail_unit)}</select></td>
@@ -613,9 +616,38 @@
 
     function normalizeSaleBasis(basis,supplier){
       const value=String(basis||'cost');
-      const allowed=['cost','supplier_1','supplier_1_5','supplier_3'];
+      const allowed=['cost','supplier_1','supplier_1_5','supplier_3','cost_1_5','cost_3'];
       const normalized=allowed.includes(value)?value:'cost';
       return supplier===null&&normalized.startsWith('supplier_')?'cost':normalized;
+    }
+
+    function pickNearestAbove(cost,candidates){
+      if(cost===null)return null;
+      let best=null;
+      for(const [basis,price] of candidates){
+        if(price===null||price<=cost)continue;
+        if(!best||price<best[1])best=[basis,price];
+      }
+      return best?.[0]||null;
+    }
+
+    function autoSaleBasis(cost,supplier,sourceKey,oldProfit){
+      if(cost===null)return supplier!==null?'supplier_1':'cost';
+      if(supplier===null)return 'cost';
+      if(supplier!==null&&supplier>cost)return 'supplier_1';
+
+      const supplier15=Math.ceil(supplier*1.015);
+      const cost15=Math.ceil(cost*1.015);
+      const pair15=pickNearestAbove(cost,[['supplier_1_5',supplier15],['cost_1_5',cost15]]);
+      if(pair15)return pair15;
+
+      const supplier3=Math.ceil(supplier*1.03);
+      const cost3=Math.ceil(cost*1.03);
+      const pair3=pickNearestAbove(cost,[['supplier_3',supplier3],['cost_3',cost3]]);
+      if(pair3)return pair3;
+
+      const reference=costTargetSale(cost,sourceKey,oldProfit);
+      return reference!==null&&reference>cost?'cost':'cost';
     }
 
     function selectedSalePrice(cost,supplier,basis,sourceKey,oldProfit){
@@ -624,13 +656,22 @@
       if(selected==='supplier_1')return supplier;
       if(selected==='supplier_1_5')return supplier===null?target:Math.ceil(supplier*1.015);
       if(selected==='supplier_3')return supplier===null?target:Math.ceil(supplier*1.03);
+      if(selected==='cost_1_5')return cost===null?target:Math.ceil(cost*1.015);
+      if(selected==='cost_3')return cost===null?target:Math.ceil(cost*1.03);
       return target;
     }
 
     function updateChoiceState(row,item){
+      const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
-      const basis=normalizeSaleBasis(item.sale_price_basis,supplier);
+      const legacyProfit=num(row.querySelector('[data-field="legacy_profit"]')?.value);
+      const mode=item.sale_price_mode==='manual'?'manual':'auto';
+      const basis=mode==='auto'
+        ?autoSaleBasis(cost,supplier,item.source_key,legacyProfit)
+        :normalizeSaleBasis(item.sale_price_basis,supplier);
+      item.sale_price_mode=mode;
       item.sale_price_basis=basis;
+      row.querySelector('.auto-price-btn')?.classList.toggle('active',mode==='auto');
       row.querySelectorAll('.price-choice').forEach(cell=>{
         const needsSupplier=String(cell.dataset.basis||'').startsWith('supplier_');
         cell.classList.toggle('disabled',needsSupplier&&supplier===null);
@@ -642,7 +683,11 @@
       const cost=num(row.querySelector('[data-field="cost"]')?.value);
       const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
       const legacyProfit=num(row.querySelector('[data-field="legacy_profit"]')?.value);
-      const basis=normalizeSaleBasis(item.sale_price_basis,supplier);
+      const mode=item.sale_price_mode==='manual'?'manual':'auto';
+      const basis=mode==='auto'
+        ?autoSaleBasis(cost,supplier,item.source_key,legacyProfit)
+        :normalizeSaleBasis(item.sale_price_basis,supplier);
+      item.sale_price_mode=mode;
       item.sale_price_basis=basis;
       const sale=selectedSalePrice(cost,supplier,basis,item.source_key,legacyProfit);
       const profit=cost===null||sale===null?null:sale-cost;
@@ -754,6 +799,7 @@
         retail_unit:read('retail_unit'),
         retail_price_override:retailOverride,
         admin_state:read('admin_state'),
+        sale_price_mode:item?.sale_price_mode??'auto',
         sale_price_basis:item?.sale_price_basis??'cost'
       };
       for(const key of numeric){
@@ -782,6 +828,7 @@
         markRow(row,'saving');
         const result=await rpc('taphoa_update_product_from_web',{p_product:payload});
         item.product_name=payload.name;item.cost=payload.cost;
+        item.sale_price_mode=result?.sale_price_mode??payload.sale_price_mode;
         item.sale_price_basis=result?.sale_price_basis??payload.sale_price_basis;
         item.price=result?.price??selectedSalePrice(
           payload.cost,payload.supplier_price,item.sale_price_basis,
@@ -911,6 +958,7 @@
       try{
         await rpc('taphoa_admin_create_product',{p_product:{
           name,source_key:source,cost:parse('newCost'),supplier_price:parse('newSupplier'),
+          sale_price_mode:'auto',
           standard_profit_percent:parse('newStandard'),units_per_carton:parse('newUnits'),
           retail_unit:getNewRetailUnit(),
           retail_price_override:$('newRetailPrice').dataset.mode==='manual'?parse('newRetailPrice'):null
@@ -1071,11 +1119,21 @@
     $('productBody').addEventListener('click',e=>{
       if(e.target.matches('.cell-input'))e.target.select();
       const row=e.target.closest('tr');if(!row)return;
+      const item=items[Number(row.dataset.index)];
+      if(e.target.closest('.auto-price-btn')){
+        if(item){
+          item.sale_price_mode='auto';
+          row.dataset.dirty='1';
+          updateDerived(row,item);
+          queueSave(row);
+        }
+        return;
+      }
       const choice=e.target.closest('.price-choice');
       const editingReference=e.target.matches('[data-field="legacy_profit"]');
       if(choice&&!choice.classList.contains('disabled')&&!editingReference){
-        const item=items[Number(row.dataset.index)];
         if(item&&choice.dataset.basis){
+          item.sale_price_mode='manual';
           item.sale_price_basis=choice.dataset.basis;
           row.dataset.dirty='1';
           updateDerived(row,item);
