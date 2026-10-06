@@ -50,3 +50,31 @@ test('clicking the editable NPP x1 value selects supplier_1 as the sale basis',(
   assert.match(admin,/item\.sale_price_basis=choice\.dataset\.basis/);
   assert.match(admin,/queueSave\(row\)/);
 });
+
+test('reference profit is editable without silently switching the selected price basis',()=>{
+  assert.match(admin,/data-col="legacy_profit"[^>]*class="[^"]*price-choice[^"]*"[^>]*data-basis="cost"[\s\S]*data-field="legacy_profit"/);
+  assert.match(admin,/const editingReference=e\.target\.matches\('\[data-field="legacy_profit"\]'\)/);
+  assert.match(admin,/if\(choice&&!choice\.classList\.contains\('disabled'\)&&!editingReference\)/);
+  assert.match(admin,/\['cost','supplier_price','legacy_profit','units_per_carton'\]\.includes\(e\.target\.dataset\.field\)/);
+});
+
+test('row save sends editable reference profit to the backend',()=>{
+  assert.match(admin,/const numeric=\['cost','supplier_price','legacy_profit','standard_profit_percent','units_per_carton'\]/);
+  assert.match(admin,/legacy_profit_vnd=result\?\.legacy_profit_vnd\?\?payload\.legacy_profit/);
+});
+
+test('backend persists reference profit and recalculates only from the already selected basis',()=>{
+  const migration2Url=new URL('../supabase/migrations/20261006061000_taphoa_editable_reference_profit.sql',import.meta.url);
+  assert.equal(fs.existsSync(migration2Url),true,'editable reference-profit migration must exist');
+  const migration2=fs.readFileSync(migration2Url,'utf8');
+  assert.match(migration2,/v_legacy numeric/);
+  assert.match(migration2,/p_product \? 'legacy_profit'/);
+  assert.match(migration2,/taphoa_product_sale_price\(v_input,v_supplier,v_basis,v_source_key,v_legacy\)/);
+  assert.match(migration2,/legacy_profit_vnd=v_legacy/);
+  assert.match(migration2,/'legacy_profit_vnd',v_legacy/);
+});
+
+test('tobacco reference price uses its editable reference profit, defaulting to one',()=>{
+  const migration2=fs.readFileSync(new URL('../supabase/migrations/20261006061000_taphoa_editable_reference_profit.sql',import.meta.url),'utf8');
+  assert.match(migration2,/when p_source_key='thuoc-la' then p_cost\+greatest\(coalesce\(p_old_profit,1\),0\)/);
+});
