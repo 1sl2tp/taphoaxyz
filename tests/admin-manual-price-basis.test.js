@@ -41,5 +41,5 @@ test('tobacco keeps the reference basis as its default without a special selecto
 });
 
 test('migration terminates each generated function definition before the next statement',()=>{
-  assert.doesNotMatch(migration,/\$function\$\n\nCREATE OR REPLACE FUNCTION/);
+  assert.doesNotMatch(migration,/\$function\$\s+CREATE OR REPLACE FUNCTION/);
 });
