@@ -245,6 +245,10 @@
     const width=Math.min(760,Math.max(360,sourceWidth));
     const clone=source.cloneNode(true);
     clone.removeAttribute('id');
+    clone.classList.remove('hidden');
+    clone.style.display='flex';
+    clone.style.webkitTextSizeAdjust='100%';
+    clone.style.textSizeAdjust='100%';
     clone.style.width=width+'px';
     clone.style.height='auto';
     clone.style.maxHeight='none';
