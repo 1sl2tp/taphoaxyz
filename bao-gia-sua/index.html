@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>Báo giá Sữa · 07/10/2026</title>
+<title>Báo giá · Tạp hóa</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#17202a;background:#f6f7f9}
 *{box-sizing:border-box}body{margin:0;background:#f6f7f9}.page{max-width:980px;margin:auto;padding:20px 14px 40px}
@@ -12,30 +12,40 @@
 .eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#667085}
 h1{margin:5px 0 8px;font-size:30px;line-height:1.12}p{margin:0;color:#667085;line-height:1.55}
 .summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:750}.pill.change{background:#ecfdf3;color:#027a48}
-.toolbar{display:flex;gap:8px;align-items:center;margin:14px 0}.search{flex:1;min-width:0;height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;padding:0 13px;font-size:15px;outline:none}.search:focus{border-color:#98a2b3;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
-button{height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:#344054;padding:0 13px;font-weight:750;cursor:pointer;white-space:nowrap}button.active{background:#17202a;color:#fff;border-color:#17202a}
+.tabs{display:flex;gap:8px;overflow:auto;padding:14px 0 2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{height:40px;border:1px solid #d0d5dd;border-radius:999px;background:#fff;color:#475467;padding:0 15px;font-weight:800;cursor:pointer;white-space:nowrap}.tab.active{background:#17202a;color:#fff;border-color:#17202a}
+.toolbar{display:flex;gap:8px;align-items:center;margin:12px 0 14px}.search{flex:1;min-width:0;height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;padding:0 13px;font-size:15px;outline:none}.search:focus{border-color:#98a2b3;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
+button{height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:#344054;padding:0 13px;font-weight:750;cursor:pointer;white-space:nowrap}.filter.active{background:#17202a;color:#fff;border-color:#17202a}
 .card{overflow:hidden;background:#fff;border:1px solid #e4e7ec;border-radius:16px}
 table{width:100%;border-collapse:collapse}th{padding:11px 12px;background:#f9fafb;color:#667085;font-size:11px;text-align:left;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e4e7ec}
-td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-child td{border-bottom:0}tr.changed{background:#fbfffc}.name{font-weight:760}.code{font-size:11px;color:#98a2b3;margin-top:3px}.price{text-align:right;font-size:17px;font-weight:850;white-space:nowrap}.change-note{text-align:right;font-size:12px;color:#027a48;font-weight:750;white-space:nowrap}.old{color:#98a2b3;text-decoration:line-through;margin-right:5px;font-weight:600}.badge{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:9px;font-weight:850;vertical-align:2px;text-transform:uppercase}.empty{padding:30px;text-align:center;color:#667085}.foot{padding:14px 4px 0;color:#667085;font-size:12px;line-height:1.5}
-@media(max-width:680px){.page{padding:10px 8px 28px}.hero{padding:18px;border-radius:14px}h1{font-size:25px}.toolbar{flex-wrap:wrap}.search{flex-basis:100%}.toolbar button{flex:1}.card{border-radius:12px}th:nth-child(1),td:nth-child(1){width:auto}th:nth-child(3),td:nth-child(3){display:none}td{padding:11px 9px}.price{font-size:15px}.name{font-size:14px}.code{font-size:10px}}
-@media print{body{background:#fff}.page{max-width:none;padding:0}.hero{border:0;box-shadow:none;padding:0 0 14px}.toolbar{display:none}.card{border:1px solid #d0d5dd;border-radius:0}.foot{padding-top:8px}tr{break-inside:avoid}th,td{padding:7px 8px}.badge{border:1px solid #98a2b3;background:#fff;color:#344054}}
+td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-child td{border-bottom:0}tr.changed{background:#fbfffc}.name{font-weight:760}.code{font-size:11px;color:#98a2b3;margin-top:3px}.price{text-align:right;font-size:17px;font-weight:850;white-space:nowrap}.change-note{text-align:right;font-size:12px;color:#027a48;font-weight:750;white-space:nowrap}.old{color:#98a2b3;text-decoration:line-through;margin-right:5px;font-weight:600}.changed-date{display:block;margin-top:3px;color:#667085;font-size:10px;font-weight:650}.badge{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:9px;font-weight:850;vertical-align:2px;text-transform:uppercase}.badge.up{background:#fff4ed;color:#b54708}
+.empty,.loading{padding:32px;text-align:center;color:#667085}.error{padding:18px;color:#b42318;background:#fff5f5;border-top:1px solid #fecaca}
+.foot{padding:14px 4px 0;color:#667085;font-size:12px;line-height:1.5}
+@media(max-width:680px){.page{padding:10px 8px 28px}.hero{padding:18px;border-radius:14px}h1{font-size:25px}.tabs{padding-top:10px}.tab{height:38px;padding:0 13px}.toolbar{flex-wrap:wrap}.search{flex-basis:100%}.toolbar button{flex:1}.card{border-radius:12px}th:nth-child(3),td:nth-child(3){display:none}td{padding:11px 9px}.price{font-size:15px}.name{font-size:14px}.code{font-size:10px}}
+@media print{body{background:#fff}.page{max-width:none;padding:0}.hero{border:0;box-shadow:none;padding:0 0 14px}.tabs,.toolbar{display:none}.card{border:1px solid #d0d5dd;border-radius:0}.foot{padding-top:8px}tr{break-inside:avoid}th,td{padding:7px 8px}.badge{border:1px solid #98a2b3;background:#fff;color:#344054}}
 </style>
 </head>
 <body>
 <main class="page">
   <section class="hero">
     <div class="eyebrow">Tạp hóa · Báo giá hiện hành</div>
-    <h1>Báo giá Sữa</h1>
-    <p>Cập nhật ngày <strong>07/10/2026</strong>. Giá bên dưới là giá bán hiện tại. Các mặt hàng vừa đổi giá được đánh dấu để dễ đối chiếu.</p>
+    <h1 id="title">Báo giá Sữa</h1>
+    <p id="subtitle">Đang tải giá bán mới nhất…</p>
     <div class="summary">
-      <span class="pill" id="countPill">59 mặt hàng</span>
-      <span class="pill change">6 mặt hàng vừa giảm giá</span>
+      <span class="pill" id="countPill">Đang tải…</span>
+      <span class="pill change" id="changedPill">—</span>
     </div>
   </section>
 
+  <nav class="tabs" id="tabs" aria-label="Nhóm báo giá">
+    <button class="tab active" type="button" data-source="sua">Sữa</button>
+    <button class="tab" type="button" data-source="hang-thuong">Hàng Thường</button>
+    <button class="tab" type="button" data-source="hang-u">Hàng U</button>
+    <button class="tab" type="button" data-source="thuoc-la">Thuốc lá</button>
+  </nav>
+
   <div class="toolbar">
     <input id="search" class="search" type="search" placeholder="Tìm tên hoặc mã sản phẩm…" autocomplete="off">
-    <button id="changedOnly" type="button">Chỉ giá thay đổi</button>
+    <button id="changedOnly" class="filter" type="button">Chỉ giá thay đổi</button>
     <button type="button" onclick="window.print()">In / Lưu PDF</button>
   </div>
 
@@ -44,40 +54,147 @@ td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-ch
       <thead><tr><th>Sản phẩm</th><th style="text-align:right">Giá bán</th><th style="text-align:right">Thay đổi</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
+    <div id="loading" class="loading">Đang tải bảng giá…</div>
     <div id="empty" class="empty" hidden>Không có sản phẩm phù hợp.</div>
+    <div id="error" class="error" hidden>Không tải được bảng giá. Vui lòng thử tải lại trang.</div>
   </section>
-  <div class="foot">Đơn vị hiển thị: đồng. Dòng có nhãn “Giảm giá” là thay đổi mới nhất ngày 07/10/2026.</div>
+
+  <div class="foot" id="foot">Giá hiển thị là giá bán hiện tại. Dòng có nhãn tăng/giảm giá sẽ kèm giá cũ và ngày thay đổi gần nhất.</div>
 </main>
+
 <script>
-const PRODUCTS=[{"old":null,"code":"SUA-000001","name":"Sua 9 hat","price":243},{"old":null,"code":"SUA-000002","name":"Sua 9 hat cao dam","price":309},{"old":null,"code":"SUA-000003","name":"Sua adm be","price":200},{"old":null,"code":"SUA-000004","name":"Sua bo be co","price":235},{"old":null,"code":"SUA-000005","name":"Sua bo be it","price":235},{"old":null,"code":"SUA-000006","name":"Sua bo bich co","price":344},{"old":null,"code":"SUA-000007","name":"Sua bo bich it","price":344},{"old":null,"code":"SUA-000008","name":"Sua bo bich khong","price":344},{"old":null,"code":"SUA-000009","name":"Sua bo bich so","price":344},{"old":null,"code":"SUA-000010","name":"Sua bo bich dau","price":344},{"old":null,"code":"SUA-000011","name":"Sua bo lit co","price":410},{"old":null,"code":"SUA-000012","name":"Sua bo lit it","price":410},{"old":null,"code":"SUA-000013","name":"Sua bo lit khong","price":410},{"old":null,"code":"SUA-000014","name":"Sua bo to co","price":366},{"old":null,"code":"SUA-000015","name":"Sua bo to it","price":366},{"old":null,"code":"SUA-000016","name":"Sua bo to khong","price":366},{"old":null,"code":"SUA-000017","name":"Sua chua co","price":268},{"old":null,"code":"SUA-000018","name":"Sua chua duong den","price":184},{"old":142,"code":"SUA-000019","name":"Sua chua greenfram","price":128},{"old":null,"code":"SUA-000020","name":"Sua chua it","price":268},{"old":null,"code":"SUA-000021","name":"Sua chua khong","price":268},{"old":null,"code":"SUA-000022","name":"Sua chua nep cam","price":167},{"old":null,"code":"SUA-000023","name":"Sua chua nha dam co","price":321},{"old":321,"code":"SUA-000024","name":"Sua chua nha dam it","price":304},{"old":null,"code":"SUA-000025","name":"Sua chua star trang","price":207},{"old":null,"code":"SUA-000026","name":"Sua chua trai cay","price":321},{"old":null,"code":"SUA-000027","name":"Sua dac tai loc 1284","price":556},{"old":null,"code":"SUA-000028","name":"Sua gau xanh vnm","price":339},{"old":null,"code":"SUA-000029","name":"Sua green cao dam","price":268},{"old":268,"code":"SUA-000030","name":"Sua green fram be co 110ml","price":258},{"old":268,"code":"SUA-000031","name":"Sua green fram be it 110ml","price":258},{"old":410,"code":"SUA-000032","name":"Sua green fram to co 180ml","price":400},{"old":410,"code":"SUA-000033","name":"Sua green fram to it 180ml","price":400},{"old":null,"code":"SUA-000034","name":"Sua ngoi sao dat","price":774},{"old":null,"code":"SUA-000035","name":"Sua ngoi sao re","price":648},{"old":null,"code":"SUA-000036","name":"Sua op vang vnm","price":364},{"old":null,"code":"SUA-000037","name":"Sua probi be mau - dâu","price":196},{"old":null,"code":"SUA-000038","name":"Sua probi be mau - dứa","price":196},{"old":null,"code":"SUA-000039","name":"Sua probi be mau - dưa gang","price":196},{"old":null,"code":"SUA-000040","name":"Sua probi be mau - it","price":196},{"old":null,"code":"SUA-000041","name":"Sua probi be mau - viet quat","price":196},{"old":null,"code":"SUA-000042","name":"Sua probi be trang","price":201},{"old":null,"code":"SUA-000043","name":"Sua probi lo 400ml","price":245},{"old":null,"code":"SUA-000044","name":"Sua probi to mau - dâu","price":166},{"old":null,"code":"SUA-000045","name":"Sua probi to mau - it","price":166},{"old":null,"code":"SUA-000046","name":"Sua probi to mau - viet quat","price":166},{"old":null,"code":"SUA-000047","name":"Sua probi to trang","price":181},{"old":null,"code":"SUA-000048","name":"Sua su lo cam","price":165},{"old":null,"code":"SUA-000049","name":"Sua su lo dau","price":165},{"old":null,"code":"SUA-000050","name":"Sua tho do giay 1284g","price":922},{"old":null,"code":"SUA-000051","name":"Sua tho do giay 1kg","price":718},{"old":null,"code":"SUA-000052","name":"Sua tho do giay 380g","price":582},{"old":null,"code":"SUA-000053","name":"Sua tho do sat","price":1105},{"old":null,"code":"SUA-000054","name":"Sua tho trang","price":1496},{"old":null,"code":"SUA-000055","name":"Sua tho tuyt","price":400},{"old":null,"code":"SUA-000056","name":"Sua tho vi","price":769},{"old":null,"code":"SUA-000057","name":"Sua probi lo 700ml","price":205},{"old":null,"code":"SUA-000058","name":"Sua green lit","price":506},{"old":null,"code":"SUA-000060","name":"Sua gau dau chuoi","price":223}];
-const rows=document.getElementById('rows'),search=document.getElementById('search'),changedOnly=document.getElementById('changedOnly'),empty=document.getElementById('empty'),countPill=document.getElementById('countPill');
+const SUPABASE='https://vtqhbhrkdxirqeqkgylo.supabase.co';
+const KEY='sb_publishable_3ms4nAPXQwBN18Zo2yNoIg_d4WrHu04';
+const SOURCE_LABELS={
+  'sua':'Sữa',
+  'hang-thuong':'Hàng Thường',
+  'hang-u':'Hàng U',
+  'thuoc-la':'Thuốc lá'
+};
+
+const tabs=document.getElementById('tabs');
+const rows=document.getElementById('rows');
+const search=document.getElementById('search');
+const changedOnly=document.getElementById('changedOnly');
+const empty=document.getElementById('empty');
+const loading=document.getElementById('loading');
+const error=document.getElementById('error');
+const title=document.getElementById('title');
+const subtitle=document.getElementById('subtitle');
+const countPill=document.getElementById('countPill');
+const changedPill=document.getElementById('changedPill');
+const foot=document.getElementById('foot');
+
+let products=[];
+let activeSource='sua';
 let onlyChanged=false;
-const fmt=n=>(Number(n)*1000).toLocaleString('vi-VN')+' đ';
-const displayName=s=>String(s||'').replace(/^Sua\b/i,'Sữa');
+let updatedAt=null;
+
+const fmt=n=>{
+  if(n===null||n===undefined||n==='')return 'Liên hệ';
+  return (Number(n)*1000).toLocaleString('vi-VN')+' đ';
+};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const viDate=value=>{
+  if(!value)return '';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?'':d.toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'});
+};
+const viDateTime=value=>{
+  if(!value)return '';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+};
+const displayName=s=>String(s||'')
+  .replace(/^Sua\b/i,'Sữa')
+  .replace(/\bco\b/gi,'có')
+  .replace(/\bit\b/gi,'ít')
+  .replace(/\bkhong\b/gi,'không')
+  .replace(/\bdau\b/gi,'dâu')
+  .replace(/\bdua gang\b/gi,'dưa gang')
+  .replace(/\bviet quat\b/gi,'việt quất')
+  .replace(/\bnha dam\b/gi,'nha đam');
+
+function isChanged(p){
+  return p.old_price!==null&&p.old_price!==undefined&&Number(p.old_price)!==Number(p.price);
+}
+
 function render(){
   const q=search.value.trim().toLocaleLowerCase('vi');
-  const visible=PRODUCTS.filter(p=>{
-    if(onlyChanged&&p.old==null)return false;
+  const sourceRows=products.filter(p=>p.source===activeSource);
+  const changedCount=sourceRows.filter(isChanged).length;
+  const visible=sourceRows.filter(p=>{
+    if(onlyChanged&&!isChanged(p))return false;
     if(!q)return true;
-    return (p.code+' '+p.name).toLocaleLowerCase('vi').includes(q);
+    return (String(p.code||'')+' '+String(p.name||'')).toLocaleLowerCase('vi').includes(q);
   });
+
+  title.textContent='Báo giá '+SOURCE_LABELS[activeSource];
+  subtitle.innerHTML='Cập nhật mới nhất'+(updatedAt?' <strong>'+esc(viDate(updatedAt))+'</strong>':'')+'. Giá bên dưới là giá bán hiện tại; mặt hàng có thay đổi sẽ ghi rõ giá cũ và ngày đổi.';
+  countPill.textContent=sourceRows.length+' mặt hàng';
+  changedPill.textContent=changedCount?changedCount+' mặt hàng có thay đổi giá':'Chưa có thay đổi giá';
+  changedPill.style.display=changedCount?'inline-flex':'none';
+
   rows.innerHTML=visible.map(p=>{
-    const changed=p.old!=null&&Number(p.old)!==Number(p.price);
-    const diff=changed?Number(p.price)-Number(p.old):0;
-    const note=changed?`<span class="old">${fmt(p.old)}</span>${diff<0?'Giảm '+fmt(Math.abs(diff)):'Tăng '+fmt(diff)}`:'—';
-    return `<tr class="${changed?'changed':''}">
-      <td><div class="name">${esc(displayName(p.name))}${changed?'<span class="badge">Giảm giá</span>':''}</div><div class="code">${esc(p.code)}</div></td>
-      <td class="price">${fmt(p.price)}</td>
-      <td class="change-note">${note}</td>
-    </tr>`;
+    const changed=isChanged(p);
+    const diff=changed?Number(p.price)-Number(p.old_price):0;
+    const isDown=diff<0;
+    const badge=changed?'<span class="badge '+(isDown?'':'up')+'">'+(isDown?'Giảm giá':'Tăng giá')+'</span>':'';
+    const note=changed
+      ? '<span class="old">'+fmt(p.old_price)+'</span>'+(isDown?'Giảm ':'Tăng ')+fmt(Math.abs(diff))+'<span class="changed-date">'+esc(viDate(p.changed_at))+'</span>'
+      : '—';
+    return '<tr class="'+(changed?'changed':'')+'">'+
+      '<td><div class="name">'+esc(displayName(p.name))+badge+'</div><div class="code">'+esc(p.code)+'</div></td>'+
+      '<td class="price">'+fmt(p.price)+'</td>'+
+      '<td class="change-note">'+note+'</td>'+
+    '</tr>';
   }).join('');
+
   empty.hidden=visible.length!==0;
-  countPill.textContent=visible.length+' mặt hàng';
+  foot.textContent='Đang xem '+SOURCE_LABELS[activeSource]+'. Giá hiển thị là giá bán hiện tại. Dòng có nhãn tăng/giảm giá kèm giá cũ và ngày thay đổi gần nhất.';
 }
+
+tabs.addEventListener('click',e=>{
+  const b=e.target.closest('[data-source]');
+  if(!b)return;
+  activeSource=b.dataset.source;
+  tabs.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));
+  search.value='';
+  onlyChanged=false;
+  changedOnly.classList.remove('active');
+  render();
+});
 search.addEventListener('input',render);
-changedOnly.addEventListener('click',()=>{onlyChanged=!onlyChanged;changedOnly.classList.toggle('active',onlyChanged);render();});
-render();
+changedOnly.addEventListener('click',()=>{
+  onlyChanged=!onlyChanged;
+  changedOnly.classList.toggle('active',onlyChanged);
+  render();
+});
+
+async function load(){
+  try{
+    const response=await fetch(SUPABASE+'/rest/v1/rpc/taphoa_public_price_quote',{
+      method:'POST',
+      headers:{
+        apikey:KEY,
+        Authorization:'Bearer '+KEY,
+        'Content-Type':'application/json'
+      },
+      body:'{}'
+    });
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const data=await response.json();
+    products=Array.isArray(data?.products)?data.products:[];
+    updatedAt=data?.updated_at||null;
+    loading.hidden=true;
+    render();
+  }catch(err){
+    console.error(err);
+    loading.hidden=true;
+    error.hidden=false;
+  }
+}
+load();
 </script>
 </body>
 </html>
