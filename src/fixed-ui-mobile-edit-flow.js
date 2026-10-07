@@ -11,7 +11,18 @@
   }
 
   const originalClickOrder=typeof window.clickOrder==='function' ? window.clickOrder : null;
+  const originalShowOrderDetailMobile=typeof window.showOrderDetailMobile==='function' ? window.showOrderDetailMobile : null;
   const originalEditOrder=typeof window.editOrder==='function' ? window.editOrder : null;
+
+  window.showOrderDetailMobile=function(orderId,sheetName){
+    const result=originalShowOrderDetailMobile?.apply(this,arguments);
+    const btnEdit=document.getElementById('btnEditPopupOrder');
+    if(btnEdit && sheetName==='dongiao'){
+      btnEdit.style.display='none';
+      btnEdit.removeAttribute('onclick');
+    }
+    return result;
+  };
 
   window.clickOrder=function(orderId,sheetName){
     const params=new URLSearchParams(window.location.search);
@@ -35,6 +46,11 @@
   };
 
   window.editOrder=function(orderId,sheetName){
+    if(sheetName==='dongiao'){
+      if(typeof window.showToast==='function')window.showToast('Đơn đã giao chỉ để xem.','info');
+      return;
+    }
+
     closeOrderDetailOverlayNow();
 
     if(typeof window.loadOrderIntoCart==='function'){
