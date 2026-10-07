@@ -26,3 +26,15 @@ test('mobile edit from order detail closes popup and keeps edit session',async()
   assert.match(close,/editingOrderId && editingOrderSheet && !editingOrderInSaleMode/);
   assert.match(close,/cart\s*=\s*\{\}/);
 });
+
+test('public customer deep-linked order opens read-only detail instead of cart flow',async()=>{
+  const flow=await read('src/fixed-ui-mobile-edit-flow.js');
+
+  assert.match(flow,/const originalClickOrder=typeof window\.clickOrder==='function' \? window\.clickOrder : null/);
+  assert.match(flow,/new URLSearchParams\(window\.location\.search\)/);
+  assert.match(flow,/params\.get\('kh'\)/);
+  assert.match(flow,/params\.get\('don'\)/);
+  assert.match(flow,/window\.showOrderDetailMobile\(orderId,sheetName\)/);
+  assert.match(flow,/window\.viewingOrderId=orderId/);
+  assert.match(flow,/window\.activeViewingSheet=sheetName/);
+});
