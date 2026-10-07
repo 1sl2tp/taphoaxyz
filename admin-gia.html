@@ -650,6 +650,36 @@
       })[0]||'';
     }
 
+    function mappedIdentityTokens(item){
+      const links=itemMarketLinks(item);
+      if(!links.length)return [];
+      const brandTokens=new Set(marketPlain(preferredMarketBrand(item)).split(/\s+/).filter(Boolean));
+      const stop=new Set([
+        'mi','sua','banh','keo','nuoc','bot','dau','gao','hao',
+        'goi','hop','tui','bich','chai','lon','loc','vi','khay','thung','cay',
+        'loai','huong','vi','san','pham','an','lien','tuoi','tiet','trung',
+        'vinamilk','vina','acecook','go','winmart','bach','hoa','xanh','vnm'
+      ]);
+      const docs=links.map(link=>{
+        const text=marketPlain([link&&link.name,link&&link.match_name].filter(Boolean).join(' '));
+        const tokens=text.split(/[^a-z0-9]+/).filter(token=>{
+          if(!token||token.length<3)return false;
+          if(stop.has(token)||brandTokens.has(token))return false;
+          if(/^\d+(?:ml|g|kg|l)?$/.test(token))return false;
+          return true;
+        });
+        return new Set(tokens);
+      });
+      if(!docs.length)return [];
+      const counts=new Map();
+      for(const set of docs)for(const token of set)counts.set(token,(counts.get(token)||0)+1);
+      const needed=Math.max(1,Math.ceil(docs.length*0.67));
+      return [...counts.entries()]
+        .filter(([,count])=>count>=needed)
+        .map(([token])=>token)
+        .slice(0,6);
+    }
+
     function marketCandidateAffinity(x,item){
       const links=itemMarketLinks(item);
       const doc=marketPlain([
@@ -681,6 +711,19 @@
       if(variantTokens.length){
         const hit=variantTokens.filter(t=>doc.includes(t)).length;
         score+=Math.round(45*hit/variantTokens.length);
+      }
+
+      // Tên nguồn đã gán là bằng chứng mạnh nhất cho hương vị/biến thể thật.
+      // Chỉ lấy các từ đặc trưng lặp lại giữa nhiều nguồn đã gán, nên "tôm chua cay"
+      // phải đứng trên "lẩu kim chi" hay "xào chua ngọt" dù cùng hãng và 75g.
+      const identityTokens=mappedIdentityTokens(item);
+      if(identityTokens.length){
+        const hit=identityTokens.filter(t=>new RegExp('(^|[^a-z0-9])'+t+'([^a-z0-9]|$)').test(doc)).length;
+        if(hit===identityTokens.length)score+=260;
+        else{
+          score+=hit*18;
+          score-=(identityTokens.length-hit)*35;
+        }
       }
 
       const color=String(item&&item.variant_color||'').trim()||mostCommonMarketValue(links,'variant_color');
