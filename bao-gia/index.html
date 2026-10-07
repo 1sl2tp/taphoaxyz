@@ -392,7 +392,7 @@ function render(){
     const note=changed
       ? '<span class="old">'+fmt(p.old_price)+'</span>'+(isDown?'Giảm ':'Tăng ')+fmt(Math.abs(diff))+'<span class="changed-date">'+esc(viDate(p.changed_at))+'</span>'
       : '—';
-    const ownPack=ownPackInfo(p);
+    const ownPack=activeSource==='thuoc-la'?'1 cây':ownPackInfo(p);
     const refs=marketRefHtml(p);
     const ownRetail=activeSource==='thuoc-la'?'':retailOwnText(p);
     return '<tr class="'+(changed?'changed':'')+'">'+
