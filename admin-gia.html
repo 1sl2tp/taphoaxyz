@@ -784,6 +784,7 @@
       const bundleUnit=String(item&&item.retail_bundle_unit||'').trim();
       const size=Number(item&&item.retail_size_value);
       const sizeUnit=String(item&&item.retail_size_unit||'').trim();
+      const weakUnit=['cai','mieng','vien','thanh','bo','doi'].includes(marketPlain(unit));
 
       if(Number.isFinite(sale)&&sale>0)parts.push('Giá bán '+pretty(sale));
       if(Number.isFinite(retail)&&retail>0)parts.push('Giá lẻ '+pretty(retail)+(unit?'/'+unit:''));
@@ -809,17 +810,22 @@
           }
           parts.push('Cấp 3 '+marketQty(bundleQty)+' '+unit+'/'+bundleUnit);
         }else{
-          if(unit)parts.push('Cấp 2 '+unit);
+          // cái/miếng/viên... là cấp con, không bao giờ được dựng thành Cấp 2.
+          if(unit&&!weakUnit)parts.push('Cấp 2 '+unit);
           if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&unit){
             parts.push('Cấp 3 '+marketQty(innerQty)+' '+innerUnit+'/'+unit);
           }else if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit){
             parts.push('Cấp 3 '+marketQty(innerQty)+' '+innerUnit);
+          }else if(unit&&weakUnit){
+            parts.push('Cấp 3 '+unit);
           }
         }
       }else if(unit){
-        parts.push('Cấp 2 '+unit);
+        if(!weakUnit)parts.push('Cấp 2 '+unit);
         if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit){
           parts.push('Cấp 3 '+marketQty(innerQty)+' '+innerUnit+'/'+unit);
+        }else if(weakUnit){
+          parts.push('Cấp 3 '+unit);
         }
       }
 
