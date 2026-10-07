@@ -605,14 +605,39 @@
 
     function smartMarketSearchText(item){
       const links=itemMarketLinks(item);
+      let size=Number(item&&item.retail_size_value);
+      let sizeUnit=String(item&&item.retail_size_unit||'').trim();
+      if(!(Number.isFinite(size)&&size>0&&sizeUnit)){
+        const sized=links.find(link=>Number(link&&link.size_value)>0&&String(link&&link.size_unit||'').trim());
+        if(sized){size=Number(sized.size_value);sizeUnit=String(sized.size_unit).trim();}
+      }
+      const sizeText=Number.isFinite(size)&&size>0&&sizeUnit?marketQty(size)+sizeUnit:'';
 
-      const brandChoices=links.map(link=>String(link&&link.brand||'').trim()).filter(Boolean).filter(value=>{
+      // Mở tìm kiếm bằng định lượng trước. Hãng/loại/vị/màu/QC dùng để xếp hạng,
+      // không khóa cứng kết quả nếu người dùng chưa gõ các từ đó.
+      if(sizeText)return sizeText;
+
+      const category=mostCommonMarketValue(links,'category');
+      const brand=preferredMarketBrand(item);
+      return [brand,category].filter(Boolean).join(' ')||String(item&&item.product_name||'').trim();
+    }
+
+    function preferredMarketBrand(item){
+      const links=itemMarketLinks(item);
+      const values=[];
+      for(const link of links){
+        let value=String(link&&link.brand||'').trim();
         const norm=marketPlain(value).replace(/\s+/g,'');
-        return /[a-z]/.test(norm)&&!/^(100|100%)$/.test(norm);
-      });
-      const brand=mostCommonMarketValue(brandChoices.map(value=>({value})),'value');
+        if(value&&/[a-z]/.test(norm)&&!/^(100|100%)$/.test(norm))values.push(value);
+        if(String(link&&link.source||'')==='VNM')values.push('Vinamilk');
+      }
+      return mostCommonMarketValue(values.map(value=>({value})),'value');
+    }
 
-      const categoryChoices=links.map(link=>String(link&&link.category||'').trim()).filter(Boolean).sort((a,b)=>{
+    function preferredMarketCategory(item){
+      const links=itemMarketLinks(item);
+      const values=links.map(link=>String(link&&link.category||'').trim()).filter(Boolean);
+      return values.sort((a,b)=>{
         const score=value=>{
           const norm=marketPlain(value);
           let n=0;
@@ -622,40 +647,86 @@
           return n;
         };
         return score(b)-score(a)||a.length-b.length;
-      });
-      const category=categoryChoices[0]||'';
+      })[0]||'';
+    }
+
+    function marketCandidateAffinity(x,item){
+      const links=itemMarketLinks(item);
+      const doc=marketPlain([
+        x&&x.name,x&&x.brand,x&&x.category,x&&x.match_name,x&&x.variant_label,x&&x.variant_color,
+        String(x&&x.source||'')==='VNM'?'Vinamilk':''
+      ].filter(Boolean).join(' '));
+      let score=0;
+
+      const ownSize=Number(item&&item.retail_size_value);
+      const ownSizeUnit=marketPlain(item&&item.retail_size_unit);
+      const candidateSize=Number(x&&x.size_value);
+      const candidateSizeUnit=marketPlain(x&&x.size_unit);
+      if(Number.isFinite(ownSize)&&ownSize>0&&Number.isFinite(candidateSize)&&candidateSize>0&&
+         ownSize===candidateSize&&ownSizeUnit&&ownSizeUnit===candidateSizeUnit)score+=120;
+
+      const brand=preferredMarketBrand(item);
+      const brandNorm=marketPlain(brand);
+      if(brandNorm&&doc.includes(brandNorm))score+=100;
+
+      const category=preferredMarketCategory(item);
+      const categoryTokens=marketPlain(category).split(/\s+/).filter(t=>t.length>2);
+      if(categoryTokens.length){
+        const hit=categoryTokens.filter(t=>doc.includes(t)).length;
+        score+=Math.round(35*hit/categoryTokens.length);
+      }
 
       const variant=String(item&&item.variant_label||'').trim()||mostCommonMarketValue(links,'variant_label');
-      const color=String(item&&item.variant_color||'').trim()||mostCommonMarketValue(links,'variant_color');
-
-      let size=Number(item&&item.retail_size_value);
-      let sizeUnit=String(item&&item.retail_size_unit||'').trim();
-      if(!(Number.isFinite(size)&&size>0&&sizeUnit)){
-        const sized=links.find(link=>Number(link&&link.size_value)>0&&String(link&&link.size_unit||'').trim());
-        if(sized){size=Number(sized.size_value);sizeUnit=String(sized.size_unit).trim();}
+      const variantTokens=marketPlain(variant).split(/\s+/).filter(t=>t.length>1);
+      if(variantTokens.length){
+        const hit=variantTokens.filter(t=>doc.includes(t)).length;
+        score+=Math.round(45*hit/variantTokens.length);
       }
-      const sizeText=Number.isFinite(size)&&size>0&&sizeUnit?marketQty(size)+sizeUnit:'';
 
-      const family={
-        'sua':'Sữa',
-        'hang-u':'',
-        'hang-thuong':'',
-        'thuoc-la':'Thuốc lá'
-      }[String(item&&item.source_key||'')]||'';
+      const color=String(item&&item.variant_color||'').trim()||mostCommonMarketValue(links,'variant_color');
+      if(color&&doc.includes(marketPlain(color)))score+=20;
 
-      // Ưu tiên nhận dạng theo nhóm lớn -> hãng -> loại -> trọng lượng/dung tích
-      // rồi mới tới vị/biến thể/màu. Đây là tìm gần đúng có xếp hạng, không phải
-      // bắt buộc mọi từ phải giống tên nội bộ của mình.
-      const structured=[family,brand,category,sizeText,variant,color]
-        .filter(Boolean)
-        .filter((value,index,array)=>array.findIndex(x=>marketPlain(x)===marketPlain(value))===index);
-      if(structured.length>=2)return structured.join(' ');
+      const ownUnits=Number(item&&item.units_per_carton);
+      const candidateCarton=marketCandidateCartonQty(x);
+      if(Number.isFinite(ownUnits)&&ownUnits>0&&Number.isFinite(candidateCarton)&&candidateCarton>0&&ownUnits===candidateCarton)score+=30;
 
-      const canonical=links.find(link=>String(link&&link.match_name||'').trim())?.match_name||
-        links.find(link=>String(link&&link.name||'').trim())?.name||'';
-      if(canonical)return String(canonical).replace(/\s+/g,' ').trim();
+      return score;
+    }
 
-      return [family,String(item&&item.product_name||'').trim(),sizeText].filter(Boolean).join(' ');
+    function marketCandidateIsCarton(x){
+      const kind=marketPlain(x&&x.pack_kind);
+      const unit=marketPlain(x&&x.pack_unit);
+      const label1=marketPlain(x&&x.label1);
+      return kind==='carton'||unit==='thung'||label1==='thung'||label1==='carton';
+    }
+
+    function marketCandidateCartonQty(x){
+      if(!marketCandidateIsCarton(x))return null;
+      const qty3=Number(x&&x.qty3);
+      const qty2=Number(x&&x.qty2);
+      const packQty=Number(x&&x.pack_quantity);
+      if(Number.isFinite(qty3)&&qty3>0)return qty3;
+      if(Number.isFinite(qty2)&&qty2>0)return qty2;
+      if(Number.isFinite(packQty)&&packQty>0)return packQty;
+      return null;
+    }
+
+    function sortMarketCandidates(rows,item){
+      return rows.slice().sort((a,b)=>{
+        const affinity=marketCandidateAffinity(b,item)-marketCandidateAffinity(a,item);
+        if(affinity)return affinity;
+
+        const packOrder=Number(marketCandidateIsCarton(a))-Number(marketCandidateIsCarton(b));
+        if(packOrder)return -packOrder;
+
+        const ap=Number(a&&a.current_price);
+        const bp=Number(b&&b.current_price);
+        const aPrice=Number.isFinite(ap)&&ap>0?ap:Number.POSITIVE_INFINITY;
+        const bPrice=Number.isFinite(bp)&&bp>0?bp:Number.POSITIVE_INFINITY;
+        if(aPrice!==bPrice)return aPrice-bPrice;
+
+        return String(a&&a.name||'').localeCompare(String(b&&b.name||''),'vi');
+      });
     }
 
     function marketQty(value){
@@ -1111,7 +1182,7 @@
           p_offset:marketCandidateOffset
         });
         const batch=Array.isArray(data)?data:[];
-        marketCandidates=reset?batch:marketCandidates.concat(batch);
+        marketCandidates=sortMarketCandidates(reset?batch:marketCandidates.concat(batch),item);
         marketCandidateOffset=marketCandidates.length;
         marketCandidateHasMore=batch.length===MARKET_CANDIDATE_PAGE_SIZE;
         renderMarketCandidates();
