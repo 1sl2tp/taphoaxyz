@@ -241,6 +241,7 @@ let items=[];
 let originals=new Map();
 let orderRows=[];
 let ordersLoaded=false;
+let ordersSource='';
 let activeView='cost';
 let orderMode='detail';
 
@@ -314,7 +315,7 @@ function switchView(view){
   $('ordersTab').classList.toggle('active',view==='orders');
   $('costPanel').classList.toggle('hidden',view!=='cost');
   $('ordersPanel').classList.toggle('hidden',view!=='orders');
-  if(view==='orders'&&!ordersLoaded)loadOrders();
+  if(view==='orders'&&(!ordersLoaded||ordersSource!==session?.source_key))loadOrders();
 }
 function orderNotes(row){
   return [row.order_note,row.item_note].map(x=>String(x||'').trim()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
@@ -334,7 +335,7 @@ function renderOrders(){
   const source=session?.source_key||'';
   const uniqueOrders=new Set(orderRows.map(x=>x.order_id)).size;
   const totalQty=orderRows.reduce((sum,x)=>sum+(Number(x.qty)||0),0);
-  $('ordersSummary').textContent=uniqueOrders+' đơn tạm · '+orderRows.length+' dòng hàng · tổng SL '+fmtQty(totalQty)+' · toàn bộ thời gian';
+  $('ordersSummary').textContent=(session?.source_name||SOURCE_LABELS[source]||'NCC')+' · '+uniqueOrders+' đơn tạm · '+orderRows.length+' dòng hàng · tổng SL '+fmtQty(totalQty)+' · toàn bộ thời gian';
   $('ordersPrintTitle').textContent='Đơn tạm · '+(session?.source_name||SOURCE_LABELS[source]||'NCC');
 
   $('detailModeBtn').classList.toggle('active',orderMode==='detail');
@@ -373,7 +374,9 @@ async function loadOrders(){
   $('ordersSummary').textContent='Đang tải đơn tạm…';
   try{
     const data=await rpc('taphoa_supplier_pending_orders',{p_token:session.token});
+    if(data?.source_key!==session?.source_key)throw new Error('supplier_order_source_mismatch');
     orderRows=Array.isArray(data?.rows)?data.rows:[];
+    ordersSource=data.source_key||'';
     ordersLoaded=true;
     renderOrders();
   }catch(err){
@@ -436,6 +439,7 @@ async function loadCatalog(){
   session.source_key=data.source_key;session.source_name=data.source_name;saveSession(session);
   items=Array.isArray(data.items)?data.items:[];
   originals=new Map(items.map(x=>[x.product_code,x.cost]));
+  orderRows=[];ordersLoaded=false;ordersSource='';
   $('title').textContent='Cập nhật giá vốn · '+(data.source_name||SOURCE_LABELS[data.source_key]||'NCC');
   showApp();render();
 }
@@ -509,7 +513,7 @@ $('logoutBtn').addEventListener('click',async()=>{
   const token=session?.token;
   saveSession(null);
   if(token)await rpc('taphoa_supplier_logout',{p_token:token}).catch(()=>{});
-  items=[];originals.clear();orderRows=[];ordersLoaded=false;activeView='cost';orderMode='detail';clearPin();setMsg('loginMsg','');showLogin();
+  items=[];originals.clear();orderRows=[];ordersLoaded=false;ordersSource='';activeView='cost';orderMode='detail';clearPin();setMsg('loginMsg','');showLogin();
 });
 
 const params=new URLSearchParams(location.search);
