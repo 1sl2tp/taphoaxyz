@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f6f7f9">
+<title>NCC · Cập nhật giá vốn</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#17202a;background:#f6f7f9}
+*{box-sizing:border-box}body{margin:0;background:#f6f7f9}button,input,select{font:inherit}.hidden{display:none!important}
+.page{max-width:980px;margin:auto;padding:16px 12px 42px}.card{background:#fff;border:1px solid #e4e7ec;border-radius:16px;box-shadow:0 8px 24px rgba(16,24,40,.05)}
+.login{max-width:430px;margin:8vh auto;padding:22px}.eyebrow{font-size:12px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;color:#667085}
+h1{font-size:26px;margin:5px 0 8px}.muted{color:#667085;font-size:13px;line-height:1.5}.field{display:grid;gap:6px;margin-top:14px}.field label{font-size:12px;font-weight:800;color:#475467}
+.field input,.field select,.search,.cost-input,.new-name,.new-cost{width:100%;height:44px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;padding:0 11px;outline:none}
+.field input:focus,.field select:focus,.search:focus,.cost-input:focus,.new-name:focus,.new-cost:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
+.pin{font-size:22px;letter-spacing:.28em;text-align:center;font-weight:800}.btn{height:42px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:#344054;padding:0 14px;font-weight:800;cursor:pointer}.btn.primary{background:#17202a;color:#fff;border-color:#17202a}.btn:disabled{opacity:.45;cursor:not-allowed}
+.msg{min-height:18px;margin-top:10px;font-size:12px;color:#667085}.msg.error{color:#b42318}.msg.ok{color:#027a48}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px}.head h1{margin:2px 0 4px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar{display:flex;gap:8px;padding:10px;border-top:1px solid #e4e7ec;border-bottom:1px solid #e4e7ec}.search{flex:1;min-width:0}.save{min-width:150px}
+.summary{padding:8px 11px;font-size:12px;color:#667085;background:#f9fafb;border-bottom:1px solid #e4e7ec}
+.table-wrap{overflow:auto;max-height:calc(100vh - 235px)}table{width:100%;border-collapse:collapse;min-width:620px}th{position:sticky;top:0;z-index:2;background:#f9fafb;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:10px 11px;border-bottom:1px solid #e4e7ec}
+td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{font-weight:760}.code{font-size:10px;color:#98a2b3;margin-top:3px}.cost-cell{width:160px}.cost-input,.new-cost{height:38px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}.cost-input.changed{background:#fff7cc;border-color:#f0b429}.new-name{height:38px}.new-row td{background:#fbfcff}.new-tag{display:inline-block;margin-left:7px;border-radius:999px;background:#eef4ff;color:#3538cd;padding:3px 6px;font-size:9px;font-weight:850;text-transform:uppercase}
+.empty{padding:28px;text-align:center;color:#667085}.foot{padding:12px 2px;color:#667085;font-size:12px;line-height:1.5}
+@media(max-width:680px){.page{padding:8px 6px 24px}.card{border-radius:12px}.login{margin:4vh auto;padding:18px}.head{padding:14px;align-items:flex-start}.head h1{font-size:22px}.toolbar{flex-wrap:wrap}.search{flex-basis:100%}.toolbar .btn{flex:1}.table-wrap{max-height:none}table{min-width:0}th:first-child,td:first-child{width:auto}.cost-cell{width:118px}.name{font-size:14px}.code{font-size:9px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section id="loginView" class="card login">
+    <div class="eyebrow">Nhà cung cấp</div>
+    <h1>Cập nhật giá vốn</h1>
+    <p class="muted">Chọn đúng nhóm hàng và nhập mã PIN 6 số. Giá nhập theo dạng số hiện tại: nhập <strong>400</strong> thì hệ thống lưu <strong>400</strong>.</p>
+    <form id="loginForm">
+      <div class="field">
+        <label>Nhóm hàng</label>
+        <select id="source">
+          <option value="sua">Sữa</option>
+          <option value="hang-thuong">Hàng Thường</option>
+          <option value="hang-u">Hàng U</option>
+          <option value="thuoc-la">Thuốc lá</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Mã PIN</label>
+        <input id="pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+      </div>
+      <button id="loginBtn" class="btn primary" type="submit" style="width:100%;margin-top:14px">Vào bảng giá</button>
+      <div id="loginMsg" class="msg"></div>
+    </form>
+  </section>
+
+  <section id="appView" class="card hidden">
+    <div class="head">
+      <div>
+        <div class="eyebrow">Nhà cung cấp</div>
+        <h1 id="title">Cập nhật giá vốn</h1>
+        <div class="muted">Chỉ sửa giá vốn. Giá bán được hệ thống xử lý theo cấu hình hiện tại.</div>
+      </div>
+      <div class="actions"><button id="logoutBtn" class="btn" type="button">Thoát</button></div>
+    </div>
+    <div class="toolbar">
+      <input id="search" class="search" type="search" placeholder="Tìm tên hoặc mã sản phẩm…" autocomplete="off">
+      <button id="saveBtn" class="btn primary save" type="button" disabled>Lưu thay đổi</button>
+    </div>
+    <div id="summary" class="summary">Đang tải…</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Sản phẩm</th><th class="cost-cell" style="text-align:right">Giá vốn</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="empty" class="empty hidden">Không tìm thấy sản phẩm.</div>
+    </div>
+    <div id="appMsg" class="msg" style="padding:0 12px"></div>
+  </section>
+  <div class="foot">Các dòng trống cuối bảng dùng để thêm sản phẩm mới. Điền tên + giá vốn rồi bấm “Lưu thay đổi”.</div>
+</main>
+
+<script>
+const SUPABASE='https://vtqhbhrkdxirqeqkgylo.supabase.co';
+const KEY='sb_publishable_3ms4nAPXQwBN18Zo2yNoIg_d4WrHu04';
+const SESSION_KEY='taphoa.ncc.session.v1';
+const SOURCE_LABELS={'sua':'Sữa','hang-thuong':'Hàng Thường','hang-u':'Hàng U','thuoc-la':'Thuốc lá'};
+const NEW_ROWS=5;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const parseNum=value=>{
+  const s=String(value??'').trim().replace(',','.');
+  if(!s)return null;
+  const n=Number(s);
+  return Number.isFinite(n)?n:null;
+};
+const pretty=value=>value===null||value===undefined||value===''?'':Number(value).toLocaleString('vi-VN',{maximumFractionDigits:2});
+
+const SUA_REPLACEMENTS=[
+  [/\bto trang\b/gi,'to trắng'],[/\bbe trang\b/gi,'bé trắng'],[/\blo\b/gi,'lọ'],[/\btho trang\b/gi,'thọ trắng'],
+  [/\bsu lo\b/gi,'su lọ'],[/\bvang vnm\b/gi,'vàng vnm'],[/\bto mau\b/gi,'màu'],[/\bnep cam\b/gi,'nếp cẩm bé'],
+  [/\bnha dam\b/gi,'nha đam'],[/\btrai cay\b/gi,'trái cây'],[/\btai loc\b/gi,'tài lộc'],[/\bdau chuoi\b/gi,'dâu, chuối'],
+  [/\bduong den\b/gi,'đường đen'],[/\b9 hat\b/gi,'9 hạt'],[/\bcao dam\b/gi,'cao đạm'],[/\bviet quat\b/gi,'việt quất'],
+  [/\btho do\b/gi,'thọ đỏ'],[/\bgiay\b/gi,'giấy'],[/\bsat\b/gi,'sắt'],[/\bvi\b/gi,'vỉ'],[/\bdat\b/gi,'đắt'],[/\bre\b/gi,'rẻ'],
+  [/\bbich\b/gi,'bịch'],[/\bbo\b/gi,'bò'],[/\bbe\b/gi,'bé'],[/\bco\b/gi,'có đường'],[/\bit\b/gi,'ít đường'],[/\bkhong\b/gi,'không đường'],
+  [/\bso\b/gi,'sô'],[/\btim\b/gi,'tím']
+];
+const HANG_U_REPLACEMENTS=[
+  [/\bsua tam\b/gi,'sữa tắm'],[/\bxa bong\b/gi,'xà bông'],[/\bbot giat\b/gi,'bột giặt'],[/\bdau goi\b/gi,'dầu gội'],[/\bdau xa\b/gi,'dầu xả'],
+  [/\bkem danh rang\b/gi,'kem đánh răng'],[/\blan khu mui\b/gi,'lăn khử mùi'],[/\bnuoc giat\b/gi,'nước giặt'],[/\brua tay\b/gi,'rửa tay'],
+  [/\brua bat\b/gi,'rửa bát'],[/\bsap thom\b/gi,'sáp thơm'],[/\bthien nhien\b/gi,'thiên nhiên'],[/\bxit phong\b/gi,'xịt phòng'],[/\bxi phong\b/gi,'xịt phòng'],
+  [/\bgia vi\b/gi,'gia vị'],[/\bday\b/gi,'dây'],[/\bgoi\b/gi,'gội'],[/\bxa\b/gi,'xả'],[/\bhong\b/gi,'hồng'],[/\bque\b/gi,'quế'],[/\btay\b/gi,'tẩy'],[/\bxit\b/gi,'xịt']
+];
+const COMMON_REPLACEMENTS=[
+  [/\bbot canh\b/gi,'bột canh'],[/\bbot mi\b/gi,'bột mì'],[/\bluong kho\b/gi,'lương khô'],[/\bgia vi\b/gi,'gia vị'],
+  [/\bhuong duong\b/gi,'hướng dương'],[/\bmi chinh\b/gi,'mì chính'],[/\bmuoi hao\b/gi,'muối hảo'],[/\bngu coc\b/gi,'ngũ cốc'],
+  [/\btuong ca\b/gi,'tương cà'],[/\btuong ot\b/gi,'tương ớt'],[/\bdau an\b/gi,'dầu ăn'],[/\bdau hao\b/gi,'dầu hào'],
+  [/\bbanh\b/gi,'bánh'],[/\bkeo\b/gi,'kẹo'],[/\bsua\b/gi,'sữa'],[/\bduong\b/gi,'đường'],[/\bphong\b/gi,'phộng'],[/\bnuoc\b/gi,'nước'],
+  [/\bchao\b/gi,'cháo'],[/\bmam\b/gi,'mắm'],[/\bnem\b/gi,'nêm'],[/\bxx\b/gi,'xúc xích']
+];
+function displayName(value,source=''){
+  let text=String(value||'').replace(/\s+/g,' ').trim();
+  if(source==='sua')for(const [p,r] of SUA_REPLACEMENTS)text=text.replace(p,r);
+  if(source==='hang-u')for(const [p,r] of HANG_U_REPLACEMENTS)text=text.replace(p,r);
+  for(const [p,r] of COMMON_REPLACEMENTS)text=text.replace(p,r);
+  text=text.replace(/\bdau\b/gi,source==='sua'?'dâu':'dầu');
+  text=text.replace(/\bmi\b/gi,'mì');
+  return text?text.charAt(0).toLocaleUpperCase('vi')+text.slice(1):'';
+}
+
+let session=null;
+let items=[];
+let originals=new Map();
+
+async function rpc(name,args){
+  const res=await fetch(SUPABASE+'/rest/v1/rpc/'+name,{
+    method:'POST',
+    headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(args||{})
+  });
+  const data=await res.json().catch(()=>null);
+  if(!res.ok)throw new Error(data?.message||data?.error||('HTTP '+res.status));
+  return data;
+}
+function setMsg(id,text='',kind=''){
+  const el=$(id);el.textContent=text;el.className='msg'+(kind?' '+kind:'');
+}
+function showLogin(message=''){
+  $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');
+  if(message)setMsg('loginMsg',message,'error');
+}
+function showApp(){
+  $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');
+}
+function saveSession(value){
+  session=value;
+  if(value)sessionStorage.setItem(SESSION_KEY,JSON.stringify(value));
+  else sessionStorage.removeItem(SESSION_KEY);
+}
+function restoreSession(){
+  try{
+    const s=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');
+    if(!s?.token)return null;
+    if(s.expires_at&&new Date(s.expires_at).getTime()<=Date.now())return null;
+    return s;
+  }catch{return null}
+}
+
+function changedExisting(){
+  let count=0;
+  document.querySelectorAll('.cost-input[data-code]').forEach(input=>{
+    const original=originals.get(input.dataset.code);
+    const now=parseNum(input.value);
+    const changed=now!==null&&Number(original)!==Number(now);
+    input.classList.toggle('changed',changed);
+    if(changed)count++;
+  });
+  return count;
+}
+function filledNewRows(){
+  return [...document.querySelectorAll('tr.new-row')].filter(row=>{
+    return row.querySelector('.new-name').value.trim()||row.querySelector('.new-cost').value.trim();
+  }).length;
+}
+function updateSaveState(){
+  const count=changedExisting()+filledNewRows();
+  $('saveBtn').disabled=count===0;
+  $('saveBtn').textContent=count?('Lưu '+count+' thay đổi'):'Lưu thay đổi';
+}
+
+function render(){
+  const q=$('search').value.trim().toLocaleLowerCase('vi');
+  const source=session?.source_key||'';
+  const visible=items
+    .slice()
+    .sort((a,b)=>displayName(a.name,source).localeCompare(displayName(b.name,source),'vi',{sensitivity:'base',numeric:true}))
+    .filter(p=>!q||(String(p.product_code)+' '+String(p.name)+' '+displayName(p.name,source)).toLocaleLowerCase('vi').includes(q));
+
+  const existing=visible.map(p=>`
+    <tr>
+      <td><div class="name">${esc(displayName(p.name,source))}</div><div class="code">${esc(p.product_code)}</div></td>
+      <td class="cost-cell"><input class="cost-input" data-code="${esc(p.product_code)}" inputmode="decimal" value="${esc(pretty(p.cost))}" aria-label="Giá vốn ${esc(displayName(p.name,source))}"></td>
+    </tr>`).join('');
+
+  const blanks=Array.from({length:NEW_ROWS},(_,i)=>`
+    <tr class="new-row">
+      <td><input class="new-name" placeholder="Tên sản phẩm mới ${i+1}" autocomplete="off"><span class="new-tag">Mới</span></td>
+      <td class="cost-cell"><input class="new-cost" inputmode="decimal" placeholder="Giá vốn"></td>
+    </tr>`).join('');
+
+  $('rows').innerHTML=existing+blanks;
+  $('empty').classList.toggle('hidden',visible.length!==0);
+  $('summary').textContent=items.length+' mặt hàng · nhập giá dạng số, ví dụ 400 = 400';
+  $('rows').querySelectorAll('input').forEach(input=>input.addEventListener('input',updateSaveState));
+  updateSaveState();
+}
+
+async function loadCatalog(){
+  const data=await rpc('taphoa_supplier_catalog',{p_token:session.token});
+  session.source_key=data.source_key;session.source_name=data.source_name;saveSession(session);
+  items=Array.isArray(data.items)?data.items:[];
+  originals=new Map(items.map(x=>[x.product_code,x.cost]));
+  $('title').textContent='Cập nhật giá vốn · '+(data.source_name||SOURCE_LABELS[data.source_key]||'NCC');
+  showApp();render();
+}
+
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();setMsg('loginMsg','Đang kiểm tra…');
+  $('loginBtn').disabled=true;
+  try{
+    const source=$('source').value;
+    const pin=$('pin').value.trim();
+    const data=await rpc('taphoa_supplier_login',{p_source_key:source,p_pin:pin});
+    if(!data?.ok){
+      const message=data?.error==='pin_locked'?'PIN đang bị khóa tạm 10 phút.':data?.error==='pin_format'?'PIN phải gồm đúng 6 số.':'PIN không đúng.';
+      throw new Error(message);
+    }
+    $('pin').value='';
+    saveSession(data);
+    await loadCatalog();
+    setMsg('appMsg','');
+  }catch(err){
+    setMsg('loginMsg',err.message||'Không đăng nhập được.','error');
+  }finally{$('loginBtn').disabled=false}
+});
+
+$('search').addEventListener('input',render);
+
+$('saveBtn').addEventListener('click',async()=>{
+  setMsg('appMsg','');
+  const changes=[];
+  let validationError='';
+
+  document.querySelectorAll('.cost-input[data-code]').forEach(input=>{
+    const cost=parseNum(input.value);
+    const original=originals.get(input.dataset.code);
+    if(cost===null){validationError='Giá vốn phải là số.';return}
+    if(cost<0){validationError='Giá vốn không được âm.';return}
+    if(Number(cost)!==Number(original))changes.push({product_code:input.dataset.code,cost});
+  });
+
+  document.querySelectorAll('tr.new-row').forEach(row=>{
+    const name=row.querySelector('.new-name').value.trim();
+    const raw=row.querySelector('.new-cost').value.trim();
+    if(!name&&!raw)return;
+    const cost=parseNum(raw);
+    if(!name||cost===null){validationError='Dòng sản phẩm mới phải có đủ tên và giá vốn.';return}
+    if(cost<0){validationError='Giá vốn không được âm.';return}
+    changes.push({name,cost});
+  });
+
+  if(validationError)return setMsg('appMsg',validationError,'error');
+  if(!changes.length)return updateSaveState();
+
+  $('saveBtn').disabled=true;$('saveBtn').textContent='Đang lưu…';
+  try{
+    const data=await rpc('taphoa_supplier_apply_changes',{p_token:session.token,p_changes:changes});
+    await loadCatalog();
+    setMsg('appMsg','Đã lưu '+Number(data.changed||0)+' giá và thêm '+Number(data.created||0)+' sản phẩm mới.','ok');
+  }catch(err){
+    setMsg('appMsg',err.message||'Không lưu được.','error');
+    if(String(err.message||'').includes('supplier_session_invalid')){saveSession(null);showLogin('Phiên đã hết hạn. Vui lòng nhập PIN lại.')}
+  }finally{updateSaveState()}
+});
+
+$('logoutBtn').addEventListener('click',async()=>{
+  const token=session?.token;
+  saveSession(null);
+  if(token)await rpc('taphoa_supplier_logout',{p_token:token}).catch(()=>{});
+  items=[];originals.clear();$('pin').value='';setMsg('loginMsg','');showLogin();
+});
+
+const paramSource=new URLSearchParams(location.search).get('s');
+if(SOURCE_LABELS[paramSource])$('source').value=paramSource;
+
+session=restoreSession();
+if(session){
+  loadCatalog().catch(()=>{saveSession(null);showLogin('Phiên đã hết hạn. Vui lòng nhập PIN lại.')});
+}else showLogin();
+</script>
+</body>
+</html>
