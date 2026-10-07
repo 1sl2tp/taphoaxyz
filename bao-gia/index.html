@@ -232,7 +232,7 @@ function productImageHtml(p){
   const image=String(p.image_url||'').trim();
   const fallback='<span class="product-visual"><span class="product-fallback">'+esc(initials(name))+'</span></span>';
   if(!/^https?:\/\//i.test(image))return fallback;
-  return '<span style="position:relative;display:flex;flex:none"><img class="product-thumb" src="'+esc(image)+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="product-fallback" style="display:none">'+esc(initials(name))+'</span></span>';
+  return '<span class="product-visual"><img class="product-thumb" src="'+esc(image)+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="product-fallback" style="display:none">'+esc(initials(name))+'</span></span>';
 }
 function packText(p){
   const units=Number(p.units_per_carton);
