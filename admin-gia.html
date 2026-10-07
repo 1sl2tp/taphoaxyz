@@ -631,6 +631,30 @@
       return parts.join(' · ');
     }
 
+    function ownMeasureLabel(unit){
+      const u=String(unit||'').trim().toLowerCase().replace(/\s+/g,'');
+      if(['ml','cl','dl','l','lit','lít','liter','litre'].includes(u))return 'Dung tích';
+      if(['mg','g','gr','gram','kg','kilogram'].includes(u))return 'Trọng lượng';
+      return 'Định lượng';
+    }
+
+    function ownProductInfoParts(item){
+      const parts=[];
+      const sale=Number(item&&item.sale_price);
+      const retail=Number(item&&item.retail_price);
+      const units=Number(item&&item.units_per_carton);
+      const unit=String(item&&item.retail_unit||'').trim();
+      const size=Number(item&&item.retail_size_value);
+      const sizeUnit=String(item&&item.retail_size_unit||'').trim();
+
+      if(Number.isFinite(sale)&&sale>0)parts.push('Giá bán '+pretty(sale));
+      if(Number.isFinite(retail)&&retail>0)parts.push('Giá lẻ '+pretty(retail)+(unit?'/'+unit:''));
+      if(Number.isFinite(units)&&units>0)parts.push('Quy cách '+marketQty(units)+(unit?' '+unit:''));
+      else if(unit)parts.push('Đơn vị lẻ '+unit);
+      if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(ownMeasureLabel(sizeUnit)+' '+marketQty(size)+' '+sizeUnit);
+      return parts;
+    }
+
     function marketPriceBasis(link){
       const packKind=String(link&&link.pack_kind||'').trim().toLowerCase();
       const packUnit=String(link&&link.pack_unit||'').trim().toLowerCase();
@@ -674,18 +698,13 @@
       $('marketProductList').innerHTML=marketItems.length?marketItems.map(function(item){
         const links=itemMarketLinks(item);
         const img=item.image_url?'<img class="market-thumb" src="'+esc(item.image_url)+'" alt="">':'<span class="market-thumb"></span>';
-        const pack=ownPackText(item);
-        const unit=String(item.retail_unit||'').trim();
-        const retail=Number(item.retail_price);
-        const priceParts=['Giá '+pretty(item.sale_price)];
-        if(Number.isFinite(retail)&&retail>0)priceParts.push('Lẻ '+pretty(retail)+(unit?'/'+unit:''));
-        if(pack)priceParts.push(pack);
+        const infoParts=ownProductInfoParts(item);
         const badge=links.length?'<span class="market-map-badge">'+links.length+' GÁN</span>':'';
         return '<button type="button" class="market-list-item '+(item.product_code===marketSelectedCode?'active':'')+'" data-market-product="'+esc(item.product_code)+'">'+
           img+
           '<span class="market-item-copy">'+
             '<span class="market-item-name">'+esc(item.product_name)+'</span>'+
-            '<span class="market-item-meta">'+esc(priceParts.join(' · '))+'</span>'+
+            '<span class="market-item-meta">'+esc(infoParts.join(' · '))+'</span>'+
             marketPriceRefsHtml(item)+
           '</span>'+badge+
         '</button>';
@@ -723,12 +742,7 @@
       }).join('')+'</div>':
       '<div class="market-current-map"><strong>Chưa gán sản phẩm siêu thị.</strong> Có thể gán nhiều sản phẩm, kể cả nhiều sản phẩm cùng một siêu thị.</div>';
 
-      const ownPack=ownPackText(item);
-      const ownUnit=String(item.retail_unit||'').trim();
-      const ownRetail=Number(item.retail_price);
-      const ownInfo=['Giá '+pretty(item.sale_price)];
-      if(Number.isFinite(ownRetail)&&ownRetail>0)ownInfo.push('Lẻ '+pretty(ownRetail)+(ownUnit?'/'+ownUnit:''));
-      if(ownPack)ownInfo.push(ownPack);
+      const ownInfo=ownProductInfoParts(item);
       $('marketCurrent').innerHTML='<div class="market-current-title">'+esc(item.product_name)+'</div>'+
         '<div class="market-current-sub">'+esc(ownInfo.join(' · '))+'</div>'+
         marketPriceRefsHtml(item)+marketSourceStatusHtml(item)+cards;
