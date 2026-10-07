@@ -663,6 +663,8 @@
       const unit=String(item&&item.retail_unit||'').trim();
       const innerQty=Number(item&&item.retail_inner_qty);
       const innerUnit=String(item&&item.retail_inner_unit||'').trim();
+      const bundleQty=Number(item&&item.retail_bundle_qty);
+      const bundleUnit=String(item&&item.retail_bundle_unit||'').trim();
       const size=Number(item&&item.retail_size_value);
       const sizeUnit=String(item&&item.retail_size_unit||'').trim();
 
@@ -672,6 +674,9 @@
         let pack='Quy cách '+marketQty(units)+(unit?' '+unit:'');
         if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit)pack+=' × '+marketQty(innerQty)+' '+innerUnit;
         parts.push(pack);
+        if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
+          parts.push('1 '+bundleUnit+' = '+marketQty(bundleQty)+' '+unit);
+        }
       }else if(unit){
         parts.push('Đơn vị lẻ '+unit);
       }
@@ -684,13 +689,33 @@
     }
 
     function marketPriceBasis(link){
+      const raw=Number(link&&link.price);
       const packKind=String(link&&link.pack_kind||'').trim().toLowerCase();
       const packUnit=String(link&&link.pack_unit||'').trim().toLowerCase();
       const label1=String(link&&link.label1||'').trim().toLowerCase();
+      const label2=String(link&&link.label2||'').trim();
+      const label3=String(link&&link.label3||'').trim();
+      const qty2=Number(link&&link.qty2);
+      const qty3=Number(link&&link.qty3);
+      const packQty=Number(link&&link.pack_quantity);
+      const unitPrice=Number(link&&link.regular_unit_price);
       const isCarton=packKind==='carton'||packUnit==='thùng'||packUnit==='carton'||label1==='thùng'||label1==='carton';
-      if(isCarton)return {kind:'carton',unit:'thùng'};
-      const leafUnit=String(link&&link.label3||'').trim()||String(link&&link.pack_unit||'').trim()||String(link&&link.label2||'').trim()||'lẻ';
-      return {kind:'retail',unit:leafUnit.toLowerCase()};
+      if(isCarton)return {kind:'carton',unit:'thùng',price:raw,packPrice:raw,packQty:1};
+
+      const leafUnit=label3||(
+        label2&&!['lốc','vỉ','khay','loc','vi','khay'].includes(label2.toLowerCase())?label2:''
+      )||String(link&&link.pack_unit||'').trim()||'lẻ';
+
+      let leafQty=1;
+      if(label3&&Number.isFinite(qty3)&&qty3>1)leafQty=qty3;
+      else if(label2&&Number.isFinite(qty2)&&qty2>1&&!['lốc','vỉ','khay','loc','vi','khay'].includes(label2.toLowerCase()))leafQty=qty2;
+      else if(Number.isFinite(packQty)&&packQty>1)leafQty=packQty;
+
+      const retailPrice=Number.isFinite(unitPrice)&&unitPrice>0
+        ?unitPrice
+        :(Number.isFinite(raw)&&raw>0&&leafQty>1?raw/leafQty:raw);
+
+      return {kind:'retail',unit:leafUnit.toLowerCase(),price:retailPrice,packPrice:raw,packQty:leafQty};
     }
 
     function marketPriceRefsHtml(item){
@@ -699,7 +724,9 @@
       return '<div class="market-own-prices">'+links.map(function(link){
         const basis=marketPriceBasis(link);
         const source=MARKET_SOURCE_SHORT[link.source]||link.source||'ST';
-        return '<span class="market-own-price '+basis.kind+'" title="'+esc(link.name||'')+'">'+esc(source)+' '+esc(marketMoney(link.price))+'/'+esc(basis.unit)+'</span>';
+        const pack=marketPackText(link);
+        const title=[link.name||'',basis.kind==='retail'&&basis.packQty>1?'Giá gói '+marketMoney(basis.packPrice)+(pack?' · '+pack:''):''].filter(Boolean).join(' · ');
+        return '<span class="market-own-price '+basis.kind+'" title="'+esc(title)+'">'+esc(source)+' '+esc(marketMoney(basis.price))+'/'+esc(basis.unit)+'</span>';
       }).join('')+'</div>';
     }
 
@@ -983,6 +1010,9 @@
           result&&result.units_per_carton
             ?marketQty(result.units_per_carton)+' '+String(result.retail_unit||'')+
               (result.retail_inner_qty&&result.retail_inner_unit?' × '+marketQty(result.retail_inner_qty)+' '+String(result.retail_inner_unit):'')
+            :'',
+          result&&result.retail_bundle_qty&&result.retail_bundle_unit
+            ?'1 '+String(result.retail_bundle_unit)+' = '+marketQty(result.retail_bundle_qty)+' '+String(result.retail_unit||'')
             :'',
           result&&result.retail_size_value?(marketQty(result.retail_size_value)+' '+String(result.retail_size_unit||'')):''
         ].filter(Boolean).join(' · ');
