@@ -344,7 +344,10 @@ function render(){
   });
 
   title.textContent='Báo giá '+SOURCE_LABELS[activeSource];
-  subtitle.innerHTML='Cập nhật mới nhất'+(updatedAt?' <strong>'+esc(viDate(updatedAt))+'</strong>':'')+'. Mỗi sản phẩm hiển thị giá bán của mình, giá lẻ của mình và giá tham khảo siêu thị cùng đúng đơn vị để dễ đối chiếu.';
+  subtitle.innerHTML='Cập nhật mới nhất'+(updatedAt?' <strong>'+esc(viDate(updatedAt))+'</strong>':'')+
+    (activeSource==='thuoc-la'
+      ?'. Thuốc lá đang bán theo cây nên chỉ hiển thị giá bán; không lặp lại dòng giá lẻ.'
+      :'. Mỗi sản phẩm hiển thị giá bán của mình, giá lẻ của mình và giá tham khảo siêu thị cùng đúng đơn vị để dễ đối chiếu.');
   countPill.textContent=sourceRows.length+' mặt hàng';
   changedPill.textContent=changedCount?changedCount+' mặt hàng có thay đổi giá':'Chưa có thay đổi giá';
   changedPill.style.display=changedCount?'inline-flex':'none';
@@ -359,7 +362,7 @@ function render(){
       : '—';
     const ownPack=ownPackInfo(p);
     const refs=marketRefHtml(p);
-    const ownRetail=retailOwnText(p);
+    const ownRetail=activeSource==='thuoc-la'?'':retailOwnText(p);
     return '<tr class="'+(changed?'changed':'')+'">'+
       '<td><div class="product-main">'+productImageHtml(p)+'<div class="product-copy"><div class="name">'+esc(displayName(p.name,p.source))+badge+'</div>'+(ownPack?'<div class="code">'+esc(ownPack)+'</div>':'')+'</div></div></td>'+
       '<td class="price">'+
@@ -372,7 +375,9 @@ function render(){
   }).join('');
 
   empty.hidden=visible.length!==0;
-  foot.textContent='Đang xem '+SOURCE_LABELS[activeSource]+'. Dòng 1 là giá bán của mình; dòng 2 là giá lẻ của mình; dòng 3 là giá siêu thị đã gán. Giá siêu thị giữ đúng đơn vị nguồn: có thùng thì so theo thùng, bán lẻ thì hiện theo đơn vị lẻ; trong cùng nhóm được xếp từ thấp đến cao.';
+  foot.textContent=activeSource==='thuoc-la'
+    ?'Đang xem Thuốc lá. Giá bán theo cây là giá chính; không hiển thị thêm dòng giá lẻ trùng giá.'
+    :'Đang xem '+SOURCE_LABELS[activeSource]+'. Dòng 1 là giá bán của mình; dòng 2 là giá lẻ của mình; dòng 3 là giá siêu thị đã gán. Giá siêu thị giữ đúng đơn vị nguồn: có thùng thì so theo thùng, bán lẻ thì hiện theo đơn vị lẻ; trong cùng nhóm được xếp từ thấp đến cao.';
 }
 
 tabs.addEventListener('click',e=>{
