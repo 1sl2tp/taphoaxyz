@@ -327,7 +327,7 @@
           </select>
           <div class="market-filter-box" id="marketCandidateFilter">
             <div id="marketCandidateTags"></div>
-            <input id="marketCandidateSearch" type="search" placeholder="Thêm hãng / loại / vị…" autocomplete="off" disabled>
+            <input id="marketCandidateSearch" type="search" placeholder="Tự lọc theo sản phẩm…" autocomplete="off" disabled>
           </div>
         </div>
         <div class="market-grid">
@@ -686,6 +686,124 @@
         };
         return score(b)-score(a)||a.length-b.length;
       })[0]||'';
+    }
+
+    function simpleMarketCategory(item){
+      let value=preferredMarketCategory(item);
+      let norm=marketPlain(value)
+        .replace(/\bi\.?\s*\d+\b/g,' ')
+        .replace(/\bcac loai\b/g,' ')
+        .replace(/\bkhac\b/g,' ')
+        .replace(/\bnguyen lieu\b/g,' ')
+        .replace(/\s+/g,' ').trim();
+      if(/gia vi/.test(norm))return 'gia vi';
+      if(/bot giat/.test(norm))return 'bot giat';
+      if(/sua chua/.test(norm))return 'sua chua';
+      if(/sua tuoi/.test(norm))return 'sua tuoi';
+      if(/sua dac/.test(norm))return 'sua dac';
+      if(/sua/.test(norm))return 'sua';
+      if(/mi/.test(norm))return 'mi';
+      if(/banh/.test(norm))return 'banh';
+      if(norm&&norm.length<=28)return norm;
+
+      const own=marketPlain(item&&item.product_name);
+      const known=['bot giat','nuoc mam','sua chua','sua dac','sua','mi','banh','keo','dau goi','nuoc giat','nuoc xa'];
+      return known.find(x=>own.includes(x))||'';
+    }
+
+    function ownNameVariantTag(item,brand,typeTag){
+      let own=marketPlain(item&&item.product_name);
+      if(!own)return '';
+      own=own.replace(/\b\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?\s*(?:ml|l|g|kg)\b/g,' ');
+      const type=marketPlain(typeTag);
+      if(type)for(const token of type.split(/\s+/).filter(Boolean))own=own.replace(new RegExp('\\b'+token+'\\b','g'),' ');
+      const brandNorm=marketPlain(brand);
+      if(brandNorm){
+        for(const token of brandNorm.split(/[^a-z0-9]+/).filter(Boolean)){
+          own=own.replace(new RegExp('\\b'+token+'\\b','g'),' ');
+          if(token.length>=3)own=own.replace(new RegExp('\\b'+token.slice(0,2)+'\\b','g'),' ');
+        }
+      }
+      own=own.replace(/\s+/g,' ').trim();
+      if(!own||own.length>24)return '';
+      return own;
+    }
+
+    function marketAutoSearchTags(item){
+      const tags=[];
+      let size=Number(item&&item.retail_size_value);
+      let sizeUnit=String(item&&item.retail_size_unit||'').trim();
+      if(!(Number.isFinite(size)&&size>0&&sizeUnit)){
+        const sized=itemMarketLinks(item).find(link=>Number(link&&link.size_value)>0&&String(link&&link.size_unit||'').trim());
+        if(sized){size=Number(sized.size_value);sizeUnit=String(sized.size_unit).trim();}
+      }
+      if(Number.isFinite(size)&&size>0&&sizeUnit)tags.push(marketQty(size)+sizeUnit);
+
+      const brand=preferredMarketBrand(item);
+      if(brand)tags.push(brand);
+
+      const typeTag=simpleMarketCategory(item);
+      if(typeTag)tags.push(typeTag);
+
+      const variant=String(item&&item.variant_label||'').trim();
+      const inferred=ownNameVariantTag(item,brand,typeTag);
+      if(variant)tags.push(variant);
+      else if(inferred)tags.push(inferred);
+
+      const color=String(item&&item.variant_color||'').trim();
+      if(color)tags.push(color);
+
+      return tags.filter((x,i,a)=>a.findIndex(y=>marketPlain(y)===marketPlain(x))===i);
+    }
+
+    async function autoRefineMarketCandidates(item){
+      const planned=marketAutoSearchTags(item);
+      marketSearchTags=[];
+      $('marketCandidateSearch').value='';
+      renderMarketSearchTags();
+
+      let accepted=[];
+      let bestBatch=[];
+      $('marketCandidateCount').textContent='Đang tự lọc…';
+      $('marketCandidateList').innerHTML='<div class="empty">Đang tự lọc sản phẩm siêu thị…</div>';
+
+      for(const tag of planned){
+        const next=[...accepted,tag];
+        try{
+          const data=await rpc('taphoa_market_search',{
+            p_query:next.join(' '),
+            p_limit:MARKET_CANDIDATE_PAGE_SIZE,
+            p_source:$('marketShopSource').value,
+            p_offset:0
+          });
+          const batch=Array.isArray(data)?data:[];
+          if(batch.length){
+            accepted=next;
+            bestBatch=batch;
+          }
+        }catch(error){
+          console.error('market auto refine',error);
+          break;
+        }
+      }
+
+      if(!bestBatch.length){
+        const fallback=planned[0]||'';
+        const data=await rpc('taphoa_market_search',{
+          p_query:fallback,
+          p_limit:MARKET_CANDIDATE_PAGE_SIZE,
+          p_source:$('marketShopSource').value,
+          p_offset:0
+        }).catch(()=>[]);
+        bestBatch=Array.isArray(data)?data:[];
+        accepted=fallback?[fallback]:[];
+      }
+
+      setMarketSearchTags(accepted);
+      marketCandidates=sortMarketCandidates(bestBatch,item);
+      marketCandidateOffset=marketCandidates.length;
+      marketCandidateHasMore=bestBatch.length===MARKET_CANDIDATE_PAGE_SIZE;
+      renderMarketCandidates();
     }
 
     function mappedIdentityTokens(item){
@@ -1216,8 +1334,7 @@
       renderMarketCurrent();
       const item=selectedMarketItem();
       if(!item)return;
-      setMarketSearchTags([smartMarketSearchText(item)]);
-      await loadMarketCandidates(true);
+      await autoRefineMarketCandidates(item);
     }
 
     function renderMarketCandidates(){
@@ -1294,8 +1411,7 @@
         await loadMarketMappings(false);
         const refreshed=selectedMarketItem();
         if(refreshed){
-          setMarketSearchTags([smartMarketSearchText(refreshed)]);
-          await loadMarketCandidates(true);
+          await autoRefineMarketCandidates(refreshed);
         }
         $('marketUpdateStatus').textContent='Đã đổi tên '+oldName+' → '+name+'.';
       }catch(error){
@@ -1995,7 +2111,7 @@
       clearTimeout(marketSearchTimer);
       marketSearchTimer=setTimeout(()=>loadMarketMappings(true),220);
     });
-    $('marketShopSource').addEventListener('change',()=>{if(marketSelectedCode)loadMarketCandidates(true);});
+    $('marketShopSource').addEventListener('change',()=>{const item=selectedMarketItem();if(item)autoRefineMarketCandidates(item);});
     $('marketCandidateSearch').addEventListener('input',()=>{
       clearTimeout(marketCandidateTimer);
       marketCandidateTimer=setTimeout(()=>loadMarketCandidates(true),220);
