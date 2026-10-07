@@ -137,6 +137,11 @@
     .market-toolbar{display:grid;grid-template-columns:160px minmax(220px,1fr) 160px minmax(220px,1fr);gap:8px;padding:10px;border-bottom:1px solid var(--grid)}
     .market-toolbar input,.market-toolbar select{width:100%;height:38px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:0 9px;outline:0}
     .market-toolbar input:focus,.market-toolbar select:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(37,99,235,.10)}
+    .market-filter-box{min-height:38px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:4px 6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .market-filter-box:focus-within{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(37,99,235,.10)}
+    .market-filter-box #marketCandidateSearch{height:28px;min-width:110px;flex:1;border:0!important;box-shadow:none!important;padding:0 4px}
+    .market-search-tag{display:inline-flex;align-items:center;gap:4px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:4px 7px;font-size:11px;font-weight:850;white-space:nowrap}
+    .market-search-tag button{border:0;background:transparent;color:#64748b;font-weight:900;padding:0;cursor:pointer}
     .market-grid{display:grid;grid-template-columns:minmax(320px,.9fr) minmax(420px,1.1fr);height:calc(100dvh - 245px);min-height:420px;max-height:none;overflow:hidden}
     .market-products{border-right:1px solid var(--grid);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
     .market-list,.market-candidates{overflow-y:auto;overflow-x:hidden;min-height:0;flex:1;padding:8px;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
@@ -320,7 +325,10 @@
             <option value="Bách Hóa XANH">Bách Hóa XANH</option>
             <option value="VNM">VNM</option>
           </select>
-          <input id="marketCandidateSearch" type="search" placeholder="Tìm sản phẩm siêu thị…" autocomplete="off" disabled>
+          <div class="market-filter-box" id="marketCandidateFilter">
+            <div id="marketCandidateTags"></div>
+            <input id="marketCandidateSearch" type="search" placeholder="Thêm hãng / loại / vị…" autocomplete="off" disabled>
+          </div>
         </div>
         <div class="market-grid">
           <div class="market-products">
@@ -411,7 +419,7 @@
     let selectedSource='';
     let adminView='goods';
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
-    let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0;
+    let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketSearchTags=[];
     const MARKET_PAGE_SIZE=100;
     const MARKET_CANDIDATE_PAGE_SIZE=120;
     let sourceDialogMode='create';
@@ -601,6 +609,36 @@
         counts.set(norm,old);
       }
       return [...counts.values()].sort((a,b)=>b.count-a.count||a.value.length-b.value.length)[0]?.value||'';
+    }
+
+    function marketSearchQuery(){
+      return [...marketSearchTags,String($('marketCandidateSearch')?.value||'').trim()].filter(Boolean).join(' ');
+    }
+
+    function renderMarketSearchTags(){
+      const host=$('marketCandidateTags');
+      if(!host)return;
+      host.innerHTML=marketSearchTags.map((tag,index)=>
+        '<span class="market-search-tag">'+esc(tag)+'<button type="button" data-market-tag-remove="'+index+'" aria-label="Bỏ '+esc(tag)+'">×</button></span>'
+      ).join('');
+    }
+
+    function setMarketSearchTags(tags){
+      marketSearchTags=(Array.isArray(tags)?tags:[])
+        .map(x=>String(x||'').replace(/\s+/g,' ').trim())
+        .filter(Boolean)
+        .filter((x,i,a)=>a.findIndex(y=>marketPlain(y)===marketPlain(x))===i);
+      if($('marketCandidateSearch'))$('marketCandidateSearch').value='';
+      renderMarketSearchTags();
+    }
+
+    function addMarketSearchTag(value){
+      const tag=String(value||'').replace(/\s+/g,' ').trim().replace(/[;,]+$/,'');
+      if(!tag)return false;
+      if(!marketSearchTags.some(x=>marketPlain(x)===marketPlain(tag)))marketSearchTags.push(tag);
+      $('marketCandidateSearch').value='';
+      renderMarketSearchTags();
+      return true;
     }
 
     function smartMarketSearchText(item){
@@ -1108,6 +1146,7 @@
       if(!item){
         $('marketCurrent').innerHTML='<div class="market-current-title">Chọn một sản phẩm bên trái</div><div class="market-current-sub">Hệ thống sẽ gợi ý sản phẩm siêu thị theo tên hiện tại.</div>';
         $('marketCandidateSearch').disabled=true;
+        setMarketSearchTags([]);
         $('marketCandidateList').innerHTML='<div class="empty">Chưa chọn sản phẩm.</div>';
         $('marketCandidateCount').textContent='';
         return;
@@ -1177,7 +1216,7 @@
       renderMarketCurrent();
       const item=selectedMarketItem();
       if(!item)return;
-      $('marketCandidateSearch').value=smartMarketSearchText(item);
+      setMarketSearchTags([smartMarketSearchText(item)]);
       await loadMarketCandidates(true);
     }
 
@@ -1214,7 +1253,7 @@
         marketCandidateOffset=0;
         marketCandidates=[];
       }
-      const query=$('marketCandidateSearch').value.trim();
+      const query=marketSearchQuery();
       $('marketCandidateCount').textContent=reset?'Đang tìm…':'Đang tải thêm…';
       if(reset)$('marketCandidateList').innerHTML='<div class="empty">Đang tìm sản phẩm siêu thị…</div>';
       try{
@@ -1255,7 +1294,7 @@
         await loadMarketMappings(false);
         const refreshed=selectedMarketItem();
         if(refreshed){
-          $('marketCandidateSearch').value=smartMarketSearchText(refreshed);
+          setMarketSearchTags([smartMarketSearchText(refreshed)]);
           await loadMarketCandidates(true);
         }
         $('marketUpdateStatus').textContent='Đã đổi tên '+oldName+' → '+name+'.';
@@ -1960,6 +1999,28 @@
     $('marketCandidateSearch').addEventListener('input',()=>{
       clearTimeout(marketCandidateTimer);
       marketCandidateTimer=setTimeout(()=>loadMarketCandidates(true),220);
+    });
+    $('marketCandidateSearch').addEventListener('keydown',e=>{
+      if((e.key==='Enter'||e.key===',')&&String(e.target.value||'').trim()){
+        e.preventDefault();
+        if(addMarketSearchTag(e.target.value))loadMarketCandidates(true);
+        return;
+      }
+      if(e.key==='Backspace'&&!e.target.value&&marketSearchTags.length){
+        marketSearchTags.pop();
+        renderMarketSearchTags();
+        loadMarketCandidates(true);
+      }
+    });
+    $('marketCandidateTags').addEventListener('click',e=>{
+      const b=e.target.closest('[data-market-tag-remove]');
+      if(!b)return;
+      const index=Number(b.dataset.marketTagRemove);
+      if(Number.isInteger(index)&&index>=0&&index<marketSearchTags.length){
+        marketSearchTags.splice(index,1);
+        renderMarketSearchTags();
+        loadMarketCandidates(true);
+      }
     });
     $('marketProductList').addEventListener('click',e=>{
       const b=e.target.closest('[data-market-product]');
