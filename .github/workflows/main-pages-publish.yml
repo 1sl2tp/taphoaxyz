@@ -17,6 +17,7 @@ on:
       - 'b/**'
       - 'kiemhang/**'
       - 'kh/**'
+      - 'bao-gia-sua/**'
       - 'scripts/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
