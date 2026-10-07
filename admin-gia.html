@@ -671,11 +671,17 @@
       if(Number.isFinite(sale)&&sale>0)parts.push('Giá bán '+pretty(sale));
       if(Number.isFinite(retail)&&retail>0)parts.push('Giá lẻ '+pretty(retail)+(unit?'/'+unit:''));
       if(Number.isFinite(units)&&units>0){
-        let pack='Quy cách '+marketQty(units)+(unit?' '+unit:'');
-        if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit)pack+=' × '+marketQty(innerQty)+' '+innerUnit;
-        parts.push(pack);
-        if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
-          parts.push('1 '+bundleUnit+' = '+marketQty(bundleQty)+' '+unit);
+        const nested=Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&
+          Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit&&
+          innerUnit.toLowerCase()===bundleUnit.toLowerCase();
+        if(nested){
+          parts.push('Quy cách '+marketQty(innerQty)+' '+innerUnit+' × '+marketQty(bundleQty)+' '+unit+' = '+marketQty(units)+' '+unit);
+        }else{
+          parts.push('Quy cách '+marketQty(units)+(unit?' '+unit:''));
+          if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit)parts.push(marketQty(innerQty)+' '+innerUnit);
+          if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
+            parts.push('1 '+bundleUnit+' = '+marketQty(bundleQty)+' '+unit);
+          }
         }
       }else if(unit){
         parts.push('Đơn vị lẻ '+unit);
@@ -1006,12 +1012,13 @@
         const result=await rpc('taphoa_copy_market_pack_to_product',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
         await loadMarketMappings(false);
         renderMarketCandidates();
+        const nested=result&&result.units_per_carton&&result.retail_inner_qty&&result.retail_inner_unit&&result.retail_bundle_qty&&result.retail_bundle_unit&&
+          String(result.retail_inner_unit).toLowerCase()===String(result.retail_bundle_unit).toLowerCase();
         const qc=[
-          result&&result.units_per_carton
-            ?marketQty(result.units_per_carton)+' '+String(result.retail_unit||'')+
-              (result.retail_inner_qty&&result.retail_inner_unit?' × '+marketQty(result.retail_inner_qty)+' '+String(result.retail_inner_unit):'')
-            :'',
-          result&&result.retail_bundle_qty&&result.retail_bundle_unit
+          nested
+            ?marketQty(result.retail_inner_qty)+' '+String(result.retail_inner_unit)+' × '+marketQty(result.retail_bundle_qty)+' '+String(result.retail_unit||'')+' = '+marketQty(result.units_per_carton)+' '+String(result.retail_unit||'')
+            :(result&&result.units_per_carton?marketQty(result.units_per_carton)+' '+String(result.retail_unit||''):''),
+          !nested&&result&&result.retail_bundle_qty&&result.retail_bundle_unit
             ?'1 '+String(result.retail_bundle_unit)+' = '+marketQty(result.retail_bundle_qty)+' '+String(result.retail_unit||'')
             :'',
           result&&result.retail_size_value?(marketQty(result.retail_size_value)+' '+String(result.retail_size_unit||'')):''
