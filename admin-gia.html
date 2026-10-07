@@ -820,7 +820,8 @@
         const last=data&&data.last_run;
         const settings=(data&&data.settings)||{};
         if(active){
-          $('marketUpdateStatus').textContent='Đang cập nhật nguồn đã gán: '+Number(active.done_categories||0)+'/'+Number(active.total_categories||0)+' nhóm · '+Number(active.updated_products||0)+' sản phẩm';
+          const mappedRun=String(active.scope||'')==='mapped';
+          $('marketUpdateStatus').textContent=(mappedRun?'Đang cập nhật nguồn đã gán: ':'Đang hoàn tất đợt cập nhật cũ: ')+Number(active.done_categories||0)+'/'+Number(active.total_categories||0)+' nhóm · '+Number(active.updated_products||0)+' sản phẩm';
           $('marketRunUpdateBtn').textContent='Tiếp tục cập nhật';
         }else{
           const lastTime=(last&&last.finished_at)||settings.last_completed_at;
