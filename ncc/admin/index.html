@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f6f7f9">
+<title>Quản lý PIN NCC · Tạp hóa</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#17202a;background:#f6f7f9}
+*{box-sizing:border-box}body{margin:0;background:#f6f7f9}button,input{font:inherit}.hidden{display:none!important}
+.page{max-width:920px;margin:auto;padding:16px 12px 40px}.card{background:#fff;border:1px solid #e4e7ec;border-radius:16px;box-shadow:0 8px 24px rgba(16,24,40,.05)}
+.login{max-width:430px;margin:8vh auto;padding:22px}.eyebrow{font-size:12px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;color:#667085}
+h1{font-size:26px;margin:5px 0 8px}.muted{color:#667085;font-size:13px;line-height:1.5}.field{display:grid;gap:6px;margin-top:12px}.field label{font-size:12px;font-weight:800;color:#475467}
+.field input{width:100%;height:44px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;padding:0 11px;outline:none}.field input:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
+.btn{height:40px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:#344054;padding:0 12px;font-weight:800;cursor:pointer}.btn.primary{background:#17202a;color:#fff;border-color:#17202a}.btn:disabled{opacity:.45;cursor:not-allowed}
+.msg{min-height:18px;margin-top:10px;font-size:12px;color:#667085}.msg.error{color:#b42318}.msg.ok{color:#027a48}
+.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px}.head h1{margin:3px 0 5px}.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.note{margin:0 18px 14px;padding:10px 12px;background:#f9fafb;border:1px solid #e4e7ec;border-radius:10px;color:#667085;font-size:12px;line-height:1.5}
+.list{display:grid;gap:10px;padding:0 18px 18px}.source-card{border:1px solid #e4e7ec;border-radius:13px;padding:14px}.source-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.source-name{font-size:18px;font-weight:850}.source-meta{font-size:11px;color:#667085;margin-top:3px}
+.link-row{display:flex;gap:7px;align-items:center;margin-top:10px}.link{flex:1;min-width:0;border:1px solid #d0d5dd;border-radius:9px;padding:9px 10px;background:#f9fafb;color:#344054;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pin-area{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.pin-boxes{display:grid;grid-template-columns:repeat(6,44px);gap:6px}.pin-digit{width:44px;height:44px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;text-align:center;font-size:21px;font-weight:850;outline:none}.pin-digit:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
+.row-msg{font-size:11px;min-height:16px;margin-top:7px;color:#667085}.row-msg.ok{color:#027a48}.row-msg.error{color:#b42318}
+@media(max-width:650px){.page{padding:8px 6px 24px}.head{padding:14px}.list{padding:0 10px 10px}.note{margin:0 10px 10px}.source-card{padding:12px}.source-top{display:block}.pin-boxes{grid-template-columns:repeat(6,1fr);width:100%}.pin-digit{width:100%;height:auto;aspect-ratio:1/1}.pin-area .btn{flex:1}.link-row{flex-wrap:wrap}.link{flex-basis:100%}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section id="loginView" class="card login hidden">
+    <div class="eyebrow">Quản trị</div>
+    <h1>Quản lý PIN NCC</h1>
+    <p class="muted">Đăng nhập tài khoản quản trị Tạp hóa.</p>
+    <form id="loginForm">
+      <div class="field"><label>Tài khoản</label><input id="username" autocomplete="username" required></div>
+      <div class="field"><label>Mật khẩu</label><input id="password" type="password" autocomplete="current-password" required></div>
+      <button id="loginBtn" class="btn primary" type="submit" style="width:100%;margin-top:14px">Đăng nhập</button>
+      <div id="loginMsg" class="msg"></div>
+    </form>
+  </section>
+
+  <section id="appView" class="card hidden">
+    <div class="head">
+      <div>
+        <div class="eyebrow">Quản trị · Nhà cung cấp</div>
+        <h1>Quản lý link & PIN NCC</h1>
+        <div class="muted">Mỗi nguồn có link riêng. Đổi PIN sẽ đăng xuất toàn bộ phiên NCC của nguồn đó.</div>
+      </div>
+      <div class="head-actions">
+        <a class="btn" href="/admin-gia.html" style="display:inline-flex;align-items:center;text-decoration:none">Quản trị giá</a>
+        <button id="logoutBtn" class="btn" type="button">Đăng xuất</button>
+      </div>
+    </div>
+    <div class="note">PIN hiện tại không thể đọc lại vì hệ thống chỉ lưu <strong>bcrypt hash</strong>. Muốn đổi PIN, nhập 6 số mới vào 6 ô vuông rồi bấm “Đổi PIN”.</div>
+    <div id="list" class="list"></div>
+  </section>
+</main>
+
+<script type="module">
+import {createAuthService} from '/src/core/auth.js';
+
+const auth=createAuthService();
+let client=null,identity=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate=value=>{
+  if(!value)return 'Chưa đặt';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?'—':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+};
+
+function showLogin(message=''){
+  $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');
+  $('loginMsg').textContent=message;$('loginMsg').className='msg'+(message?' error':'');
+}
+function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden'); }
+async function rpc(name,args={}){
+  if(!client)client=await auth.getClient();
+  const {data,error}=await client.rpc(name,args);
+  if(error)throw error;
+  return data;
+}
+function bindPinBoxes(container){
+  const inputs=[...container.querySelectorAll('.pin-digit')];
+  inputs.forEach((input,index)=>{
+    input.addEventListener('input',()=>{
+      input.value=input.value.replace(/\D/g,'').slice(-1);
+      if(input.value&&index<inputs.length-1)inputs[index+1].focus();
+    });
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!input.value&&index>0)inputs[index-1].focus();
+      if(e.key==='ArrowLeft'&&index>0)inputs[index-1].focus();
+      if(e.key==='ArrowRight'&&index<inputs.length-1)inputs[index+1].focus();
+    });
+    input.addEventListener('paste',e=>{
+      const digits=(e.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,6);
+      if(!digits)return;
+      e.preventDefault();
+      digits.split('').forEach((d,i)=>{if(inputs[i])inputs[i].value=d});
+      inputs[Math.min(digits.length,6)-1]?.focus();
+    });
+  });
+}
+function pinValue(card){return [...card.querySelectorAll('.pin-digit')].map(x=>x.value).join('')}
+function setPinValue(card,pin){[...card.querySelectorAll('.pin-digit')].forEach((x,i)=>x.value=pin[i]||'')}
+function rowMsg(card,text='',kind=''){const el=card.querySelector('.row-msg');el.textContent=text;el.className='row-msg'+(kind?' '+kind:'')}
+
+function render(items){
+  $('list').innerHTML=items.map(item=>`
+    <section class="source-card" data-source="${esc(item.source_key)}">
+      <div class="source-top">
+        <div>
+          <div class="source-name">${esc(item.source_name)}</div>
+          <div class="source-meta">PIN: ${item.pin_configured?'Đã cấu hình':'Chưa cấu hình'} · Đặt gần nhất: ${esc(fmtDate(item.pin_set_at))}</div>
+        </div>
+        <a class="btn" href="${esc(item.url)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Mở trang NCC</a>
+      </div>
+      <div class="link-row">
+        <div class="link">${esc(item.url)}</div>
+        <button class="btn copy-link" type="button">Sao chép link</button>
+      </div>
+      <div class="pin-area">
+        <div class="pin-boxes" aria-label="PIN mới 6 số">
+          ${Array.from({length:6},(_,i)=>`<input class="pin-digit" inputmode="numeric" maxlength="1" aria-label="Số PIN ${i+1}">`).join('')}
+        </div>
+        <button class="btn generate-pin" type="button">Tạo PIN</button>
+        <button class="btn primary save-pin" type="button">Đổi PIN</button>
+      </div>
+      <div class="row-msg"></div>
+    </section>
+  `).join('');
+
+  document.querySelectorAll('.source-card').forEach(card=>{
+    bindPinBoxes(card);
+    card.querySelector('.copy-link').addEventListener('click',async()=>{
+      const link=card.querySelector('.link').textContent;
+      try{await navigator.clipboard.writeText(link);rowMsg(card,'Đã sao chép link.','ok')}
+      catch{rowMsg(card,'Không sao chép tự động được; hãy chọn link và copy.','error')}
+    });
+    card.querySelector('.generate-pin').addEventListener('click',()=>{
+      const pin=String(Math.floor(100000+Math.random()*900000));
+      setPinValue(card,pin);rowMsg(card,'Đã tạo PIN mới, bấm “Đổi PIN” để lưu.','');
+    });
+    card.querySelector('.save-pin').addEventListener('click',async()=>{
+      const pin=pinValue(card);
+      if(!/^\d{6}$/.test(pin))return rowMsg(card,'PIN phải đủ 6 số.','error');
+      const btn=card.querySelector('.save-pin');btn.disabled=true;rowMsg(card,'Đang đổi PIN…','');
+      try{
+        await rpc('taphoa_admin_supplier_set_pin',{p_source_key:card.dataset.source,p_new_pin:pin});
+        setPinValue(card,'');
+        rowMsg(card,'Đã đổi PIN. Các phiên NCC cũ đã bị đăng xuất.','ok');
+        await load();
+      }catch(error){
+        console.error(error);rowMsg(card,'Không đổi được PIN.','error');
+      }finally{btn.disabled=false}
+    });
+  });
+}
+
+async function load(){
+  const data=await rpc('taphoa_admin_supplier_access_state');
+  render(Array.isArray(data?.items)?data.items:[]);
+}
+
+async function enter(info){
+  identity=info?.identity||null;
+  if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
+  if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
+  client=info.client||await auth.getClient();showApp();await load();
+}
+
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();$('loginBtn').disabled=true;$('loginMsg').textContent='Đang đăng nhập…';$('loginMsg').className='msg';
+  try{await enter(await auth.login($('username').value,$('password').value));$('password').value=''}
+  catch(error){$('loginMsg').textContent=error?.message||'Không đăng nhập được.';$('loginMsg').className='msg error'}
+  finally{$('loginBtn').disabled=false}
+});
+$('logoutBtn').addEventListener('click',async()=>{await auth.logout().catch(()=>{});client=null;identity=null;showLogin()});
+
+const restored=await auth.restore();
+if(restored)await enter(restored);
+else showLogin();
+</script>
+</body>
+</html>
