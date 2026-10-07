@@ -106,19 +106,19 @@ const viDateTime=value=>{
   return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 };
 const NAME_REPLACEMENTS=[
-  [/\\bluong kho\\b/gi,'Lương Khô'],
-  [/\\bdau an\\b/gi,'dầu ăn'],
-  [/\\bdau hao\\b/gi,'dầu hào'],
-  [/\\bbanh\\b/gi,'bánh'],
-  [/\\bkeo\\b/gi,'kẹo'],
-  [/\\bsua\\b/gi,'sữa'],
-  [/\\bduong\\b/gi,'đường'],
-  [/\\bphong\\b/gi,'phộng'],
-  [/\\bnuoc\\b/gi,'nước']
+  [/\bluong kho\b/gi,'Lương Khô'],
+  [/\bdau an\b/gi,'dầu ăn'],
+  [/\bdau hao\b/gi,'dầu hào'],
+  [/\bbanh\b/gi,'bánh'],
+  [/\bkeo\b/gi,'kẹo'],
+  [/\bsua\b/gi,'sữa'],
+  [/\bduong\b/gi,'đường'],
+  [/\bphong\b/gi,'phộng'],
+  [/\bnuoc\b/gi,'nước']
 ];
 
 function displayName(value){
-  let text=String(value||'').replace(/\\s+/g,' ').trim();
+  let text=String(value||'').replace(/\s+/g,' ').trim();
   for(const [pattern,replacement] of NAME_REPLACEMENTS)text=text.replace(pattern,replacement);
   if(!text)return '';
   return text.charAt(0).toLocaleUpperCase('vi')+text.slice(1);
