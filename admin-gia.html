@@ -408,8 +408,9 @@
     let selectedSource='';
     let adminView='goods';
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
-    let marketSelectedCode='',marketCandidates=[],marketStatusTimer=0;
+    let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0;
     const MARKET_PAGE_SIZE=100;
+    const MARKET_CANDIDATE_PAGE_SIZE=120;
     let sourceDialogMode='create';
     let saveQueues=new Map();
     const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v10';
@@ -664,35 +665,54 @@
       const item=selectedMarketItem();
       if(!item)return;
       $('marketCandidateSearch').value=item.product_name||'';
-      await loadMarketCandidates();
+      await loadMarketCandidates(true);
     }
 
-    async function loadMarketCandidates(){
+    function renderMarketCandidates(){
+      $('marketCandidateCount').textContent=marketCandidates.length+(marketCandidateHasMore?'+':'')+' kết quả';
+      if(!marketCandidates.length){
+        $('marketCandidateList').innerHTML='<div class="empty">Không tìm thấy gợi ý phù hợp.</div>';
+        return;
+      }
+      let html=marketCandidates.map(function(x){
+        const img=x.image_url?'<img class="market-thumb" src="'+esc(x.image_url)+'" alt="">':'<span class="market-thumb"></span>';
+        return '<div class="market-candidate">'+img+
+          '<span class="market-item-copy"><span class="market-item-name">'+esc(x.name)+'</span>'+
+          '<span class="market-item-meta">'+esc(x.source||'')+' · '+esc(marketMoney(x.current_price))+'</span></span>'+
+          '<button class="market-assign" type="button" data-market-candidate="'+esc(x.id)+'">Gán</button></div>';
+      }).join('');
+      if(marketCandidateHasMore){
+        html+='<div style="padding:6px 0 12px;text-align:center"><button class="btn" type="button" data-market-more="1">Xem thêm kết quả</button></div>';
+      }
+      $('marketCandidateList').innerHTML=html;
+    }
+
+    async function loadMarketCandidates(reset=true){
       const item=selectedMarketItem();
       if(!item)return;
+      if(reset){
+        marketCandidateOffset=0;
+        marketCandidates=[];
+      }
       const query=$('marketCandidateSearch').value.trim();
-      $('marketCandidateCount').textContent='Đang tìm…';
-      $('marketCandidateList').innerHTML='<div class="empty">Đang tìm sản phẩm siêu thị…</div>';
+      $('marketCandidateCount').textContent=reset?'Đang tìm…':'Đang tải thêm…';
+      if(reset)$('marketCandidateList').innerHTML='<div class="empty">Đang tìm sản phẩm siêu thị…</div>';
       try{
         const data=await rpc('taphoa_market_search',{
           p_query:query,
-          p_limit:60,
+          p_limit:MARKET_CANDIDATE_PAGE_SIZE,
           p_source:$('marketShopSource').value,
-          p_offset:0
+          p_offset:marketCandidateOffset
         });
-        marketCandidates=Array.isArray(data)?data:[];
-        $('marketCandidateCount').textContent=marketCandidates.length+' kết quả';
-        $('marketCandidateList').innerHTML=marketCandidates.length?marketCandidates.map(function(x){
-          const img=x.image_url?'<img class="market-thumb" src="'+esc(x.image_url)+'" alt="">':'<span class="market-thumb"></span>';
-          return '<div class="market-candidate">'+img+
-            '<span class="market-item-copy"><span class="market-item-name">'+esc(x.name)+'</span>'+
-            '<span class="market-item-meta">'+esc(x.source||'')+' · '+esc(marketMoney(x.current_price))+'</span></span>'+
-            '<button class="market-assign" type="button" data-market-candidate="'+esc(x.id)+'">Gán</button></div>';
-        }).join(''):'<div class="empty">Không tìm thấy gợi ý phù hợp.</div>';
+        const batch=Array.isArray(data)?data:[];
+        marketCandidates=reset?batch:marketCandidates.concat(batch);
+        marketCandidateOffset=marketCandidates.length;
+        marketCandidateHasMore=batch.length===MARKET_CANDIDATE_PAGE_SIZE;
+        renderMarketCandidates();
       }catch(error){
         console.error('market search',error);
         $('marketCandidateCount').textContent='';
-        $('marketCandidateList').innerHTML='<div class="empty">Không tìm được dữ liệu siêu thị.</div>';
+        if(reset)$('marketCandidateList').innerHTML='<div class="empty">Không tìm được dữ liệu siêu thị.</div>';
       }
     }
 
@@ -1312,16 +1332,18 @@
       clearTimeout(marketSearchTimer);
       marketSearchTimer=setTimeout(()=>loadMarketMappings(true),220);
     });
-    $('marketShopSource').addEventListener('change',()=>{if(marketSelectedCode)loadMarketCandidates();});
+    $('marketShopSource').addEventListener('change',()=>{if(marketSelectedCode)loadMarketCandidates(true);});
     $('marketCandidateSearch').addEventListener('input',()=>{
       clearTimeout(marketCandidateTimer);
-      marketCandidateTimer=setTimeout(loadMarketCandidates,220);
+      marketCandidateTimer=setTimeout(()=>loadMarketCandidates(true),220);
     });
     $('marketProductList').addEventListener('click',e=>{
       const b=e.target.closest('[data-market-product]');
       if(b)selectMarketProduct(b.dataset.marketProduct);
     });
     $('marketCandidateList').addEventListener('click',e=>{
+      const more=e.target.closest('[data-market-more]');
+      if(more){loadMarketCandidates(false);return;}
       const b=e.target.closest('[data-market-candidate]');
       if(b)assignMarketCandidate(b.dataset.marketCandidate);
     });
