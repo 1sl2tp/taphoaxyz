@@ -137,9 +137,9 @@
     .market-toolbar{display:grid;grid-template-columns:160px minmax(220px,1fr) 160px minmax(220px,1fr);gap:8px;padding:10px;border-bottom:1px solid var(--grid)}
     .market-toolbar input,.market-toolbar select{width:100%;height:38px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:0 9px;outline:0}
     .market-toolbar input:focus,.market-toolbar select:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(37,99,235,.10)}
-    .market-grid{display:grid;grid-template-columns:minmax(320px,.9fr) minmax(420px,1.1fr);min-height:560px;max-height:calc(100vh - 245px)}
-    .market-products{border-right:1px solid var(--grid);display:flex;flex-direction:column;min-width:0}
-    .market-list,.market-candidates{overflow:auto;min-height:0;flex:1;padding:8px}
+    .market-grid{display:grid;grid-template-columns:minmax(320px,.9fr) minmax(420px,1.1fr);height:calc(100dvh - 245px);min-height:420px;max-height:none;overflow:hidden}
+    .market-products{border-right:1px solid var(--grid);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+    .market-list,.market-candidates{overflow-y:auto;overflow-x:hidden;min-height:0;flex:1;padding:8px;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
     .market-list-item,.market-candidate{width:100%;border:1px solid #e2e8f0;background:#fff;border-radius:9px;padding:9px;text-align:left;display:flex;gap:9px;align-items:center;margin-bottom:6px}
     .market-list-item:hover,.market-candidate:hover{border-color:#93c5fd;background:#f8fbff}
     .market-list-item.active{border-color:#60a5fa;background:#eff6ff}
@@ -148,7 +148,7 @@
     .market-item-meta{font-size:10px;color:var(--muted);margin-top:3px;white-space:normal;line-height:1.35}
     .market-own-prices{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}.market-own-price{font-size:9px;font-weight:850;padding:3px 5px;border-radius:6px;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}.market-own-price.carton{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}.market-own-price.retail{background:#f8fafc;color:#475569}
     .market-map-badge{font-size:9px;font-weight:900;color:#15803d;background:#ecfdf3;border-radius:999px;padding:4px 6px;flex:none}
-    .market-detail{display:flex;flex-direction:column;min-width:0}
+    .market-detail{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
     .market-current{padding:12px;border-bottom:1px solid var(--grid);background:#fff}
     .market-current-title{font-size:14px;font-weight:900}.market-current-sub{font-size:11px;color:var(--muted);margin-top:3px}.market-name-row{display:flex;gap:6px;align-items:center}.market-name-input{min-width:0;flex:1;height:34px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:0 9px;font-size:14px;font-weight:900;color:#0f172a;outline:0}.market-name-input:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(37,99,235,.10)}.market-name-save{height:34px;border:1px solid #86efac;background:#f0fdf4;color:#15803d;border-radius:8px;padding:0 10px;font-size:11px;font-weight:900}
     .market-current-map{margin-top:9px;padding:9px;border:1px solid #dbeafe;border-radius:9px;background:#f8fbff;font-size:12px}
@@ -159,7 +159,7 @@
     .market-candidate-price{font-weight:900;color:#111827;white-space:nowrap}
     .market-assign{border:1px solid #86efac;background:#f0fdf4;color:#15803d;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:900;flex:none}
     .market-pager{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px;border-top:1px solid var(--grid);font-size:11px;color:var(--muted)}
-    @media(max-width:980px){.market-grid{grid-template-columns:1fr;max-height:none}.market-products{border-right:0;border-bottom:1px solid var(--grid)}.market-list{max-height:360px}.market-candidates{max-height:520px}.market-toolbar{grid-template-columns:1fr 1fr}}
+    @media(max-width:980px){.market-grid{grid-template-columns:1fr;height:auto;min-height:0;max-height:none;overflow:visible}.market-products{border-right:0;border-bottom:1px solid var(--grid);overflow:visible}.market-detail{overflow:visible}.market-list{max-height:360px}.market-candidates{max-height:520px}.market-toolbar{grid-template-columns:1fr 1fr}}
     @media(max-width:800px){
       .wrap{padding:8px}.top{align-items:flex-start}.top-actions .home{display:none}
       .searchbar{grid-template-columns:1fr auto auto}.searchbar .status{display:none}
