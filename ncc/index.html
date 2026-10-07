@@ -331,6 +331,10 @@ if(fixedSource&&SOURCE_LABELS[paramSource]){
 bindPinBoxes();
 
 session=restoreSession();
+if(fixedSource&&session&&session.source_key!==paramSource){
+  saveSession(null);
+  session=null;
+}
 if(session){
   loadCatalog().catch(()=>{saveSession(null);showLogin('Phiên đã hết hạn. Vui lòng nhập PIN lại.')});
 }else showLogin();
