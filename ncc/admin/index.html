@@ -123,6 +123,7 @@ function render(items){
           ${Array.from({length:6},(_,i)=>`<input class="pin-digit" inputmode="numeric" maxlength="1" aria-label="Số PIN ${i+1}">`).join('')}
         </div>
         <button class="btn generate-pin" type="button">Tạo PIN</button>
+        <button class="btn copy-pin" type="button">Sao chép PIN</button>
         <button class="btn primary save-pin" type="button">Đổi PIN</button>
       </div>
       <div class="row-msg"></div>
@@ -137,8 +138,15 @@ function render(items){
       catch{rowMsg(card,'Không sao chép tự động được; hãy chọn link và copy.','error')}
     });
     card.querySelector('.generate-pin').addEventListener('click',()=>{
-      const pin=String(Math.floor(100000+Math.random()*900000));
+      const values=new Uint32Array(1);crypto.getRandomValues(values);
+      const pin=String(100000+(values[0]%900000));
       setPinValue(card,pin);rowMsg(card,'Đã tạo PIN mới, bấm “Đổi PIN” để lưu.','');
+    });
+    card.querySelector('.copy-pin').addEventListener('click',async()=>{
+      const pin=pinValue(card);
+      if(!/^\d{6}$/.test(pin))return rowMsg(card,'Chưa có đủ 6 số PIN để sao chép.','error');
+      try{await navigator.clipboard.writeText(pin);rowMsg(card,'Đã sao chép PIN.','ok')}
+      catch{rowMsg(card,'Không sao chép tự động được.','error')}
     });
     card.querySelector('.save-pin').addEventListener('click',async()=>{
       const pin=pinValue(card);
@@ -146,8 +154,7 @@ function render(items){
       const btn=card.querySelector('.save-pin');btn.disabled=true;rowMsg(card,'Đang đổi PIN…','');
       try{
         await rpc('taphoa_admin_supplier_set_pin',{p_source_key:card.dataset.source,p_new_pin:pin});
-        setPinValue(card,'');
-        rowMsg(card,'Đã đổi PIN. Các phiên NCC cũ đã bị đăng xuất.','ok');
+        rowMsg(card,'Đã đổi PIN. Có thể sao chép PIN này để gửi NCC; các phiên cũ đã bị đăng xuất.','ok');
         await load();
       }catch(error){
         console.error(error);rowMsg(card,'Không đổi được PIN.','error');
