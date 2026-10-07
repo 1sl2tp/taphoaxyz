@@ -105,7 +105,7 @@ function packText(p){
     const unit=String(p.retail_unit||'').trim();
     return fmt(retail)+' × '+fmtQty(units)+(unit?' '+unit:'');
   }
-  return 'Quy cách chưa cập nhật';
+  return '';
 }
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const viDate=value=>{
@@ -256,14 +256,14 @@ function render(){
       ? '<span class="old">'+fmt(p.old_price)+'</span>'+(isDown?'Giảm ':'Tăng ')+fmt(Math.abs(diff))+'<span class="changed-date">'+esc(viDate(p.changed_at))+'</span>'
       : '—';
     return '<tr class="'+(changed?'changed':'')+'">'+
-      '<td><div class="name">'+esc(displayName(p.name,p.source))+badge+'</div><div class="code">'+esc(packText(p))+'</div></td>'+
+      '<td><div class="name">'+esc(displayName(p.name,p.source))+badge+'</div>'+(packText(p)?'<div class="code">'+esc(packText(p))+'</div>':'')+'</td>'+
       '<td class="price">'+fmt(p.price)+'</td>'+
       '<td class="change-note">'+note+'</td>'+
     '</tr>';
   }).join('');
 
   empty.hidden=visible.length!==0;
-  foot.textContent='Đang xem '+SOURCE_LABELS[activeSource]+'. Dòng phụ dưới tên sản phẩm hiển thị giá lẻ × số lượng/quy cách khi dữ liệu đã có. Giá bên phải là giá bán hiện tại.';
+  foot.textContent='Đang xem '+SOURCE_LABELS[activeSource]+'. Dòng phụ dưới tên sản phẩm chỉ hiện khi có giá lẻ và quy cách. Giá bên phải là giá bán hiện tại.';
 }
 
 tabs.addEventListener('click',e=>{
