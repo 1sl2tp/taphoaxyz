@@ -190,6 +190,12 @@
         </div>
       </div>
 
+      <div class="admin-tabs" role="tablist" aria-label="Quản trị hàng hóa">
+        <button id="goodsTabBtn" class="admin-tab active" type="button">Hàng hóa</button>
+        <button id="marketTabBtn" class="admin-tab" type="button">Siêu thị</button>
+      </div>
+
+      <div id="goodsPane">
       <section class="panel">
         <div class="searchbar">
           <input id="searchInput" placeholder="Tìm tên sản phẩm…" autocomplete="off">
@@ -286,6 +292,51 @@
             <tbody id="supplierFeedbackBody"></tbody>
           </table>
           <div id="supplierFeedbackEmpty" class="feedback-empty hidden">Chưa có giá nào cần phản hồi NCC.</div>
+        </div>
+      </section>
+      </div>
+
+      <section id="marketPane" class="market-panel hidden">
+        <div class="market-head">
+          <div>
+            <strong>Gán sản phẩm siêu thị</strong>
+            <small>Gán một lần GO! / WinMart / Bách Hóa XANH / VNM với sản phẩm mình đang bán để so sánh và gợi ý đúng hơn.</small>
+          </div>
+          <div class="market-head-actions">
+            <span id="marketUpdateStatus" class="market-update-status">Đang đọc trạng thái cập nhật…</span>
+            <button id="marketRunUpdateBtn" class="btn" type="button">Cập nhật dữ liệu siêu thị</button>
+          </div>
+        </div>
+        <div class="market-toolbar">
+          <select id="marketOwnSource"><option value="">Tất cả nguồn hàng</option></select>
+          <input id="marketOwnSearch" type="search" placeholder="Tìm sản phẩm mình bán…" autocomplete="off">
+          <select id="marketShopSource">
+            <option value="">Tất cả siêu thị</option>
+            <option value="GO!">GO!</option>
+            <option value="WinMart">WinMart</option>
+            <option value="Bách Hóa XANH">Bách Hóa XANH</option>
+            <option value="VNM">VNM</option>
+          </select>
+          <input id="marketCandidateSearch" type="search" placeholder="Tìm sản phẩm siêu thị…" autocomplete="off" disabled>
+        </div>
+        <div class="market-grid">
+          <div class="market-products">
+            <div class="market-candidate-head"><strong>Sản phẩm của mình</strong><span id="marketMapCount"></span></div>
+            <div id="marketProductList" class="market-list"></div>
+            <div class="market-pager">
+              <button id="marketPrevBtn" class="btn" type="button">← Trước</button>
+              <span id="marketPageText"></span>
+              <button id="marketNextBtn" class="btn" type="button">Sau →</button>
+            </div>
+          </div>
+          <div class="market-detail">
+            <div id="marketCurrent" class="market-current">
+              <div class="market-current-title">Chọn một sản phẩm bên trái</div>
+              <div class="market-current-sub">Hệ thống sẽ gợi ý sản phẩm siêu thị theo tên hiện tại.</div>
+            </div>
+            <div class="market-candidate-head"><strong>Gợi ý từ siêu thị</strong><span id="marketCandidateCount"></span></div>
+            <div id="marketCandidateList" class="market-candidates"><div class="empty">Chưa chọn sản phẩm.</div></div>
+          </div>
         </div>
       </section>
     </section>
