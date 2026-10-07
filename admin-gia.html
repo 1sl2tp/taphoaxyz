@@ -407,7 +407,7 @@
             <h3>Truy cập gần đây</h3>
             <div class="analytics-table-wrap">
               <table class="analytics-table">
-                <thead><tr><th>Gần nhất</th><th>Thiết bị</th><th>Trình duyệt</th><th>HĐH</th><th class="num">Lượt/ngày</th></tr></thead>
+                <thead><tr><th>Gần nhất</th><th>Thiết bị</th><th>Khu vực (IP)</th><th>IP</th><th>Trình duyệt</th><th>HĐH</th><th class="num">Lượt/ngày</th></tr></thead>
                 <tbody id="analyticsRecentBody"></tbody>
               </table>
             </div>
@@ -670,7 +670,12 @@
         const daily=Array.isArray(data?.daily)?data.daily:[];
         $('analyticsDailyBody').innerHTML=daily.map(row=>'<tr><td>'+esc(analyticsDate(row.day))+'</td><td class="num">'+esc(analyticsNumber(row.views))+'</td><td class="num">'+esc(analyticsNumber(row.unique_visitors))+'</td></tr>').join('')||'<tr><td colspan="3">Chưa có lượt truy cập.</td></tr>';
         const recent=Array.isArray(data?.recent)?data.recent:[];
-        $('analyticsRecentBody').innerHTML=recent.map(row=>'<tr><td>'+esc(new Date(row.last_seen_at).toLocaleString('vi-VN'))+'</td><td>'+esc(row.device_type||'—')+'</td><td>'+esc(row.browser||'—')+'</td><td>'+esc(row.os||'—')+'</td><td class="num">'+esc(analyticsNumber(row.view_count))+'</td></tr>').join('')||'<tr><td colspan="5">Chưa có lượt truy cập.</td></tr>';
+        $('analyticsRecentBody').innerHTML=recent.map(row=>{
+          const place=[row.city,row.region,row.country,row.postal].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ')||'—';
+          const device=[row.device_model,row.device_type].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ')||'—';
+          const approx=(row.latitude!=null&&row.longitude!=null)?'≈ '+row.latitude+', '+row.longitude:'';
+          return '<tr><td>'+esc(new Date(row.last_seen_at).toLocaleString('vi-VN'))+'</td><td>'+esc(device)+'</td><td title="'+esc(approx)+'">'+esc(place)+'</td><td>'+esc(row.ip_masked||'—')+'</td><td>'+esc(row.browser||'—')+'</td><td>'+esc(row.os||'—')+'</td><td class="num">'+esc(analyticsNumber(row.view_count))+'</td></tr>';
+        }).join('')||'<tr><td colspan="7">Chưa có lượt truy cập.</td></tr>';
         analyticsLoaded=true;
         $('analyticsStatus').textContent='Đang xem '+days+' ngày gần nhất · dữ liệu chỉ cập nhật khi mở/làm mới tab.';
       }catch(error){
