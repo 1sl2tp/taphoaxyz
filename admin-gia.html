@@ -643,16 +643,20 @@
     }
 
     function inferMarketLeafUnit(x,item){
+      const weak=['cái','miếng','viên','thanh','bộ','đôi','cai','mieng','vien','thanh','bo','doi'];
+      const strongLabel2=String(x&&x.label2||'').trim();
+      if(strongLabel2&&!marketLooksLikeMeasure(strongLabel2)&&
+        !['thùng','carton','lốc','vỉ','khay'].includes(strongLabel2.toLowerCase())&&
+        !weak.includes(marketPlain(strongLabel2)))return strongLabel2;
       const direct=[x&&x.label3,x&&x.pack_unit].map(v=>String(v||'').trim()).find(v=>
-        v&&!marketLooksLikeMeasure(v)&&!['thùng','carton','lốc','vỉ','khay'].includes(v.toLowerCase())
+        v&&!marketLooksLikeMeasure(v)&&!['thùng','carton','lốc','vỉ','khay'].includes(v.toLowerCase())&&!weak.includes(marketPlain(v))
       );
       if(direct)return direct;
 
       const text=marketPlain([x&&x.name,x&&x.packaging].filter(Boolean).join(' '));
       const explicit=[
         ['chai','Chai'],['lon','Lon'],['hop','Hộp'],['goi','Gói'],['tui','Túi'],['bich','Bịch'],
-        ['hu','Hũ'],['lo','Lọ'],['can','Can'],['tuyp','Tuýp'],['cay','Cây'],['vien','Viên'],
-        ['mieng','Miếng'],['thanh','Thanh'],['ly','Ly'],['binh','Bình']
+        ['hu','Hũ'],['lo','Lọ'],['can','Can'],['tuyp','Tuýp'],['ly','Ly'],['binh','Bình']
       ];
       for(const pair of explicit){
         if(new RegExp('(^|[^a-z0-9])'+pair[0]+'([^a-z0-9]|$)').test(text))return pair[1];
@@ -674,8 +678,12 @@
       const kind=String(x&&x.pack_kind||'').trim().toLowerCase();
       const label1=String(x&&x.label1||'').trim().toLowerCase();
       const label2=String(x&&x.label2||'').trim();
+      const label2Plain=marketPlain(label2);
+      const bundle=['loc','vi','khay'].includes(label2Plain);
+      const container=['hop','goi','tui','bich','chai','lon','hu','lo','can','tuyp','ly','to','binh'].includes(label2Plain);
       if(kind==='carton'||label1==='thùng'||label1==='carton')return 'thùng';
-      if(kind==='middle'&&label2)return label2.toLowerCase();
+      if(bundle)return label2.toLowerCase();
+      if(container)return label2.toLowerCase();
       return inferMarketLeafUnit(x,item).toLowerCase();
     }
 
@@ -687,8 +695,11 @@
       const label3=String(x&&x.label3||'').trim();
       const qty2=Number(x&&x.qty2);
       const qty3=Number(x&&x.qty3);
+      const label2Plain=marketPlain(label2);
       const carton=kind==='carton'||label1.toLowerCase()==='thùng'||label1.toLowerCase()==='carton';
-      const middle=kind==='middle'||(!carton&&label2);
+      const bundle=['loc','vi','khay'].includes(label2Plain);
+      const container=['hop','goi','tui','bich','chai','lon','hu','lo','can','tuyp','ly','to','binh'].includes(label2Plain);
+      const weak=['cai','mieng','vien','thanh','bo','doi'].includes(marketPlain(label3));
 
       parts.push('Loại '+(carton?'Thùng':'Lẻ'));
 
@@ -706,15 +717,24 @@
           parts.push('Quy cách '+marketQty(qty3)+' '+label3.toLowerCase());
           parts.push('QC cuối '+marketQty(qty3)+' '+label3.toLowerCase());
         }
-      }else if(middle){
-        const middleName=label2||marketSoldUnit(x,item);
-        parts.push('Quy cách 1 '+middleName.toLowerCase());
+      }else if(container){
+        parts.push('QC cuối '+marketQty(Number.isFinite(qty2)&&qty2>0?qty2:1)+' '+label2.toLowerCase());
         if(label3&&Number.isFinite(qty3)&&qty3>0){
-          parts.push('QC con '+marketQty(qty3)+' '+label3.toLowerCase()+'/'+middleName.toLowerCase());
+          parts.push((weak?'Bên trong ':'QC con ')+marketQty(qty3)+' '+label3.toLowerCase()+'/'+label2.toLowerCase());
+        }
+      }else if(bundle){
+        parts.push('Quy cách '+marketQty(Number.isFinite(qty2)&&qty2>0?qty2:1)+' '+label2.toLowerCase());
+        if(label3&&Number.isFinite(qty3)&&qty3>0){
+          const per=qty2>0?qty3/qty2:qty3;
+          if(Number.isFinite(per)&&per>0)parts.push('QC con '+marketQty(per)+' '+label3.toLowerCase()+'/'+label2.toLowerCase());
           parts.push('QC cuối '+marketQty(qty3)+' '+label3.toLowerCase());
         }
       }else{
-        parts.push('QC cuối 1 '+inferMarketLeafUnit(x,item).toLowerCase());
+        const sold=marketSoldUnit(x,item);
+        parts.push('QC cuối 1 '+sold);
+        if(label2&&Number.isFinite(qty2)&&qty2>1){
+          parts.push('Bên trong '+marketQty(qty2)+' '+label2.toLowerCase());
+        }
       }
 
       const size=Number(x&&x.size_value);
@@ -806,15 +826,19 @@
       if(isCarton)return {kind:'carton',unit:'thùng',price:raw,packPrice:raw,packQty:1};
 
       const leafUnit=inferMarketLeafUnit(link,item);
+      const label2Plain=marketPlain(label2);
+      const outerContainer=['hop','goi','tui','bich','chai','lon','hu','lo','can','tuyp','ly','to','binh'].includes(label2Plain);
 
       let leafQty=1;
-      if(label3&&Number.isFinite(qty3)&&qty3>1)leafQty=qty3;
-      else if(label2&&Number.isFinite(qty2)&&qty2>1&&!['lốc','vỉ','khay','loc','vi','khay'].includes(label2.toLowerCase()))leafQty=qty2;
-      else if(Number.isFinite(packQty)&&packQty>1)leafQty=packQty;
+      if(!outerContainer&&label3&&Number.isFinite(qty3)&&qty3>1)leafQty=qty3;
+      else if(!outerContainer&&label2&&Number.isFinite(qty2)&&qty2>1&&!['lốc','vỉ','khay','loc','vi','khay'].includes(label2.toLowerCase()))leafQty=qty2;
+      else if(!outerContainer&&Number.isFinite(packQty)&&packQty>1)leafQty=packQty;
 
-      const retailPrice=Number.isFinite(unitPrice)&&unitPrice>0
-        ?unitPrice
-        :(Number.isFinite(raw)&&raw>0&&leafQty>1?raw/leafQty:raw);
+      const retailPrice=outerContainer
+        ?raw
+        :(Number.isFinite(unitPrice)&&unitPrice>0
+          ?unitPrice
+          :(Number.isFinite(raw)&&raw>0&&leafQty>1?raw/leafQty:raw));
 
       return {kind:'retail',unit:leafUnit.toLowerCase(),price:retailPrice,packPrice:raw,packQty:leafQty};
     }
