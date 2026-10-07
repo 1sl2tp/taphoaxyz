@@ -633,6 +633,103 @@
       return parts.join(' · ');
     }
 
+    function marketPlain(value){
+      return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
+    }
+
+    function marketLooksLikeMeasure(value){
+      const v=String(value||'').trim().toLowerCase();
+      return /^\d+(?:[.,]\d+)?\s*(ml|l|lit|g|kg)$/.test(v)||/^(ml|l|lit|g|kg)$/.test(v);
+    }
+
+    function inferMarketLeafUnit(x,item){
+      const direct=[x&&x.label3,x&&x.pack_unit].map(v=>String(v||'').trim()).find(v=>
+        v&&!marketLooksLikeMeasure(v)&&!['thùng','carton','lốc','vỉ','khay'].includes(v.toLowerCase())
+      );
+      if(direct)return direct;
+
+      const text=marketPlain([x&&x.name,x&&x.packaging].filter(Boolean).join(' '));
+      const explicit=[
+        ['chai','Chai'],['lon','Lon'],['hop','Hộp'],['goi','Gói'],['tui','Túi'],['bich','Bịch'],
+        ['hu','Hũ'],['lo','Lọ'],['can','Can'],['tuyp','Tuýp'],['cay','Cây'],['vien','Viên'],
+        ['mieng','Miếng'],['thanh','Thanh'],['ly','Ly'],['binh','Bình']
+      ];
+      for(const pair of explicit){
+        if(new RegExp('(^|[^a-z0-9])'+pair[0]+'([^a-z0-9]|$)').test(text))return pair[1];
+      }
+
+      const own=String(item&&item.retail_unit||'').trim();
+      if(own&&!marketLooksLikeMeasure(own))return own;
+
+      const sizeUnit=String(x&&x.size_unit||'').trim().toLowerCase();
+      if(/\bbia\b/.test(text))return 'Lon';
+      if(/\b(sua tuoi|sua tiet trung|sua chua|sua dac|sua dinh duong|sua dau nanh|sua hat|sua)\b/.test(text))return 'Hộp';
+      if(/\b(nuoc mam|mam|dau an|dau hao|nuoc tuong|tuong ot|tuong ca|nuoc giat|nuoc xa|dau goi|dau xa|sua tam|nuoc rua|nuoc lau|nuoc ngot|nuoc khoang|nuoc tinh khiet)\b/.test(text))return 'Chai';
+      if(sizeUnit==='ml')return 'Chai';
+      if(sizeUnit==='g')return 'Gói';
+      return 'sản phẩm';
+    }
+
+    function marketSoldUnit(x,item){
+      const kind=String(x&&x.pack_kind||'').trim().toLowerCase();
+      const label1=String(x&&x.label1||'').trim().toLowerCase();
+      const label2=String(x&&x.label2||'').trim();
+      if(kind==='carton'||label1==='thùng'||label1==='carton')return 'thùng';
+      if(kind==='middle'&&label2)return label2.toLowerCase();
+      return inferMarketLeafUnit(x,item).toLowerCase();
+    }
+
+    function marketStructureParts(x,item){
+      const parts=[];
+      const kind=String(x&&x.pack_kind||'').trim().toLowerCase();
+      const label1=String(x&&x.label1||'').trim();
+      const label2=String(x&&x.label2||'').trim();
+      const label3=String(x&&x.label3||'').trim();
+      const qty2=Number(x&&x.qty2);
+      const qty3=Number(x&&x.qty3);
+      const carton=kind==='carton'||label1.toLowerCase()==='thùng'||label1.toLowerCase()==='carton';
+      const middle=kind==='middle'||(!carton&&label2);
+
+      parts.push('Loại '+(carton?'Thùng':'Lẻ'));
+
+      if(carton){
+        if(label2&&Number.isFinite(qty2)&&qty2>0){
+          parts.push('Quy cách '+marketQty(qty2)+' '+label2.toLowerCase());
+          if(label3&&Number.isFinite(qty3)&&qty3>0){
+            const per=qty3/qty2;
+            if(Number.isFinite(per)&&per>0){
+              parts.push('QC con '+marketQty(per)+' '+label3.toLowerCase()+'/'+label2.toLowerCase());
+            }
+            parts.push('QC cuối '+marketQty(qty3)+' '+label3.toLowerCase());
+          }
+        }else if(label3&&Number.isFinite(qty3)&&qty3>0){
+          parts.push('Quy cách '+marketQty(qty3)+' '+label3.toLowerCase());
+          parts.push('QC cuối '+marketQty(qty3)+' '+label3.toLowerCase());
+        }
+      }else if(middle){
+        const middleName=label2||marketSoldUnit(x,item);
+        parts.push('Quy cách 1 '+middleName.toLowerCase());
+        if(label3&&Number.isFinite(qty3)&&qty3>0){
+          parts.push('QC con '+marketQty(qty3)+' '+label3.toLowerCase()+'/'+middleName.toLowerCase());
+          parts.push('QC cuối '+marketQty(qty3)+' '+label3.toLowerCase());
+        }
+      }else{
+        parts.push('QC cuối 1 '+inferMarketLeafUnit(x,item).toLowerCase());
+      }
+
+      const size=Number(x&&x.size_value);
+      const sizeUnit=String(x&&x.size_unit||'').trim();
+      if(Number.isFinite(size)&&size>0&&sizeUnit){
+        parts.push(ownMeasureLabel(sizeUnit)+' '+marketQty(size)+' '+sizeUnit);
+      }
+      return parts;
+    }
+
+    function marketSoldPriceText(x,item){
+      const raw=Number(x&&('price' in x?x.price:x.current_price));
+      return marketMoney(raw)+'/'+marketSoldUnit(x,item);
+    }
+
     function ownPackText(item){
       const parts=[];
       const units=Number(item&&item.units_per_carton);
@@ -694,7 +791,7 @@
       return parts;
     }
 
-    function marketPriceBasis(link){
+    function marketPriceBasis(link,item){
       const raw=Number(link&&link.price);
       const packKind=String(link&&link.pack_kind||'').trim().toLowerCase();
       const packUnit=String(link&&link.pack_unit||'').trim().toLowerCase();
@@ -708,9 +805,7 @@
       const isCarton=packKind==='carton'||packUnit==='thùng'||packUnit==='carton'||label1==='thùng'||label1==='carton';
       if(isCarton)return {kind:'carton',unit:'thùng',price:raw,packPrice:raw,packQty:1};
 
-      const leafUnit=label3||(
-        label2&&!['lốc','vỉ','khay','loc','vi','khay'].includes(label2.toLowerCase())?label2:''
-      )||String(link&&link.pack_unit||'').trim()||'lẻ';
+      const leafUnit=inferMarketLeafUnit(link,item);
 
       let leafQty=1;
       if(label3&&Number.isFinite(qty3)&&qty3>1)leafQty=qty3;
@@ -728,10 +823,10 @@
       const links=itemMarketLinks(item);
       if(!links.length)return '';
       return '<div class="market-own-prices">'+links.map(function(link){
-        const basis=marketPriceBasis(link);
+        const basis=marketPriceBasis(link,item);
         const source=MARKET_SOURCE_SHORT[link.source]||link.source||'ST';
-        const pack=marketPackText(link);
-        const title=[link.name||'',basis.kind==='retail'&&basis.packQty>1?'Giá gói '+marketMoney(basis.packPrice)+(pack?' · '+pack:''):''].filter(Boolean).join(' · ');
+        const structure=marketStructureParts(link,item).join(' · ');
+        const title=[link.name||'',structure].filter(Boolean).join(' · ');
         return '<span class="market-own-price '+basis.kind+'" title="'+esc(title)+'">'+esc(source)+' '+esc(marketMoney(basis.price))+'/'+esc(basis.unit)+'</span>';
       }).join('')+'</div>';
     }
@@ -799,7 +894,7 @@
           ((link.variant_color||link.variant_label)?'<button class="market-link-copy" type="button" data-market-variant="'+esc(link.candidate_id)+'">Chép màu</button>':'')+
           '<button class="market-link-remove" type="button" data-market-remove="'+esc(link.candidate_id)+'">Bỏ gán</button>'+
           '</div></div>'+
-          '<div class="market-link-meta">Giá '+esc(marketMoney(link.price))+(pack?' · '+esc(pack):'')+
+          '<div class="market-link-meta">Giá '+esc(marketSoldPriceText(link,item))+' · '+esc(marketStructureParts(link,item).join(' · '))+
           (link.variant_color?'<span class="market-variant">Màu '+esc(link.variant_color)+'</span>':'')+
           (link.variant_label?'<span class="market-variant">'+esc(link.variant_label)+'</span>':'')+'</div>'+
         '</div>';
@@ -863,12 +958,11 @@
       const links=itemMarketLinks(item);
       let html=marketCandidates.map(function(x){
         const img=x.image_url?'<img class="market-thumb" src="'+esc(x.image_url)+'" alt="">':'<span class="market-thumb"></span>';
-        const pack=marketPackText(x);
         const exact=links.some(function(link){return link.candidate_id===x.id;});
         const label=exact?'Đã gán':'Gán';
         return '<div class="market-candidate">'+img+
           '<span class="market-item-copy"><span class="market-item-name">'+esc(x.name)+'</span>'+
-          '<span class="market-item-meta">'+esc(x.source||'')+' · '+esc(marketMoney(x.current_price))+(pack?' · '+esc(pack):'')+
+          '<span class="market-item-meta">'+esc(x.source||'')+' · Giá '+esc(marketSoldPriceText(x,item))+' · '+esc(marketStructureParts(x,item).join(' · '))+
           (x.variant_color?' · Màu '+esc(x.variant_color):'')+(x.variant_label?' · '+esc(x.variant_label):'')+'</span>'+
           '</span>'+
           (x.open_url?'<a class="market-link-open" href="'+esc(x.open_url)+'" target="_blank" rel="noopener">Mở ↗</a>':'')+
