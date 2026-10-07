@@ -98,7 +98,15 @@ const parseNum=value=>{
   const n=Number(s);
   return Number.isFinite(n)?n:null;
 };
-const pretty=value=>value===null||value===undefined||value===''?'':Number(value).toLocaleString('vi-VN',{maximumFractionDigits:2});
+const pretty=value=>{
+  if(value===null||value===undefined||value==='')return '';
+  const n=Number(value);
+  return Number.isFinite(n)?n.toLocaleString('vi-VN',{useGrouping:false,maximumFractionDigits:2}):'';
+};
+function normalizePriceInput(input){
+  const value=parseNum(input.value);
+  if(value!==null)input.value=pretty(value);
+}
 function pinInputs(){return [...document.querySelectorAll('#pinBoxes .pin-digit')]}
 function getPin(){return pinInputs().map(x=>x.value).join('')}
 function clearPin(){pinInputs().forEach(x=>x.value='');pinInputs()[0]?.focus()}
@@ -240,7 +248,15 @@ function render(){
   $('rows').innerHTML=existing+blanks;
   $('empty').classList.toggle('hidden',visible.length!==0);
   $('summary').textContent=items.length+' mặt hàng · nhập giá dạng số, ví dụ 400 = 400';
-  $('rows').querySelectorAll('input').forEach(input=>input.addEventListener('input',updateSaveState));
+  $('rows').querySelectorAll('input').forEach(input=>{
+    input.addEventListener('input',updateSaveState);
+    if(input.classList.contains('cost-input')||input.classList.contains('new-cost')){
+      input.addEventListener('blur',()=>{
+        normalizePriceInput(input);
+        updateSaveState();
+      });
+    }
+  });
   updateSaveState();
 }
 
