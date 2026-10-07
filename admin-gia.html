@@ -598,15 +598,32 @@
 
     function marketPackText(x){
       const parts=[];
-      const addLevel=function(label,qty,omitOne){
-        label=String(label||'').trim();
-        const q=Number(qty);
-        if(!label||!Number.isFinite(q)||q<=0)return;
-        parts.push((omitOne&&q===1?'':marketQty(q)+' ')+label.toLowerCase());
-      };
-      addLevel(x.label1,x.qty1,true);
-      addLevel(x.label2,x.qty2,false);
-      addLevel(x.label3,x.qty3,false);
+      const label1=String(x.label1||'').trim();
+      const label2=String(x.label2||'').trim();
+      const label3=String(x.label3||'').trim();
+      const qty1=Number(x.qty1);
+      const qty2=Number(x.qty2);
+      const qty3=Number(x.qty3);
+
+      if(label1&&Number.isFinite(qty1)&&qty1>0){
+        parts.push((qty1===1?'':marketQty(qty1)+' ')+label1.toLowerCase());
+      }
+      if(label2&&Number.isFinite(qty2)&&qty2>0){
+        if(label3&&Number.isFinite(qty3)&&qty3>=qty2&&qty2>0){
+          const per=qty3/qty2;
+          if(Number.isFinite(per)&&per>0&&Math.abs(per-Math.round(per))<0.0001){
+            parts.push(marketQty(qty2)+' '+label2.toLowerCase()+' × '+marketQty(per)+' '+label3.toLowerCase());
+          }else{
+            parts.push(marketQty(qty2)+' '+label2.toLowerCase());
+            parts.push(marketQty(qty3)+' '+label3.toLowerCase());
+          }
+        }else{
+          parts.push(marketQty(qty2)+' '+label2.toLowerCase());
+        }
+      }else if(label3&&Number.isFinite(qty3)&&qty3>0){
+        parts.push(marketQty(qty3)+' '+label3.toLowerCase());
+      }
+
       const size=Number(x.size_value);
       if(Number.isFinite(size)&&size>0&&String(x.size_unit||'').trim()){
         parts.push(marketQty(size)+' '+String(x.size_unit).trim());
@@ -644,13 +661,20 @@
       const retail=Number(item&&item.retail_price);
       const units=Number(item&&item.units_per_carton);
       const unit=String(item&&item.retail_unit||'').trim();
+      const innerQty=Number(item&&item.retail_inner_qty);
+      const innerUnit=String(item&&item.retail_inner_unit||'').trim();
       const size=Number(item&&item.retail_size_value);
       const sizeUnit=String(item&&item.retail_size_unit||'').trim();
 
       if(Number.isFinite(sale)&&sale>0)parts.push('Giá bán '+pretty(sale));
       if(Number.isFinite(retail)&&retail>0)parts.push('Giá lẻ '+pretty(retail)+(unit?'/'+unit:''));
-      if(Number.isFinite(units)&&units>0)parts.push('Quy cách '+marketQty(units)+(unit?' '+unit:''));
-      else if(unit)parts.push('Đơn vị lẻ '+unit);
+      if(Number.isFinite(units)&&units>0){
+        let pack='Quy cách '+marketQty(units)+(unit?' '+unit:'');
+        if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit)pack+=' × '+marketQty(innerQty)+' '+innerUnit;
+        parts.push(pack);
+      }else if(unit){
+        parts.push('Đơn vị lẻ '+unit);
+      }
       if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(ownMeasureLabel(sizeUnit)+' '+marketQty(size)+' '+sizeUnit);
       return parts;
     }
@@ -930,7 +954,13 @@
         const result=await rpc('taphoa_copy_market_pack_to_product',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
         await loadMarketMappings(false);
         renderMarketCandidates();
-        const qc=[result&&result.units_per_carton?(marketQty(result.units_per_carton)+' '+String(result.retail_unit||'')):'',result&&result.retail_size_value?(marketQty(result.retail_size_value)+' '+String(result.retail_size_unit||'')):''].filter(Boolean).join(' · ');
+        const qc=[
+          result&&result.units_per_carton
+            ?marketQty(result.units_per_carton)+' '+String(result.retail_unit||'')+
+              (result.retail_inner_qty&&result.retail_inner_unit?' × '+marketQty(result.retail_inner_qty)+' '+String(result.retail_inner_unit):'')
+            :'',
+          result&&result.retail_size_value?(marketQty(result.retail_size_value)+' '+String(result.retail_size_unit||'')):''
+        ].filter(Boolean).join(' · ');
         $('marketUpdateStatus').textContent='Đã chép quy cách'+(qc?' '+qc:'')+' vào '+item.product_name+'.';
       }catch(error){
         console.error('copy market pack',error);
