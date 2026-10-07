@@ -277,8 +277,9 @@ function insertNodeAtCaret(node){
   if(!range||!$('editor').contains(range.commonAncestorContainer)){
     range=document.createRange();range.selectNodeContents($('editor'));range.collapse(false);
   }
-  range.deleteContents();range.insertNode(node);range.setStartAfter(node);range.collapse(true);
-  sel.removeAllRanges();sel.addRange(range);
+  const tail=node.nodeType===DocumentFragment.DOCUMENT_FRAGMENT_NODE?node.lastChild:node;
+  range.deleteContents();range.insertNode(node);
+  if(tail&&tail.parentNode){range.setStartAfter(tail);range.collapse(true);sel.removeAllRanges();sel.addRange(range)}
 }
 function insertPlainText(text){
   const frag=document.createDocumentFragment();
@@ -314,10 +315,33 @@ async function uploadImage(file){
   fig.appendChild(img);insertNodeAtCaret(fig);decorateImages();scheduleSave();await saveNow();
 }
 async function handleFiles(files){
-  for(const file of files){
+  const images=[...files].filter(file=>file&&String(file.type||'').startsWith('image/'));
+  if(!images.length){setStatus('Không tìm thấy ảnh hợp lệ','error');return}
+  for(const file of images){
     try{await uploadImage(file)}
-    catch(error){console.error(error);setStatus('Không tải được ảnh','error')}
+    catch(error){
+      console.error(error);
+      setStatus('Không tải được ảnh: '+(error?.message||'lỗi không xác định'),'error');
+    }
   }
+}
+function clipboardImageFiles(data){
+  const files=[...(data?.files||[])].filter(f=>String(f.type||'').startsWith('image/'));
+  if(files.length)return files;
+  const itemFiles=[...(data?.items||[])]
+    .filter(item=>item.kind==='file'&&String(item.type||'').startsWith('image/'))
+    .map(item=>item.getAsFile())
+    .filter(Boolean);
+  return itemFiles;
+}
+async function dataImageFromHtml(html){
+  if(!html)return null;
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const src=doc.querySelector('img')?.getAttribute('src')||'';
+  if(!src.startsWith('data:image/'))return null;
+  const response=await fetch(src);
+  const blob=await response.blob();
+  return new File([blob],'clipboard-image.'+(blob.type==='image/png'?'png':'jpg'),{type:blob.type});
 }
 
 function exec(cmd){$('editor').focus();document.execCommand(cmd,false,null);scheduleSave()}
@@ -408,16 +432,36 @@ $('editor').addEventListener('input',scheduleSave);
 $('copyLinkBtn').addEventListener('click',async()=>{if(!current)return;try{await navigator.clipboard.writeText(noteUrl(current.id));setStatus('Đã sao chép link','ok')}catch{setStatus('Không sao chép tự động được','error')}});
 $('deleteBtn').addEventListener('click',deleteCurrent);
 $('imageBtn').addEventListener('click',()=>$('imageInput').click());
-$('imageInput').addEventListener('change',async()=>{await handleFiles([...$('imageInput').files]);$('imageInput').value=''});
+$('imageInput').addEventListener('change',async()=>{
+  const files=[...($('imageInput').files||[])];
+  if(files.length)await handleFiles(files);
+  $('imageInput').value='';
+});
 document.querySelectorAll('[data-cmd]').forEach(btn=>btn.addEventListener('click',()=>exec(btn.dataset.cmd)));
 
 $('editor').addEventListener('paste',async e=>{
-  const files=[...(e.clipboardData?.files||[])].filter(f=>f.type.startsWith('image/'));
-  const text=e.clipboardData?.getData('text/plain')||'';
+  const data=e.clipboardData;
+  let files=clipboardImageFiles(data);
+  const text=data?.getData('text/plain')||'';
+  const html=data?.getData('text/html')||'';
+
+  if(!files.length&&html){
+    try{
+      const htmlImage=await dataImageFromHtml(html);
+      if(htmlImage)files=[htmlImage];
+    }catch(error){console.warn('clipboard html image',error)}
+  }
+
   if(!files.length&&!text)return;
   e.preventDefault();
+
+  if(files.length){
+    await handleFiles(files);
+    if(text&&text.trim()&&!html.includes('<img')){insertPlainText(text);scheduleSave()}
+    return;
+  }
+
   if(text){insertPlainText(text);scheduleSave()}
-  if(files.length)await handleFiles(files);
 });
 $('editor').addEventListener('dragover',e=>{e.preventDefault();$('dropMask').classList.add('show')});
 $('dropMask').addEventListener('dragover',e=>e.preventDefault());
