@@ -123,44 +123,32 @@ function ownPackInfo(p){
   const bundleQty=Number(p.retail_bundle_qty);
   const bundleUnit=String(p.retail_bundle_unit||'').trim();
 
-  if(unit)parts.push('Đơn vị lẻ '+unit);
+  const nested=Number.isFinite(units)&&units>0&&Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&
+    Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit&&innerUnit.toLowerCase()===bundleUnit.toLowerCase();
 
-  if(Number.isFinite(units)&&units>0){
-    parts.push('Số lượng/1 thùng '+fmtQty(units)+(unit?' '+unit:''));
-    parts.push('Cấp 1 thùng');
-
-    const nested=Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&
-      Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit&&innerUnit.toLowerCase()===bundleUnit.toLowerCase();
-
-    if(nested){
-      parts.push('Cấp 2 '+fmtQty(innerQty)+' '+innerUnit+'/thùng');
-      parts.push('Cấp 3 '+fmtQty(bundleQty)+' '+unit+'/'+innerUnit);
-    }else if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
-      const middleCount=units/bundleQty;
-      if(Number.isFinite(middleCount)&&middleCount>0){
-        parts.push('Cấp 2 '+fmtQty(middleCount)+' '+bundleUnit+'/thùng');
-      }else{
-        parts.push('Cấp 2 '+bundleUnit);
-      }
-      parts.push('Cấp 3 '+fmtQty(bundleQty)+' '+unit+'/'+bundleUnit);
+  if(nested){
+    parts.push(fmtQty(innerQty)+' '+innerUnit+'/thùng');
+    parts.push(fmtQty(bundleQty)+' '+unit+'/'+innerUnit);
+  }else if(Number.isFinite(units)&&units>0&&Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
+    const middleCount=units/bundleQty;
+    if(Number.isFinite(middleCount)&&middleCount>0){
+      parts.push(fmtQty(middleCount)+' '+bundleUnit+'/thùng');
+      parts.push(fmtQty(bundleQty)+' '+unit+'/'+bundleUnit);
     }else{
-      if(unit)parts.push('Cấp 2 '+unit);
-      if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&unit){
-        parts.push('Cấp 3 '+fmtQty(innerQty)+' '+innerUnit+'/'+unit);
-      }else if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit){
-        parts.push('Cấp 3 '+fmtQty(innerQty)+' '+innerUnit);
-      }
+      parts.push(fmtQty(units)+' '+unit+'/thùng');
     }
-  }else if(unit){
-    parts.push('Cấp 2 '+unit);
+  }else if(Number.isFinite(units)&&units>0&&unit){
+    parts.push(fmtQty(units)+' '+unit+'/thùng');
     if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit){
-      parts.push('Cấp 3 '+fmtQty(innerQty)+' '+innerUnit+'/'+unit);
+      parts.push(fmtQty(innerQty)+' '+innerUnit+'/'+unit);
     }
+  }else if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&unit){
+    parts.push(fmtQty(innerQty)+' '+innerUnit+'/'+unit);
   }
 
   const size=Number(p.retail_size_value);
   const sizeUnit=String(p.retail_size_unit||'').trim();
-  if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(measureLabel(sizeUnit)+' '+fmtQty(size)+' '+sizeUnit);
+  if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(fmtQty(size)+' '+sizeUnit);
   return parts.join(' · ');
 }
 function ownSaleText(p){
