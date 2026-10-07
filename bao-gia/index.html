@@ -7,20 +7,20 @@
 <title>Báo giá · Tạp hóa</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#17202a;background:#f6f7f9}
-*{box-sizing:border-box}body{margin:0;background:#f6f7f9}.page{max-width:980px;margin:auto;padding:20px 14px 40px}
+*{box-sizing:border-box}body{margin:0;background:#f6f7f9}.page{max-width:1160px;margin:auto;padding:20px 14px 40px}
 .hero{background:#fff;border:1px solid #e4e7ec;border-radius:18px;padding:22px;box-shadow:0 8px 24px rgba(16,24,40,.05)}
 .eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#667085}
 h1{margin:5px 0 8px;font-size:30px;line-height:1.12}p{margin:0;color:#667085;line-height:1.55}
-.summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:750}.pill.change{background:#ecfdf3;color:#027a48}.market-note{margin-top:12px;padding:11px 13px;border:1px solid #fedf89;border-radius:12px;background:#fffaeb;color:#7a2e0e;font-size:13px;line-height:1.45;font-weight:750}.market-note strong{color:#93370d}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:750}.pill.change{background:#ecfdf3;color:#027a48}.market-note{margin-top:12px;padding:10px 12px;border:1px solid #fedf89;border-radius:12px;background:#fffaeb;color:#7a2e0e;font-size:12px;line-height:1.4;font-weight:750}.market-note strong{color:#93370d}
 .tabs{display:flex;gap:8px;overflow:auto;padding:14px 0 2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{height:40px;border:1px solid #d0d5dd;border-radius:999px;background:#fff;color:#475467;padding:0 15px;font-weight:800;cursor:pointer;white-space:nowrap}.tab.active{background:#17202a;color:#fff;border-color:#17202a}
 .toolbar{display:flex;gap:8px;align-items:center;margin:12px 0 14px}.search{flex:1;min-width:0;height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;padding:0 13px;font-size:15px;outline:none}.search:focus{border-color:#98a2b3;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
 button{height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:#344054;padding:0 13px;font-weight:750;cursor:pointer;white-space:nowrap}.filter.active{background:#17202a;color:#fff;border-color:#17202a}
 .card{overflow:hidden;background:#fff;border:1px solid #e4e7ec;border-radius:16px}
 table{width:100%;border-collapse:collapse}th{padding:11px 12px;background:#f9fafb;color:#667085;font-size:11px;text-align:left;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e4e7ec}
-td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-child td{border-bottom:0}tr.changed{background:#fbfffc}.product-main{display:flex;gap:12px;align-items:center;min-width:0}.product-thumb{width:72px;height:72px;border:1px solid #e4e7ec;border-radius:12px;background:#f8fafc;object-fit:contain;flex:none}.product-fallback{width:72px;height:72px;border:1px solid #e4e7ec;border-radius:12px;background:#eef2f6;color:#475467;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:850;flex:none}.product-copy{min-width:0}.name{font-weight:760}.code{font-size:11px;color:#667085;margin-top:5px;line-height:1.35}.price{text-align:right;min-width:280px}.price-line{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;line-height:1.3}.price-line+.price-line{margin-top:3px}.price-label{display:inline-block;min-width:58px;text-align:right;font-size:10px;color:#667085;font-weight:750;white-space:nowrap}.sale-price{font-size:17px;font-weight:900;white-space:nowrap}.retail-price{font-size:13px;font-weight:850;white-space:nowrap}.market-refs{display:flex;justify-content:flex-end;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px}.market-ref{font-size:10px;font-weight:800;padding:4px 6px;border-radius:7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;white-space:nowrap}.change-note{text-align:right;font-size:12px;color:#027a48;font-weight:750;white-space:nowrap}.old{color:#98a2b3;text-decoration:line-through;margin-right:5px;font-weight:600}.changed-date{display:block;margin-top:3px;color:#667085;font-size:10px;font-weight:650}.badge{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:9px;font-weight:850;vertical-align:2px;text-transform:uppercase}.badge.up{background:#fff4ed;color:#b54708}
+td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-child td{border-bottom:0}tr.changed{background:#fbfffc}.product-main{display:flex;gap:12px;align-items:center;min-width:0}.product-visual{position:relative;display:flex;width:72px;height:72px;border:1px solid #e4e7ec;border-radius:12px;background:#f8fafc;overflow:hidden;flex:none;align-items:center;justify-content:center}.product-thumb{width:100%;height:100%;border:0;background:transparent;object-fit:contain;transform:scale(1.08)}.product-fallback{width:100%;height:100%;background:#eef2f6;color:#475467;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:850;flex:none}.product-copy{min-width:0}.name{font-weight:760}.code{font-size:11px;color:#667085;margin-top:5px;line-height:1.35}.price{text-align:right;min-width:280px}.price-line{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;line-height:1.3}.price-line+.price-line{margin-top:3px}.price-label{display:inline-block;min-width:58px;text-align:right;font-size:10px;color:#667085;font-weight:750;white-space:nowrap}.sale-price{font-size:17px;font-weight:900;white-space:nowrap}.retail-price{font-size:13px;font-weight:850;white-space:nowrap}.market-refs{display:flex;justify-content:flex-end;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px}.market-ref{font-size:10px;font-weight:750;padding:3px 5px;border-radius:7px;background:#f5f9ff;color:#1d4ed8;border:1px solid #dbeafe;white-space:nowrap}.change-note{width:112px;text-align:right;font-size:12px;color:#027a48;font-weight:750;white-space:nowrap}.old{color:#98a2b3;text-decoration:line-through;margin-right:5px;font-weight:600}.changed-date{display:block;margin-top:3px;color:#667085;font-size:10px;font-weight:650}.badge{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:9px;font-weight:850;vertical-align:2px;text-transform:uppercase}.badge.up{background:#fff4ed;color:#b54708}
 .empty,.loading{padding:32px;text-align:center;color:#667085}.error{padding:18px;color:#b42318;background:#fff5f5;border-top:1px solid #fecaca}
 .foot{padding:14px 4px 0;color:#667085;font-size:12px;line-height:1.5}
-@media(max-width:680px){.page{padding:10px 8px 28px}.hero{padding:18px;border-radius:14px}h1{font-size:25px}.tabs{padding-top:10px}.tab{height:38px;padding:0 13px}.toolbar{flex-wrap:wrap}.search{flex-basis:100%}.toolbar button{flex:1}.card{border-radius:12px}th:nth-child(3),td:nth-child(3){display:none}td{padding:10px 8px}.product-thumb,.product-fallback{width:56px;height:56px;border-radius:9px}.product-main{gap:9px}.price{min-width:170px}.sale-price{font-size:13px}.retail-price{font-size:11px}.price-label{min-width:44px;font-size:8px}.market-refs{gap:3px}.market-ref{font-size:8px;padding:3px 4px}.name{font-size:13px}.code{font-size:9px}}
+@media(max-width:680px){.page{padding:8px 7px 24px}.hero{padding:14px;border-radius:14px}h1{margin:3px 0 6px;font-size:23px}.eyebrow{font-size:10px}p{font-size:13px;line-height:1.42}.summary{gap:6px;margin-top:10px}.pill{padding:5px 8px;font-size:10px}.market-note{margin-top:9px;padding:8px 10px;font-size:10.5px;line-height:1.35}.tabs{padding-top:9px;gap:6px}.tab{height:36px;padding:0 12px;font-size:12px}.toolbar{gap:6px;margin:9px 0 10px;flex-wrap:wrap}.search{flex-basis:100%;height:42px;font-size:14px}.toolbar button{height:40px;flex:1;font-size:12px}.card{border-radius:12px}th{padding:9px 8px;font-size:9px}th:nth-child(3),td:nth-child(3){display:none}td{padding:9px 8px}.product-visual{width:56px;height:56px;border-radius:9px}.product-thumb{transform:scale(1.08)}.product-main{gap:9px}.price{min-width:170px}.sale-price{font-size:13px}.retail-price{font-size:11px}.price-label{min-width:44px;font-size:8px}.market-refs{gap:3px;margin-top:4px}.market-ref{font-size:8px;padding:2px 4px}.name{font-size:13px}.code{font-size:9px;margin-top:3px}}
 @media print{body{background:#fff}.page{max-width:none;padding:0}.hero{border:0;box-shadow:none;padding:0 0 14px}.tabs,.toolbar{display:none}.card{border:1px solid #d0d5dd;border-radius:0}.foot{padding-top:8px}tr{break-inside:avoid}th,td{padding:7px 8px}.badge{border:1px solid #98a2b3;background:#fff;color:#344054}}
 </style>
 </head>
@@ -52,7 +52,7 @@ td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-ch
 
   <section class="card">
     <table>
-      <thead><tr><th>Sản phẩm</th><th style="text-align:right">Giá</th><th style="text-align:right">Thay đổi</th></tr></thead>
+      <thead><tr><th>Sản phẩm</th><th style="text-align:right">Giá</th><th class="change-col" style="width:112px;text-align:right">Thay đổi</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div id="loading" class="loading">Đang tải bảng giá…</div>
@@ -230,7 +230,7 @@ function marketRefHtml(p){
 function productImageHtml(p){
   const name=displayName(p.name,p.source);
   const image=String(p.image_url||'').trim();
-  const fallback='<span class="product-fallback">'+esc(initials(name))+'</span>';
+  const fallback='<span class="product-visual"><span class="product-fallback">'+esc(initials(name))+'</span></span>';
   if(!/^https?:\/\//i.test(image))return fallback;
   return '<span style="position:relative;display:flex;flex:none"><img class="product-thumb" src="'+esc(image)+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="product-fallback" style="display:none">'+esc(initials(name))+'</span></span>';
 }
@@ -370,10 +370,10 @@ function median(values){
   const mid=Math.floor(nums.length/2);
   return nums.length%2?nums[mid]:(nums[mid-1]+nums[mid])/2;
 }
-function pctWords(value){
+function pctCompact(value){
   if(!Number.isFinite(value))return '';
-  const n=Math.abs(value).toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1});
-  return value>=0?'cao hơn khoảng '+n+'%':'thấp hơn khoảng '+n+'%';
+  const sign=value>=0?'+':'−';
+  return sign+Math.abs(value).toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 }
 function marketInsightText(source){
   if(source==='thuoc-la')return '';
@@ -414,12 +414,12 @@ function marketInsightText(source){
   const rm=median(retail);
   const vm=median(vnmCarton);
   const parts=[];
-  if(Number.isFinite(rm))parts.push('giá lẻ '+pctWords(rm));
-  if(Number.isFinite(cm))parts.push('giá thùng '+pctWords(cm));
+  if(Number.isFinite(rm))parts.push('lẻ '+pctCompact(rm));
+  if(Number.isFinite(cm))parts.push('thùng '+pctCompact(cm));
   if(!parts.length)return 'Chưa đủ dữ liệu tham khảo cùng đơn vị để rút ra mặt bằng giá.';
 
-  let text='<strong>Mặt bằng B/W/G hiện tại:</strong> '+parts.join('; ')+' so với giá bán của mình.';
-  if(source==='sua'&&Number.isFinite(vm))text+=' <strong>VNM là giá hãng riêng:</strong> giá thùng '+pctWords(vm)+'.';
+  let text='<strong>B/W/G:</strong> '+parts.join(' · ')+' so với giá mình.';
+  if(source==='sua'&&Number.isFinite(vm))text+=' <strong>VNM:</strong> thùng '+pctCompact(vm)+'.';
   return text;
 }
 
@@ -454,7 +454,7 @@ function render(){
     const badge=changed?'<span class="badge '+(isDown?'':'up')+'">'+(isDown?'Giảm giá':'Tăng giá')+'</span>':'';
     const note=changed
       ? '<span class="old">'+fmt(p.old_price)+'</span>'+(isDown?'Giảm ':'Tăng ')+fmt(Math.abs(diff))+'<span class="changed-date">'+esc(viDate(p.changed_at))+'</span>'
-      : '—';
+      : '';
     const ownPack=activeSource==='thuoc-la'?'1 cây':ownPackInfo(p);
     const refs=marketRefHtml(p);
     const ownRetail=activeSource==='thuoc-la'?'':retailOwnText(p);
