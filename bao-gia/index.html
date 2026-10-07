@@ -118,11 +118,19 @@ function ownPackInfo(p){
   const parts=[];
   const units=Number(p.units_per_carton);
   const unit=String(p.retail_unit||'').trim();
-  if(Number.isFinite(units)&&units>0)parts.push('Quy cách '+fmtQty(units)+(unit?' '+unit:''));
+  const innerQty=Number(p.retail_inner_qty);
+  const innerUnit=String(p.retail_inner_unit||'').trim();
   const bundleQty=Number(p.retail_bundle_qty);
   const bundleUnit=String(p.retail_bundle_unit||'').trim();
-  if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
-    parts.push('1 '+bundleUnit+' = '+fmtQty(bundleQty)+' '+unit);
+  const nested=Number.isFinite(units)&&units>0&&Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&
+    Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit&&innerUnit.toLowerCase()===bundleUnit.toLowerCase();
+  if(nested){
+    parts.push('Quy cách '+fmtQty(innerQty)+' '+innerUnit+' × '+fmtQty(bundleQty)+' '+unit+' = '+fmtQty(units)+' '+unit);
+  }else{
+    if(Number.isFinite(units)&&units>0)parts.push('Quy cách '+fmtQty(units)+(unit?' '+unit:''));
+    if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
+      parts.push('1 '+bundleUnit+' = '+fmtQty(bundleQty)+' '+unit);
+    }
   }
   const size=Number(p.retail_size_value);
   const sizeUnit=String(p.retail_size_unit||'').trim();
