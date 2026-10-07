@@ -17,10 +17,10 @@ h1{margin:5px 0 8px;font-size:30px;line-height:1.12}p{margin:0;color:#667085;lin
 button{height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:#344054;padding:0 13px;font-weight:750;cursor:pointer;white-space:nowrap}.filter.active{background:#17202a;color:#fff;border-color:#17202a}
 .card{overflow:hidden;background:#fff;border:1px solid #e4e7ec;border-radius:16px}
 table{width:100%;border-collapse:collapse}th{padding:11px 12px;background:#f9fafb;color:#667085;font-size:11px;text-align:left;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e4e7ec}
-td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-child td{border-bottom:0}tr.changed{background:#fbfffc}.name{font-weight:760}.code{font-size:11px;color:#98a2b3;margin-top:3px}.price{text-align:right;font-size:17px;font-weight:850;white-space:nowrap}.change-note{text-align:right;font-size:12px;color:#027a48;font-weight:750;white-space:nowrap}.old{color:#98a2b3;text-decoration:line-through;margin-right:5px;font-weight:600}.changed-date{display:block;margin-top:3px;color:#667085;font-size:10px;font-weight:650}.badge{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:9px;font-weight:850;vertical-align:2px;text-transform:uppercase}.badge.up{background:#fff4ed;color:#b54708}
+td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-child td{border-bottom:0}tr.changed{background:#fbfffc}.product-main{display:flex;gap:10px;align-items:center;min-width:0}.product-thumb{width:54px;height:54px;border:1px solid #e4e7ec;border-radius:10px;background:#f8fafc;object-fit:contain;flex:none}.product-fallback{width:54px;height:54px;border:1px solid #e4e7ec;border-radius:10px;background:#eef2f6;color:#475467;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:850;flex:none}.product-copy{min-width:0}.name{font-weight:760}.code{font-size:11px;color:#667085;margin-top:4px;line-height:1.4}.price{text-align:right;min-width:220px}.retail-price{font-size:18px;font-weight:900;white-space:nowrap}.sale-price{font-size:11px;color:#667085;margin-top:3px;white-space:nowrap}.market-refs{display:flex;justify-content:flex-end;gap:4px;flex-wrap:wrap;margin-top:6px}.market-ref{font-size:10px;font-weight:800;padding:4px 6px;border-radius:7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;white-space:nowrap}.change-note{text-align:right;font-size:12px;color:#027a48;font-weight:750;white-space:nowrap}.old{color:#98a2b3;text-decoration:line-through;margin-right:5px;font-weight:600}.changed-date{display:block;margin-top:3px;color:#667085;font-size:10px;font-weight:650}.badge{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:9px;font-weight:850;vertical-align:2px;text-transform:uppercase}.badge.up{background:#fff4ed;color:#b54708}
 .empty,.loading{padding:32px;text-align:center;color:#667085}.error{padding:18px;color:#b42318;background:#fff5f5;border-top:1px solid #fecaca}
 .foot{padding:14px 4px 0;color:#667085;font-size:12px;line-height:1.5}
-@media(max-width:680px){.page{padding:10px 8px 28px}.hero{padding:18px;border-radius:14px}h1{font-size:25px}.tabs{padding-top:10px}.tab{height:38px;padding:0 13px}.toolbar{flex-wrap:wrap}.search{flex-basis:100%}.toolbar button{flex:1}.card{border-radius:12px}th:nth-child(3),td:nth-child(3){display:none}td{padding:11px 9px}.price{font-size:15px}.name{font-size:14px}.code{font-size:10px}}
+@media(max-width:680px){.page{padding:10px 8px 28px}.hero{padding:18px;border-radius:14px}h1{font-size:25px}.tabs{padding-top:10px}.tab{height:38px;padding:0 13px}.toolbar{flex-wrap:wrap}.search{flex-basis:100%}.toolbar button{flex:1}.card{border-radius:12px}th:nth-child(3),td:nth-child(3){display:none}td{padding:10px 8px}.product-thumb,.product-fallback{width:44px;height:44px;border-radius:8px}.product-main{gap:8px}.price{min-width:145px}.retail-price{font-size:14px}.sale-price{font-size:9px}.market-refs{gap:3px}.market-ref{font-size:8px;padding:3px 4px}.name{font-size:13px}.code{font-size:9px}}
 @media print{body{background:#fff}.page{max-width:none;padding:0}.hero{border:0;box-shadow:none;padding:0 0 14px}.tabs,.toolbar{display:none}.card{border:1px solid #d0d5dd;border-radius:0}.foot{padding-top:8px}tr{break-inside:avoid}th,td{padding:7px 8px}.badge{border:1px solid #98a2b3;background:#fff;color:#344054}}
 </style>
 </head>
@@ -51,7 +51,7 @@ td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-ch
 
   <section class="card">
     <table>
-      <thead><tr><th>Sản phẩm</th><th style="text-align:right">Giá bán</th><th style="text-align:right">Thay đổi</th></tr></thead>
+      <thead><tr><th>Sản phẩm</th><th style="text-align:right">Giá lẻ</th><th style="text-align:right">Thay đổi</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div id="loading" class="loading">Đang tải bảng giá…</div>
@@ -98,6 +98,55 @@ const fmtQty=n=>{
   const value=Number(n);
   return Number.isFinite(value)?value.toLocaleString('vi-VN',{maximumFractionDigits:2}):'';
 };
+const fmtVnd=n=>{
+  if(n===null||n===undefined||n==='')return '';
+  const value=Number(n);
+  return Number.isFinite(value)?Math.round(value).toLocaleString('vi-VN')+' đ':'';
+};
+const initials=value=>{
+  const parts=String(value||'').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length)return '?';
+  return parts.slice(0,2).map(x=>x.charAt(0)).join('').toLocaleUpperCase('vi');
+};
+function measureLabel(unit){
+  const u=String(unit||'').trim().toLocaleLowerCase('vi');
+  if(['ml','cl','dl','l','lit','lít','liter','litre'].includes(u))return 'Dung tích';
+  if(['mg','g','gr','gram','kg','kilogram'].includes(u))return 'Trọng lượng';
+  return 'Định lượng';
+}
+function ownPackInfo(p){
+  const parts=[];
+  const units=Number(p.units_per_carton);
+  const unit=String(p.retail_unit||'').trim();
+  if(Number.isFinite(units)&&units>0)parts.push('Quy cách '+fmtQty(units)+(unit?' '+unit:''));
+  const size=Number(p.retail_size_value);
+  const sizeUnit=String(p.retail_size_unit||'').trim();
+  if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(measureLabel(sizeUnit)+' '+fmtQty(size)+' '+sizeUnit);
+  return parts.join(' · ');
+}
+function retailOwnText(p){
+  const retail=Number(p.retail_price);
+  const unit=String(p.retail_unit||'').trim();
+  if(Number.isFinite(retail)&&retail>0)return fmt(retail)+(unit?'/'+unit:'');
+  return fmt(p.price);
+}
+function marketRefHtml(p){
+  const refs=Array.isArray(p.market_refs)?p.market_refs:[];
+  return refs.map(ref=>{
+    const price=fmtVnd(ref.retail_price_vnd);
+    if(!price)return '';
+    const unit=String(ref.retail_unit||'lẻ').trim();
+    const source=String(ref.source||'ST').trim();
+    return '<span class="market-ref">'+esc(source)+' '+esc(price)+(unit?'/'+esc(unit):'')+'</span>';
+  }).filter(Boolean).join('');
+}
+function productImageHtml(p){
+  const name=displayName(p.name,p.source);
+  const image=String(p.image_url||'').trim();
+  const fallback='<span class="product-fallback">'+esc(initials(name))+'</span>';
+  if(!/^https?:\/\//i.test(image))return fallback;
+  return '<span style="position:relative;display:flex;flex:none"><img class="product-thumb" src="'+esc(image)+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="product-fallback" style="display:none">'+esc(initials(name))+'</span></span>';
+}
 function packText(p){
   const units=Number(p.units_per_carton);
   const retail=Number(p.retail_price);
@@ -242,7 +291,7 @@ function render(){
   });
 
   title.textContent='Báo giá '+SOURCE_LABELS[activeSource];
-  subtitle.innerHTML='Cập nhật mới nhất'+(updatedAt?' <strong>'+esc(viDate(updatedAt))+'</strong>':'')+'. Giá bên dưới là giá bán hiện tại; mặt hàng có thay đổi sẽ ghi rõ giá cũ và ngày đổi.';
+  subtitle.innerHTML='Cập nhật mới nhất'+(updatedAt?' <strong>'+esc(viDate(updatedAt))+'</strong>':'')+'. Giá lẻ của mình được đặt ở dòng chính; bên dưới có giá tham khảo siêu thị và quy cách khi đã có dữ liệu.';
   countPill.textContent=sourceRows.length+' mặt hàng';
   changedPill.textContent=changedCount?changedCount+' mặt hàng có thay đổi giá':'Chưa có thay đổi giá';
   changedPill.style.display=changedCount?'inline-flex':'none';
@@ -255,15 +304,19 @@ function render(){
     const note=changed
       ? '<span class="old">'+fmt(p.old_price)+'</span>'+(isDown?'Giảm ':'Tăng ')+fmt(Math.abs(diff))+'<span class="changed-date">'+esc(viDate(p.changed_at))+'</span>'
       : '—';
+    const ownPack=ownPackInfo(p);
+    const refs=marketRefHtml(p);
+    const hasRetail=Number(p.retail_price)>0;
+    const saleLine=hasRetail&&Number(p.price)>0?'<div class="sale-price">Giá quy cách '+fmt(p.price)+'</div>':'';
     return '<tr class="'+(changed?'changed':'')+'">'+
-      '<td><div class="name">'+esc(displayName(p.name,p.source))+badge+'</div>'+(packText(p)?'<div class="code">'+esc(packText(p))+'</div>':'')+'</td>'+
-      '<td class="price">'+fmt(p.price)+'</td>'+
+      '<td><div class="product-main">'+productImageHtml(p)+'<div class="product-copy"><div class="name">'+esc(displayName(p.name,p.source))+badge+'</div>'+(ownPack?'<div class="code">'+esc(ownPack)+'</div>':'')+'</div></div></td>'+
+      '<td class="price"><div class="retail-price">'+retailOwnText(p)+'</div>'+saleLine+(refs?'<div class="market-refs">'+refs+'</div>':'')+'</td>'+
       '<td class="change-note">'+note+'</td>'+
     '</tr>';
   }).join('');
 
   empty.hidden=visible.length!==0;
-  foot.textContent='Đang xem '+SOURCE_LABELS[activeSource]+'. Dòng phụ dưới tên sản phẩm chỉ hiện khi có giá lẻ và quy cách. Giá bên phải là giá bán hiện tại.';
+  foot.textContent='Đang xem '+SOURCE_LABELS[activeSource]+'. Giá lẻ của mình là dòng chính; giá GO!/WinMart/BHX/VNM là giá lẻ tham khảo quy đổi theo quy cách nguồn đã gán. Ảnh là ảnh sản phẩm đang chọn trong quản trị.';
 }
 
 tabs.addEventListener('click',e=>{
