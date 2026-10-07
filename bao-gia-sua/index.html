@@ -105,15 +105,24 @@ const viDateTime=value=>{
   const d=new Date(value);
   return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 };
-const displayName=s=>String(s||'')
-  .replace(/^Sua\b/i,'Sữa')
-  .replace(/\bco\b/gi,'có')
-  .replace(/\bit\b/gi,'ít')
-  .replace(/\bkhong\b/gi,'không')
-  .replace(/\bdau\b/gi,'dâu')
-  .replace(/\bdua gang\b/gi,'dưa gang')
-  .replace(/\bviet quat\b/gi,'việt quất')
-  .replace(/\bnha dam\b/gi,'nha đam');
+const NAME_REPLACEMENTS=[
+  [/\\bluong kho\\b/gi,'Lương Khô'],
+  [/\\bdau an\\b/gi,'dầu ăn'],
+  [/\\bdau hao\\b/gi,'dầu hào'],
+  [/\\bbanh\\b/gi,'bánh'],
+  [/\\bkeo\\b/gi,'kẹo'],
+  [/\\bsua\\b/gi,'sữa'],
+  [/\\bduong\\b/gi,'đường'],
+  [/\\bphong\\b/gi,'phộng'],
+  [/\\bnuoc\\b/gi,'nước']
+];
+
+function displayName(value){
+  let text=String(value||'').replace(/\\s+/g,' ').trim();
+  for(const [pattern,replacement] of NAME_REPLACEMENTS)text=text.replace(pattern,replacement);
+  if(!text)return '';
+  return text.charAt(0).toLocaleUpperCase('vi')+text.slice(1);
+}
 
 function isChanged(p){
   return p.old_price!==null&&p.old_price!==undefined&&Number(p.old_price)!==Number(p.price);
@@ -121,7 +130,9 @@ function isChanged(p){
 
 function render(){
   const q=search.value.trim().toLocaleLowerCase('vi');
-  const sourceRows=products.filter(p=>p.source===activeSource);
+  const sourceRows=products
+    .filter(p=>p.source===activeSource)
+    .sort((a,b)=>displayName(a.name).localeCompare(displayName(b.name),'vi',{sensitivity:'base',numeric:true}));
   const changedCount=sourceRows.filter(isChanged).length;
   const visible=sourceRows.filter(p=>{
     if(onlyChanged&&!isChanged(p))return false;
