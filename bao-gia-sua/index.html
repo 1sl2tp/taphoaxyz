@@ -106,6 +106,17 @@ const viDateTime=value=>{
   return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 };
 const SUA_REPLACEMENTS=[
+  [/\blo\b/gi,'lọ'],
+  [/\btho trang\b/gi,'thọ trắng'],
+  [/\bsu lo\b/gi,'su lọ'],
+  [/\bvang vnm\b/gi,'vàng vnm'],
+  [/\bto mau\b/gi,'màu'],
+  [/\bnep cam\b/gi,'nếp cẩm bé'],
+  [/\bnha dam\b/gi,'nha đam'],
+  [/\btrai cay\b/gi,'trái cây'],
+  [/\btai loc\b/gi,'tài lộc'],
+  [/\bdau chuoi\b/gi,'dâu, chuối'],
+  [/\bduong den\b/gi,'đường đen'],
   [/\b9 hat\b/gi,'9 hạt'],
   [/\bcao dam\b/gi,'cao đạm'],
   [/\bviet quat\b/gi,'việt quất'],
