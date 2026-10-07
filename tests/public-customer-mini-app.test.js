@@ -80,7 +80,7 @@ test('bought suggested and employee modes are thin filters on the existing produ
     "segment === 'bought'",
     "segment === 'suggested'",
     'market_customer_count',
-    'window.taphoa_employee_mode',
+    "window.taphoa_employee_mode",
     "const employeemode = boolean(window.taphoa_employee_mode)",
     'function getsourcedisplayrank(src)',
     "'hang thuong': 10",
@@ -153,4 +153,20 @@ test('optional PIN access keeps link possession open until PIN is created and le
     "extensions.digest(v_link.access_key||':'||v_new",
     "'pin_configured',true"
   ])assert.ok(pinManagement.includes(needle),needle);
+});
+
+test('public order deep link opens the read-only order detail instead of the cart editor',()=>{
+  const start=overrides.indexOf('function applypublicdeeplink(){');
+  const end=overrides.indexOf('function sharedcartitems()',start);
+  assert.ok(start>=0&&end>start,'applyPublicDeepLink block');
+  const deepLink=overrides.slice(start,end);
+  assert.ok(
+    deepLink.includes("showorderdetailmobile(q.don,q.don.startswith('dt')?'dontam':'dongiao')"),
+    'deep-linked order must use the read-only order detail view'
+  );
+  assert.equal(
+    deepLink.includes('clickorder(q.don'),
+    false,
+    'deep-linked order must not route through the editable cart/order flow'
+  );
 });
