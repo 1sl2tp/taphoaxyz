@@ -71,6 +71,12 @@ const SOURCE_LABELS={
   'hang-u':'Hàng U',
   'thuoc-la':'Thuốc lá'
 };
+const MARKET_SOURCE_SHORT={
+  'GO!':'G',
+  'WinMart':'W',
+  'Bách Hóa XANH':'B',
+  'VNM':'V'
+};
 
 const tabs=document.getElementById('tabs');
 const rows=document.getElementById('rows');
@@ -149,6 +155,10 @@ function ownPackInfo(p){
   const size=Number(p.retail_size_value);
   const sizeUnit=String(p.retail_size_unit||'').trim();
   if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(fmtQty(size)+' '+sizeUnit);
+
+  const attrs=productVariantInfo(p);
+  if(attrs.flavor)parts.push('Vị '+attrs.flavor);
+  if(attrs.color)parts.push('Màu '+attrs.color);
   return parts.join(' · ');
 }
 function ownSaleText(p){
@@ -163,22 +173,56 @@ function retailOwnText(p){
   if(Number.isFinite(retail)&&retail>0)return fmt(retail)+(unit?'/'+unit:'');
   return '';
 }
+function uniqueAttr(values){
+  const seen=new Map();
+  for(const raw of values){
+    const value=String(raw||'').trim();
+    if(!value)continue;
+    const key=value.toLocaleLowerCase('vi');
+    if(!seen.has(key))seen.set(key,value);
+  }
+  return [...seen.values()];
+}
+function productVariantInfo(p){
+  const refs=Array.isArray(p.market_refs)?p.market_refs:[];
+  const labels=uniqueAttr([p.variant_label,...refs.map(x=>x&&x.variant_label)]);
+  const colors=uniqueAttr([p.variant_color,...refs.map(x=>x&&x.variant_color)]);
+  const flavors=uniqueAttr(labels.map(x=>{
+    const m=String(x).match(/^hương\s+(.+)$/i);
+    return m?m[1].trim():'';
+  }));
+  return {
+    flavor:flavors.length===1?flavors[0]:'',
+    color:colors.length===1?colors[0]:''
+  };
+}
 function marketRefHtml(p){
   const refs=Array.isArray(p.market_refs)?p.market_refs:[];
   const ownUnit=String(p.retail_unit||'').trim().toLocaleLowerCase('vi');
-  const ranked=refs.map(ref=>{
-    const raw=Number(ref.price_vnd);
+  const normalized=refs.map(ref=>{
+    const raw=Number(ref&&ref.price_vnd);
     if(!Number.isFinite(raw)||raw<=0)return null;
-    const carton=Boolean(ref.is_carton);
-    const retail=Number(ref.retail_price_vnd);
-    const unit=carton?'thùng':String(ref.retail_unit||'lẻ').trim().toLocaleLowerCase('vi');
+    const carton=Boolean(ref&&ref.is_carton);
+    const retail=Number(ref&&ref.retail_price_vnd);
+    const unit=carton?'thùng':String(ref&&ref.retail_unit||'lẻ').trim().toLocaleLowerCase('vi');
     const price=carton?raw:(Number.isFinite(retail)&&retail>0?retail:raw);
-    const group=carton?0:(unit===ownUnit?1:2);
-    return {ref,price,unit,group};
-  }).filter(Boolean).sort((a,b)=>a.group-b.group||a.price-b.price||String(a.ref.source||'').localeCompare(String(b.ref.source||''),'vi'));
-  return ranked.map(x=>{
-    const source=String(x.ref.source||'ST').trim();
-    return '<span class="market-ref">'+esc(source)+' '+esc(fmtVnd(x.price))+'/'+esc(x.unit)+'</span>';
+    return {ref,price,unit,carton};
+  }).filter(Boolean);
+
+  const picks=[];
+  const cartons=normalized.filter(x=>x.carton).sort((a,b)=>a.price-b.price);
+  if(cartons.length)picks.push(cartons[0]);
+
+  const retailAll=normalized.filter(x=>!x.carton);
+  const sameUnit=ownUnit?retailAll.filter(x=>x.unit===ownUnit):[];
+  const retailPool=sameUnit.length?sameUnit:retailAll;
+  retailPool.sort((a,b)=>a.price-b.price);
+  if(retailPool.length)picks.push(retailPool[0]);
+
+  return picks.map(x=>{
+    const full=String(x.ref.source||'ST').trim();
+    const source=MARKET_SOURCE_SHORT[full]||full.slice(0,1).toLocaleUpperCase('vi');
+    return '<span class="market-ref" title="'+esc(full)+'">'+esc(source)+' '+esc(fmtVnd(x.price))+'/'+esc(x.unit)+'</span>';
   }).join('');
 }
 function productImageHtml(p){
@@ -365,7 +409,7 @@ function render(){
   empty.hidden=visible.length!==0;
   foot.textContent=activeSource==='thuoc-la'
     ?'Đang xem Thuốc lá. Giá bán theo cây là giá chính; không hiển thị thêm dòng giá lẻ trùng giá.'
-    :'Đang xem '+SOURCE_LABELS[activeSource]+'. Dòng 1 là giá bán của mình; dòng 2 là giá lẻ của mình; dòng 3 là giá siêu thị đã gán. Giá siêu thị giữ đúng đơn vị nguồn: có thùng thì so theo thùng, bán lẻ thì hiện theo đơn vị lẻ; trong cùng nhóm được xếp từ thấp đến cao.';
+    :'Đang xem '+SOURCE_LABELS[activeSource]+'. Tham khảo chỉ giữ giá thấp nhất theo thùng và giá lẻ thấp nhất cùng đơn vị để bảng gọn và dễ so sánh.';
 }
 
 tabs.addEventListener('click',e=>{
