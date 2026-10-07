@@ -19,6 +19,7 @@ on:
       - 'kh/**'
       - 'bao-gia-sua/**'
       - 'bao-gia/**'
+      - 'ncc/**'
       - 'scripts/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
