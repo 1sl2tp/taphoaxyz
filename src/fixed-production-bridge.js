@@ -506,6 +506,13 @@ async function debtTransaction(customerId,type,amount,note=''){
   if(publicAccess)throw new Error('public_read_only');
   const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;
 }
+async function createCustomer(name){
+  if(employeeAccess)throw new Error('employee_read_only');
+  if(publicAccess)throw new Error('public_read_only');
+  const result=await business.createCustomer(name);
+  await refresh(['customers']);
+  return result;
+}
 async function stockCheckLinks(customerId){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)return publicRpc('taphoa_public_employee_link_access');
@@ -564,7 +571,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
-  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
+  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
