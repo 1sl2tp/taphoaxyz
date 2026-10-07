@@ -26,16 +26,16 @@
 .toolbar{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid var(--line);overflow:auto;white-space:nowrap}.tool{height:34px;min-width:34px;border:1px solid #d0d5dd;background:#fff;border-radius:8px;font-weight:800;cursor:pointer}.tool:hover{background:#f9fafb}.toolbar .sep{width:1px;height:24px;background:#e4e7ec;margin:0 2px}
 .editor-wrap{overflow:auto;background:#fff}.editor{max-width:900px;min-height:calc(100vh - 160px);margin:0 auto;padding:30px 44px 80px;outline:0;font-size:16px;line-height:1.65;white-space:normal;word-break:break-word}
 .editor:empty:before{content:"Bắt đầu ghi chú…\A Dán văn bản hoặc ảnh trực tiếp vào đây.";white-space:pre;color:#b0b7c3;pointer-events:none}.editor p{margin:.55em 0}.editor ul,.editor ol{padding-left:1.5em}
-.note-image{position:relative;margin:16px 0;display:block;max-width:100%;border-radius:12px;overflow:hidden;background:#f2f4f7;border:1px solid #e4e7ec}.note-image img{display:block;max-width:100%;height:auto;margin:auto}.image-actions{position:absolute;right:8px;top:8px;display:flex;gap:6px;opacity:0;transition:opacity .15s}.note-image:hover .image-actions,.note-image:focus-within .image-actions{opacity:1}.image-actions button{height:32px;border:1px solid rgba(255,255,255,.7);border-radius:8px;background:rgba(17,24,39,.84);color:white;padding:0 9px;font-size:12px;font-weight:800;cursor:pointer}
+.note-image{position:relative;margin:16px auto;display:block;width:min(72%,680px);max-width:100%;border-radius:12px;overflow:hidden;background:#f2f4f7;border:1px solid #e4e7ec}.note-image img{display:block;width:100%;height:auto;margin:auto}.image-actions{position:absolute;right:8px;top:8px;display:flex;gap:6px;opacity:0;transition:opacity .15s;z-index:3}.note-image:hover .image-actions,.note-image:focus-within .image-actions{opacity:1}.image-actions button{height:32px;border:1px solid rgba(255,255,255,.7);border-radius:8px;background:rgba(17,24,39,.84);color:white;padding:0 9px;font-size:12px;font-weight:800;cursor:pointer}.resize-handle{position:absolute;right:0;bottom:0;width:28px;height:28px;z-index:4;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 0 48%,rgba(17,24,39,.78) 49% 58%,transparent 59% 67%,rgba(17,24,39,.78) 68% 77%,transparent 78%);border-bottom-right-radius:10px}
 .statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-top:1px solid var(--line);font-size:11px;color:#667085;background:#fbfcfd}.save-status.ok{color:#027a48}.save-status.error{color:#b42318}
 .drop-mask{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(17,24,39,.42);z-index:90;color:#fff;font-size:22px;font-weight:850}.drop-mask.show{display:flex}
 dialog{border:0;border-radius:14px;padding:0;width:min(1000px,calc(100vw - 20px));max-height:94vh;box-shadow:0 28px 80px rgba(15,23,42,.35)}dialog::backdrop{background:rgba(15,23,42,.46)}
 .image-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}.image-dialog-head strong{font-size:16px}
-.image-toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}.image-toolbar label{font-size:12px;color:#667085;display:flex;gap:5px;align-items:center}.image-toolbar input[type=color]{width:34px;height:30px;padding:2px;border:1px solid #d0d5dd;border-radius:7px;background:#fff}.image-toolbar input[type=range]{width:100px}
+.image-toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}.image-toolbar label{font-size:12px;color:#667085;display:flex;gap:5px;align-items:center}.image-toolbar input[type=color]{width:34px;height:30px;padding:2px;border:1px solid #d0d5dd;border-radius:7px;background:#fff}.image-toolbar input[type=range]{width:100px}.image-text-input{height:34px;width:min(240px,42vw);border:1px solid #d0d5dd;border-radius:8px;padding:0 9px;outline:none}.image-text-input:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
 .canvas-wrap{padding:10px;background:#111827;overflow:auto;max-height:68vh;text-align:center}.canvas-stack{position:relative;display:inline-block;line-height:0}.canvas-stack canvas{display:block;max-width:calc(100vw - 50px);height:auto}.overlay-canvas{position:absolute;inset:0;width:100%;height:100%}
 .image-dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
 @media(max-width:760px){
-  .app{grid-template-columns:1fr}.sidebar{position:fixed;inset:0 auto 0 0;width:min(86vw,320px);z-index:70;transform:translateX(-102%);transition:transform .18s;box-shadow:14px 0 34px rgba(16,24,40,.18)}.app.sidebar-open .sidebar{transform:translateX(0)}.menu-btn{display:inline-flex;align-items:center;justify-content:center}.topbar{padding:8px}.title-input{font-size:18px}.id-chip{display:none}.top-actions .delete-label,.top-actions .copy-label{display:none}.editor{padding:22px 16px 70px;font-size:16px}.toolbar{padding:6px 8px}.statusbar{padding:7px 9px}.image-actions{opacity:1}
+  .app{grid-template-columns:1fr}.sidebar{position:fixed;inset:0 auto 0 0;width:min(86vw,320px);z-index:70;transform:translateX(-102%);transition:transform .18s;box-shadow:14px 0 34px rgba(16,24,40,.18)}.app.sidebar-open .sidebar{transform:translateX(0)}.menu-btn{display:inline-flex;align-items:center;justify-content:center}.topbar{padding:8px}.title-input{font-size:18px}.id-chip{display:none}.top-actions .delete-label,.top-actions .copy-label{display:none}.editor{padding:22px 16px 70px;font-size:16px}.toolbar{padding:6px 8px}.statusbar{padding:7px 9px}.note-image{width:100%}.image-actions{opacity:1}
 }
 </style>
 </head>
@@ -102,13 +102,18 @@ dialog{border:0;border-radius:14px;padding:0;width:min(1000px,calc(100vw - 20px)
 <dialog id="imageDialog">
   <div class="image-dialog-head"><strong>Chỉnh sửa ảnh</strong><button id="closeImageDialog" class="btn" type="button">×</button></div>
   <div class="image-toolbar">
-    <button id="drawModeBtn" class="btn primary" type="button">Vẽ</button>
+    <button id="drawModeBtn" class="btn primary" type="button">Vẽ tự do</button>
+    <button id="lineModeBtn" class="btn" type="button">Đường kẻ</button>
+    <button id="circleModeBtn" class="btn" type="button">Khoanh tròn</button>
+    <button id="textModeBtn" class="btn" type="button">Chữ</button>
     <button id="cropModeBtn" class="btn" type="button">Cắt</button>
     <button id="applyCropBtn" class="btn hidden" type="button">Cắt vùng đã chọn</button>
     <button id="rotateBtn" class="btn" type="button">Xoay 90°</button>
     <button id="resetImageBtn" class="btn" type="button">Khôi phục</button>
     <label>Màu <input id="drawColor" type="color" value="#ff2d2d"></label>
     <label>Nét <input id="drawWidth" type="range" min="1" max="30" value="5"></label>
+    <input id="imageText" class="image-text-input" placeholder="Nhập chữ rồi bấm lên ảnh…" autocomplete="off">
+    <label>Cỡ chữ <input id="textSize" type="range" min="16" max="120" value="48"></label>
   </div>
   <div class="canvas-wrap">
     <div class="canvas-stack">
@@ -134,7 +139,7 @@ const fmtDate=value=>{
 
 let client=null,identity=null,authUid='';
 let notes=[],current=null,dirty=false,saveTimer=0,listTimer=0,saving=false;
-let currentImagePath='',originalImageBlob=null,imageMode='draw',drawing=false,lastPoint=null,cropStart=null,cropRect=null;
+let currentImagePath='',originalImageBlob=null,imageMode='draw',drawing=false,lastPoint=null,cropStart=null,cropRect=null,shapeStart=null,shapePoint=null;
 
 function showLogin(message=''){
   $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');
@@ -162,7 +167,7 @@ function syncUrl(id){
 }
 function serializeEditor(){
   const clone=$('editor').cloneNode(true);
-  clone.querySelectorAll('.image-actions').forEach(x=>x.remove());
+  clone.querySelectorAll('.image-actions,.resize-handle').forEach(x=>x.remove());
   clone.querySelectorAll('img[data-path]').forEach(img=>img.removeAttribute('src'));
   clone.querySelectorAll('[contenteditable]').forEach(x=>{
     if(x!==clone)x.setAttribute('contenteditable','false');
@@ -221,22 +226,58 @@ async function resolveImages(){
   const map=new Map((data||[]).map(x=>[x.path,x.signedUrl]));
   images.forEach(img=>{const url=map.get(img.dataset.path);if(url)img.src=url});
 }
+function autoFitFigure(fig,img,force=false){
+  if(!force&&fig.style.width)return;
+  const w=Number(img.naturalWidth)||1,h=Number(img.naturalHeight)||1,ratio=w/h;
+  fig.style.width=ratio<0.8?'62%':ratio>1.35?'88%':'72%';
+}
+function installResizeHandle(fig){
+  if(fig.querySelector('.resize-handle'))return;
+  const handle=document.createElement('div');handle.className='resize-handle';handle.title='Kéo để thay đổi kích thước';
+  fig.appendChild(handle);
+  handle.addEventListener('pointerdown',e=>{
+    e.preventDefault();e.stopPropagation();handle.setPointerCapture(e.pointerId);
+    const editorWidth=Math.max(1,$('editor').clientWidth-1);
+    const startX=e.clientX,startWidth=fig.getBoundingClientRect().width;
+    const move=ev=>{
+      const width=Math.max(160,Math.min(editorWidth,startWidth+(ev.clientX-startX)));
+      fig.style.width=Math.min(100,width/editorWidth*100).toFixed(1)+'%';
+    };
+    const end=ev=>{
+      handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);handle.removeEventListener('pointercancel',end);
+      try{handle.releasePointerCapture(ev.pointerId)}catch{}
+      scheduleSave();
+    };
+    handle.addEventListener('pointermove',move);
+    handle.addEventListener('pointerup',end);
+    handle.addEventListener('pointercancel',end);
+  });
+}
 function decorateImages(){
   $('editor').querySelectorAll('figure.note-image[data-path]').forEach(fig=>{
     fig.setAttribute('contenteditable','false');
-    if(fig.querySelector('.image-actions'))return;
-    const actions=document.createElement('div');actions.className='image-actions';
-    const edit=document.createElement('button');edit.type='button';edit.textContent='Sửa ảnh';
-    const remove=document.createElement('button');remove.type='button';remove.textContent='Xóa';
-    actions.append(edit,remove);fig.appendChild(actions);
-    edit.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openImageEditor(fig.dataset.path)});
-    remove.addEventListener('click',async e=>{
-      e.preventDefault();e.stopPropagation();
-      const path=fig.dataset.path;
-      fig.remove();scheduleSave();
-      await client.storage.from(BUCKET).remove([path]).catch(()=>{});
-    });
-    fig.addEventListener('dblclick',()=>openImageEditor(fig.dataset.path));
+    const img=fig.querySelector('img[data-path]');
+    if(img){
+      if(img.complete&&img.naturalWidth)autoFitFigure(fig,img);
+      else img.addEventListener('load',()=>autoFitFigure(fig,img),{once:true});
+    }
+    if(!fig.querySelector('.image-actions')){
+      const actions=document.createElement('div');actions.className='image-actions';
+      const edit=document.createElement('button');edit.type='button';edit.textContent='Sửa ảnh';
+      const fit=document.createElement('button');fit.type='button';fit.textContent='Vừa';
+      const remove=document.createElement('button');remove.type='button';remove.textContent='Xóa';
+      actions.append(edit,fit,remove);fig.appendChild(actions);
+      edit.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openImageEditor(fig.dataset.path)});
+      fit.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(img){autoFitFigure(fig,img,true);scheduleSave()}});
+      remove.addEventListener('click',async e=>{
+        e.preventDefault();e.stopPropagation();
+        const path=fig.dataset.path;
+        fig.remove();scheduleSave();
+        await client.storage.from(BUCKET).remove([path]).catch(()=>{});
+      });
+      fig.addEventListener('dblclick',()=>openImageEditor(fig.dataset.path));
+    }
+    installResizeHandle(fig);
   });
 }
 async function openNote(id){
@@ -311,7 +352,9 @@ async function uploadImage(file){
   const {error}=await client.storage.from(BUCKET).upload(path,blob,{contentType:blob.type,upsert:false,cacheControl:'3600'});
   if(error)throw error;
   const fig=document.createElement('figure');fig.className='note-image';fig.dataset.path=path;fig.contentEditable='false';
-  const img=document.createElement('img');img.dataset.path=path;img.alt='Ảnh ghi chú';img.src=URL.createObjectURL(blob);
+  const img=document.createElement('img');img.dataset.path=path;img.alt='Ảnh ghi chú';
+  img.addEventListener('load',()=>autoFitFigure(fig,img,true),{once:true});
+  img.src=URL.createObjectURL(blob);
   fig.appendChild(img);insertNodeAtCaret(fig);decorateImages();scheduleSave();await saveNow();
 }
 async function handleFiles(files){
@@ -366,8 +409,11 @@ async function loadCanvasFromBlob(blob){
   fitOverlay();cropRect=null;
 }
 function setImageMode(mode){
-  imageMode=mode;$('drawModeBtn').classList.toggle('primary',mode==='draw');$('cropModeBtn').classList.toggle('primary',mode==='crop');
-  $('applyCropBtn').classList.toggle('hidden',mode!=='crop');clearOverlay();cropRect=null;
+  imageMode=mode;
+  const buttons={draw:'drawModeBtn',line:'lineModeBtn',circle:'circleModeBtn',text:'textModeBtn',crop:'cropModeBtn'};
+  Object.entries(buttons).forEach(([key,id])=>$(id).classList.toggle('primary',mode===key));
+  $('applyCropBtn').classList.toggle('hidden',mode!=='crop');
+  clearOverlay();cropRect=null;shapeStart=null;shapePoint=null;drawing=false;lastPoint=null;
 }
 async function openImageEditor(path){
   currentImagePath=path;setStatus('Đang mở ảnh…');
@@ -381,6 +427,41 @@ function drawCropOverlay(){
   ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(0,0,o.width,o.height);
   ctx.clearRect(cropRect.x,cropRect.y,cropRect.w,cropRect.h);
   ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(2,o.width/700);ctx.strokeRect(cropRect.x,cropRect.y,cropRect.w,cropRect.h);
+}
+function shapeStyle(ctx){
+  ctx.strokeStyle=$('drawColor').value;
+  ctx.fillStyle=$('drawColor').value;
+  ctx.lineWidth=Number($('drawWidth').value)||5;
+  ctx.lineCap='round';ctx.lineJoin='round';
+}
+function drawShape(ctx,mode,a,b){
+  shapeStyle(ctx);
+  if(mode==='line'){
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();return;
+  }
+  if(mode==='circle'){
+    const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
+    ctx.beginPath();ctx.ellipse(x+w/2,y+h/2,Math.max(.5,w/2),Math.max(.5,h/2),0,0,Math.PI*2);ctx.stroke();
+  }
+}
+function drawShapePreview(){
+  clearOverlay();if(!shapeStart||!shapePoint)return;
+  drawShape($('overlayCanvas').getContext('2d'),imageMode,shapeStart,shapePoint);
+}
+function commitShape(){
+  if(!shapeStart||!shapePoint)return;
+  drawShape($('imageCanvas').getContext('2d'),imageMode,shapeStart,shapePoint);
+  shapeStart=null;shapePoint=null;clearOverlay();
+}
+function placeText(point){
+  const text=$('imageText').value.trim();
+  if(!text)return;
+  const ctx=$('imageCanvas').getContext('2d');
+  const size=Number($('textSize').value)||48;
+  ctx.fillStyle=$('drawColor').value;
+  ctx.font='700 '+size+'px sans-serif';
+  ctx.textBaseline='top';
+  ctx.fillText(text,point.x,point.y);
 }
 function rotateCanvas(){
   const c=$('imageCanvas'),tmp=document.createElement('canvas');tmp.width=c.height;tmp.height=c.width;
@@ -470,6 +551,9 @@ $('dropMask').addEventListener('drop',async e=>{e.preventDefault();$('dropMask')
 document.addEventListener('dragend',()=>$('dropMask').classList.remove('show'));
 
 $('drawModeBtn').addEventListener('click',()=>setImageMode('draw'));
+$('lineModeBtn').addEventListener('click',()=>setImageMode('line'));
+$('circleModeBtn').addEventListener('click',()=>setImageMode('circle'));
+$('textModeBtn').addEventListener('click',()=>setImageMode('text'));
 $('cropModeBtn').addEventListener('click',()=>setImageMode('crop'));
 $('applyCropBtn').addEventListener('click',applyCrop);
 $('rotateBtn').addEventListener('click',rotateCanvas);
@@ -481,20 +565,28 @@ $('saveImageBtn').addEventListener('click',()=>saveEditedImage().catch(error=>{c
 $('overlayCanvas').addEventListener('pointerdown',e=>{
   const o=$('overlayCanvas'),p=canvasPoint(e,o);o.setPointerCapture(e.pointerId);
   if(imageMode==='draw'){drawing=true;lastPoint=p}
-  else{cropStart=p;cropRect={x:p.x,y:p.y,w:0,h:0};drawCropOverlay()}
+  else if(imageMode==='crop'){cropStart=p;cropRect={x:p.x,y:p.y,w:0,h:0};drawCropOverlay()}
+  else if(imageMode==='line'||imageMode==='circle'){shapeStart=p;shapePoint=p;drawShapePreview()}
+  else if(imageMode==='text'){placeText(p)}
 });
 $('overlayCanvas').addEventListener('pointermove',e=>{
   const o=$('overlayCanvas'),p=canvasPoint(e,o);
   if(imageMode==='draw'&&drawing){
     const c=$('imageCanvas'),ctx=c.getContext('2d');
-    ctx.strokeStyle=$('drawColor').value;ctx.lineWidth=Number($('drawWidth').value)||5;ctx.lineCap='round';ctx.lineJoin='round';
+    shapeStyle(ctx);
     ctx.beginPath();ctx.moveTo(lastPoint.x,lastPoint.y);ctx.lineTo(p.x,p.y);ctx.stroke();lastPoint=p;
   }else if(imageMode==='crop'&&cropStart){
     cropRect={x:Math.min(cropStart.x,p.x),y:Math.min(cropStart.y,p.y),w:Math.abs(p.x-cropStart.x),h:Math.abs(p.y-cropStart.y)};drawCropOverlay();
+  }else if((imageMode==='line'||imageMode==='circle')&&shapeStart){
+    shapePoint=p;drawShapePreview();
   }
 });
-$('overlayCanvas').addEventListener('pointerup',e=>{drawing=false;lastPoint=null;cropStart=null;try{$('overlayCanvas').releasePointerCapture(e.pointerId)}catch{}});
-$('overlayCanvas').addEventListener('pointercancel',()=>{drawing=false;lastPoint=null;cropStart=null});
+$('overlayCanvas').addEventListener('pointerup',e=>{
+  if(imageMode==='line'||imageMode==='circle')commitShape();
+  drawing=false;lastPoint=null;cropStart=null;
+  try{$('overlayCanvas').releasePointerCapture(e.pointerId)}catch{}
+});
+$('overlayCanvas').addEventListener('pointercancel',()=>{drawing=false;lastPoint=null;cropStart=null;shapeStart=null;shapePoint=null;clearOverlay()});
 
 window.addEventListener('beforeunload',()=>{if(dirty)saveNow()});
 
