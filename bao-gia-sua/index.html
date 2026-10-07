@@ -105,6 +105,27 @@ const viDateTime=value=>{
   const d=new Date(value);
   return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 };
+const HANG_U_REPLACEMENTS=[
+  [/\bbot giat\b/gi,'bột giặt'],
+  [/\bdau goi\b/gi,'dầu gội'],
+  [/\bdau xa\b/gi,'dầu xả'],
+  [/\bkem danh rang\b/gi,'kem đánh răng'],
+  [/\blan khu mui\b/gi,'lăn khử mùi'],
+  [/\bnuoc giat\b/gi,'nước giặt'],
+  [/\brua bat\b/gi,'rửa bát'],
+  [/\bsap thom\b/gi,'sáp thơm'],
+  [/\bthien nhien\b/gi,'thiên nhiên'],
+  [/\bxi phong\b/gi,'xịt phòng'],
+  [/\bgia vi\b/gi,'gia vị'],
+  [/\bday\b/gi,'dây'],
+  [/\bgoi\b/gi,'gội'],
+  [/\bxa\b/gi,'xả'],
+  [/\bhong\b/gi,'hồng'],
+  [/\bque\b/gi,'quế'],
+  [/\btay\b/gi,'tẩy'],
+  [/\bxit\b/gi,'xịt']
+];
+
 const NAME_REPLACEMENTS=[
   [/\bbot canh\b/gi,'bột canh'],
   [/\bbot mi\b/gi,'bột mì'],
@@ -132,6 +153,12 @@ const NAME_REPLACEMENTS=[
 
 function displayName(value,source=''){
   let text=String(value||'').replace(/\s+/g,' ').trim();
+
+  // Hàng U có bộ từ riêng; chỉ áp dụng trong đúng nhóm để không sửa nhầm nhóm khác.
+  if(source==='hang-u'){
+    for(const [pattern,replacement] of HANG_U_REPLACEMENTS)text=text.replace(pattern,replacement);
+  }
+
   for(const [pattern,replacement] of NAME_REPLACEMENTS)text=text.replace(pattern,replacement);
 
   // "dau" phụ thuộc nhóm: ở Sữa là "dâu", các nhóm còn lại là "dầu".
