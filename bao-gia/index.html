@@ -11,7 +11,7 @@
 .hero{background:#fff;border:1px solid #e4e7ec;border-radius:18px;padding:22px;box-shadow:0 8px 24px rgba(16,24,40,.05)}
 .eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#667085}
 h1{margin:5px 0 8px;font-size:30px;line-height:1.12}p{margin:0;color:#667085;line-height:1.55}
-.summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:750}.pill.change{background:#ecfdf3;color:#027a48}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:750}.pill.change{background:#ecfdf3;color:#027a48}.market-note{margin-top:12px;padding:11px 13px;border:1px solid #fedf89;border-radius:12px;background:#fffaeb;color:#7a2e0e;font-size:13px;line-height:1.45;font-weight:750}.market-note strong{color:#93370d}
 .tabs{display:flex;gap:8px;overflow:auto;padding:14px 0 2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{height:40px;border:1px solid #d0d5dd;border-radius:999px;background:#fff;color:#475467;padding:0 15px;font-weight:800;cursor:pointer;white-space:nowrap}.tab.active{background:#17202a;color:#fff;border-color:#17202a}
 .toolbar{display:flex;gap:8px;align-items:center;margin:12px 0 14px}.search{flex:1;min-width:0;height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;padding:0 13px;font-size:15px;outline:none}.search:focus{border-color:#98a2b3;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
 button{height:44px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:#344054;padding:0 13px;font-weight:750;cursor:pointer;white-space:nowrap}.filter.active{background:#17202a;color:#fff;border-color:#17202a}
@@ -34,6 +34,7 @@ td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-ch
       <span class="pill" id="countPill">Đang tải…</span>
       <span class="pill change" id="changedPill">—</span>
     </div>
+    <div class="market-note" id="marketNote">Đang tổng hợp mặt bằng giá tham khảo…</div>
   </section>
 
   <nav class="tabs" id="tabs" aria-label="Nhóm báo giá">
@@ -90,6 +91,7 @@ const subtitle=document.getElementById('subtitle');
 const countPill=document.getElementById('countPill');
 const changedPill=document.getElementById('changedPill');
 const foot=document.getElementById('foot');
+const marketNote=document.getElementById('marketNote');
 
 let products=[];
 let activeSource='sua';
@@ -362,6 +364,64 @@ function displayName(value,source=''){
 function isChanged(p){
   return p.old_price!==null&&p.old_price!==undefined&&Number(p.old_price)!==Number(p.price);
 }
+function median(values){
+  const nums=values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!nums.length)return null;
+  const mid=Math.floor(nums.length/2);
+  return nums.length%2?nums[mid]:(nums[mid-1]+nums[mid])/2;
+}
+function pctWords(value){
+  if(!Number.isFinite(value))return '';
+  const n=Math.abs(value).toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1});
+  return value>=0?'cao hơn khoảng '+n+'%':'thấp hơn khoảng '+n+'%';
+}
+function marketInsightText(source){
+  if(source==='thuoc-la')return '';
+  const supermarket=new Set(['Bách Hóa XANH','WinMart','GO!']);
+  const carton=[];
+  const retail=[];
+  const vnmCarton=[];
+
+  for(const p of products){
+    if(p.source!==source)continue;
+    const ownCarton=Number(p.price)*1000;
+    const ownRetail=Number(p.retail_price)*1000;
+    const ownUnit=String(p.retail_unit||'').trim().toLocaleLowerCase('vi');
+    const refs=Array.isArray(p.market_refs)?p.market_refs:[];
+
+    for(const ref of refs){
+      const isCarton=Boolean(ref&&ref.is_carton);
+      const market=String(ref&&ref.source||'').trim();
+      if(isCarton&&Number.isFinite(ownCarton)&&ownCarton>0){
+        const price=Number(ref&&ref.price_vnd);
+        if(Number.isFinite(price)&&price>0){
+          const pct=(price/ownCarton-1)*100;
+          if(supermarket.has(market))carton.push(pct);
+          else if(market==='VNM')vnmCarton.push(pct);
+        }
+        continue;
+      }
+      if(!isCarton&&supermarket.has(market)&&Number.isFinite(ownRetail)&&ownRetail>0){
+        const unit=String(ref&&ref.retail_unit||'').trim().toLocaleLowerCase('vi');
+        if(!ownUnit||unit!==ownUnit)continue;
+        const price=Number(ref&&ref.retail_price_vnd)||Number(ref&&ref.price_vnd);
+        if(Number.isFinite(price)&&price>0)retail.push((price/ownRetail-1)*100);
+      }
+    }
+  }
+
+  const cm=median(carton);
+  const rm=median(retail);
+  const vm=median(vnmCarton);
+  const parts=[];
+  if(Number.isFinite(rm))parts.push('giá lẻ '+pctWords(rm));
+  if(Number.isFinite(cm))parts.push('giá thùng '+pctWords(cm));
+  if(!parts.length)return 'Chưa đủ dữ liệu tham khảo cùng đơn vị để rút ra mặt bằng giá.';
+
+  let text='<strong>Mặt bằng B/W/G hiện tại:</strong> '+parts.join('; ')+' so với giá bán của mình.';
+  if(source==='sua'&&Number.isFinite(vm))text+=' <strong>VNM là giá hãng riêng:</strong> giá thùng '+pctWords(vm)+'.';
+  return text;
+}
 
 function render(){
   const q=search.value.trim().toLocaleLowerCase('vi');
@@ -383,6 +443,9 @@ function render(){
   countPill.textContent=sourceRows.length+' mặt hàng';
   changedPill.textContent=changedCount?changedCount+' mặt hàng có thay đổi giá':'Chưa có thay đổi giá';
   changedPill.style.display=changedCount?'inline-flex':'none';
+  const insight=marketInsightText(activeSource);
+  marketNote.hidden=!insight;
+  marketNote.innerHTML=insight;
 
   rows.innerHTML=visible.map(p=>{
     const changed=isChanged(p);
