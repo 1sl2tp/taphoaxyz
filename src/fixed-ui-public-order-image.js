@@ -39,17 +39,22 @@
     return (hash>>>0).toString(36);
   }
 
+  function currentAppData(){
+    return typeof appData!=='undefined' && appData ? appData : {};
+  }
+
   function collectOrder(orderId,sheetName){
-    const sheet=Array.isArray(window.appData?.[sheetName])?window.appData[sheetName]:[];
+    const dataStore=currentAppData();
+    const sheet=Array.isArray(dataStore?.[sheetName])?dataStore[sheetName]:[];
     const rows=sheet.slice(1).filter(row=>String(row?.[0]??'').trim()===String(orderId||'').trim());
     if(!rows.length)return null;
 
     const products=new Map(
-      (Array.isArray(window.appData?.sanpham)?window.appData.sanpham.slice(1):[])
+      (Array.isArray(dataStore?.sanpham)?dataStore.sanpham.slice(1):[])
         .map(row=>[String(row?.[0]??''),String(row?.[1]??row?.[0]??'')])
     );
     const customers=new Map(
-      (Array.isArray(window.appData?.khachhang)?window.appData.khachhang.slice(1):[])
+      (Array.isArray(dataStore?.khachhang)?dataStore.khachhang.slice(1):[])
         .map(row=>[String(row?.[0]??''),String(row?.[1]??row?.[0]??'')])
     );
 
