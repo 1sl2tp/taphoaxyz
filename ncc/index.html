@@ -14,7 +14,7 @@
 h1{font-size:26px;margin:5px 0 8px}.muted{color:#667085;font-size:13px;line-height:1.5}.field{display:grid;gap:6px;margin-top:14px}.field label{font-size:12px;font-weight:800;color:#475467}
 .field input,.field select,.search,.cost-input,.new-name,.new-cost{width:100%;height:44px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;padding:0 11px;outline:none}
 .field input:focus,.field select:focus,.search:focus,.cost-input:focus,.new-name:focus,.new-cost:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
-.pin{font-size:22px;letter-spacing:.28em;text-align:center;font-weight:800}.btn{height:42px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:#344054;padding:0 14px;font-weight:800;cursor:pointer}.btn.primary{background:#17202a;color:#fff;border-color:#17202a}.btn:disabled{opacity:.45;cursor:not-allowed}
+.pin-boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.pin-digit{width:100%;aspect-ratio:1/1;min-width:0;border:1px solid #d0d5dd;border-radius:10px;background:#fff;text-align:center;font-size:24px;font-weight:850;outline:none}.pin-digit:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}.btn{height:42px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:#344054;padding:0 14px;font-weight:800;cursor:pointer}.btn.primary{background:#17202a;color:#fff;border-color:#17202a}.btn:disabled{opacity:.45;cursor:not-allowed}
 .msg{min-height:18px;margin-top:10px;font-size:12px;color:#667085}.msg.error{color:#b42318}.msg.ok{color:#027a48}
 .head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px}.head h1{margin:2px 0 4px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .toolbar{display:flex;gap:8px;padding:10px;border-top:1px solid #e4e7ec;border-bottom:1px solid #e4e7ec}.search{flex:1;min-width:0}.save{min-width:150px}
@@ -43,7 +43,14 @@ td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{
       </div>
       <div class="field">
         <label>Mã PIN</label>
-        <input id="pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+        <div id="pinBoxes" class="pin-boxes" aria-label="Mã PIN 6 số">
+          <input class="pin-digit" type="password" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Số PIN 1">
+          <input class="pin-digit" type="password" inputmode="numeric" maxlength="1" aria-label="Số PIN 2">
+          <input class="pin-digit" type="password" inputmode="numeric" maxlength="1" aria-label="Số PIN 3">
+          <input class="pin-digit" type="password" inputmode="numeric" maxlength="1" aria-label="Số PIN 4">
+          <input class="pin-digit" type="password" inputmode="numeric" maxlength="1" aria-label="Số PIN 5">
+          <input class="pin-digit" type="password" inputmode="numeric" maxlength="1" aria-label="Số PIN 6">
+        </div>
       </div>
       <button id="loginBtn" class="btn primary" type="submit" style="width:100%;margin-top:14px">Vào bảng giá</button>
       <div id="loginMsg" class="msg"></div>
@@ -92,6 +99,31 @@ const parseNum=value=>{
   return Number.isFinite(n)?n:null;
 };
 const pretty=value=>value===null||value===undefined||value===''?'':Number(value).toLocaleString('vi-VN',{maximumFractionDigits:2});
+function pinInputs(){return [...document.querySelectorAll('#pinBoxes .pin-digit')]}
+function getPin(){return pinInputs().map(x=>x.value).join('')}
+function clearPin(){pinInputs().forEach(x=>x.value='');pinInputs()[0]?.focus()}
+function bindPinBoxes(){
+  const inputs=pinInputs();
+  inputs.forEach((input,index)=>{
+    input.addEventListener('input',()=>{
+      input.value=input.value.replace(/\D/g,'').slice(-1);
+      if(input.value&&index<inputs.length-1)inputs[index+1].focus();
+    });
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!input.value&&index>0)inputs[index-1].focus();
+      if(e.key==='ArrowLeft'&&index>0)inputs[index-1].focus();
+      if(e.key==='ArrowRight'&&index<inputs.length-1)inputs[index+1].focus();
+    });
+    input.addEventListener('paste',e=>{
+      const digits=(e.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,6);
+      if(!digits)return;
+      e.preventDefault();
+      digits.split('').forEach((d,i)=>{if(inputs[i])inputs[i].value=d});
+      inputs[Math.min(digits.length,6)-1]?.focus();
+    });
+  });
+}
+
 
 const SUA_REPLACEMENTS=[
   [/\bto trang\b/gi,'to trắng'],[/\bbe trang\b/gi,'bé trắng'],[/\blo\b/gi,'lọ'],[/\btho trang\b/gi,'thọ trắng'],
@@ -226,13 +258,13 @@ $('loginForm').addEventListener('submit',async e=>{
   $('loginBtn').disabled=true;
   try{
     const source=$('source').value;
-    const pin=$('pin').value.trim();
+    const pin=getPin();
     const data=await rpc('taphoa_supplier_login',{p_source_key:source,p_pin:pin});
     if(!data?.ok){
       const message=data?.error==='pin_locked'?'PIN đang bị khóa tạm 10 phút.':data?.error==='pin_format'?'PIN phải gồm đúng 6 số.':'PIN không đúng.';
       throw new Error(message);
     }
-    $('pin').value='';
+    clearPin();
     saveSession(data);
     await loadCatalog();
     setMsg('appMsg','');
@@ -284,11 +316,19 @@ $('logoutBtn').addEventListener('click',async()=>{
   const token=session?.token;
   saveSession(null);
   if(token)await rpc('taphoa_supplier_logout',{p_token:token}).catch(()=>{});
-  items=[];originals.clear();$('pin').value='';setMsg('loginMsg','');showLogin();
+  items=[];originals.clear();clearPin();setMsg('loginMsg','');showLogin();
 });
 
-const paramSource=new URLSearchParams(location.search).get('s');
+const params=new URLSearchParams(location.search);
+const paramSource=params.get('s');
+const fixedSource=params.get('fixed')==='1';
 if(SOURCE_LABELS[paramSource])$('source').value=paramSource;
+if(fixedSource&&SOURCE_LABELS[paramSource]){
+  $('source').disabled=true;
+  document.querySelector('label[for="source"]')?.removeAttribute('for');
+  document.querySelector('#source')?.closest('.field')?.querySelector('label')?.replaceChildren('Nhóm hàng cố định');
+}
+bindPinBoxes();
 
 session=restoreSession();
 if(session){
