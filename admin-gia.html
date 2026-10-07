@@ -787,22 +787,43 @@
 
       if(Number.isFinite(sale)&&sale>0)parts.push('Giá bán '+pretty(sale));
       if(Number.isFinite(retail)&&retail>0)parts.push('Giá lẻ '+pretty(retail)+(unit?'/'+unit:''));
+      if(unit)parts.push('Đơn vị lẻ '+unit);
+
       if(Number.isFinite(units)&&units>0){
+        parts.push('Số lượng/1 thùng '+marketQty(units)+(unit?' '+unit:''));
+        parts.push('Cấp 1 thùng');
+
         const nested=Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&
           Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit&&
           innerUnit.toLowerCase()===bundleUnit.toLowerCase();
+
         if(nested){
-          parts.push('Quy cách '+marketQty(innerQty)+' '+innerUnit+' × '+marketQty(bundleQty)+' '+unit+' = '+marketQty(units)+' '+unit);
+          parts.push('Cấp 2 '+marketQty(innerQty)+' '+innerUnit+'/thùng');
+          parts.push('Cấp 3 '+marketQty(bundleQty)+' '+unit+'/'+innerUnit);
+        }else if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
+          const middleCount=units/bundleQty;
+          if(Number.isFinite(middleCount)&&middleCount>0){
+            parts.push('Cấp 2 '+marketQty(middleCount)+' '+bundleUnit+'/thùng');
+          }else{
+            parts.push('Cấp 2 '+bundleUnit);
+          }
+          parts.push('Cấp 3 '+marketQty(bundleQty)+' '+unit+'/'+bundleUnit);
         }else{
-          parts.push('Quy cách '+marketQty(units)+(unit?' '+unit:''));
-          if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit)parts.push(marketQty(innerQty)+' '+innerUnit);
-          if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
-            parts.push('1 '+bundleUnit+' = '+marketQty(bundleQty)+' '+unit);
+          if(unit)parts.push('Cấp 2 '+unit);
+          if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit&&unit){
+            parts.push('Cấp 3 '+marketQty(innerQty)+' '+innerUnit+'/'+unit);
+          }else if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit){
+            parts.push('Cấp 3 '+marketQty(innerQty)+' '+innerUnit);
           }
         }
       }else if(unit){
-        parts.push('Đơn vị lẻ '+unit);
+        parts.push('Cấp 2 '+unit);
+        if(Number.isFinite(innerQty)&&innerQty>0&&innerUnit){
+          parts.push('Cấp 3 '+marketQty(innerQty)+' '+innerUnit+'/'+unit);
+        }
       }
+
+      // Dung tích / trọng lượng là thuộc tính độc lập của QC, luôn giữ và luôn hiển thị khi đã có dữ liệu.
       if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(ownMeasureLabel(sizeUnit)+' '+marketQty(size)+' '+sizeUnit);
       const variantLabel=String(item&&item.variant_label||'').trim();
       const variantColor=String(item&&item.variant_color||'').trim();
