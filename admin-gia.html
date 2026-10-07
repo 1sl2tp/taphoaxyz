@@ -406,6 +406,10 @@
     const PAGE_SIZE=100;
     let identity=null,client=null,items=[],comparisonItems=[],sources=[],total=0,offset=0,loading=false,searchTimer=0;
     let selectedSource='';
+    let adminView='goods';
+    let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
+    let marketSelectedCode='',marketCandidates=[],marketStatusTimer=0;
+    const MARKET_PAGE_SIZE=100;
     let sourceDialogMode='create';
     let saveQueues=new Map();
     const COLUMN_STORAGE_KEY='taphoa.adminGia.columns.v10';
@@ -546,7 +550,7 @@
       identity=info?.identity||null;
       if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
       if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
-      client=info.client||await auth.getClient();showApp();await loadPage(true);await loadSupplierFeedback();
+      client=info.client||await auth.getClient();showApp();await loadPage(true);await loadSupplierFeedback();await loadMarketStatus();
     }
 
     async function loadPage(reset=false){
