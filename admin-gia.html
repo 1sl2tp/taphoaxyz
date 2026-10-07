@@ -152,6 +152,8 @@
     .market-current-title{font-size:14px;font-weight:900}.market-current-sub{font-size:11px;color:var(--muted);margin-top:3px}
     .market-current-map{margin-top:9px;padding:9px;border:1px solid #dbeafe;border-radius:9px;background:#f8fbff;font-size:12px}
     .market-current-map a{color:#2563eb;text-decoration:none;font-weight:800}
+    .market-source-status{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.market-source-pill{font-size:10px;font-weight:900;border-radius:999px;padding:4px 7px;background:#f1f5f9;color:#64748b}.market-source-pill.on{background:#ecfdf3;color:#15803d}
+    .market-link-list{display:grid;gap:7px;margin-top:9px}.market-link-card{border:1px solid #dbeafe;border-radius:9px;background:#f8fbff;padding:9px}.market-link-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.market-link-source{font-weight:900;color:#0f172a}.market-link-name{font-weight:800;margin-top:3px}.market-link-meta{font-size:11px;color:#64748b;margin-top:3px;line-height:1.4}.market-link-actions{display:flex;gap:6px;flex:none}.market-link-remove{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.market-link-open{border:1px solid #bfdbfe;background:#fff;color:#2563eb;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900;text-decoration:none}
     .market-candidate-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid var(--grid);background:#f8fafc;font-size:11px;color:var(--muted)}
     .market-candidate-price{font-weight:900;color:#111827;white-space:nowrap}
     .market-assign{border:1px solid #86efac;background:#f0fdf4;color:#15803d;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:900;flex:none}
@@ -576,8 +578,49 @@
       return Number.isFinite(n)&&n>0?n.toLocaleString('vi-VN')+' đ':'—';
     }
 
+    const MARKET_SOURCE_ORDER=['GO!','WinMart','Bách Hóa XANH','VNM'];
+    const MARKET_SOURCE_SHORT={'GO!':'GO!','WinMart':'WinMart','Bách Hóa XANH':'BHX','VNM':'VNM'};
+
     function selectedMarketItem(){
       return marketItems.find(function(x){return x.product_code===marketSelectedCode;})||null;
+    }
+
+    function itemMarketLinks(item){
+      return Array.isArray(item&&item.market_links)?item.market_links:[];
+    }
+
+    function marketQty(value){
+      const n=Number(value);
+      if(!Number.isFinite(n)||n<=0)return '';
+      return n.toLocaleString('vi-VN',{maximumFractionDigits:2});
+    }
+
+    function marketPackText(x){
+      const parts=[];
+      const addLevel=function(label,qty,omitOne){
+        label=String(label||'').trim();
+        const q=Number(qty);
+        if(!label||!Number.isFinite(q)||q<=0)return;
+        parts.push((omitOne&&q===1?'':marketQty(q)+' ')+label.toLowerCase());
+      };
+      addLevel(x.label1,x.qty1,true);
+      addLevel(x.label2,x.qty2,false);
+      addLevel(x.label3,x.qty3,false);
+      const size=Number(x.size_value);
+      if(Number.isFinite(size)&&size>0&&String(x.size_unit||'').trim()){
+        parts.push(marketQty(size)+' '+String(x.size_unit).trim());
+      }
+      if(!parts.length&&String(x.packaging||'').trim())parts.push(String(x.packaging).trim());
+      if(!parts.length&&String(x.pack_kind||'').trim())parts.push(String(x.pack_kind).trim());
+      return parts.join(' · ');
+    }
+
+    function marketSourceStatusHtml(item){
+      const links=itemMarketLinks(item);
+      return '<div class="market-source-status">'+MARKET_SOURCE_ORDER.map(function(source){
+        const on=links.some(function(x){return x.source===source;});
+        return '<span class="market-source-pill '+(on?'on':'')+'">'+esc(MARKET_SOURCE_SHORT[source])+' '+(on?'✓':'—')+'</span>';
+      }).join('')+'</div>';
     }
 
     function renderMarketSourceOptions(){
@@ -589,12 +632,15 @@
     }
 
     function renderMarketProducts(){
-      const mapped=marketItems.filter(function(x){return x.mapped;}).length;
-      $('marketMapCount').textContent=mapped+'/'+marketItems.length+' đang hiện đã gán · tổng '+marketTotal;
+      const mapped=marketItems.filter(function(x){return Number(x.mapped_count||0)>0;}).length;
+      const linkCount=marketItems.reduce(function(n,x){return n+Number(x.mapped_count||0);},0);
+      $('marketMapCount').textContent=mapped+'/'+marketItems.length+' sản phẩm đã gán · '+linkCount+' nguồn · tổng '+marketTotal;
       $('marketProductList').innerHTML=marketItems.length?marketItems.map(function(item){
+        const links=itemMarketLinks(item);
         const img=item.image_url?'<img class="market-thumb" src="'+esc(item.image_url)+'" alt="">':'<span class="market-thumb"></span>';
-        const extra=item.market_product_name?' · '+esc(item.market_product_name):'';
-        const badge=item.mapped?'<span class="market-map-badge">ĐÃ GÁN</span>':'';
+        const sources=links.map(function(x){return MARKET_SOURCE_SHORT[x.source]||x.source;}).join(' · ');
+        const extra=sources?' · '+esc(sources):'';
+        const badge=links.length?'<span class="market-map-badge">'+links.length+' NGUỒN</span>':'';
         return '<button type="button" class="market-list-item '+(item.product_code===marketSelectedCode?'active':'')+'" data-market-product="'+esc(item.product_code)+'">'+
           img+
           '<span class="market-item-copy">'+
@@ -618,16 +664,26 @@
         return;
       }
       $('marketCandidateSearch').disabled=false;
-      let mapped='<div class="market-current-map"><strong>Chưa gán sản phẩm siêu thị.</strong> Chọn một gợi ý bên dưới để gán.</div>';
-      if(item.mapped&&item.market_product_name){
-        mapped='<div class="market-current-map"><strong>Đang gán:</strong> '+esc(item.market_source)+' · '+esc(item.market_product_name)+
-          (item.market_price?' · '+esc(marketMoney(item.market_price)):'')+
-          (item.market_packaging?' · '+esc(item.market_packaging):'')+
-          (item.market_url?' · <a href="'+esc(item.market_url)+'" target="_blank" rel="noopener">Mở nguồn ↗</a>':'')+
-          '</div>';
-      }
+      const links=itemMarketLinks(item);
+      const cards=links.length?'<div class="market-link-list">'+links.map(function(link){
+        const pack=marketPackText(link);
+        return '<div class="market-link-card">'+
+          '<div class="market-link-top"><div><div class="market-link-source">'+esc(link.source||'')+'</div>'+
+          '<div class="market-link-name">'+esc(link.name||'')+'</div></div>'+
+          '<div class="market-link-actions">'+
+          (link.url?'<a class="market-link-open" href="'+esc(link.url)+'" target="_blank" rel="noopener">Mở ↗</a>':'')+
+          '<button class="market-link-remove" type="button" data-market-remove="'+esc(link.source||'')+'">Bỏ gán</button>'+
+          '</div></div>'+
+          '<div class="market-link-meta">Giá '+esc(marketMoney(link.price))+(pack?' · '+esc(pack):'')+
+          (link.barcode?' · Barcode '+esc(link.barcode):'')+'</div>'+
+        '</div>';
+      }).join('')+'</div>':
+      '<div class="market-current-map"><strong>Chưa gán nguồn siêu thị.</strong> Có thể gán đồng thời GO!, WinMart, Bách Hóa XANH và VNM.</div>';
+
       $('marketCurrent').innerHTML='<div class="market-current-title">'+esc(item.product_name)+'</div>'+
-        '<div class="market-current-sub">'+esc(item.source_name||item.source_key)+' · giá bán '+esc(pretty(item.sale_price))+'</div>'+mapped;
+        '<div class="market-current-sub">'+esc(item.source_name||item.source_key)+' · giá bán '+esc(pretty(item.sale_price))+
+        (item.units_per_carton?' · '+esc(pretty(item.units_per_carton))+' '+esc(item.retail_unit||''):'')+'</div>'+
+        marketSourceStatusHtml(item)+cards;
     }
 
     async function loadMarketMappings(reset=false){
@@ -674,12 +730,21 @@
         $('marketCandidateList').innerHTML='<div class="empty">Không tìm thấy gợi ý phù hợp.</div>';
         return;
       }
+      const item=selectedMarketItem();
+      const links=itemMarketLinks(item);
       let html=marketCandidates.map(function(x){
         const img=x.image_url?'<img class="market-thumb" src="'+esc(x.image_url)+'" alt="">':'<span class="market-thumb"></span>';
+        const pack=marketPackText(x);
+        const current=links.find(function(link){return link.source===x.source;});
+        const exact=current&&current.candidate_id===x.id;
+        const label=exact?'Đã gán':(current?'Đổi '+(MARKET_SOURCE_SHORT[x.source]||x.source):'Gán '+(MARKET_SOURCE_SHORT[x.source]||x.source));
         return '<div class="market-candidate">'+img+
           '<span class="market-item-copy"><span class="market-item-name">'+esc(x.name)+'</span>'+
-          '<span class="market-item-meta">'+esc(x.source||'')+' · '+esc(marketMoney(x.current_price))+'</span></span>'+
-          '<button class="market-assign" type="button" data-market-candidate="'+esc(x.id)+'">Gán</button></div>';
+          '<span class="market-item-meta">'+esc(x.source||'')+' · '+esc(marketMoney(x.current_price))+(pack?' · '+esc(pack):'')+'</span>'+
+          (x.barcode?'<span class="market-item-meta">Barcode '+esc(x.barcode)+(x.source_product_id?' · ID '+esc(x.source_product_id):'')+'</span>':'')+
+          '</span>'+
+          (x.open_url?'<a class="market-link-open" href="'+esc(x.open_url)+'" target="_blank" rel="noopener">Mở ↗</a>':'')+
+          '<button class="market-assign" type="button" data-market-candidate="'+esc(x.id)+'" '+(exact?'disabled':'')+'>'+esc(label)+'</button></div>';
       }).join('');
       if(marketCandidateHasMore){
         html+='<div style="padding:6px 0 12px;text-align:center"><button class="btn" type="button" data-market-more="1">Xem thêm kết quả</button></div>';
@@ -722,7 +787,7 @@
       const button=Array.from($('marketCandidateList').querySelectorAll('[data-market-candidate]')).find(function(b){return b.dataset.marketCandidate===candidateId;});
       if(button){button.disabled=true;button.textContent='Đang gán…';}
       try{
-        await rpc('taphoa_set_product_media',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
+        await rpc('taphoa_set_product_market_link',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
         await loadMarketMappings(false);
         await selectMarketProduct(item.product_code);
         $('marketUpdateStatus').textContent='Đã gán '+item.product_name+' với sản phẩm siêu thị.';
@@ -734,6 +799,20 @@
       }
     }
 
+    async function clearMarketSource(source){
+      const item=selectedMarketItem();
+      if(!item||!source)return;
+      try{
+        await rpc('taphoa_clear_product_market_link',{p_product_code:item.product_code,p_market_source:source});
+        await loadMarketMappings(false);
+        renderMarketCandidates();
+        $('marketUpdateStatus').textContent='Đã bỏ gán '+source+' khỏi '+item.product_name+'.';
+      }catch(error){
+        console.error('clear market link',error);
+        $('marketUpdateStatus').textContent=(error&&error.message)||'Không bỏ gán được nguồn.';
+      }
+    }
+
     async function loadMarketStatus(){
       try{
         const data=await rpc('taphoa_admin_market_update_status');
@@ -741,12 +820,12 @@
         const last=data&&data.last_run;
         const settings=(data&&data.settings)||{};
         if(active){
-          $('marketUpdateStatus').textContent='Đang cập nhật: '+Number(active.done_categories||0)+'/'+Number(active.total_categories||0)+' nhóm · '+Number(active.updated_products||0)+' sản phẩm';
+          $('marketUpdateStatus').textContent='Đang cập nhật nguồn đã gán: '+Number(active.done_categories||0)+'/'+Number(active.total_categories||0)+' nhóm · '+Number(active.updated_products||0)+' sản phẩm';
           $('marketRunUpdateBtn').textContent='Tiếp tục cập nhật';
         }else{
           const lastTime=(last&&last.finished_at)||settings.last_completed_at;
-          $('marketUpdateStatus').textContent='Tự động '+Number(settings.interval_days||7)+' ngày/lần · '+(lastTime?'lần cuối '+new Date(lastTime).toLocaleString('vi-VN'):'chưa có lần hoàn tất');
-          $('marketRunUpdateBtn').textContent='Cập nhật dữ liệu siêu thị';
+          $('marketUpdateStatus').textContent='Tự động '+Number(settings.interval_days||7)+' ngày/lần · chỉ nguồn đã gán · '+(lastTime?'lần cuối '+new Date(lastTime).toLocaleString('vi-VN'):'chưa có lần hoàn tất');
+          $('marketRunUpdateBtn').textContent='Cập nhật nguồn đã gán';
         }
       }catch(error){
         console.error('market update status',error);
@@ -1340,6 +1419,10 @@
     $('marketProductList').addEventListener('click',e=>{
       const b=e.target.closest('[data-market-product]');
       if(b)selectMarketProduct(b.dataset.marketProduct);
+    });
+    $('marketCurrent').addEventListener('click',e=>{
+      const b=e.target.closest('[data-market-remove]');
+      if(b)clearMarketSource(b.dataset.marketRemove);
     });
     $('marketCandidateList').addEventListener('click',e=>{
       const more=e.target.closest('[data-market-more]');
