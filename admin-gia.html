@@ -154,7 +154,7 @@
     .market-current-map{margin-top:9px;padding:9px;border:1px solid #dbeafe;border-radius:9px;background:#f8fbff;font-size:12px}
     .market-current-map a{color:#2563eb;text-decoration:none;font-weight:800}
     .market-source-status{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.market-source-pill{font-size:10px;font-weight:900;border-radius:999px;padding:4px 7px;background:#f1f5f9;color:#64748b}.market-source-pill.on{background:#ecfdf3;color:#15803d}
-    .market-link-list{display:grid;gap:7px;margin-top:9px}.market-link-card{border:1px solid #dbeafe;border-radius:9px;background:#f8fbff;padding:9px}.market-link-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.market-link-source{font-weight:900;color:#0f172a}.market-link-name{font-weight:800;margin-top:3px}.market-link-meta{font-size:11px;color:#64748b;margin-top:3px;line-height:1.4}.market-link-actions{display:flex;gap:5px;flex:none;flex-wrap:wrap;justify-content:flex-end}.market-link-remove{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.market-link-open{border:1px solid #bfdbfe;background:#fff;color:#2563eb;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900;text-decoration:none}.market-link-copy{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.market-link-image{border:1px solid #fde68a;background:#fffbeb;color:#92400e;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.market-link-image.active{border-color:#86efac;background:#f0fdf4;color:#15803d}
+    .market-link-list{display:grid;gap:7px;margin-top:9px}.market-link-card{border:1px solid #dbeafe;border-radius:9px;background:#f8fbff;padding:9px}.market-link-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.market-link-source{font-weight:900;color:#0f172a}.market-link-name{font-weight:800;margin-top:3px}.market-link-meta{font-size:11px;color:#64748b;margin-top:3px;line-height:1.4}.market-variant{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:850;padding:3px 6px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;margin-left:4px}.market-link-actions{display:flex;gap:5px;flex:none;flex-wrap:wrap;justify-content:flex-end}.market-link-remove{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.market-link-open{border:1px solid #bfdbfe;background:#fff;color:#2563eb;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900;text-decoration:none}.market-link-copy{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.market-link-image{border:1px solid #fde68a;background:#fffbeb;color:#92400e;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.market-link-image.active{border-color:#86efac;background:#f0fdf4;color:#15803d}
     .market-candidate-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid var(--grid);background:#f8fafc;font-size:11px;color:var(--muted)}
     .market-candidate-price{font-weight:900;color:#111827;white-space:nowrap}
     .market-assign{border:1px solid #86efac;background:#f0fdf4;color:#15803d;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:900;flex:none}
@@ -676,6 +676,10 @@
         parts.push('Đơn vị lẻ '+unit);
       }
       if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(ownMeasureLabel(sizeUnit)+' '+marketQty(size)+' '+sizeUnit);
+      const variantLabel=String(item&&item.variant_label||'').trim();
+      const variantColor=String(item&&item.variant_color||'').trim();
+      if(variantColor)parts.push('Màu '+variantColor);
+      if(variantLabel)parts.push('Biến thể '+variantLabel);
       return parts;
     }
 
@@ -759,9 +763,12 @@
           (link.url?'<a class="market-link-open" href="'+esc(link.url)+'" target="_blank" rel="noopener">Mở ↗</a>':'')+
           (link.image_url?'<button class="market-link-image '+(imageActive?'active':'')+'" type="button" data-market-image="'+esc(link.candidate_id)+'">'+(imageActive?'Ảnh đang dùng':'Dùng ảnh')+'</button>':'')+
           '<button class="market-link-copy" type="button" data-market-copy="'+esc(link.candidate_id)+'">Chép QC</button>'+
+          ((link.variant_color||link.variant_label)?'<button class="market-link-copy" type="button" data-market-variant="'+esc(link.candidate_id)+'">Chép màu</button>':'')+
           '<button class="market-link-remove" type="button" data-market-remove="'+esc(link.candidate_id)+'">Bỏ gán</button>'+
           '</div></div>'+
-          '<div class="market-link-meta">Giá '+esc(marketMoney(link.price))+(pack?' · '+esc(pack):'')+'</div>'+
+          '<div class="market-link-meta">Giá '+esc(marketMoney(link.price))+(pack?' · '+esc(pack):'')+
+          (link.variant_color?'<span class="market-variant">Màu '+esc(link.variant_color)+'</span>':'')+
+          (link.variant_label?'<span class="market-variant">'+esc(link.variant_label)+'</span>':'')+'</div>'+
         '</div>';
       }).join('')+'</div>':
       '<div class="market-current-map"><strong>Chưa gán sản phẩm siêu thị.</strong> Có thể gán nhiều sản phẩm, kể cả nhiều sản phẩm cùng một siêu thị.</div>';
@@ -828,7 +835,8 @@
         const label=exact?'Đã gán':'Gán';
         return '<div class="market-candidate">'+img+
           '<span class="market-item-copy"><span class="market-item-name">'+esc(x.name)+'</span>'+
-          '<span class="market-item-meta">'+esc(x.source||'')+' · '+esc(marketMoney(x.current_price))+(pack?' · '+esc(pack):'')+'</span>'+
+          '<span class="market-item-meta">'+esc(x.source||'')+' · '+esc(marketMoney(x.current_price))+(pack?' · '+esc(pack):'')+
+          (x.variant_color?' · Màu '+esc(x.variant_color):'')+(x.variant_label?' · '+esc(x.variant_label):'')+'</span>'+
           '</span>'+
           (x.open_url?'<a class="market-link-open" href="'+esc(x.open_url)+'" target="_blank" rel="noopener">Mở ↗</a>':'')+
           '<button class="market-assign" type="button" data-market-candidate="'+esc(x.id)+'" '+(exact?'disabled':'')+'>'+esc(label)+'</button></div>';
@@ -944,6 +952,23 @@
       }catch(error){
         console.error('set market image',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không chọn được ảnh.';
+      }
+    }
+
+    async function copyMarketVariant(candidateId){
+      const item=selectedMarketItem();
+      if(!item||!candidateId)return;
+      try{
+        const result=await rpc('taphoa_copy_market_variant_to_product',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
+        await loadMarketMappings(false);
+        renderMarketCandidates();
+        const bits=[];
+        if(result&&result.variant_color)bits.push('màu '+result.variant_color);
+        if(result&&result.variant_label)bits.push(result.variant_label);
+        $('marketUpdateStatus').textContent='Đã chép '+(bits.join(' · ')||'thuộc tính màu')+' vào '+item.product_name+'.';
+      }catch(error){
+        console.error('copy market variant',error);
+        $('marketUpdateStatus').textContent=(error&&error.message)||'Không chép được màu/biến thể.';
       }
     }
 
@@ -1583,6 +1608,8 @@
       if(remove){clearMarketCandidate(remove.dataset.marketRemove);return;}
       const image=e.target.closest('[data-market-image]');
       if(image){setMarketImage(image.dataset.marketImage);return;}
+      const variant=e.target.closest('[data-market-variant]');
+      if(variant){copyMarketVariant(variant.dataset.marketVariant);return;}
       const copy=e.target.closest('[data-market-copy]');
       if(copy){copyMarketPack(copy.dataset.marketCopy);}
     });
