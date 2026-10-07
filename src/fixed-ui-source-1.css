@@ -242,7 +242,7 @@ body[data-force-pc="1"] #btnOpenCartMobile{display:none !important;}
 
 .order-detail-compact-grid{
   display:grid !important;
-  grid-template-columns:30px minmax(0,1fr) 38px 56px !important;
+  grid-template-columns:30px minmax(0,1fr) 52px 28px 58px !important;
   column-gap:4px !important;
   align-items:center;
   min-width:0;
@@ -251,7 +251,14 @@ body[data-force-pc="1"] #btnOpenCartMobile{display:none !important;}
 .order-detail-compact-grid .order-stt{text-align:center;}
 .order-detail-compact-grid .order-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .order-detail-compact-grid .order-qty{text-align:center;font-variant-numeric:tabular-nums;}
+.order-detail-compact-grid .order-price,
 .order-detail-compact-grid .order-total{text-align:right;font-variant-numeric:tabular-nums;}
+
+@media (max-width:767px){
+  #orderDetailBottomSheet.is-zalo-inapp .order-detail-summary{
+    padding-bottom:calc(56px + env(safe-area-inset-bottom)) !important;
+  }
+}
 
 .summary-compact-table{
   width:100%;
