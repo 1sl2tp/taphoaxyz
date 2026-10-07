@@ -27,7 +27,8 @@
     const result=originalShowOrderDetailMobile?.apply(this,arguments);
     syncOrderDetailBrowserContext();
     const btnEdit=document.getElementById('btnEditPopupOrder');
-    if(btnEdit && sheetName==='dongiao'){
+    const deliveredReadOnly=sheetName==='dongiao' && currentAuthRole==='user';
+    if(btnEdit && deliveredReadOnly){
       btnEdit.style.display='none';
       btnEdit.removeAttribute('onclick');
     }
@@ -56,7 +57,7 @@
   };
 
   window.editOrder=function(orderId,sheetName){
-    if(sheetName==='dongiao'){
+    if(sheetName==='dongiao' && currentAuthRole==='user'){
       if(typeof window.showToast==='function')window.showToast('Đơn đã giao chỉ để xem.','info');
       return;
     }
