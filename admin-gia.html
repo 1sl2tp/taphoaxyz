@@ -1305,6 +1305,30 @@
       }catch(error){$('historyBody').innerHTML=`<tr><td colspan="5" style="padding:18px;color:#dc2626">${esc(error?.message||'Không tải được lịch sử')}</td></tr>`;}
     }
 
+    $('goodsTabBtn').addEventListener('click',()=>switchAdminView('goods'));
+    $('marketTabBtn').addEventListener('click',()=>switchAdminView('market'));
+    $('marketOwnSource').addEventListener('change',()=>loadMarketMappings(true));
+    $('marketOwnSearch').addEventListener('input',()=>{
+      clearTimeout(marketSearchTimer);
+      marketSearchTimer=setTimeout(()=>loadMarketMappings(true),220);
+    });
+    $('marketShopSource').addEventListener('change',()=>{if(marketSelectedCode)loadMarketCandidates();});
+    $('marketCandidateSearch').addEventListener('input',()=>{
+      clearTimeout(marketCandidateTimer);
+      marketCandidateTimer=setTimeout(loadMarketCandidates,220);
+    });
+    $('marketProductList').addEventListener('click',e=>{
+      const b=e.target.closest('[data-market-product]');
+      if(b)selectMarketProduct(b.dataset.marketProduct);
+    });
+    $('marketCandidateList').addEventListener('click',e=>{
+      const b=e.target.closest('[data-market-candidate]');
+      if(b)assignMarketCandidate(b.dataset.marketCandidate);
+    });
+    $('marketPrevBtn').addEventListener('click',()=>{marketOffset=Math.max(0,marketOffset-MARKET_PAGE_SIZE);loadMarketMappings(false);});
+    $('marketNextBtn').addEventListener('click',()=>{if(marketOffset+MARKET_PAGE_SIZE<marketTotal){marketOffset+=MARKET_PAGE_SIZE;loadMarketMappings(false);}});
+    $('marketRunUpdateBtn').addEventListener('click',runMarketUpdate);
+
     $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Đang đăng nhập…';try{await enter(await auth.login($('username').value,$('password').value));$('loginMsg').textContent='';}catch(error){showLogin(error?.message||'Không đăng nhập được');}});
     $('logoutBtn').addEventListener('click',async()=>{await auth.logout().catch(()=>{});identity=null;client=null;showLogin();});
     $('searchInput').addEventListener('focus',e=>e.target.select());
