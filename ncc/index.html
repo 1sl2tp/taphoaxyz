@@ -93,19 +93,59 @@ const NEW_ROWS=5;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const parseNum=value=>{
-  const s=String(value??'').trim().replace(',','.');
-  if(!s)return null;
-  const n=Number(s);
+  const raw=String(value??'').trim().replace(/\s+/g,'');
+  if(!raw)return null;
+
+  let normalized=raw;
+  if(raw.includes(',')){
+    // Dấu "." là phân cách hàng nghìn; dấu "," là phần thập phân.
+    normalized=raw.replace(/\./g,'').replace(',','.');
+  }else if(raw.includes('.')){
+    const parts=raw.split('.');
+    if(parts.length===2){
+      // 51.5 / 51.50 = số thập phân; 1.463 = 1463.
+      normalized=parts[1].length<=2 ? raw : parts.join('');
+    }else{
+      // Nhiều dấu "." trên giao diện là phân cách hàng nghìn.
+      normalized=parts.join('');
+    }
+  }
+
+  const n=Number(normalized);
   return Number.isFinite(n)?n:null;
 };
 const pretty=value=>{
   if(value===null||value===undefined||value==='')return '';
   const n=Number(value);
-  return Number.isFinite(n)?n.toLocaleString('vi-VN',{useGrouping:false,maximumFractionDigits:2}):'';
+  return Number.isFinite(n)?n.toLocaleString('vi-VN',{useGrouping:true,maximumFractionDigits:2}):'';
 };
 function normalizePriceInput(input){
   const value=parseNum(input.value);
   if(value!==null)input.value=pretty(value);
+}
+function formatPriceWhileTyping(input){
+  const raw=String(input.value||'').replace(/[^0-9.,]/g,'');
+  if(!raw){input.value='';return}
+
+  // Nếu NCC đang nhập phần thập phân, giữ dấu phẩy và vẫn phân cách phần nguyên.
+  const hasComma=raw.includes(',');
+  const dotParts=raw.split('.');
+  const dotLooksDecimal=!hasComma&&dotParts.length===2&&dotParts[1].length<=2;
+  const decimalMode=hasComma||dotLooksDecimal;
+
+  if(decimalMode){
+    const sep=hasComma?',':'.';
+    const first=raw.indexOf(sep);
+    let integerPart=raw.slice(0,first).replace(/[.,]/g,'');
+    let decimalPart=raw.slice(first+1).replace(/[.,]/g,'').slice(0,2);
+    integerPart=integerPart.replace(/^0+(?=\d)/,'')||'0';
+    const grouped=Number(integerPart).toLocaleString('vi-VN',{useGrouping:true,maximumFractionDigits:0});
+    input.value=grouped+(raw.slice(first).length?','+decimalPart:'');
+    return;
+  }
+
+  const digits=raw.replace(/[.,]/g,'').replace(/^0+(?=\d)/,'')||'0';
+  input.value=Number(digits).toLocaleString('vi-VN',{useGrouping:true,maximumFractionDigits:0});
 }
 function pinInputs(){return [...document.querySelectorAll('#pinBoxes .pin-digit')]}
 function getPin(){return pinInputs().map(x=>x.value).join('')}
@@ -249,12 +289,17 @@ function render(){
   $('empty').classList.toggle('hidden',visible.length!==0);
   $('summary').textContent=items.length+' mặt hàng · nhập giá dạng số, ví dụ 400 = 400';
   $('rows').querySelectorAll('input').forEach(input=>{
-    input.addEventListener('input',updateSaveState);
     if(input.classList.contains('cost-input')||input.classList.contains('new-cost')){
+      input.addEventListener('input',()=>{
+        formatPriceWhileTyping(input);
+        updateSaveState();
+      });
       input.addEventListener('blur',()=>{
         normalizePriceInput(input);
         updateSaveState();
       });
+    }else{
+      input.addEventListener('input',updateSaveState);
     }
   });
   updateSaveState();
