@@ -38,3 +38,14 @@ test('public customer deep-linked order opens read-only detail instead of cart f
   assert.match(flow,/viewingOrderId=orderId/);
   assert.match(flow,/window\.activeViewingSheet=sheetName/);
 });
+
+test('delivered orders stay read-only for every role',async()=>{
+  const flow=await read('src/fixed-ui-mobile-edit-flow.js');
+
+  assert.match(flow,/const originalShowOrderDetailMobile=typeof window\.showOrderDetailMobile==='function' \? window\.showOrderDetailMobile : null/);
+  assert.match(flow,/window\.showOrderDetailMobile=function\(orderId,sheetName\)/);
+  assert.match(flow,/sheetName==='dongiao'/);
+  assert.match(flow,/btnEdit\.style\.display='none'/);
+  assert.match(flow,/if\(sheetName==='dongiao'\)/);
+  assert.match(flow,/Đơn đã giao chỉ để xem/);
+});
