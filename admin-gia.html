@@ -129,6 +129,25 @@
     .admin-tabs{display:flex;gap:6px;margin:0 0 10px;padding:4px;background:#e5eaf1;border:1px solid #cbd5e1;border-radius:10px;width:max-content}
     .admin-tab{border:0;background:transparent;border-radius:7px;padding:7px 13px;font-weight:800;color:#64748b}
     .admin-tab.active{background:#fff;color:#111827;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+    .analytics-panel{background:#fff;border:1px solid #cbd5e1;border-radius:10px;overflow:hidden}
+    .analytics-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-bottom:1px solid var(--grid);background:#fbfdff}
+    .analytics-head strong{font-size:14px}.analytics-head small{display:block;color:var(--muted);margin-top:2px}
+    .analytics-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .analytics-actions select{height:34px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:0 8px}
+    .analytics-status{padding:7px 10px;border-bottom:1px solid var(--grid);font-size:11px;color:var(--muted)}
+    .analytics-cards{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:8px;padding:10px;background:#f8fafc}
+    .analytics-card{border:1px solid var(--grid);border-radius:9px;background:#fff;padding:10px}
+    .analytics-card span{display:block;font-size:11px;color:var(--muted);font-weight:700}
+    .analytics-card strong{display:block;margin-top:4px;font-size:23px;line-height:1.1}
+    .analytics-grid{display:grid;grid-template-columns:minmax(320px,.8fr) minmax(440px,1.2fr);gap:0;border-top:1px solid var(--grid)}
+    .analytics-block{min-width:0;padding:10px}.analytics-block+.analytics-block{border-left:1px solid var(--grid)}
+    .analytics-block h3{font-size:13px;margin:0 0 8px}
+    .analytics-table-wrap{overflow:auto;max-height:calc(100dvh - 390px);border:1px solid var(--grid);border-radius:8px}
+    .analytics-table{width:100%;min-width:100%;table-layout:auto;font-size:12px}
+    .analytics-table th,.analytics-table td{height:34px;padding:6px 8px;text-align:left;white-space:nowrap}
+    .analytics-table th{position:sticky;top:0}
+    .analytics-table td.num,.analytics-table th.num{text-align:right}
+    @media(max-width:850px){.analytics-cards{grid-template-columns:repeat(2,1fr)}.analytics-grid{grid-template-columns:1fr}.analytics-block+.analytics-block{border-left:0;border-top:1px solid var(--grid)}}
     .market-panel{background:#fff;border:1px solid #cbd5e1;border-radius:10px;overflow:hidden}
     .market-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-bottom:1px solid var(--grid);background:#fbfdff}
     .market-head strong{font-size:14px}.market-head small{display:block;color:var(--muted);margin-top:2px}
@@ -201,6 +220,7 @@
       <div class="admin-tabs" role="tablist" aria-label="Quản trị hàng hóa">
         <button id="goodsTabBtn" class="admin-tab active" type="button">Hàng hóa</button>
         <button id="marketTabBtn" class="admin-tab" type="button">Siêu thị</button>
+        <button id="analyticsTabBtn" class="admin-tab" type="button">Lượt truy cập</button>
       </div>
 
       <div id="goodsPane">
@@ -350,6 +370,50 @@
           </div>
         </div>
       </section>
+
+      <section id="analyticsPane" class="analytics-panel hidden">
+        <div class="analytics-head">
+          <div>
+            <strong>Lượt truy cập báo giá</strong>
+            <small>Đếm lượt mở /bao-gia/. Chỉ đọc báo cáo khi mở tab này; không theo dõi nền.</small>
+          </div>
+          <div class="analytics-actions">
+            <select id="analyticsDays" aria-label="Khoảng thời gian">
+              <option value="7">7 ngày</option>
+              <option value="30" selected>30 ngày</option>
+              <option value="90">90 ngày</option>
+            </select>
+            <button id="analyticsRefreshBtn" class="btn" type="button">Làm mới</button>
+          </div>
+        </div>
+        <div id="analyticsStatus" class="analytics-status">Mở tab để đọc báo cáo.</div>
+        <div class="analytics-cards">
+          <div class="analytics-card"><span>Tổng lượt truy cập</span><strong id="analyticsTotal">—</strong></div>
+          <div class="analytics-card"><span>Hôm nay</span><strong id="analyticsToday">—</strong></div>
+          <div class="analytics-card"><span>7 ngày gần nhất</span><strong id="analyticsWeek">—</strong></div>
+          <div class="analytics-card"><span>Thiết bị khác nhau</span><strong id="analyticsUnique">—</strong></div>
+        </div>
+        <div class="analytics-grid">
+          <div class="analytics-block">
+            <h3>Theo ngày</h3>
+            <div class="analytics-table-wrap">
+              <table class="analytics-table">
+                <thead><tr><th>Ngày</th><th class="num">Lượt</th><th class="num">Thiết bị</th></tr></thead>
+                <tbody id="analyticsDailyBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="analytics-block">
+            <h3>Truy cập gần đây</h3>
+            <div class="analytics-table-wrap">
+              <table class="analytics-table">
+                <thead><tr><th>Gần nhất</th><th>Thiết bị</th><th>Trình duyệt</th><th>HĐH</th><th class="num">Lượt/ngày</th></tr></thead>
+                <tbody id="analyticsRecentBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -418,6 +482,7 @@
     let identity=null,client=null,items=[],comparisonItems=[],sources=[],total=0,offset=0,loading=false,searchTimer=0;
     let selectedSource='';
     let adminView='goods';
+    let analyticsLoaded=false,analyticsLoading=false;
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
     let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketSearchTags=[];
     const MARKET_PAGE_SIZE=100;
@@ -566,11 +631,13 @@
     }
 
     function switchAdminView(view){
-      adminView=view==='market'?'market':'goods';
+      adminView=view==='market'?'market':view==='analytics'?'analytics':'goods';
       $('goodsTabBtn').classList.toggle('active',adminView==='goods');
       $('marketTabBtn').classList.toggle('active',adminView==='market');
+      $('analyticsTabBtn').classList.toggle('active',adminView==='analytics');
       $('goodsPane').classList.toggle('hidden',adminView!=='goods');
       $('marketPane').classList.toggle('hidden',adminView!=='market');
+      $('analyticsPane').classList.toggle('hidden',adminView!=='analytics');
       clearTimeout(marketStatusTimer);
       if(adminView==='market'){
         loadMarketMappings(true);
@@ -579,6 +646,37 @@
           if(adminView!=='market')return;
           loadMarketStatus().finally(function(){marketStatusTimer=setTimeout(tick,15000);});
         },15000);
+      }else if(adminView==='analytics'){
+        loadQuoteAnalytics(false);
+      }
+    }
+
+    const analyticsNumber=value=>Number(value||0).toLocaleString('vi-VN');
+    const analyticsDate=value=>{
+      const d=new Date(String(value||'')+'T00:00:00');
+      return Number.isNaN(d.getTime())?String(value||''):d.toLocaleDateString('vi-VN');
+    };
+    async function loadQuoteAnalytics(force=false){
+      if(analyticsLoading||(!force&&analyticsLoaded))return;
+      analyticsLoading=true;
+      $('analyticsStatus').textContent='Đang tải báo cáo…';
+      try{
+        const days=Math.max(7,Math.min(90,Number($('analyticsDays').value)||30));
+        const data=await rpc('taphoa_admin_quote_visit_report',{p_days:days});
+        $('analyticsTotal').textContent=analyticsNumber(data?.total_views);
+        $('analyticsToday').textContent=analyticsNumber(data?.today_views);
+        $('analyticsWeek').textContent=analyticsNumber(data?.last_7_days);
+        $('analyticsUnique').textContent=analyticsNumber(data?.period_unique_visitors);
+        const daily=Array.isArray(data?.daily)?data.daily:[];
+        $('analyticsDailyBody').innerHTML=daily.map(row=>'<tr><td>'+esc(analyticsDate(row.day))+'</td><td class="num">'+esc(analyticsNumber(row.views))+'</td><td class="num">'+esc(analyticsNumber(row.unique_visitors))+'</td></tr>').join('')||'<tr><td colspan="3">Chưa có lượt truy cập.</td></tr>';
+        const recent=Array.isArray(data?.recent)?data.recent:[];
+        $('analyticsRecentBody').innerHTML=recent.map(row=>'<tr><td>'+esc(new Date(row.last_seen_at).toLocaleString('vi-VN'))+'</td><td>'+esc(row.device_type||'—')+'</td><td>'+esc(row.browser||'—')+'</td><td>'+esc(row.os||'—')+'</td><td class="num">'+esc(analyticsNumber(row.view_count))+'</td></tr>').join('')||'<tr><td colspan="5">Chưa có lượt truy cập.</td></tr>';
+        analyticsLoaded=true;
+        $('analyticsStatus').textContent='Đang xem '+days+' ngày gần nhất · dữ liệu chỉ cập nhật khi mở/làm mới tab.';
+      }catch(error){
+        $('analyticsStatus').textContent='Không tải được báo cáo: '+(error?.message||'Lỗi không xác định');
+      }finally{
+        analyticsLoading=false;
       }
     }
 
@@ -2106,6 +2204,9 @@
 
     $('goodsTabBtn').addEventListener('click',()=>switchAdminView('goods'));
     $('marketTabBtn').addEventListener('click',()=>switchAdminView('market'));
+    $('analyticsTabBtn').addEventListener('click',()=>switchAdminView('analytics'));
+    $('analyticsRefreshBtn').addEventListener('click',()=>loadQuoteAnalytics(true));
+    $('analyticsDays').addEventListener('change',()=>loadQuoteAnalytics(true));
     $('marketOwnSource').addEventListener('change',()=>loadMarketMappings(true));
     $('marketOwnSearch').addEventListener('input',()=>{
       clearTimeout(marketSearchTimer);
