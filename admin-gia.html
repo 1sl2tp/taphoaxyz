@@ -150,7 +150,7 @@
     .market-map-badge{font-size:9px;font-weight:900;color:#15803d;background:#ecfdf3;border-radius:999px;padding:4px 6px;flex:none}
     .market-detail{display:flex;flex-direction:column;min-width:0}
     .market-current{padding:12px;border-bottom:1px solid var(--grid);background:#fff}
-    .market-current-title{font-size:14px;font-weight:900}.market-current-sub{font-size:11px;color:var(--muted);margin-top:3px}
+    .market-current-title{font-size:14px;font-weight:900}.market-current-sub{font-size:11px;color:var(--muted);margin-top:3px}.market-name-row{display:flex;gap:6px;align-items:center}.market-name-input{min-width:0;flex:1;height:34px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:0 9px;font-size:14px;font-weight:900;color:#0f172a;outline:0}.market-name-input:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(37,99,235,.10)}.market-name-save{height:34px;border:1px solid #86efac;background:#f0fdf4;color:#15803d;border-radius:8px;padding:0 10px;font-size:11px;font-weight:900}
     .market-current-map{margin-top:9px;padding:9px;border:1px solid #dbeafe;border-radius:9px;background:#f8fbff;font-size:12px}
     .market-current-map a{color:#2563eb;text-decoration:none;font-weight:800}
     .market-source-status{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.market-source-pill{font-size:10px;font-weight:900;border-radius:999px;padding:4px 7px;background:#f1f5f9;color:#64748b}.market-source-pill.on{background:#ecfdf3;color:#15803d}
@@ -743,7 +743,10 @@
       '<div class="market-current-map"><strong>Chưa gán sản phẩm siêu thị.</strong> Có thể gán nhiều sản phẩm, kể cả nhiều sản phẩm cùng một siêu thị.</div>';
 
       const ownInfo=ownProductInfoParts(item);
-      $('marketCurrent').innerHTML='<div class="market-current-title">'+esc(item.product_name)+'</div>'+
+      $('marketCurrent').innerHTML='<div class="market-name-row">'+
+        '<input id="marketNameInput" class="market-name-input" type="text" maxlength="120" autocomplete="off" value="'+esc(item.product_name)+'" aria-label="Tên sản phẩm">'+
+        '<button class="market-name-save" type="button" data-market-rename="1">Lưu tên</button>'+
+        '</div>'+
         '<div class="market-current-sub">'+esc(ownInfo.join(' · '))+'</div>'+
         marketPriceRefsHtml(item)+marketSourceStatusHtml(item)+cards;
     }
@@ -838,6 +841,39 @@
         console.error('market search',error);
         $('marketCandidateCount').textContent='';
         if(reset)$('marketCandidateList').innerHTML='<div class="empty">Không tìm được dữ liệu siêu thị.</div>';
+      }
+    }
+
+    async function renameMarketProduct(){
+      const item=selectedMarketItem();
+      const input=$('marketNameInput');
+      if(!item||!input)return;
+      const name=String(input.value||'').replace(/\s+/g,' ').trim();
+      if(!name){
+        input.focus();
+        $('marketUpdateStatus').textContent='Tên sản phẩm không được để trống.';
+        return;
+      }
+      if(name===item.product_name)return;
+      const button=$('marketCurrent').querySelector('[data-market-rename]');
+      if(button){button.disabled=true;button.textContent='Đang lưu…';}
+      try{
+        const oldName=item.product_name;
+        await rpc('taphoa_admin_rename_product',{p_product_code:item.product_code,p_name:name});
+        await loadMarketMappings(false);
+        const refreshed=selectedMarketItem();
+        if(refreshed){
+          $('marketCandidateSearch').value=refreshed.product_name||name;
+          await loadMarketCandidates(true);
+        }
+        $('marketUpdateStatus').textContent='Đã đổi tên '+oldName+' → '+name+'.';
+      }catch(error){
+        console.error('rename market product',error);
+        $('marketUpdateStatus').textContent=(error&&error.message)||'Không đổi được tên sản phẩm.';
+        input.focus();
+      }finally{
+        const next=$('marketCurrent').querySelector('[data-market-rename]');
+        if(next){next.disabled=false;next.textContent='Lưu tên';}
       }
     }
 
@@ -1511,12 +1547,20 @@
       if(b)selectMarketProduct(b.dataset.marketProduct);
     });
     $('marketCurrent').addEventListener('click',e=>{
+      const rename=e.target.closest('[data-market-rename]');
+      if(rename){renameMarketProduct();return;}
       const remove=e.target.closest('[data-market-remove]');
       if(remove){clearMarketCandidate(remove.dataset.marketRemove);return;}
       const image=e.target.closest('[data-market-image]');
       if(image){setMarketImage(image.dataset.marketImage);return;}
       const copy=e.target.closest('[data-market-copy]');
       if(copy){copyMarketPack(copy.dataset.marketCopy);}
+    });
+    $('marketCurrent').addEventListener('keydown',e=>{
+      if(e.target&&e.target.id==='marketNameInput'&&e.key==='Enter'){
+        e.preventDefault();
+        renameMarketProduct();
+      }
     });
     $('marketCandidateList').addEventListener('click',e=>{
       const more=e.target.closest('[data-market-more]');
