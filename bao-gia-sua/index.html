@@ -106,7 +106,16 @@ const viDateTime=value=>{
   return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 };
 const NAME_REPLACEMENTS=[
-  [/\bluong kho\b/gi,'Lương Khô'],
+  [/\bbot canh\b/gi,'bột canh'],
+  [/\bbot mi\b/gi,'bột mì'],
+  [/\bluong kho\b/gi,'lương khô'],
+  [/\bgia vi\b/gi,'gia vị'],
+  [/\bhuong duong\b/gi,'hướng dương'],
+  [/\bmi chinh\b/gi,'mì chính'],
+  [/\bmuoi hao\b/gi,'muối hảo'],
+  [/\bngu coc\b/gi,'ngũ cốc'],
+  [/\btuong ca\b/gi,'tương cà'],
+  [/\btuong ot\b/gi,'tương ớt'],
   [/\bdau an\b/gi,'dầu ăn'],
   [/\bdau hao\b/gi,'dầu hào'],
   [/\bbanh\b/gi,'bánh'],
@@ -114,12 +123,23 @@ const NAME_REPLACEMENTS=[
   [/\bsua\b/gi,'sữa'],
   [/\bduong\b/gi,'đường'],
   [/\bphong\b/gi,'phộng'],
-  [/\bnuoc\b/gi,'nước']
+  [/\bnuoc\b/gi,'nước'],
+  [/\bchao\b/gi,'cháo'],
+  [/\bmam\b/gi,'mắm'],
+  [/\bnem\b/gi,'nêm'],
+  [/\bxx\b/gi,'xúc xích']
 ];
 
-function displayName(value){
+function displayName(value,source=''){
   let text=String(value||'').replace(/\s+/g,' ').trim();
   for(const [pattern,replacement] of NAME_REPLACEMENTS)text=text.replace(pattern,replacement);
+
+  // "dau" phụ thuộc nhóm: ở Sữa là "dâu", các nhóm còn lại là "dầu".
+  text=text.replace(/\bdau\b/gi,source==='sua'?'dâu':'dầu');
+
+  // Sau khi xử lý "bột mì" và "mì chính", "mi" còn lại là mì ăn liền/mì tôm.
+  text=text.replace(/\bmi\b/gi,'mì');
+
   if(!text)return '';
   return text.charAt(0).toLocaleUpperCase('vi')+text.slice(1);
 }
@@ -132,12 +152,12 @@ function render(){
   const q=search.value.trim().toLocaleLowerCase('vi');
   const sourceRows=products
     .filter(p=>p.source===activeSource)
-    .sort((a,b)=>displayName(a.name).localeCompare(displayName(b.name),'vi',{sensitivity:'base',numeric:true}));
+    .sort((a,b)=>displayName(a.name,a.source).localeCompare(displayName(b.name,b.source),'vi',{sensitivity:'base',numeric:true}));
   const changedCount=sourceRows.filter(isChanged).length;
   const visible=sourceRows.filter(p=>{
     if(onlyChanged&&!isChanged(p))return false;
     if(!q)return true;
-    return (String(p.code||'')+' '+String(p.name||'')).toLocaleLowerCase('vi').includes(q);
+    return (String(p.code||'')+' '+String(p.name||'')+' '+displayName(p.name,p.source)).toLocaleLowerCase('vi').includes(q);
   });
 
   title.textContent='Báo giá '+SOURCE_LABELS[activeSource];
@@ -155,7 +175,7 @@ function render(){
       ? '<span class="old">'+fmt(p.old_price)+'</span>'+(isDown?'Giảm ':'Tăng ')+fmt(Math.abs(diff))+'<span class="changed-date">'+esc(viDate(p.changed_at))+'</span>'
       : '—';
     return '<tr class="'+(changed?'changed':'')+'">'+
-      '<td><div class="name">'+esc(displayName(p.name))+badge+'</div><div class="code">'+esc(p.code)+'</div></td>'+
+      '<td><div class="name">'+esc(displayName(p.name,p.source))+badge+'</div><div class="code">'+esc(p.code)+'</div></td>'+
       '<td class="price">'+fmt(p.price)+'</td>'+
       '<td class="change-note">'+note+'</td>'+
     '</tr>';
