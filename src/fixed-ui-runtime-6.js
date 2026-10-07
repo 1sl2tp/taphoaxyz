@@ -116,6 +116,10 @@
                 return;
             }
             customerSelectionContext = context || 'sale';
+            closeNewCustomerForm({ focusSearch: false });
+            const newButton = document.getElementById('newCustomerButton');
+            if (newButton) newButton.classList.toggle('hidden', !(currentAuthRole === 'admin' && customerSelectionContext === 'sale'));
+
             const search = document.getElementById('customerSearchInput');
             if (search) search.value = '';
             renderCustomerList();
@@ -141,8 +145,112 @@
         }
 
         function closeCustomerModal() {
+            closeNewCustomerForm({ focusSearch: false });
             document.getElementById('customerModal').classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('customerBox').classList.add('scale-95');
+        }
+
+        function setNewCustomerError(message = '') {
+            const error = document.getElementById('newCustomerError');
+            if (!error) return;
+            error.textContent = String(message || '');
+            error.classList.toggle('hidden', !message);
+        }
+
+        function openNewCustomerForm() {
+            if (currentAuthRole !== 'admin' || customerSelectionContext !== 'sale') return;
+            const form = document.getElementById('newCustomerForm');
+            const input = document.getElementById('newCustomerName');
+            const search = document.getElementById('customerSearchInput');
+            if (!form || !input) return;
+            setNewCustomerError('');
+            form.classList.remove('hidden');
+            input.value = String(search?.value || '').trim();
+            requestAnimationFrame(() => {
+                try {
+                    input.focus({ preventScroll: true });
+                    input.select();
+                } catch (_) {
+                    input.focus();
+                }
+            });
+        }
+
+        function closeNewCustomerForm({ focusSearch = true } = {}) {
+            const form = document.getElementById('newCustomerForm');
+            const input = document.getElementById('newCustomerName');
+            const saveButton = document.getElementById('newCustomerSaveButton');
+            if (form) form.classList.add('hidden');
+            if (input) input.value = '';
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Tạo khách';
+            }
+            setNewCustomerError('');
+            if (focusSearch) {
+                const search = document.getElementById('customerSearchInput');
+                if (search) requestAnimationFrame(() => search.focus({ preventScroll: true }));
+            }
+        }
+
+        async function submitNewCustomer(event) {
+            event?.preventDefault();
+            if (currentAuthRole !== 'admin' || customerSelectionContext !== 'sale') return;
+
+            const input = document.getElementById('newCustomerName');
+            const saveButton = document.getElementById('newCustomerSaveButton');
+            const name = String(input?.value || '').replace(/\s+/g, ' ').trim();
+            if (!name) {
+                setNewCustomerError('Vui lòng nhập tên khách hàng.');
+                input?.focus();
+                return;
+            }
+            if (name.length > 50) {
+                setNewCustomerError('Tên khách hàng tối đa 50 ký tự.');
+                input?.focus();
+                return;
+            }
+
+            const bridge = window.TAPHOA_PRODUCTION;
+            if (!bridge?.createCustomer || !bridge?.readSheet) {
+                setNewCustomerError('Chức năng thêm khách chưa sẵn sàng. Vui lòng tải lại trang.');
+                return;
+            }
+
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.textContent = 'Đang tạo...';
+            }
+            setNewCustomerError('');
+
+            try {
+                const result = await bridge.createCustomer(name);
+                const rows = await bridge.readSheet('khachhang');
+                if (Array.isArray(rows)) appData.khachhang = rows;
+                renderCustomerList();
+
+                if (result?.ok === false && result?.error === 'customer_exists' && result?.existing?.id) {
+                    const existing = result.existing;
+                    closeNewCustomerForm({ focusSearch: false });
+                    selectCustomer(String(existing.id), String(existing.name || name));
+                    showToast('Khách này đã có, mình đã chọn khách cũ.', 'success');
+                    return;
+                }
+
+                const customer = result?.customer;
+                if (!result?.ok || !customer?.id) throw new Error('customer_create_failed');
+
+                closeNewCustomerForm({ focusSearch: false });
+                selectCustomer(String(customer.id), String(customer.name || name));
+                showToast('Đã thêm khách mới vào nhóm KH.', 'success');
+            } catch (error) {
+                console.error(error);
+                setNewCustomerError('Không tạo được khách hàng. Vui lòng thử lại.');
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.textContent = 'Tạo khách';
+                }
+            }
         }
 
         function getAllCustomerRows() {
