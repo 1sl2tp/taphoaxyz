@@ -119,6 +119,11 @@ function ownPackInfo(p){
   const units=Number(p.units_per_carton);
   const unit=String(p.retail_unit||'').trim();
   if(Number.isFinite(units)&&units>0)parts.push('Quy cách '+fmtQty(units)+(unit?' '+unit:''));
+  const bundleQty=Number(p.retail_bundle_qty);
+  const bundleUnit=String(p.retail_bundle_unit||'').trim();
+  if(Number.isFinite(bundleQty)&&bundleQty>0&&bundleUnit&&unit){
+    parts.push('1 '+bundleUnit+' = '+fmtQty(bundleQty)+' '+unit);
+  }
   const size=Number(p.retail_size_value);
   const sizeUnit=String(p.retail_size_unit||'').trim();
   if(Number.isFinite(size)&&size>0&&sizeUnit)parts.push(measureLabel(sizeUnit)+' '+fmtQty(size)+' '+sizeUnit);
@@ -143,9 +148,11 @@ function marketRefHtml(p){
     const raw=Number(ref.price_vnd);
     if(!Number.isFinite(raw)||raw<=0)return null;
     const carton=Boolean(ref.is_carton);
+    const retail=Number(ref.retail_price_vnd);
     const unit=carton?'thùng':String(ref.retail_unit||'lẻ').trim().toLocaleLowerCase('vi');
+    const price=carton?raw:(Number.isFinite(retail)&&retail>0?retail:raw);
     const group=carton?0:(unit===ownUnit?1:2);
-    return {ref,price:raw,unit,group};
+    return {ref,price,unit,group};
   }).filter(Boolean).sort((a,b)=>a.group-b.group||a.price-b.price||String(a.ref.source||'').localeCompare(String(b.ref.source||''),'vi'));
   return ranked.map(x=>{
     const source=String(x.ref.source||'ST').trim();
