@@ -10,12 +10,22 @@
     }
   }
 
+  function isZaloInAppBrowser(){
+    return /Zalo/i.test(String(navigator.userAgent||''));
+  }
+
+  function syncOrderDetailBrowserContext(){
+    const bottomSheet=document.getElementById('orderDetailBottomSheet');
+    if(bottomSheet) bottomSheet.classList.toggle('is-zalo-inapp',isZaloInAppBrowser());
+  }
+
   const originalClickOrder=typeof window.clickOrder==='function' ? window.clickOrder : null;
   const originalShowOrderDetailMobile=typeof window.showOrderDetailMobile==='function' ? window.showOrderDetailMobile : null;
   const originalEditOrder=typeof window.editOrder==='function' ? window.editOrder : null;
 
   window.showOrderDetailMobile=function(orderId,sheetName){
     const result=originalShowOrderDetailMobile?.apply(this,arguments);
+    syncOrderDetailBrowserContext();
     const btnEdit=document.getElementById('btnEditPopupOrder');
     if(btnEdit && sheetName==='dongiao'){
       btnEdit.style.display='none';
