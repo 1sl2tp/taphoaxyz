@@ -282,3 +282,20 @@ body[data-force-pc="1"] #btnOpenCartMobile{display:none !important;}
 #cartTotalPriceDisplay,
 #detailModalTotal{font-variant-numeric:tabular-nums;white-space:nowrap;}
 
+/* FIXED STYLE: bounded-inner-scroll-owners
+   The viewport stays pinned; each long list must own its own bounded vertical scroll. */
+#tab-ban-hang > main,
+#cartItemList,
+#detailModalItems,
+#cDebtModalHistoryList{
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+#cartBottomSheet,
+#orderDetailBottomSheet,
+#customerDebtBottomSheet{
+  min-height:0 !important;
+  overflow:hidden !important;
+}
