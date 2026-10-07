@@ -145,7 +145,8 @@
     .market-list-item.active{border-color:#60a5fa;background:#eff6ff}
     .market-thumb{width:46px;height:46px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;object-fit:contain;flex:none}
     .market-item-copy{min-width:0;flex:1}.market-item-name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .market-item-meta{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .market-item-meta{font-size:10px;color:var(--muted);margin-top:3px;white-space:normal;line-height:1.35}
+    .market-own-prices{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}.market-own-price{font-size:9px;font-weight:850;padding:3px 5px;border-radius:6px;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}.market-own-price.carton{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}.market-own-price.retail{background:#f8fafc;color:#475569}
     .market-map-badge{font-size:9px;font-weight:900;color:#15803d;background:#ecfdf3;border-radius:999px;padding:4px 6px;flex:none}
     .market-detail{display:flex;flex-direction:column;min-width:0}
     .market-current{padding:12px;border-bottom:1px solid var(--grid);background:#fff}
@@ -630,6 +631,26 @@
       return parts.join(' · ');
     }
 
+    function marketPriceBasis(link){
+      const packKind=String(link&&link.pack_kind||'').trim().toLowerCase();
+      const packUnit=String(link&&link.pack_unit||'').trim().toLowerCase();
+      const label1=String(link&&link.label1||'').trim().toLowerCase();
+      const isCarton=packKind==='carton'||packUnit==='thùng'||packUnit==='carton'||label1==='thùng'||label1==='carton';
+      if(isCarton)return {kind:'carton',unit:'thùng'};
+      const leafUnit=String(link&&link.label3||'').trim()||String(link&&link.pack_unit||'').trim()||String(link&&link.label2||'').trim()||'lẻ';
+      return {kind:'retail',unit:leafUnit.toLowerCase()};
+    }
+
+    function marketPriceRefsHtml(item){
+      const links=itemMarketLinks(item);
+      if(!links.length)return '';
+      return '<div class="market-own-prices">'+links.map(function(link){
+        const basis=marketPriceBasis(link);
+        const source=MARKET_SOURCE_SHORT[link.source]||link.source||'ST';
+        return '<span class="market-own-price '+basis.kind+'" title="'+esc(link.name||'')+'">'+esc(source)+' '+esc(marketMoney(link.price))+'/'+esc(basis.unit)+'</span>';
+      }).join('')+'</div>';
+    }
+
     function marketSourceStatusHtml(item){
       const links=itemMarketLinks(item);
       return '<div class="market-source-status">'+MARKET_SOURCE_ORDER.map(function(source){
@@ -653,15 +674,19 @@
       $('marketProductList').innerHTML=marketItems.length?marketItems.map(function(item){
         const links=itemMarketLinks(item);
         const img=item.image_url?'<img class="market-thumb" src="'+esc(item.image_url)+'" alt="">':'<span class="market-thumb"></span>';
-        const sources=links.map(function(x){return MARKET_SOURCE_SHORT[x.source]||x.source;}).join(' · ');
         const pack=ownPackText(item);
-        const meta=[item.source_name||item.source_key,'giá '+pretty(item.sale_price),pack,sources].filter(Boolean).join(' · ');
+        const unit=String(item.retail_unit||'').trim();
+        const retail=Number(item.retail_price);
+        const priceParts=['Giá '+pretty(item.sale_price)];
+        if(Number.isFinite(retail)&&retail>0)priceParts.push('Lẻ '+pretty(retail)+(unit?'/'+unit:''));
+        if(pack)priceParts.push(pack);
         const badge=links.length?'<span class="market-map-badge">'+links.length+' GÁN</span>':'';
         return '<button type="button" class="market-list-item '+(item.product_code===marketSelectedCode?'active':'')+'" data-market-product="'+esc(item.product_code)+'">'+
           img+
           '<span class="market-item-copy">'+
             '<span class="market-item-name">'+esc(item.product_name)+'</span>'+
-            '<span class="market-item-meta">'+esc(meta)+'</span>'+
+            '<span class="market-item-meta">'+esc(priceParts.join(' · '))+'</span>'+
+            marketPriceRefsHtml(item)+
           '</span>'+badge+
         '</button>';
       }).join(''):'<div class="empty">Không có sản phẩm phù hợp.</div>';
@@ -699,10 +724,14 @@
       '<div class="market-current-map"><strong>Chưa gán sản phẩm siêu thị.</strong> Có thể gán nhiều sản phẩm, kể cả nhiều sản phẩm cùng một siêu thị.</div>';
 
       const ownPack=ownPackText(item);
+      const ownUnit=String(item.retail_unit||'').trim();
+      const ownRetail=Number(item.retail_price);
+      const ownInfo=['Giá '+pretty(item.sale_price)];
+      if(Number.isFinite(ownRetail)&&ownRetail>0)ownInfo.push('Lẻ '+pretty(ownRetail)+(ownUnit?'/'+ownUnit:''));
+      if(ownPack)ownInfo.push(ownPack);
       $('marketCurrent').innerHTML='<div class="market-current-title">'+esc(item.product_name)+'</div>'+
-        '<div class="market-current-sub">'+esc(item.source_name||item.source_key)+' · giá bán '+esc(pretty(item.sale_price))+
-        (ownPack?' · '+esc(ownPack):'')+'</div>'+
-        marketSourceStatusHtml(item)+cards;
+        '<div class="market-current-sub">'+esc(ownInfo.join(' · '))+'</div>'+
+        marketPriceRefsHtml(item)+marketSourceStatusHtml(item)+cards;
     }
 
     async function loadMarketMappings(reset=false){
