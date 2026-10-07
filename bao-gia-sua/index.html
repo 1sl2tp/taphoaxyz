@@ -105,6 +105,26 @@ const viDateTime=value=>{
   const d=new Date(value);
   return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 };
+const SUA_REPLACEMENTS=[
+  [/\b9 hat\b/gi,'9 hạt'],
+  [/\bcao dam\b/gi,'cao đạm'],
+  [/\bviet quat\b/gi,'việt quất'],
+  [/\btho do\b/gi,'thọ đỏ'],
+  [/\bgiay\b/gi,'giấy'],
+  [/\bsat\b/gi,'sắt'],
+  [/\bvi\b/gi,'vỉ'],
+  [/\bdat\b/gi,'đắt'],
+  [/\bre\b/gi,'rẻ'],
+  [/\bbich\b/gi,'bịch'],
+  [/\bbo\b/gi,'bò'],
+  [/\bbe\b/gi,'bé'],
+  [/\bco\b/gi,'có đường'],
+  [/\bit\b/gi,'ít đường'],
+  [/\bkhong\b/gi,'không đường'],
+  [/\bso\b/gi,'sô'],
+  [/\btim\b/gi,'tím']
+];
+
 const HANG_U_REPLACEMENTS=[
   [/\bbot giat\b/gi,'bột giặt'],
   [/\bdau goi\b/gi,'dầu gội'],
@@ -155,6 +175,10 @@ const NAME_REPLACEMENTS=[
 
 function displayName(value,source=''){
   let text=String(value||'').replace(/\s+/g,' ').trim();
+
+  if(source==='sua'){
+    for(const [pattern,replacement] of SUA_REPLACEMENTS)text=text.replace(pattern,replacement);
+  }
 
   // Hàng U có bộ từ riêng; chỉ áp dụng trong đúng nhóm để không sửa nhầm nhóm khác.
   if(source==='hang-u'){
