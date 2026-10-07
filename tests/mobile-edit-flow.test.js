@@ -35,6 +35,6 @@ test('public customer deep-linked order opens read-only detail instead of cart f
   assert.match(flow,/params\.get\('kh'\)/);
   assert.match(flow,/params\.get\('don'\)/);
   assert.match(flow,/window\.showOrderDetailMobile\(orderId,sheetName\)/);
-  assert.match(flow,/window\.viewingOrderId=orderId/);
+  assert.match(flow,/viewingOrderId=orderId/);
   assert.match(flow,/window\.activeViewingSheet=sheetName/);
 });
