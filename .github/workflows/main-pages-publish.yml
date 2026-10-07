@@ -18,6 +18,7 @@ on:
       - 'kiemhang/**'
       - 'kh/**'
       - 'bao-gia-sua/**'
+      - 'bao-gia/**'
       - 'scripts/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
