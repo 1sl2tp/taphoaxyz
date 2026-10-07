@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f5f6f8">
+<title>Ghi chú · Tạp hóa</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#17202a;background:#f5f6f8;--line:#e3e7ed;--muted:#667085;--panel:#fff;--accent:#17202a}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#f5f6f8}button,input{font:inherit}.hidden{display:none!important}
+.login{max-width:430px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 10px 34px rgba(16,24,40,.08)}
+.login h1{margin:4px 0 8px;font-size:27px}.eyebrow{font-size:12px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}.field{display:grid;gap:6px;margin-top:12px}.field label{font-size:12px;font-weight:800;color:#475467}
+.field input,.search,.title-input{width:100%;border:1px solid #d0d5dd;background:#fff;border-radius:10px;outline:none}.field input{height:44px;padding:0 11px}.field input:focus,.search:focus,.title-input:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
+.btn{height:40px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:#344054;padding:0 12px;font-weight:800;cursor:pointer}.btn:hover{background:#f9fafb}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.danger{color:#b42318}.btn:disabled{opacity:.45;cursor:not-allowed}
+.msg{min-height:18px;margin-top:10px;font-size:12px;color:var(--muted)}.msg.error{color:#b42318}.msg.ok{color:#027a48}
+.app{height:100vh;display:grid;grid-template-columns:290px minmax(0,1fr);overflow:hidden}
+.sidebar{background:#fff;border-right:1px solid var(--line);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;min-width:0}
+.side-head{padding:14px;border-bottom:1px solid var(--line)}.side-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.side-title strong{font-size:18px}.side-tools{display:flex;gap:7px}
+.search-wrap{padding:10px;border-bottom:1px solid var(--line)}.search{height:40px;padding:0 11px}
+.note-list{overflow:auto;padding:6px}.note-item{width:100%;border:0;background:transparent;text-align:left;padding:10px;border-radius:10px;cursor:pointer}.note-item:hover{background:#f7f8fa}.note-item.active{background:#eef1f5}.note-item-title{font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.note-item-date{font-size:10px;color:#98a2b3;margin-top:4px}
+.side-foot{padding:10px;border-top:1px solid var(--line);display:flex;gap:7px}.side-foot .btn{flex:1}
+.editor-shell{min-width:0;background:#fff;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto}
+.topbar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fff}.menu-btn{display:none}.title-input{border:0;border-radius:7px;font-size:20px;font-weight:850;height:42px;padding:0 8px;min-width:0;flex:1}.title-input:focus{box-shadow:inset 0 0 0 1px #d0d5dd}.top-actions{display:flex;gap:7px;align-items:center}.id-chip{font-size:10px;color:#667085;background:#f2f4f7;border-radius:999px;padding:6px 8px;white-space:nowrap}
+.toolbar{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid var(--line);overflow:auto;white-space:nowrap}.tool{height:34px;min-width:34px;border:1px solid #d0d5dd;background:#fff;border-radius:8px;font-weight:800;cursor:pointer}.tool:hover{background:#f9fafb}.toolbar .sep{width:1px;height:24px;background:#e4e7ec;margin:0 2px}
+.editor-wrap{overflow:auto;background:#fff}.editor{max-width:900px;min-height:calc(100vh - 160px);margin:0 auto;padding:30px 44px 80px;outline:0;font-size:16px;line-height:1.65;white-space:normal;word-break:break-word}
+.editor:empty:before{content:"Bắt đầu ghi chú…\A Dán văn bản hoặc ảnh trực tiếp vào đây.";white-space:pre;color:#b0b7c3;pointer-events:none}.editor p{margin:.55em 0}.editor ul,.editor ol{padding-left:1.5em}
+.note-image{position:relative;margin:16px 0;display:block;max-width:100%;border-radius:12px;overflow:hidden;background:#f2f4f7;border:1px solid #e4e7ec}.note-image img{display:block;max-width:100%;height:auto;margin:auto}.image-actions{position:absolute;right:8px;top:8px;display:flex;gap:6px;opacity:0;transition:opacity .15s}.note-image:hover .image-actions,.note-image:focus-within .image-actions{opacity:1}.image-actions button{height:32px;border:1px solid rgba(255,255,255,.7);border-radius:8px;background:rgba(17,24,39,.84);color:white;padding:0 9px;font-size:12px;font-weight:800;cursor:pointer}
+.statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-top:1px solid var(--line);font-size:11px;color:#667085;background:#fbfcfd}.save-status.ok{color:#027a48}.save-status.error{color:#b42318}
+.drop-mask{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(17,24,39,.42);z-index:90;color:#fff;font-size:22px;font-weight:850}.drop-mask.show{display:flex}
+dialog{border:0;border-radius:14px;padding:0;width:min(1000px,calc(100vw - 20px));max-height:94vh;box-shadow:0 28px 80px rgba(15,23,42,.35)}dialog::backdrop{background:rgba(15,23,42,.46)}
+.image-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}.image-dialog-head strong{font-size:16px}
+.image-toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}.image-toolbar label{font-size:12px;color:#667085;display:flex;gap:5px;align-items:center}.image-toolbar input[type=color]{width:34px;height:30px;padding:2px;border:1px solid #d0d5dd;border-radius:7px;background:#fff}.image-toolbar input[type=range]{width:100px}
+.canvas-wrap{padding:10px;background:#111827;overflow:auto;max-height:68vh;text-align:center}.canvas-stack{position:relative;display:inline-block;line-height:0}.canvas-stack canvas{display:block;max-width:calc(100vw - 50px);height:auto}.overlay-canvas{position:absolute;inset:0;width:100%;height:100%}
+.image-dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr}.sidebar{position:fixed;inset:0 auto 0 0;width:min(86vw,320px);z-index:70;transform:translateX(-102%);transition:transform .18s;box-shadow:14px 0 34px rgba(16,24,40,.18)}.app.sidebar-open .sidebar{transform:translateX(0)}.menu-btn{display:inline-flex;align-items:center;justify-content:center}.topbar{padding:8px}.title-input{font-size:18px}.id-chip{display:none}.top-actions .delete-label,.top-actions .copy-label{display:none}.editor{padding:22px 16px 70px;font-size:16px}.toolbar{padding:6px 8px}.statusbar{padding:7px 9px}.image-actions{opacity:1}
+}
+</style>
+</head>
+<body>
+<section id="loginView" class="login hidden">
+  <div class="eyebrow">Tạp hóa · Ghi chú</div>
+  <h1>Ghi chú cá nhân</h1>
+  <p class="muted">Đăng nhập tài khoản Admin Tạp hóa để mở ghi chú.</p>
+  <form id="loginForm">
+    <div class="field"><label>Tài khoản</label><input id="username" autocomplete="username" required></div>
+    <div class="field"><label>Mật khẩu</label><input id="password" type="password" autocomplete="current-password" required></div>
+    <button id="loginBtn" class="btn primary" type="submit" style="width:100%;margin-top:14px">Đăng nhập</button>
+    <div id="loginMsg" class="msg"></div>
+  </form>
+</section>
+
+<main id="appView" class="app hidden">
+  <aside class="sidebar">
+    <div class="side-head">
+      <div class="eyebrow">Tạp hóa</div>
+      <div class="side-title">
+        <strong>Ghi chú</strong>
+        <div class="side-tools"><button id="newBtn" class="btn primary" type="button">+ Mới</button></div>
+      </div>
+    </div>
+    <div class="search-wrap"><input id="search" class="search" type="search" placeholder="Tìm ghi chú…" autocomplete="off"></div>
+    <div id="noteList" class="note-list"></div>
+    <div class="side-foot"><button id="refreshBtn" class="btn" type="button">Làm mới</button><button id="logoutBtn" class="btn" type="button">Thoát</button></div>
+  </aside>
+
+  <section class="editor-shell">
+    <div class="topbar">
+      <button id="menuBtn" class="btn menu-btn" type="button">☰</button>
+      <input id="titleInput" class="title-input" value="" placeholder="Tiêu đề ghi chú" autocomplete="off">
+      <span id="idChip" class="id-chip">ID: —</span>
+      <div class="top-actions">
+        <button id="copyLinkBtn" class="btn" type="button" disabled>🔗 <span class="copy-label">Sao chép link</span></button>
+        <button id="deleteBtn" class="btn danger" type="button" disabled>🗑 <span class="delete-label">Xóa</span></button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="tool" type="button" data-cmd="bold" title="Đậm"><strong>B</strong></button>
+      <button class="tool" type="button" data-cmd="italic" title="Nghiêng"><em>I</em></button>
+      <button class="tool" type="button" data-cmd="underline" title="Gạch chân"><u>U</u></button>
+      <span class="sep"></span>
+      <button class="tool" type="button" data-cmd="insertUnorderedList" title="Danh sách">•≡</button>
+      <button class="tool" type="button" data-cmd="insertOrderedList" title="Danh sách số">1.</button>
+      <span class="sep"></span>
+      <button id="imageBtn" class="tool" type="button" title="Chèn ảnh">🖼</button>
+      <input id="imageInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+    </div>
+    <div class="editor-wrap">
+      <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
+    </div>
+    <div class="statusbar">
+      <span id="saveStatus" class="save-status">Chưa có ghi chú</span>
+      <span id="noteMeta"></span>
+    </div>
+  </section>
+</main>
+
+<div id="dropMask" class="drop-mask">Thả ảnh vào ghi chú</div>
+
+<dialog id="imageDialog">
+  <div class="image-dialog-head"><strong>Chỉnh sửa ảnh</strong><button id="closeImageDialog" class="btn" type="button">×</button></div>
+  <div class="image-toolbar">
+    <button id="drawModeBtn" class="btn primary" type="button">Vẽ</button>
+    <button id="cropModeBtn" class="btn" type="button">Cắt</button>
+    <button id="applyCropBtn" class="btn hidden" type="button">Cắt vùng đã chọn</button>
+    <button id="rotateBtn" class="btn" type="button">Xoay 90°</button>
+    <button id="resetImageBtn" class="btn" type="button">Khôi phục</button>
+    <label>Màu <input id="drawColor" type="color" value="#ff2d2d"></label>
+    <label>Nét <input id="drawWidth" type="range" min="1" max="30" value="5"></label>
+  </div>
+  <div class="canvas-wrap">
+    <div class="canvas-stack">
+      <canvas id="imageCanvas"></canvas>
+      <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
+    </div>
+  </div>
+  <div class="image-dialog-foot"><button id="cancelImageBtn" class="btn" type="button">Hủy</button><button id="saveImageBtn" class="btn primary" type="button">Lưu ảnh</button></div>
+</dialog>
+
+<script type="module">
+import {createAuthService} from '/src/core/auth.js';
+
+const auth=createAuthService();
+const BUCKET='taphoa-notes';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate=value=>{
+  if(!value)return '';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+};
+
+let client=null,identity=null,authUid='';
+let notes=[],current=null,dirty=false,saveTimer=0,listTimer=0,saving=false;
+let currentImagePath='',originalImageBlob=null,imageMode='draw',drawing=false,lastPoint=null,cropStart=null,cropRect=null;
+
+function showLogin(message=''){
+  $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');
+  $('loginMsg').textContent=message;$('loginMsg').className='msg'+(message?' error':'');
+}
+function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden'); }
+async function rpc(name,args={}){
+  if(!client)client=await auth.getClient();
+  const {data,error}=await client.rpc(name,args);
+  if(error)throw error;
+  return data;
+}
+function setStatus(text,kind=''){
+  $('saveStatus').textContent=text;
+  $('saveStatus').className='save-status'+(kind?' '+kind:'');
+}
+function setCurrentControls(enabled){
+  $('titleInput').disabled=!enabled;$('editor').contentEditable=enabled?'true':'false';
+  $('copyLinkBtn').disabled=!enabled;$('deleteBtn').disabled=!enabled;$('imageBtn').disabled=!enabled;
+}
+function noteUrl(id){return location.origin+'/ghi-chu/?id='+encodeURIComponent(id)}
+function syncUrl(id){
+  const url=id?('/ghi-chu/?id='+encodeURIComponent(id)):'/ghi-chu/';
+  history.replaceState(null,'',url);
+}
+function serializeEditor(){
+  const clone=$('editor').cloneNode(true);
+  clone.querySelectorAll('.image-actions').forEach(x=>x.remove());
+  clone.querySelectorAll('img[data-path]').forEach(img=>img.removeAttribute('src'));
+  clone.querySelectorAll('[contenteditable]').forEach(x=>{
+    if(x!==clone)x.setAttribute('contenteditable','false');
+  });
+  return clone.innerHTML;
+}
+function referencedPaths(root=$('editor')){
+  return [...root.querySelectorAll('[data-path]')].map(x=>x.dataset.path).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+}
+function scheduleSave(){
+  if(!current)return;
+  dirty=true;setStatus('Đang chờ lưu…');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveNow,900);
+}
+async function saveNow(){
+  if(!current||!dirty||saving)return;
+  saving=true;clearTimeout(saveTimer);setStatus('Đang lưu…');
+  try{
+    const title=$('titleInput').value.trim()||'Ghi chú mới';
+    const content=serializeEditor();
+    const data=await rpc('taphoa_note_save',{p_id:current.id,p_title:title,p_content_html:content});
+    current.title=title;current.updated_at=data.updated_at;dirty=false;
+    setStatus('Đã lưu','ok');$('noteMeta').textContent='Cập nhật '+fmtDate(data.updated_at);
+    await loadList(false);
+  }catch(error){
+    console.error(error);setStatus('Lỗi lưu ghi chú','error');
+  }finally{saving=false;if(dirty)scheduleSave()}
+}
+async function loadList(openFirst=true){
+  const q=$('search').value.trim();
+  const data=await rpc('taphoa_notes_list',{p_query:q,p_limit:100});
+  notes=Array.isArray(data?.items)?data.items:[];
+  renderList();
+  if(openFirst&&!current){
+    const requested=new URLSearchParams(location.search).get('id');
+    if(requested)await openNote(requested).catch(()=>{});
+    if(!current&&notes[0])await openNote(notes[0].id);
+    if(!current&&!notes.length)await createNote();
+  }
+}
+function renderList(){
+  $('noteList').innerHTML=notes.length?notes.map(n=>`
+    <button class="note-item ${current?.id===n.id?'active':''}" type="button" data-id="${esc(n.id)}">
+      <div class="note-item-title">${esc(n.title||'Ghi chú mới')}</div>
+      <div class="note-item-date">${esc(fmtDate(n.updated_at))}</div>
+    </button>`).join(''):'<div class="muted" style="padding:18px 10px">Chưa có ghi chú.</div>';
+  $('noteList').querySelectorAll('.note-item').forEach(btn=>btn.addEventListener('click',()=>openNote(btn.dataset.id)));
+}
+async function resolveImages(){
+  const images=[...$('editor').querySelectorAll('img[data-path]')];
+  if(!images.length)return;
+  const paths=images.map(x=>x.dataset.path);
+  const {data,error}=await client.storage.from(BUCKET).createSignedUrls(paths,3600);
+  if(error){console.error(error);return}
+  const map=new Map((data||[]).map(x=>[x.path,x.signedUrl]));
+  images.forEach(img=>{const url=map.get(img.dataset.path);if(url)img.src=url});
+}
+function decorateImages(){
+  $('editor').querySelectorAll('figure.note-image[data-path]').forEach(fig=>{
+    fig.setAttribute('contenteditable','false');
+    if(fig.querySelector('.image-actions'))return;
+    const actions=document.createElement('div');actions.className='image-actions';
+    const edit=document.createElement('button');edit.type='button';edit.textContent='Sửa ảnh';
+    const remove=document.createElement('button');remove.type='button';remove.textContent='Xóa';
+    actions.append(edit,remove);fig.appendChild(actions);
+    edit.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openImageEditor(fig.dataset.path)});
+    remove.addEventListener('click',async e=>{
+      e.preventDefault();e.stopPropagation();
+      const path=fig.dataset.path;
+      fig.remove();scheduleSave();
+      await client.storage.from(BUCKET).remove([path]).catch(()=>{});
+    });
+    fig.addEventListener('dblclick',()=>openImageEditor(fig.dataset.path));
+  });
+}
+async function openNote(id){
+  if(current?.id===id)return;
+  await saveNow();
+  const data=await rpc('taphoa_note_get',{p_id:id});
+  current=data;dirty=false;
+  $('titleInput').value=data.title||'';
+  $('editor').innerHTML=data.content_html||'';
+  $('idChip').textContent='ID: '+data.id;
+  $('noteMeta').textContent='Cập nhật '+fmtDate(data.updated_at);
+  setStatus('Đã lưu','ok');setCurrentControls(true);syncUrl(data.id);
+  await resolveImages();decorateImages();renderList();
+  $('appView').classList.remove('sidebar-open');
+}
+async function createNote(){
+  await saveNow();
+  const data=await rpc('taphoa_note_create',{p_title:'Ghi chú mới'});
+  current=null;
+  await loadList(false);
+  await openNote(data.id);
+  $('titleInput').focus();$('titleInput').select();
+}
+async function deleteCurrent(){
+  if(!current)return;
+  if(!confirm('Xóa ghi chú này?'))return;
+  const paths=referencedPaths();
+  if(paths.length)await client.storage.from(BUCKET).remove(paths).catch(()=>{});
+  await rpc('taphoa_note_delete',{p_id:current.id});
+  current=null;dirty=false;$('titleInput').value='';$('editor').innerHTML='';setCurrentControls(false);syncUrl('');
+  setStatus('Đã xóa','ok');$('noteMeta').textContent='';
+  await loadList(true);
+}
+
+function insertNodeAtCaret(node){
+  const sel=window.getSelection();
+  let range=sel&&sel.rangeCount?sel.getRangeAt(0):null;
+  if(!range||!$('editor').contains(range.commonAncestorContainer)){
+    range=document.createRange();range.selectNodeContents($('editor'));range.collapse(false);
+  }
+  range.deleteContents();range.insertNode(node);range.setStartAfter(node);range.collapse(true);
+  sel.removeAllRanges();sel.addRange(range);
+}
+function insertPlainText(text){
+  const frag=document.createDocumentFragment();
+  const lines=String(text||'').replace(/\r/g,'').split('\n');
+  lines.forEach((line,i)=>{if(i)frag.appendChild(document.createElement('br'));frag.appendChild(document.createTextNode(line))});
+  insertNodeAtCaret(frag);
+}
+async function imageToWebp(file){
+  if(!file?.type?.startsWith('image/'))throw new Error('not_image');
+  const url=URL.createObjectURL(file);
+  try{
+    const img=new Image();
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+    const max=2400,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
+    let blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.9));
+    if(!blob)blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.9));
+    return blob;
+  }finally{URL.revokeObjectURL(url)}
+}
+async function uploadImage(file){
+  if(!current)await createNote();
+  setStatus('Đang tải ảnh…');
+  const blob=await imageToWebp(file);
+  const ext=blob.type==='image/webp'?'webp':'jpg';
+  const path=authUid+'/'+current.id+'/'+crypto.randomUUID()+'.'+ext;
+  const {error}=await client.storage.from(BUCKET).upload(path,blob,{contentType:blob.type,upsert:false,cacheControl:'3600'});
+  if(error)throw error;
+  const fig=document.createElement('figure');fig.className='note-image';fig.dataset.path=path;fig.contentEditable='false';
+  const img=document.createElement('img');img.dataset.path=path;img.alt='Ảnh ghi chú';img.src=URL.createObjectURL(blob);
+  fig.appendChild(img);insertNodeAtCaret(fig);decorateImages();scheduleSave();await saveNow();
+}
+async function handleFiles(files){
+  for(const file of files){
+    try{await uploadImage(file)}
+    catch(error){console.error(error);setStatus('Không tải được ảnh','error')}
+  }
+}
+
+function exec(cmd){$('editor').focus();document.execCommand(cmd,false,null);scheduleSave()}
+
+function canvasPoint(event,canvas){
+  const rect=canvas.getBoundingClientRect();
+  return {x:(event.clientX-rect.left)*canvas.width/rect.width,y:(event.clientY-rect.top)*canvas.height/rect.height};
+}
+function fitOverlay(){
+  const c=$('imageCanvas'),o=$('overlayCanvas');o.width=c.width;o.height=c.height;clearOverlay();
+}
+function clearOverlay(){const o=$('overlayCanvas');o.getContext('2d').clearRect(0,0,o.width,o.height)}
+async function blobToImage(blob){
+  const url=URL.createObjectURL(blob);
+  try{
+    const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});return img;
+  }finally{URL.revokeObjectURL(url)}
+}
+async function loadCanvasFromBlob(blob){
+  const img=await blobToImage(blob);
+  const c=$('imageCanvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);
+  fitOverlay();cropRect=null;
+}
+function setImageMode(mode){
+  imageMode=mode;$('drawModeBtn').classList.toggle('primary',mode==='draw');$('cropModeBtn').classList.toggle('primary',mode==='crop');
+  $('applyCropBtn').classList.toggle('hidden',mode!=='crop');clearOverlay();cropRect=null;
+}
+async function openImageEditor(path){
+  currentImagePath=path;setStatus('Đang mở ảnh…');
+  const {data,error}=await client.storage.from(BUCKET).download(path);
+  if(error){setStatus('Không mở được ảnh','error');return}
+  originalImageBlob=data;await loadCanvasFromBlob(data);setImageMode('draw');$('imageDialog').showModal();setStatus('Đã lưu','ok');
+}
+function drawCropOverlay(){
+  clearOverlay();if(!cropRect)return;
+  const o=$('overlayCanvas'),ctx=o.getContext('2d');
+  ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(0,0,o.width,o.height);
+  ctx.clearRect(cropRect.x,cropRect.y,cropRect.w,cropRect.h);
+  ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(2,o.width/700);ctx.strokeRect(cropRect.x,cropRect.y,cropRect.w,cropRect.h);
+}
+function rotateCanvas(){
+  const c=$('imageCanvas'),tmp=document.createElement('canvas');tmp.width=c.height;tmp.height=c.width;
+  const ctx=tmp.getContext('2d');ctx.translate(tmp.width,0);ctx.rotate(Math.PI/2);ctx.drawImage(c,0,0);
+  c.width=tmp.width;c.height=tmp.height;c.getContext('2d').drawImage(tmp,0,0);fitOverlay();
+}
+function applyCrop(){
+  if(!cropRect||cropRect.w<5||cropRect.h<5)return;
+  const c=$('imageCanvas'),r=cropRect,tmp=document.createElement('canvas');
+  tmp.width=Math.round(r.w);tmp.height=Math.round(r.h);
+  tmp.getContext('2d').drawImage(c,r.x,r.y,r.w,r.h,0,0,tmp.width,tmp.height);
+  c.width=tmp.width;c.height=tmp.height;c.getContext('2d').drawImage(tmp,0,0);fitOverlay();cropRect=null;
+}
+async function saveEditedImage(){
+  const c=$('imageCanvas');
+  const blob=await new Promise(resolve=>c.toBlob(resolve,'image/webp',.92));
+  if(!blob)return;
+  $('saveImageBtn').disabled=true;$('saveImageBtn').textContent='Đang lưu…';
+  const {error}=await client.storage.from(BUCKET).upload(currentImagePath,blob,{contentType:'image/webp',upsert:true,cacheControl:'3600'});
+  if(error){$('saveImageBtn').disabled=false;$('saveImageBtn').textContent='Lưu ảnh';throw error}
+  const img=$('editor').querySelector('img[data-path="'+CSS.escape(currentImagePath)+'"]');
+  if(img)img.src=URL.createObjectURL(blob);
+  $('imageDialog').close();$('saveImageBtn').disabled=false;$('saveImageBtn').textContent='Lưu ảnh';scheduleSave();await saveNow();
+}
+
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();$('loginBtn').disabled=true;$('loginMsg').textContent='Đang đăng nhập…';$('loginMsg').className='msg';
+  try{await enter(await auth.login($('username').value,$('password').value));$('password').value=''}
+  catch(error){$('loginMsg').textContent=error?.message||'Không đăng nhập được.';$('loginMsg').className='msg error'}
+  finally{$('loginBtn').disabled=false}
+});
+async function enter(info){
+  identity=info?.identity||null;
+  if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
+  if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang ghi chú này chỉ dành cho Admin.');}
+  client=info.client||await auth.getClient();
+  const {data}=await client.auth.getUser();authUid=data?.user?.id||'';
+  if(!authUid)return showLogin('Không xác định được phiên đăng nhập.');
+  showApp();setCurrentControls(false);await loadList(true);
+}
+
+$('newBtn').addEventListener('click',createNote);
+$('refreshBtn').addEventListener('click',()=>loadList(false));
+$('logoutBtn').addEventListener('click',async()=>{await saveNow();await auth.logout().catch(()=>{});client=null;identity=null;authUid='';current=null;showLogin()});
+$('menuBtn').addEventListener('click',()=>$('appView').classList.toggle('sidebar-open'));
+$('search').addEventListener('input',()=>{clearTimeout(listTimer);listTimer=setTimeout(()=>loadList(false),250)});
+$('titleInput').addEventListener('input',scheduleSave);
+$('editor').addEventListener('input',scheduleSave);
+$('copyLinkBtn').addEventListener('click',async()=>{if(!current)return;try{await navigator.clipboard.writeText(noteUrl(current.id));setStatus('Đã sao chép link','ok')}catch{setStatus('Không sao chép tự động được','error')}});
+$('deleteBtn').addEventListener('click',deleteCurrent);
+$('imageBtn').addEventListener('click',()=>$('imageInput').click());
+$('imageInput').addEventListener('change',async()=>{await handleFiles([...$('imageInput').files]);$('imageInput').value=''});
+document.querySelectorAll('[data-cmd]').forEach(btn=>btn.addEventListener('click',()=>exec(btn.dataset.cmd)));
+
+$('editor').addEventListener('paste',async e=>{
+  const files=[...(e.clipboardData?.files||[])].filter(f=>f.type.startsWith('image/'));
+  const text=e.clipboardData?.getData('text/plain')||'';
+  if(!files.length&&!text)return;
+  e.preventDefault();
+  if(text){insertPlainText(text);scheduleSave()}
+  if(files.length)await handleFiles(files);
+});
+$('editor').addEventListener('dragover',e=>{e.preventDefault();$('dropMask').classList.add('show')});
+$('dropMask').addEventListener('dragover',e=>e.preventDefault());
+$('dropMask').addEventListener('dragleave',()=>$('dropMask').classList.remove('show'));
+$('dropMask').addEventListener('drop',async e=>{e.preventDefault();$('dropMask').classList.remove('show');const files=[...(e.dataTransfer?.files||[])].filter(f=>f.type.startsWith('image/'));if(files.length)await handleFiles(files)});
+document.addEventListener('dragend',()=>$('dropMask').classList.remove('show'));
+
+$('drawModeBtn').addEventListener('click',()=>setImageMode('draw'));
+$('cropModeBtn').addEventListener('click',()=>setImageMode('crop'));
+$('applyCropBtn').addEventListener('click',applyCrop);
+$('rotateBtn').addEventListener('click',rotateCanvas);
+$('resetImageBtn').addEventListener('click',()=>originalImageBlob&&loadCanvasFromBlob(originalImageBlob));
+$('closeImageDialog').addEventListener('click',()=>$('imageDialog').close());
+$('cancelImageBtn').addEventListener('click',()=>$('imageDialog').close());
+$('saveImageBtn').addEventListener('click',()=>saveEditedImage().catch(error=>{console.error(error);setStatus('Không lưu được ảnh','error')}));
+
+$('overlayCanvas').addEventListener('pointerdown',e=>{
+  const o=$('overlayCanvas'),p=canvasPoint(e,o);o.setPointerCapture(e.pointerId);
+  if(imageMode==='draw'){drawing=true;lastPoint=p}
+  else{cropStart=p;cropRect={x:p.x,y:p.y,w:0,h:0};drawCropOverlay()}
+});
+$('overlayCanvas').addEventListener('pointermove',e=>{
+  const o=$('overlayCanvas'),p=canvasPoint(e,o);
+  if(imageMode==='draw'&&drawing){
+    const c=$('imageCanvas'),ctx=c.getContext('2d');
+    ctx.strokeStyle=$('drawColor').value;ctx.lineWidth=Number($('drawWidth').value)||5;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(lastPoint.x,lastPoint.y);ctx.lineTo(p.x,p.y);ctx.stroke();lastPoint=p;
+  }else if(imageMode==='crop'&&cropStart){
+    cropRect={x:Math.min(cropStart.x,p.x),y:Math.min(cropStart.y,p.y),w:Math.abs(p.x-cropStart.x),h:Math.abs(p.y-cropStart.y)};drawCropOverlay();
+  }
+});
+$('overlayCanvas').addEventListener('pointerup',e=>{drawing=false;lastPoint=null;cropStart=null;try{$('overlayCanvas').releasePointerCapture(e.pointerId)}catch{}});
+$('overlayCanvas').addEventListener('pointercancel',()=>{drawing=false;lastPoint=null;cropStart=null});
+
+window.addEventListener('beforeunload',()=>{if(dirty)saveNow()});
+
+const restored=await auth.restore();
+if(restored)await enter(restored);
+else showLogin();
+</script>
+</body>
+</html>
