@@ -405,13 +405,13 @@ function render(){
   const existing=visible.map(p=>`
     <tr>
       <td><div class="name">${esc(displayName(p.name,source))}</div><div class="code">${esc(p.product_code)}</div></td>
-      <td class="cost-cell"><input class="cost-input" data-code="${esc(p.product_code)}" inputmode="decimal" value="${esc(pretty(p.cost))}" aria-label="Giá vốn ${esc(displayName(p.name,source))}"></td>
+      <td class="cost-cell"><input class="cost-input" data-code="${esc(p.product_code)}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${esc(pretty(p.cost))}" aria-label="Giá vốn ${esc(displayName(p.name,source))}"></td>
     </tr>`).join('');
 
   const blanks=Array.from({length:NEW_ROWS},(_,i)=>`
     <tr class="new-row">
       <td><input class="new-name" placeholder="Tên sản phẩm mới ${i+1}" autocomplete="off"><span class="new-tag">Mới</span></td>
-      <td class="cost-cell"><input class="new-cost" inputmode="decimal" placeholder="Giá vốn"></td>
+      <td class="cost-cell"><input class="new-cost" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Giá vốn"></td>
     </tr>`).join('');
 
   $('rows').innerHTML=existing+blanks;
@@ -419,6 +419,9 @@ function render(){
   $('summary').textContent=items.length+' mặt hàng · nhập giá dạng số, ví dụ 400 = 400';
   $('rows').querySelectorAll('input').forEach(input=>{
     if(input.classList.contains('cost-input')||input.classList.contains('new-cost')){
+      input.addEventListener('focus',()=>{
+        requestAnimationFrame(()=>input.select());
+      });
       input.addEventListener('input',()=>{
         formatPriceWhileTyping(input);
         updateSaveState();
@@ -426,6 +429,22 @@ function render(){
       input.addEventListener('blur',()=>{
         normalizePriceInput(input);
         updateSaveState();
+      });
+      input.addEventListener('keydown',e=>{
+        if(e.key!=='Enter')return;
+        e.preventDefault();
+        normalizePriceInput(input);
+        updateSaveState();
+        const priceInputs=[...$('rows').querySelectorAll('.cost-input,.new-cost')];
+        const index=priceInputs.indexOf(input);
+        const next=priceInputs[index+1];
+        if(next){
+          next.focus({preventScroll:true});
+          next.scrollIntoView({block:'center',behavior:'smooth'});
+          requestAnimationFrame(()=>next.select());
+        }else if(!$('saveBtn').disabled){
+          $('saveBtn').focus();
+        }
       });
     }else{
       input.addEventListener('input',updateSaveState);
