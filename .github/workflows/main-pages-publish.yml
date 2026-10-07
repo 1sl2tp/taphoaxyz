@@ -20,6 +20,7 @@ on:
       - 'bao-gia-sua/**'
       - 'bao-gia/**'
       - 'ncc/**'
+      - 'ghi-chu/**'
       - 'scripts/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
