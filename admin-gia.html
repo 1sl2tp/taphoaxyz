@@ -605,8 +605,26 @@
 
     function smartMarketSearchText(item){
       const links=itemMarketLinks(item);
-      const brand=mostCommonMarketValue(links,'brand');
-      const category=mostCommonMarketValue(links,'category');
+
+      const brandChoices=links.map(link=>String(link&&link.brand||'').trim()).filter(Boolean).filter(value=>{
+        const norm=marketPlain(value).replace(/\s+/g,'');
+        return /[a-z]/.test(norm)&&!/^(100|100%)$/.test(norm);
+      });
+      const brand=mostCommonMarketValue(brandChoices.map(value=>({value})),'value');
+
+      const categoryChoices=links.map(link=>String(link&&link.category||'').trim()).filter(Boolean).sort((a,b)=>{
+        const score=value=>{
+          const norm=marketPlain(value);
+          let n=0;
+          if(!/\d/.test(norm))n+=4;
+          if(!/cac loai|i\.\d+/.test(norm))n+=4;
+          if(/sua tuoi|sua dinh duong|sua chua|sua hat|sua thuc vat|sua dac/.test(norm))n+=4;
+          return n;
+        };
+        return score(b)-score(a)||a.length-b.length;
+      });
+      const category=categoryChoices[0]||'';
+
       const variant=String(item&&item.variant_label||'').trim()||mostCommonMarketValue(links,'variant_label');
       const color=String(item&&item.variant_color||'').trim()||mostCommonMarketValue(links,'variant_color');
 
@@ -618,16 +636,26 @@
       }
       const sizeText=Number.isFinite(size)&&size>0&&sizeUnit?marketQty(size)+sizeUnit:'';
 
-      // Search by the supermarket identity, not by our internal nickname:
-      // brand -> product type -> size/weight -> flavor/variant -> color.
-      const structured=[brand,category,sizeText,variant,color].filter(Boolean);
+      const family={
+        'sua':'Sữa',
+        'hang-u':'',
+        'hang-thuong':'',
+        'thuoc-la':'Thuốc lá'
+      }[String(item&&item.source_key||'')]||'';
+
+      // Ưu tiên nhận dạng theo nhóm lớn -> hãng -> loại -> trọng lượng/dung tích
+      // rồi mới tới vị/biến thể/màu. Đây là tìm gần đúng có xếp hạng, không phải
+      // bắt buộc mọi từ phải giống tên nội bộ của mình.
+      const structured=[family,brand,category,sizeText,variant,color]
+        .filter(Boolean)
+        .filter((value,index,array)=>array.findIndex(x=>marketPlain(x)===marketPlain(value))===index);
       if(structured.length>=2)return structured.join(' ');
 
       const canonical=links.find(link=>String(link&&link.match_name||'').trim())?.match_name||
         links.find(link=>String(link&&link.name||'').trim())?.name||'';
       if(canonical)return String(canonical).replace(/\s+/g,' ').trim();
 
-      return [String(item&&item.product_name||'').trim(),sizeText].filter(Boolean).join(' ');
+      return [family,String(item&&item.product_name||'').trim(),sizeText].filter(Boolean).join(' ');
     }
 
     function marketQty(value){
