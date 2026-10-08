@@ -28,15 +28,14 @@
 
 
         function syncProductNoteEditorVisibility(maSp, qty) {
+            // UI-115: no note UI while browsing (SL=0). When SL>0, reveal
+            // only a small note icon beside the price, never a full input.
             document.querySelectorAll('[data-product-note-wrap]').forEach(wrap => {
                 if (String(wrap.dataset.productNoteWrap) !== String(maSp)) return;
-                const visible = Number(qty) > 0;
-                wrap.classList.toggle('hidden', !visible);
-                if (!visible) {
-                    const input = wrap.querySelector('[data-line-note-id]');
-                    if (input) input.value = '';
-                }
+                const selected = Number(qty) > 0 && !window.TAPHOA_EMPLOYEE_MODE;
+                wrap.classList.toggle('hidden', !selected);
             });
+            syncCartItemNoteDisplay(maSp);
         }
 
         function syncCartItemNoteDisplay(maSp) {
@@ -46,7 +45,19 @@
                 // This is the NAME, not an inline note button. Never overwrite it.
                 el.dataset.noteCurrent = note;
                 el.classList.toggle('has-cart-note', !!note);
-                el.title = note ? 'Ghi chú: ' + note : 'Chạm để thêm ghi chú';
+                const isSaleIcon = !!el.closest('[data-product-note-wrap]');
+                el.title = note ? 'Ghi chú: ' + note : (isSaleIcon ? 'Thêm ghi chú' : 'Chạm để thêm ghi chú');
+                if (isSaleIcon) {
+                    el.classList.toggle('has-note', !!note);
+                    const name = String(el.dataset.cartProductName || '');
+                    el.setAttribute('aria-label',
+                        (note ? 'Sửa ghi chú sản phẩm ' : 'Thêm ghi chú cho sản phẩm ') + name);
+                    const summary = el.querySelector('.sale-note-summary');
+                    if (summary) {
+                        summary.textContent = note;
+                        summary.classList.toggle('hidden', !note);
+                    }
+                }
             });
             document.querySelectorAll('[data-line-note-id]').forEach(input => {
                 if (String(input.dataset.lineNoteId) !== String(maSp)) return;
