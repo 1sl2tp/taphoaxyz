@@ -641,19 +641,25 @@
   justify-content:center !important;
 }
 @media (max-width:480px){
-  /* 320px viewport - 32px list padding = 288px.
-     Fixed: 22 + 54 + 104 + 61 + 4*4 gap = 257px;
-     the flexible Tên track keeps the remaining pixels. */
+  /* IMG_9482 (readonly) / IMG_9483 (edit): one five-column layout,
+     same caption/row tracks in each mode. Only the quantity track needs
+     extra room for controls when editing. Leave every spare px to Tên. */
   #cartBottomSheet .cart-compact-grid,
   #orderDetailContentToShare .order-detail-compact-grid{
     display:grid !important;
-    grid-template-columns:22px minmax(0,1fr) 54px 104px 61px !important;
+    grid-template-columns:22px minmax(0,1fr) 54px 96px 69px !important;
     grid-template-areas:none !important;
     grid-template-rows:auto !important;
     column-gap:4px !important;
     justify-content:stretch !important;
     align-items:center !important;
     min-width:0 !important;
+  }
+  /* Preview has plain digits instead of buttons; reclaim unused width
+     for longer product names without shifting header against body. */
+  #cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid,
+  #orderDetailContentToShare .order-detail-compact-grid{
+    grid-template-columns:22px minmax(0,1fr) 54px 50px 72px !important;
   }
   #cartBottomSheet > .cart-column-header{
     display:grid !important;
@@ -742,12 +748,16 @@
     min-height:34px !important;
     text-align:right !important;
   }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-qty{
+    width:100% !important;
+    min-width:0 !important;
+  }
   #cartItemList .cart-compact-grid .cart-qty-control,
   #cartItemList .cart-compact-grid .cart-qty-readonly{
     box-sizing:border-box;
-    flex:0 0 104px !important;
-    width:104px !important;
-    min-width:104px !important;
+    flex:0 0 96px !important;
+    width:96px !important;
+    min-width:96px !important;
     min-height:34px !important;
     height:34px !important;
     padding:0 2px !important;
@@ -755,16 +765,29 @@
   }
   #cartItemList .cart-compact-grid .cart-qty-control{
     display:grid !important;
-    grid-template-columns:32px 32px 32px !important;
+    grid-template-columns:30px 28px 30px !important;
     gap:1px !important;
   }
-  #cartItemList .cart-compact-grid .cart-qty-control > button,
-  #cartItemList .cart-compact-grid .cart-qty-control > input{
+  #cartItemList .cart-compact-grid .cart-qty-control > button{
     box-sizing:border-box;
-    min-width:32px !important;
-    width:32px !important;
+    min-width:30px !important;
+    width:30px !important;
     min-height:30px !important;
     height:30px !important;
+    padding:0 !important;
+  }
+  #cartItemList .cart-compact-grid .cart-qty-control > input{
+    box-sizing:border-box;
+    min-width:28px !important;
+    width:28px !important;
+    min-height:30px !important;
+    height:30px !important;
+    padding:0 !important;
+  }
+  #cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid .cart-qty-readonly{
+    flex:0 0 50px !important;
+    width:50px !important;
+    min-width:0 !important;
     padding:0 !important;
   }
   #cartItemList .cart-compact-grid .cart-qty-readonly{
@@ -796,6 +819,12 @@
     overflow:hidden !important;
     white-space:nowrap !important;
     text-overflow:ellipsis !important;
+  }
+  /* In readonly mode, optional secondary notes must not crowd the name. */
+  #cartItemList .cart-compact-grid[data-cart-readonly="1"] .cart-line-note:not([data-cart-note-id]){
+    flex:0 1 auto !important;
+    min-width:0 !important;
+    max-width:48px !important;
   }
 }
 

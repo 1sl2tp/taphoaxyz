@@ -12,7 +12,7 @@ Cập nhật: 2026-10-08. Phạm vi: **1sl2tp/taphoaxyz**, giao diện đơn hà
 - **Giỏ hàng / đang sửa đơn:** giữ nguyên 4 cột còn lại; **duy nhất cột Số lượng** đổi nội dung thành `− số +` và ô nhập; các hàng không thay vị trí khi đổi trạng thái.
 - **Chia sẻ ảnh giỏ / ảnh hóa đơn / ảnh công khai**: dùng đúng năm cột, cùng thứ tự, **chỉ hiển thị số lượng**. Không đưa nút sửa, các input, thông tin nội bộ hay ô trống vào ảnh. Ảnh chia sẻ phải lấy đúng dữ liệu đang xem/chọn; tuyệt đối không gọi lại server chỉ để dựng ảnh.
 - Căn **STT giữa, Tên trái, Đơn giá phải, Số lượng giữa, Thành tiền phải**. Giữ định dạng tiền vi-VN, tổng = đơn giá × số lượng. Không tự dịch/đổi tiền, không làm tròn mới.
-- **Header và body dùng cùng ruler**. Trên điện thoại <=480px, các track: `22px minmax(0,1fr) 54px 104px 61px`, gap 4px; rút gọn **tên sản phẩm** nếu cần để bảo vệ tiền. Không cắt số tiền, không cho nút +/- lấn sang cột kế bên. Trên màn rộng dùng ruler desktop hiện có cho nội dung và ảnh chia sẻ; không sửa layout bán hàng ngoài giỏ.
+- **Header và body dùng cùng ruler**. Trên điện thoại <=480px, các track edit: `22px minmax(0,1fr) 54px 96px 69px`, preview: `22px minmax(0,1fr) 54px 50px 72px`, gap 4px; tiêu đề và dòng dùng cùng ruler trong mỗi chế độ để có thêm chỗ cho Tên; rút gọn **tên sản phẩm** nếu cần để bảo vệ tiền. Không cắt số tiền, không cho nút +/- lấn sang cột kế bên. Trên màn rộng dùng ruler desktop hiện có cho nội dung và ảnh chia sẻ; không sửa layout bán hàng ngoài giỏ.
 - Nút +/- phải bấm được và vẫn dùng handlers đang có; giữ lối vào ghi chú, quyền xem/chỉnh, trạng thái đang sửa và việc lưu đơn.
 
 ## Nguồn mã và điểm kiểm soát
@@ -39,3 +39,9 @@ Quy tắc này được viện dẫn từ `AGENTS.md`. Không tự chia layout g
 - Trên mobile, CSS cũ từng gán `grid-area:line / unit / quantity / subtotal` cho bốn ô. Chỉ đặt `grid-template-areas:none` **không đủ**: các ô vẫn tham gia vào grid implicit và tạo hàng/cột ảo, khiến mất tên/đơn giá và đè Thành tiền.
 - Source cuối trong `src/fixed-ui-cart-spacing.css` **bắt buộc reset** `grid-area:auto!important`, `grid-row:auto!important` và `grid-column:auto!important` cho `.cart-left/.cart-price/.cart-qty/.cart-total` trên mobile; một hàng phải chứa đủ 5 ô theo thứ tự.
 - Khi cập nhật có CSS từ nhiều file `fixed-ui-source-*.css`, phải kiểm tra cascade thực tế. Không chỉ dựa vào test chuỗi selector: đối chiếu ảnh Safari/PWA có tên, đơn giá, SL, thành tiền, không chồng nút; ảnh 17:40 cho thấy test cũ PASS nhưng UI lỗi.
+
+## QA IMG_9482 / IMG_9483 — tối ưu hai kiểu số lượng (08/10/2026)
+- Hai ảnh đã xác nhận **lưới 5 cột hoạt động**, số lượng readonly `2/1/24` không có nút; edit `− 1 +` có nút. Không chuyển về bố cục 2 hàng hoặc quay lại CSS grid-area cũ.
+- Width phải dựa trên **chế độ của bottom sheet** `data-cart-mode=preview|edit`, set trong `renderCartUI`: preview dùng 50px cho số, edit 96px cho ba control 30/28/30px. Header và body chọn cùng ruler theo `data-cart-mode`; không ẩn header hay đổi thứ tự.
+- `STT` và tên chính vẫn căn theo trục dọc 34px. Ghi chú bên cạnh tên là thứ yếu; readonly giới hạn phần ghi chú để ưu tiên tên chính, không thay đổi dữ liệu ghi chú.
+- Ảnh sau deploy phải kiểm xem tên dài tăng diện tích hiển thị, `Số lượng` không đè `Thành tiền`, thao tác +/- và số tổng đúng. Unit tests chỉ là contract, pixel thực tế Safari/PWA vẫn cần được xác nhận.

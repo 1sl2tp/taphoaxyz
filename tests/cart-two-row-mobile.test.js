@@ -13,16 +13,16 @@ test('cart has same FIVE visible columns as invoice detail, not a two-row produc
   assert.match(owner,/#cartBottomSheet \.cart-compact-grid \.cart-left\{[^}]*display:contents !important;/);
   assert.match(owner,/#cartBottomSheet \.cart-column-header\{[^}]*display:grid !important;/);
   assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-field-caption\{[^}]*display:none !important;/);
-  assert.match(owner,/#cartBottomSheet \.cart-compact-grid,[\s\S]*?#orderDetailContentToShare \.order-detail-compact-grid\{[^}]*grid-template-columns:22px minmax\(0,1fr\) 54px 104px 61px !important;/);
-  assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-control\{[^}]*grid-template-columns:32px 32px 32px !important;/);
+  assert.match(owner,/#cartBottomSheet \.cart-compact-grid,[\s\S]*?#orderDetailContentToShare \.order-detail-compact-grid\{[^}]*grid-template-columns:22px minmax\(0,1fr\) 54px 96px 69px !important;/);
+  assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-control\{[^}]*grid-template-columns:30px 28px 30px !important;/);
 });
 
 test('editable shopping cart uses buttons only at the same quantity track as readonly',()=>{
   assert.match(runtime,/data-cart-readonly="\$\{isDeliveredReadOnlyPreview \? '1' : '0'\}"/);
   assert.match(runtime,/isDeliveredReadOnlyPreview\s*\? `<div class="cart-qty-readonly/);
   assert.match(runtime,/: `<div class="cart-qty-control/);
-  assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:104px !important;/);
-  assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-control,[\s\S]*?#cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:104px !important;/);
+  assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:96px !important;/);
+  assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-control,[\s\S]*?#cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:96px !important;/);
   assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-name,[\s\S]*?text-overflow:ellipsis !important;/);
 });
 
@@ -32,4 +32,11 @@ test('mobile five-column header/body and images have fresh versions',()=>{
   assert.match(html,/fixed-ui-markup-5\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-cart-share-v3\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-public-order-image\.js\?v=[^"]*order-five-col=20261008/);
+});
+
+test('readonly and editing use separate compact rulers but common five-column order',()=>{
+  assert.match(runtime,/cartSheet\.dataset\.cartMode = isDeliveredReadOnlyPreview \? 'preview' : 'edit'/);
+  assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid,[\s\S]*?#orderDetailContentToShare \.order-detail-compact-grid\{[^}]*grid-template-columns:22px minmax\(0,1fr\) 54px 50px 72px !important;/);
+  assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] #cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:50px !important;/);
+  assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*qty-modes=9482-9483/);
 });

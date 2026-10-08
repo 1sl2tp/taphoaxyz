@@ -4,6 +4,10 @@
                 && (activeTabId === 'tab-da-giao' || activeTabId === 'tab-don-tam' || activeTabId === 'tab-cong-no')
                 && !editingOrderInSaleMode;
             const isDeliveredReadOnlyPreview = (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') || isOrderPreview;
+            // Header and rows must use the same five-column ruler in each mode.
+            // Read-only quantity needs a number only; editing reserves room for -/+.
+            const cartSheet = document.getElementById('cartBottomSheet');
+            if (cartSheet) cartSheet.dataset.cartMode = isDeliveredReadOnlyPreview ? 'preview' : 'edit';
             let totalQty = 0; let totalPrice = 0; let index = 1; let html = '';
             const cartEntries = Object.entries(cart).sort(([, a], [, b]) =>
                 (Number(b.__lastTouched) || 0) - (Number(a.__lastTouched) || 0)
