@@ -280,6 +280,20 @@
     white-space:nowrap;
   }
   #cartItemList .cart-price .cart-money-value{justify-content:flex-start}
+  /* Editing price is an input: align its text with Qty and Total value row. */
+  #cartItemList .cart-price input.cart-money-value{
+    display:block !important;
+    box-sizing:border-box;
+    width:100% !important;
+    min-width:0 !important;
+    height:46px !important;
+    min-height:46px !important;
+    padding:0 !important;
+    text-align:left !important;
+    background:transparent;
+    border:0;
+    font-variant-numeric:tabular-nums;
+  }
   #cartItemList .cart-total .cart-money-value{justify-content:flex-end}
   #cartFooterActions > button{
     min-width:0;

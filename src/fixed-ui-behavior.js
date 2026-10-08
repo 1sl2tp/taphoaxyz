@@ -53,8 +53,8 @@ function previewCartPriceInput(input) {
   input.value = formatCartPriceInputValue(price);
   syncCartPriceToQtyEditors(maSp, price);
   const row = input.closest('.cart-compact-grid');
-  const totalEl = row?.querySelector('.cart-total');
-  if (totalEl) totalEl.innerText = ((Number(item.qty) || 0) * price).toLocaleString('vi-VN');
+  const totalValue = row?.querySelector('.cart-total .cart-money-value');
+  if (totalValue) totalValue.textContent = ((Number(item.qty) || 0) * price).toLocaleString('vi-VN');
   refreshCartTotalsOnly();
 }
 
@@ -92,7 +92,7 @@ renderCartUI = function() {
     const [maSp, item] = cartEntries[index] || [];
     const priceCell = row.querySelector('.cart-price');
     if (!maSp || !item || !priceCell) return;
-    priceCell.innerHTML = `<input type="text" inputmode="numeric" value="${formatCartPriceInputValue(item.price)}" data-price-editor="cart" data-price-id="${maSp}" onfocus="selectCartPriceInputValue(this)" onmouseup="event.preventDefault(); selectCartPriceInputValue(this)" oninput="previewCartPriceInput(this)" onblur="commitCartPriceEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="w-full min-w-0 text-right font-semibold text-gray-700 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 p-0 m-0 tabular-nums">`;
+    priceCell.innerHTML = `<span class="cart-field-caption">Đơn giá</span><input type="text" inputmode="numeric" value="${formatCartPriceInputValue(item.price)}" data-price-editor="cart" data-price-id="${maSp}" onfocus="selectCartPriceInputValue(this)" onmouseup="event.preventDefault(); selectCartPriceInputValue(this)" oninput="previewCartPriceInput(this)" onblur="commitCartPriceEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="cart-money-value cart-price-input w-full min-w-0 text-right font-semibold text-gray-700 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 p-0 m-0 tabular-nums">`;
   });
 };
 

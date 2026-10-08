@@ -138,8 +138,8 @@
 
             if (input.dataset.qtyEditor === 'cart') {
                 const row = input.closest('.cart-compact-grid');
-                const totalEl = row?.querySelector('.cart-total');
-                if (totalEl) totalEl.innerText = (qty * meta.price).toLocaleString('vi-VN');
+                const totalValue = row?.querySelector('.cart-total .cart-money-value');
+                if (totalValue) totalValue.textContent = (qty * meta.price).toLocaleString('vi-VN');
                 refreshCartTotalsOnly();
             } else {
                 // Product-card quantity edits mutate cart data too. Re-render only
@@ -169,8 +169,8 @@
 
             if (input.dataset.qtyEditor === 'cart') {
                 const row = input.closest('.cart-compact-grid');
-                const totalEl = row?.querySelector('.cart-total');
-                if (totalEl) totalEl.innerText = (qty * meta.price).toLocaleString('vi-VN');
+                const totalValue = row?.querySelector('.cart-total .cart-money-value');
+                if (totalValue) totalValue.textContent = (qty * meta.price).toLocaleString('vi-VN');
                 refreshCartTotalsOnly();
             } else {
                 renderCartUI();
