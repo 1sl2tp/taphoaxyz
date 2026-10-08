@@ -281,6 +281,16 @@
       return;
     }
 
+    // UI-113: opening a public order must NOT asynchronously capture PNG
+    // or load html2canvas. Render the interactive, readable HTML immediately;
+    // only the explicit “Ảnh” button requests a portrait image.
+    activeOrderRequest={orderId,sheetName};
+    if(!options.forceImage){
+      ensureViewer();
+      setViewMode('table');
+      return;
+    }
+
     const data=collectOrder(orderId,sheetName);
     if(!data){
       fallbackToTable('Không tạo được bản xem ảnh của đơn.');
@@ -291,13 +301,6 @@
     activeOrderRequest={orderId,sheetName};
     const ui=ensureViewer();
     if(!ui)return;
-    // A 720px image rendered into a 360–420px panel reduces all text to
-    // around half size. Show the live readable HTML table on narrow panels;
-    // generate the unchanged share-quality image only if the user requests it.
-    if(!options.forceImage && preferReadableTable()){
-      setViewMode('table');
-      return;
-    }
     ui.viewer.innerHTML=loadingMarkup();
     setViewMode('image');
 
