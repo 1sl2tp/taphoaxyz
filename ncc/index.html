@@ -330,7 +330,16 @@ function groupedOrders(){
     item.qty+=Number(row.qty)||0;
     for(const note of orderNotes(row))if(!item.notes.includes(note))item.notes.push(note);
   }
-  return [...map.values()].sort((a,b)=>displayName(a.product_name,session?.source_key||'').localeCompare(displayName(b.product_name,session?.source_key||''),'vi',{sensitivity:'base',numeric:true}));
+  const grouped=[...map.values()];
+  if(session?.source_key==='thuoc-la'){
+    // Same NCC order as admin-gia, from the already-loaded supplier list.
+    // Missing historical codes follow at the end in a stable order.
+    const rank=new Map(items.map((p,i)=>[String(p.product_code),i]));
+    return grouped.sort((a,b)=>
+      (rank.get(String(a.product_code))??Number.MAX_SAFE_INTEGER)
+      -(rank.get(String(b.product_code))??Number.MAX_SAFE_INTEGER));
+  }
+  return grouped.sort((a,b)=>displayName(a.product_name,session?.source_key||'').localeCompare(displayName(b.product_name,session?.source_key||''),'vi',{sensitivity:'base',numeric:true}));
 }
 function renderOrders(){
   const source=session?.source_key||'';
@@ -398,9 +407,13 @@ function printOrders(){
 function render(){
   const q=$('search').value.trim().toLocaleLowerCase('vi');
   const source=session?.source_key||'';
-  const visible=items
-    .slice()
-    .sort((a,b)=>displayName(a.name,source).localeCompare(displayName(b.name,source),'vi',{sensitivity:'base',numeric:true}))
+  // Supplier catalog for Thuốc lá arrives in canonical source_row order.
+  // Never A–Z this list, including after searching or editing a cost.
+  const sourceItems=items.slice();
+  if(source!=='thuoc-la'){
+    sourceItems.sort((a,b)=>displayName(a.name,source).localeCompare(displayName(b.name,source),'vi',{sensitivity:'base',numeric:true}));
+  }
+  const visible=sourceItems
     .filter(p=>!q||(String(p.product_code)+' '+String(p.name)+' '+displayName(p.name,source)).toLocaleLowerCase('vi').includes(q));
 
   const existing=visible.map(p=>`
