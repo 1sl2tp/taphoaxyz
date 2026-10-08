@@ -120,7 +120,13 @@
                         totalHead.title = 'Thành tiền';
                         totalHead.setAttribute('aria-label', 'Thành tiền');
                     }
-                    const totalWidth = Math.ceil(Math.max(widestAmount, measure(totalLabel, totalHead)) + 8);
+                    // UI-109: the RIGHTMOST column has no trailing inner gutter.
+                    // The former "+8" reserved empty space to the LEFT of its
+                    // right-aligned digits, making price -> qty look tighter
+                    // than qty -> amount even when both amounts have 3 digits.
+                    // Keep one common E track across header and EVERY row;
+                    // no per-row shift, so SL and +/- controls remain aligned.
+                    const totalWidth = Math.ceil(Math.max(widestAmount, measure(totalLabel, totalHead)));
                     const qtyInput = body.querySelector('.cart-qty-control > input');
                     const qtyInputWidth = Math.max(28, maxWidth(quantityTexts, qtyInput || qtyStyle) + 12);
                     // Two 30px buttons + editable number + 2 one-pixel gaps,
