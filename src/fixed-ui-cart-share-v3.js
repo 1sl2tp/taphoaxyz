@@ -183,7 +183,7 @@
             ${String(item?.note || '').trim() ? `<div style="margin-top:2px;color:#6b7280;font-size:10px;font-weight:500;">${escapeHtml(String(item.note).trim())}</div>` : ''}
           </div>
           <div style="text-align:right;color:#374151;font-weight:600;font-variant-numeric:tabular-nums;">${price.toLocaleString('vi-VN')}</div>
-          <div style="text-align:right;color:#374151;font-weight:700;font-variant-numeric:tabular-nums;">${qty}</div>
+          <div style="text-align:center;color:#374151;font-weight:700;font-variant-numeric:tabular-nums;">${qty}</div>
           <div style="text-align:right;color:#111827;font-weight:800;font-variant-numeric:tabular-nums;">${lineTotal.toLocaleString('vi-VN')}</div>
         </div>`;
     }).join('');
@@ -219,7 +219,7 @@
           <div style="text-align:center;">STT</div>
           <div>Tên</div>
           <div style="text-align:right;">Đơn giá</div>
-          <div style="text-align:right;">SL</div>
+          <div style="text-align:center;">SL</div>
           <div style="text-align:right;">Thành tiền</div>
         </div>
         <div>${rows}</div>
