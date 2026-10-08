@@ -394,6 +394,9 @@
     const header=source?.querySelector('.order-column-header');
     const rows=Array.from(source?.querySelectorAll('#detailModalItems .order-detail-compact-grid')||[]);
     if(!source||!header||!rows.length)return;
+    const panel=document.getElementById('orderDetailBottomSheet');
+    const panelWidth=panel?.getBoundingClientRect().width||window.innerWidth;
+    source.classList.toggle('order-readable-compact',panelWidth<600);
     const canvas=document.createElement('canvas');
     const context=canvas.getContext('2d');
     const textWidth=(node)=>{
