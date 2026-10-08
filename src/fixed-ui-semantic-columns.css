@@ -16,8 +16,8 @@
   grid-template-columns:
     var(--cart-stt-track,24px)
     minmax(0,1fr)
-    var(--cart-unit-track,54px)
     var(--cart-qty-track,96px)
+    var(--cart-unit-track,54px)
     var(--cart-total-track,69px) !important;
   grid-template-areas:none !important;
   width:100% !important;
@@ -77,8 +77,8 @@
   grid-template-columns:
     var(--order-stt-track,24px)
     minmax(0,1fr)
-    var(--order-price-track,60px)
     var(--order-qty-track,29px)
+    var(--order-price-track,60px)
     var(--order-total-track,76px) !important;
   column-gap:7px !important;
   width:100% !important;
@@ -174,11 +174,74 @@
 }
 #cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-price,
 #cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-price{
-  grid-column:3 !important;
+  grid-column:4 !important;
   grid-row:2 !important;
 }
 #cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-qty,
 #cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-qty{
+  grid-column:3 !important;
+  grid-row:2 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-total,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-total{
+  grid-column:5 !important;
+  grid-row:2 !important;
+}
+
+/* UI-111/112: accounting order. One coherent five-track ruler at every width.
+   A STT | B Description | C Quantity | D Unit Price | E Amount.
+   Captions are adaptive to the displayed NUMERIC widths; never move values. */
+#cartBottomSheet .cart-compact-grid{
+  grid-template-columns:
+    var(--cart-stt-track,24px) minmax(0,1fr)
+    var(--cart-qty-track,96px)
+    var(--cart-unit-track,54px)
+    var(--cart-total-track,69px) !important;
+}
+#cartBottomSheet .cart-compact-grid .cart-qty{
+  grid-area:auto !important;
+  grid-column:3 !important;
+  grid-row:1 !important;
+}
+#cartBottomSheet .cart-compact-grid .cart-price{
+  grid-area:auto !important;
+  grid-column:4 !important;
+  grid-row:1 !important;
+}
+#cartBottomSheet .cart-compact-grid .cart-total{
+  grid-area:auto !important;
+  grid-column:5 !important;
+  grid-row:1 !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid{
+  grid-template-columns:
+    var(--order-stt-track,24px) minmax(0,1fr)
+    var(--order-qty-track,29px)
+    var(--order-price-track,60px)
+    var(--order-total-track,76px) !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-qty{
+  grid-area:auto !important;
+  grid-column:3 !important;
+  grid-row:1 !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-price{
+  grid-area:auto !important;
+  grid-column:4 !important;
+  grid-row:1 !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-total{
+  grid-area:auto !important;
+  grid-column:5 !important;
+  grid-row:1 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-qty,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-qty{
+  grid-column:3 !important;
+  grid-row:2 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-price,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-price{
   grid-column:4 !important;
   grid-row:2 !important;
 }
