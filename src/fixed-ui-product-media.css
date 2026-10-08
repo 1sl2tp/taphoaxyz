@@ -410,3 +410,43 @@ button.product-image-compare-source:hover{
   .product-market-detail-row{font-size:10px;}
   .product-market-detail-head{font-size:8px;}
 }
+
+/* Mobile sales card core flow: give product identity its own readable row.
+   Quantity remains the same updateCart/qty-edit owner and is always touch reachable. */
+@media (max-width:480px){
+  #tab-ban-hang .product-card > .flex.justify-between.items-center{
+    flex-wrap:wrap;
+    align-items:stretch;
+    row-gap:8px;
+  }
+  #tab-ban-hang .product-card > .flex.justify-between.items-center > :first-child{
+    flex:1 1 100%;
+    padding-right:0 !important;
+  }
+  #tab-ban-hang .product-card > .flex.justify-between.items-center > :last-child{
+    flex:1 1 100%;
+    justify-content:flex-end;
+  }
+  #tab-ban-hang .product-card .line-clamp-1{
+    -webkit-line-clamp:2;
+    overflow-wrap:anywhere;
+  }
+  #tab-ban-hang .product-card button[onclick^="updateCart("]{
+    width:40px !important;
+    height:40px !important;
+    min-width:40px;
+    min-height:40px;
+  }
+  #tab-ban-hang .product-card button[onclick^="updateCart("] i{
+    font-size:14px !important;
+  }
+  #tab-ban-hang .product-card input[data-qty-editor="product"]{
+    width:44px !important;
+    min-width:44px;
+    font-size:16px !important;
+  }
+  #tab-ban-hang .product-card input[data-line-note-id]{
+    min-height:40px;
+    font-size:16px !important;
+  }
+}

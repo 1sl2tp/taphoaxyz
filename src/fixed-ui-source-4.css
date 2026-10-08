@@ -500,6 +500,27 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 }
 
 
+/* P4 mobile sales search: 16px input avoids Safari text zoom; 40px mode button. */
+@media (max-width:480px){
+  #tab-ban-hang #searchProductInput{
+    height:44px;
+    min-height:44px;
+    font-size:16px !important;
+  }
+  body:not([data-employee-mode="true"]) #tab-ban-hang #searchProductInput{
+    padding-left:48px !important;
+  }
+  #tab-ban-hang #salesSearchModeToggle{
+    width:40px;
+    height:40px;
+    left:4px;
+  }
+  #tab-ban-hang #sourceTagsContainer .source-filter-chip,
+  #tab-ban-hang #sourceTagsContainer .market-source-filter-chip{
+    min-height:36px;
+  }
+}
+
 /* FIXED STYLE: sales-supermarket-search-toggle */
 #salesSearchModeToggle.is-market{
   color:#16a34a !important;

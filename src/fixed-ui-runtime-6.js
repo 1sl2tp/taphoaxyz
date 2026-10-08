@@ -41,8 +41,9 @@
                                 </div>`}
                         </div>
                     </div>
-                    <div class="cart-price font-semibold text-gray-700">${item.price.toLocaleString('vi-VN')}</div>
+                    <div class="cart-price font-semibold text-gray-700"><span class="cart-field-caption">Đơn giá</span><span class="cart-money-value">${item.price.toLocaleString('vi-VN')}</span></div>
                     <div class="cart-qty">
+                        <span class="cart-field-caption">Số lượng</span>
                         ${isDeliveredReadOnlyPreview
                             ? `<div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums">${item.qty}</div>`
                             : `<div class="cart-qty-control border border-gray-200 rounded-full bg-white shadow-sm">
@@ -51,7 +52,7 @@
                                 <button onclick="updateCart('${id}', '${item.name}', ${item.price}, 1)" class="allow-fast-click w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[8px]"></i></button>
                             </div>`}
                     </div>
-                    <div class="cart-total font-extrabold text-gray-900">${(item.qty * item.price).toLocaleString('vi-VN')}</div>
+                    <div class="cart-total font-extrabold text-gray-900"><span class="cart-field-caption">Thành tiền</span><span class="cart-money-value">${(item.qty * item.price).toLocaleString('vi-VN')}</span></div>
                 </div>`;
             }
 
