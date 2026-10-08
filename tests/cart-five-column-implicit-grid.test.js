@@ -27,3 +27,11 @@ test('IMG_9481: STT, name, price, quantity and total are the five flattened visu
   assert.match(runtime,/class="cart-total font-extrabold/);
   assert.match(html,/fixed-ui-cart-spacing\.css\?ui=order-five-col-corrected-20261008/);
 });
+
+test('mobile STT and product name use the same vertical center ruler',()=>{
+  const axis=owner.slice(owner.indexOf('/* STT and product name share the same vertically-centered item row. */'));
+  assert.ok(axis.startsWith('/* STT and product name share the same vertically-centered item row. */'));
+  assert.match(axis, /#cartItemList \.cart-compact-grid \.cart-stt\{[^}]*align-self:center !important;[^}]*align-items:center !important;[^}]*height:34px !important;/);
+  assert.match(axis, /#cartItemList \.cart-compact-grid \.cart-left > \.min-w-0\{[^}]*align-self:center !important;[^}]*align-items:center !important;[^}]*height:34px !important;/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=order-five-col-corrected-20261008&stt-axis=20261008/);
+});

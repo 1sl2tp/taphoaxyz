@@ -831,6 +831,25 @@
     min-width:0 !important;
     overflow:hidden;
   }
+  /* STT and product name share the same vertically-centered item row. */
+  #cartItemList .cart-compact-grid .cart-stt{
+    box-sizing:border-box;
+    display:flex !important;
+    align-self:center !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-height:34px !important;
+    height:34px !important;
+    padding:0 !important;
+    line-height:1 !important;
+  }
+  #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+    display:flex !important;
+    align-self:center !important;
+    align-items:center !important;
+    min-height:34px !important;
+    height:34px !important;
+  }
   #cartItemList .cart-compact-grid .cart-name{
     min-width:0 !important;
     max-width:100% !important;
