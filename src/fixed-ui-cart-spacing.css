@@ -1242,3 +1242,51 @@
     min-height:30px !important;
   }
 
+
+
+/* UI-94–100 / 2026-10-08: order detail 5-column responsive ruler.
+   Override legacy nowrap quantity header to prevent price/qty/total collision.
+   Same five tracks are applied to caption and every data row; no data fetch. */
+#orderDetailContentToShare .order-detail-compact-grid{
+  display:grid !important;
+  grid-template-columns:22px minmax(0,1fr) 62px 48px 76px !important;
+  column-gap:7px !important;
+  grid-template-areas:none !important;
+  justify-content:stretch !important;
+  align-items:center !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+#orderDetailContentToShare .order-column-header .order-price,
+#orderDetailContentToShare .order-column-header .order-qty,
+#orderDetailContentToShare .order-column-header .order-total{
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  line-height:1.2 !important;
+}
+#orderDetailContentToShare .order-column-header .order-qty{
+  white-space:normal !important;
+  overflow-wrap:normal !important;
+  text-align:center !important;
+}
+#orderDetailContentToShare .order-column-header .order-price,
+#orderDetailContentToShare .order-column-header .order-total{
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-name{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-total{
+  text-align:right !important;
+  justify-self:stretch !important;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:360px){
+  #orderDetailContentToShare .order-detail-compact-grid{
+    grid-template-columns:18px minmax(0,1fr) 56px 43px 70px !important;
+    column-gap:5px !important;
+  }
+}
