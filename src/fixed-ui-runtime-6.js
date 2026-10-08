@@ -48,7 +48,6 @@
                                 onclick="openCartLineNoteEditor(this)">${escapeProductEditorValue(item.name)}</button>
                         </div>
                     </div>
-                    <div class="cart-price font-semibold text-gray-700"><span class="cart-field-caption">Đơn giá</span><span class="cart-money-value">${item.price.toLocaleString('vi-VN')}</span></div>
                     <div class="cart-qty">
                         <span class="cart-field-caption">Số lượng</span>
                         ${isDeliveredReadOnlyPreview
@@ -59,6 +58,7 @@
                                 <button onclick="updateCart('${id}', '${item.name}', ${item.price}, 1)" class="allow-fast-click w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[8px]"></i></button>
                             </div>`}
                     </div>
+                    <div class="cart-price font-semibold text-gray-700"><span class="cart-field-caption">Đơn giá</span><span class="cart-money-value">${item.price.toLocaleString('vi-VN')}</span></div>
                     <div class="cart-total font-extrabold text-gray-900"><span class="cart-field-caption">Thành tiền</span><span class="cart-money-value">${(item.qty * item.price).toLocaleString('vi-VN')}</span></div>
                 </div>`;
             }
@@ -104,7 +104,21 @@
                         Math.ceil(Math.max(measure(label, headerNode), maxWidth(values, valueNode)) + padding);
                     const sttWidth = columnWidth('STT', head('.cart-stt'), indexTexts, sttStyle, 6);
                     // B/Tên receives all free space between left ID and right metrics.
-                    const priceWidth = columnWidth('Đơn giá', head('.cart-price'), priceTexts, numberStyle, 8);
+                    // UI-111/112: C=SL, D=Đơn giá, E=Thành tiền.
+                    // Unit-price caption follows the widest VALUE, just like
+                    // the adaptive final-money caption. Keep the full meaning
+                    // accessible via title/aria-label even when shortened.
+                    const priceHead = head('.cart-price');
+                    const widestPrice = maxWidth(priceTexts, numberStyle);
+                    const priceLabels = ['Đơn giá', 'Đ.giá', 'Giá', 'ĐG'];
+                    const priceLabel = !cartEntries.length ? 'Đơn giá'
+                        : priceLabels.find(label => measure(label,priceHead) <= widestPrice) || 'ĐG';
+                    if (priceHead) {
+                        priceHead.textContent = priceLabel;
+                        priceHead.title = 'Đơn giá';
+                        priceHead.setAttribute('aria-label','Đơn giá');
+                    }
+                    const priceWidth = Math.ceil(Math.max(widestPrice,measure(priceLabel,priceHead))+2);
                     // UI-108: LAST MONEY column is sized by its largest NUMBER,
                     // never stretched merely to hold the long "Thành tiền" caption.
                     // Choose the longest semantic caption that fits that number;
