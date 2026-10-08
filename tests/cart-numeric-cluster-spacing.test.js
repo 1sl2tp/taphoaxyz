@@ -63,7 +63,7 @@ test('mobile cart adapts sheet height and preserves the list inner scroll', () =
   assert.match(css, /#cartItemList\s*\{\s*flex:0 1 auto !important;\s*min-height:0 !important;\s*overflow-y:auto !important;/);
   assert.ok(css.includes('width:132px !important'));
   assert.ok(css.includes('@media (max-width:360px)'));
-  assert.ok(index.includes('cart-height-preview-20261008'));
+  assert.ok(index.includes('cart-caption-20261008'));
 });
 test('cart preview does not insert phantom empty note height when there is no note', () => {
   const js=fs.readFileSync('src/fixed-ui-runtime-6.js','utf8');
