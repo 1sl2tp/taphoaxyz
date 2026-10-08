@@ -1080,7 +1080,7 @@
    truncate only after the four numeric tracks and four EQUAL gutters
    have been reserved. No phantom flexible spacer columns.
    Runtime 6 sets all five --cart-*-track variables after rendering. */
-@media (max-width:480px){
+/* Applies to the cart panel at ANY viewport width, including .pc-mode split pane. */
   #cartBottomSheet .cart-compact-grid,
   #cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid{
     display:grid !important;
@@ -1173,4 +1173,72 @@
     white-space:nowrap !important;
     text-overflow:ellipsis !important;
   }
-}
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-price{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    text-align:right !important;
+    min-width:0 !important;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-total{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    text-align:left !important;
+    min-width:0 !important;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-total .cart-money-value{
+    flex:0 0 auto !important;
+    width:auto !important;
+    text-align:left !important;
+    white-space:nowrap !important;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-stt,
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+    align-self:center !important;
+    min-height:34px !important;
+    height:34px !important;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-stt{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:0 !important;
+    line-height:1 !important;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+    display:flex !important;
+    align-items:center !important;
+    overflow:hidden;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-name-note-trigger{
+    display:block !important;
+    box-sizing:border-box;
+    flex:1 1 100% !important;
+    width:100% !important;
+    font-size:12px !important;
+    line-height:34px !important;
+    height:34px !important;
+    min-height:34px !important;
+    border:0 !important;
+    padding:0 !important;
+    background:transparent;
+    text-align:left !important;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-name-note-trigger::after{
+    content:none !important;
+    display:none !important;
+  }
+  #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button{
+    box-sizing:border-box;
+    width:30px !important;
+    min-width:30px !important;
+    height:30px !important;
+    min-height:30px !important;
+    padding:0 !important;
+  }
+  #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > input{
+    height:30px !important;
+    min-height:30px !important;
+  }
+

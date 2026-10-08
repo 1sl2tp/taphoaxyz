@@ -113,9 +113,17 @@
                         ? columnWidth('SL', head('.cart-qty'), quantityTexts, qtyStyle, 8)
                         : Math.max(controlWidth, columnWidth('Số lượng', head('.cart-qty'), [], qtyStyle, 8));
                     const headerStyle = getStyle(header);
-                    const innerWidth = header.clientWidth -
+                    const bodyStyle = getStyle(body);
+                    const headerInnerWidth = header.clientWidth -
                         (parseFloat(headerStyle?.paddingLeft) || 0) -
                         (parseFloat(headerStyle?.paddingRight) || 0);
+                    const bodyInnerWidth = body.clientWidth -
+                        (parseFloat(bodyStyle?.paddingLeft) || 0) -
+                        (parseFloat(bodyStyle?.paddingRight) || 0);
+                    // A desktop split pane and a mobile sheet use the same
+                    // measured ruler. Budget the SMALLER real content width,
+                    // including any scrollbar in a long cart.
+                    const innerWidth = Math.max(0, Math.min(headerInnerWidth, bodyInnerWidth));
                     const gap = 6; // the same 6px gap between ALL five columns
                     const remaining = Math.max(0, innerWidth - sttWidth - priceWidth - qtyWidth - totalWidth - 4 * gap);
                     cartSheet.style.setProperty('--cart-stt-track', sttWidth + 'px');

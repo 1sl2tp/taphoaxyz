@@ -73,3 +73,11 @@ Nguồn: ảnh ví dụ bảng tính do người dùng gửi 2026-10-08 20:20.
 - Chế độ sửa có nhãn **Số lượng**, bộ `− số +`; chế độ xem chỉ có nhãn **SL**, số thường. Nút ghi chú không ở bảng: chạm Tên sẽ nổi ghi chú, giữ nguyên dữ liệu. Không sửa phép tính tiền hay share/back-end.
 - Đo width theo toàn bộ các dòng (không chỉ dòng 1/2 trong ví dụ). Nếu giá trị tăng khi sửa SL/giá thì lần render tiếp phải tính lại. Không gọi server, DB hay background job để đo chữ.
 - **PASS yêu cầu ảnh Safari/PWA sau triển khai**: 5 cột thẳng hàng, A/C/D/E đủ rộng theo max, B co nếu cần, tên dài cắt dấu ba chấm, đơn giá/SL/thành tiền cách nhau đều theo mép thực. Không khẳng định visual PASS chỉ dựa vào CI.
+
+## 2026-10-08 — Desktop split pane dùng cùng ruler với mobile
+- Ảnh mới: cửa sổ Chrome rộng ~1080px nhưng Giỏ hàng là panel bên phải rộng ~480px. CSS `@media (max-width:480px)` **không bao giờ kích hoạt** trong trường hợp này dù panel hẹp. Do đó các bản sửa A–E trước đó không hiển thị trên desktop.
+- Chuẩn **5 cột nội dung A–E theo max font** phải được áp dụng cho `#cartBottomSheet .cart-compact-grid` **không phụ thuộc vào viewport breakpoint**, bao gồm `.pc-mode` / panel bên phải / giao diện bottom sheet mobile. Selector owner cuối trong `src/fixed-ui-cart-spacing.css` phải để NGOÀI `@media`, header và rows cùng biến CSS `--cart-*-track`.
+- `.cart-left {display:contents}` đưa STT và Tên thành hai grid cells; grid-column 1/2/3/4/5 cho STT/Tên/Đơn giá/SL/Thành tiền. Tên click ghi chú nổi, không xuất hiện icon bút pseudo-element, kể cả `data-note-current=""`; STT/Tên đều center theo 34px.
+- Đơn giá right, SL center, Thành tiền left theo mép số. Khung edit sử dụng `--cart-qty-track`, hai nút 30px, input theo `--cart-qty-input-track`; readonly chỉ có số. Tất cả cột có gap 6px, không tự `space-between` trên desktop.
+- Khi tính vùng còn lại cho Tên, lấy `Math.min(headerInnerWidth, bodyInnerWidth)` sau trừ padding cả hai để không tràn khi body có scrollbar. Tên là cột duy nhất co.
+- Regression bắt buộc kiểm thử breakpoint **desktop 1080px với panel ~480px** và mobile 320/375/390/428px; đổi CSS version trong index.html. Tests và Pages PASS chưa thay cho screenshot Chrome thực tế sau triển khai.
