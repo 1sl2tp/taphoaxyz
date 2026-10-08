@@ -145,3 +145,45 @@
   #cartBottomSheet .cart-compact-grid {column-gap:4px !important;}
   #orderDetailContentToShare .order-detail-compact-grid {column-gap:4px !important;}
 }
+
+/* UI-107: semantic two-line fallback, ONLY when runtime measures <68px
+   left for product name with a full - number + stepper. The same five
+   numeric tracks remain locked; both caption and data reorganize together.
+   Never apply it merely because the browser viewport is narrow: split
+   desktop panes are also measured on their actual inner width. */
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid {
+  grid-template-rows:minmax(20px,auto) minmax(34px,auto) !important;
+  row-gap:3px !important;
+  align-items:center !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header{
+  padding-top:5px !important;
+  padding-bottom:5px !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-stt,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-stt{
+  grid-column:1 !important;
+  grid-row:1 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-name,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+  grid-column:2 / -1 !important;
+  grid-row:1 !important;
+  min-width:0 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-price,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-price{
+  grid-column:3 !important;
+  grid-row:2 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-qty,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-qty{
+  grid-column:4 !important;
+  grid-row:2 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] .cart-column-header .cart-total,
+#cartBottomSheet[data-cart-mode="edit"][data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-total{
+  grid-column:5 !important;
+  grid-row:2 !important;
+}
