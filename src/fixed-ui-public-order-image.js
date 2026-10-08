@@ -399,9 +399,16 @@
     const textWidth=(node)=>{
       if(!node)return 0;
       const style=getComputedStyle(node);
-      if(!context)return (node.textContent||'').length*8;
+      let content=(node.textContent||'').trim();
+      // The caption uses uppercase + tracking-wider. Measuring its untransformed
+      // source text underestimates its rendered width and can collide with SL.
+      if(style.textTransform==='uppercase')content=content.toLocaleUpperCase('vi-VN');
+      else if(style.textTransform==='lowercase')content=content.toLocaleLowerCase('vi-VN');
+      if(!context)return content.length*8;
       context.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].filter(Boolean).join(' ');
-      return context.measureText((node.textContent||'').trim()).width;
+      const tracking=Number.parseFloat(style.letterSpacing);
+      const extra=Number.isFinite(tracking)?Math.max(0,content.length-1)*tracking:0;
+      return context.measureText(content).width+extra;
     };
     const trackWidth=(selector,min)=>{
       const nodes=[header.querySelector(selector),...rows.map(row=>row.querySelector(selector))];
