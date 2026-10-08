@@ -598,9 +598,21 @@
                             ${imageHtml}
                             <div class="min-w-0 flex-1">
                                 <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
-                                <div class="mt-1 flex items-baseline gap-2 min-w-0 ${employeeMode ? 'hidden' : ''}">
+                                <div class="mt-1 flex items-center gap-2 min-w-0 ${employeeMode ? 'hidden' : ''}">
                                     ${salePriceHtml}
                                     ${!employeeMode && giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
+                                    <span data-product-note-wrap="${escapeProductEditorValue(maSp)}" class="sale-note-inline ${qty > 0 && !employeeMode ? '' : 'hidden'}">
+                                        <button type="button" class="sale-note-trigger allow-fast-click ${lineNote.trim() ? 'has-note' : ''}"
+                                            data-cart-note-id="${escapeProductEditorValue(maSp)}"
+                                            data-cart-product-name="${escapeProductEditorValue(tenSp)}"
+                                            data-note-current="${escapeProductEditorValue(lineNote.trim())}"
+                                            title="${lineNote.trim() ? 'Sửa ghi chú: ' + escapeProductEditorValue(lineNote.trim()) : 'Thêm ghi chú cho sản phẩm'}"
+                                            aria-label="${lineNote.trim() ? 'Sửa ghi chú sản phẩm ' : 'Thêm ghi chú cho sản phẩm '}${escapeProductEditorValue(tenSp)}"
+                                            onclick="openCartLineNoteEditor(this)">
+                                            <i class="ph-bold ph-note-pencil" aria-hidden="true"></i>
+                                            <span class="sale-note-summary ${lineNote.trim() ? '' : 'hidden'}">${escapeProductEditorValue(lineNote.trim())}</span>
+                                        </button>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -611,9 +623,6 @@
                                 <button onclick="updateCart('${maSp}', '${tenSp}', ${giaBan}, 1)" class="allow-fast-click w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[10px]"></i></button>
                             </div>
                         </div>
-                    </div>
-                    <div data-product-note-wrap="${escapeProductEditorValue(maSp)}" class="product-line-note-wrap mt-2 ${qty > 0 && !employeeMode ? '' : 'hidden'}">
-                        <input type="text" value="${escapeProductEditorValue(lineNote)}" data-line-note-id="${escapeProductEditorValue(maSp)}" oninput="previewProductLineNote(this)" placeholder="Ghi chú màu / loại..." autocomplete="off" class="w-full h-8 px-3 rounded-lg border border-gray-200 bg-gray-50 text-[12px] text-gray-700 outline-none focus:border-primary">
                     </div>
                 </div>`;
             }).join('');
