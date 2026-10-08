@@ -1290,3 +1290,35 @@
     column-gap:5px !important;
   }
 }
+
+/* UI-101 / 2026-10-08: align text and plain numbers by typographic baseline,
+   never by the center of differently-sized font boxes. Editable steppers
+   remain centered as full controls; each row uses one shared grid ruler. */
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid{
+  align-items:baseline !important;
+}
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid > .min-w-0{
+  align-self:baseline !important;
+  min-width:0 !important;
+}
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid :is(.order-stt,.order-price,.order-qty,.order-total){
+  align-self:baseline !important;
+  line-height:1.25 !important;
+}
+#cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid{
+  align-items:baseline !important;
+}
+#cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid :is(.cart-stt,.cart-price,.cart-qty,.cart-total),
+#cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+  align-self:baseline !important;
+}
+#cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid .cart-qty-readonly{
+  align-self:baseline !important;
+  line-height:1.25 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid{
+  align-items:center !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control{
+  align-self:center !important;
+}
