@@ -167,144 +167,63 @@
   }
 
   function buildCapture(entries){
-    let totalQty=0;
-    let totalPrice=0;
-    const rows=entries.map(([id,item],idx)=>{
+    const portrait=window.TAPHOA_ORDER_PORTRAIT;
+    if(!portrait)throw new Error('portrait_order_renderer_unavailable');
+    let totalQty=0, totalPrice=0;
+    const items=entries.map(([id,item],index)=>{
       const qty=Number(item?.qty)||0;
       const price=Number(item?.price)||0;
-      const lineTotal=qty*price;
-      totalQty+=qty;
-      totalPrice+=lineTotal;
-      return `
-        <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 72px 42px 86px;column-gap:10px;align-items:center;min-height:38px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;">
-          <div style="text-align:center;color:#9ca3af;font-weight:700;">${idx+1}</div>
-          <div style="min-width:0;line-height:1.35;overflow-wrap:anywhere;">
-            <div style="color:#111827;font-weight:700;">${escapeHtml(item?.name || id)}</div>
-            ${String(item?.note || '').trim() ? `<div style="margin-top:2px;color:#6b7280;font-size:10px;font-weight:500;">${escapeHtml(String(item.note).trim())}</div>` : ''}
-          </div>
-          <div style="text-align:right;color:#374151;font-weight:600;font-variant-numeric:tabular-nums;">${price.toLocaleString('vi-VN')}</div>
-          <div style="text-align:center;color:#374151;font-weight:700;font-variant-numeric:tabular-nums;">${qty}</div>
-          <div style="text-align:right;color:#111827;font-weight:800;font-variant-numeric:tabular-nums;">${lineTotal.toLocaleString('vi-VN')}</div>
-        </div>`;
-    }).join('');
-
-    // UI-108: exported 720px capture obeys the same money-first caption rule.
-    const probe=document.createElement('canvas').getContext('2d');
-    const measure=(str,font)=>{if(!probe)return str.length*8;probe.font=font;return probe.measureText(str).width;};
-    const longestAmount=Math.max(0,...entries.map(([,item])=>
-      measure(((Number(item?.qty)||0)*(Number(item?.price)||0)).toLocaleString('vi-VN'),
-        '800 12px "Be Vietnam Pro", sans-serif')));
-    const totalCaption=['Thành tiền','T.tiền','Tiền','TT']
-      .find(label=>measure(label.toLocaleUpperCase('vi-VN'),
-        '800 10px "Be Vietnam Pro", sans-serif')<=longestAmount)||'TT';
+      const amount=qty*price;
+      totalQty+=qty;totalPrice+=amount;
+      return {
+        index:index+1,
+        name:String(item?.name||id),
+        note:String(item?.note||'').trim(),
+        qtyText:qty.toLocaleString('vi-VN'),
+        priceText:price.toLocaleString('vi-VN'),
+        totalText:amount.toLocaleString('vi-VN')
+      };
+    });
     const meta=getOrderMeta();
-    const host=document.createElement('div');
-    host.setAttribute('aria-hidden','true');
-    host.style.position='fixed';
-    host.style.left='-100000px';
-    host.style.top='0';
-    host.style.width='720px';
-    host.style.background='#fff';
-    host.style.pointerEvents='none';
-    host.style.zIndex='-1';
-
-    const capture=document.createElement('div');
-    capture.style.width='720px';
-    capture.style.background='#fff';
-    capture.style.color='#1f2937';
-    capture.style.fontFamily='\"Be Vietnam Pro\",sans-serif';
-    capture.style.boxSizing='border-box';
-    const metaTitle=meta.isCreatingSaleDraft
-      ? 'Đơn đang tạo'
-      : 'Mã đơn: ' + escapeHtml(meta.orderId || '--');
-    capture.innerHTML=`
-      <div style="padding:22px 28px 18px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
-        <div style="font-size:12px;color:#9ca3af;font-weight:700;">${metaTitle}</div>
-        <div style="margin-top:8px;font-size:18px;color:#111827;font-weight:800;">${escapeHtml(meta.customer)}</div>
-        <div style="margin-top:6px;font-size:12px;color:#6b7280;">Thời gian: ${escapeHtml(meta.time)}</div>
-      </div>
-      <div style="padding:0 28px;">
-        <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 72px 42px 86px;column-gap:10px;align-items:center;height:40px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px;font-weight:800;text-transform:uppercase;">
-          <div style="text-align:center;">STT</div>
-          <div>Tên</div>
-          <div style="text-align:right;">Đơn giá</div>
-          <div style="text-align:center;">SL</div>
-          <div style="text-align:right;" title="Thành tiền">${totalCaption}</div>
-        </div>
-        <div>${rows}</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:20px 28px 24px;border-top:1px solid #e5e7eb;background:#fff;">
-        <div>
-          <div style="font-size:11px;color:#9ca3af;font-weight:600;">Số lượng</div>
-          <div style="margin-top:5px;font-size:16px;color:#111827;font-weight:800;">${entries.length} mã · ${totalQty} sản phẩm</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;color:#9ca3af;font-weight:600;">Tổng thanh toán</div>
-          <div style="margin-top:3px;font-size:24px;color:#16a34a;font-weight:800;font-variant-numeric:tabular-nums;">${totalPrice.toLocaleString('vi-VN')}</div>
-        </div>
-      </div>`;
-
-    host.appendChild(capture);
-    document.body.appendChild(host);
-    return {host,capture,totalQty,totalPrice,meta};
+    const built=portrait.createPage({
+      isDraft:meta.isCreatingSaleDraft,
+      orderId:meta.orderId,customer:meta.customer,time:meta.time,
+      items,lineCount:items.length,totalQty,
+      totalPriceText:totalPrice.toLocaleString('vi-VN')
+    });
+    return {...built,totalQty,totalPrice,meta};
   }
 
   function prepareDetailClone(source){
-    const sourceWidth=Math.ceil(source.getBoundingClientRect().width);
-    const width=Math.min(760,Math.max(360,sourceWidth));
-    const clone=source.cloneNode(true);
-    clone.removeAttribute('id');
-    clone.classList.remove('hidden');
-    clone.style.display='flex';
-    clone.style.webkitTextSizeAdjust='100%';
-    clone.style.textSizeAdjust='100%';
-    clone.style.width=width+'px';
-    clone.style.height='auto';
-    clone.style.maxHeight='none';
-    clone.style.minHeight='0';
-    clone.style.overflow='visible';
-    clone.style.flex='none';
-
-    const cloneItems=clone.querySelector('#detailModalItems');
-    if(cloneItems){
-      cloneItems.removeAttribute('id');
-      cloneItems.style.height='auto';
-      cloneItems.style.maxHeight='none';
-      cloneItems.style.minHeight='0';
-      cloneItems.style.overflow='visible';
-      cloneItems.style.flex='none';
-    }
-
-    clone.querySelectorAll('.order-detail-compact-grid').forEach(row=>{
-      row.style.minHeight='34px';
-      row.style.height='auto';
-      row.style.overflow='visible';
-      row.style.alignItems='center';
+    const portrait=window.TAPHOA_ORDER_PORTRAIT;
+    if(!portrait)throw new Error('portrait_order_renderer_unavailable');
+    const getText=(parent,selector)=>String(parent?.querySelector(selector)?.textContent||'').trim();
+    const rows=Array.from(source.querySelectorAll('#detailModalItems .order-detail-compact-grid'));
+    if(!rows.length)throw new Error('order_detail_has_no_visible_rows');
+    const items=rows.map((row,index)=>({
+      index:getText(row,'.order-stt')||index+1,
+      name:getText(row,'.order-name'),
+      note:getText(row,'.order-line-note'),
+      priceText:getText(row,'.order-price'),
+      qtyText:getText(row,'.order-qty'),
+      totalText:getText(row,'.order-total')
+    }));
+    const orderCode=getText(source,'#detailModalOrderCode')
+      .replace(/^Mã đơn\s*:\s*/i,'');
+    const meta=getOrderMeta();
+    const customer=getText(source,'#detailModalKH')||meta.customer;
+    const time=getText(source,'#detailModalTime')
+      .replace(/^Thời gian\s*:\s*/i,'')||meta.time;
+    const number=(text)=>Number(String(text||'0').replace(/[^\d-]/g,''))||0;
+    const totalQty=number(getText(source,'#detailTotalQtyDisplay'))
+      ||items.reduce((sum,item)=>sum+number(item.qtyText),0);
+    const totalPriceText=getText(source,'#detailModalTotal')
+      ||(items.reduce((sum,item)=>sum+number(item.totalText),0)).toLocaleString('vi-VN');
+    return portrait.createPage({
+      isDraft:false,
+      orderId:orderCode||meta.orderId,
+      customer,time,items,lineCount:items.length,totalQty,totalPriceText
     });
-
-    clone.querySelectorAll('.order-name').forEach(name=>{
-      name.style.overflow='visible';
-      name.style.textOverflow='clip';
-      name.style.whiteSpace='normal';
-      name.style.lineHeight='1.35';
-      name.style.paddingTop='2px';
-      name.style.paddingBottom='2px';
-    });
-
-    const host=document.createElement('div');
-    host.setAttribute('aria-hidden','true');
-    host.style.position='fixed';
-    host.style.left='-100000px';
-    host.style.top='0';
-    host.style.width=width+'px';
-    host.style.height='auto';
-    host.style.overflow='visible';
-    host.style.background='#ffffff';
-    host.style.pointerEvents='none';
-    host.style.zIndex='-1';
-    host.appendChild(clone);
-    document.body.appendChild(host);
-    return {host,clone,width};
   }
 
   async function canvasToPngBlob(target,width,height,errorMessage){
