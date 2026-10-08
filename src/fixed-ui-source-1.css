@@ -2,14 +2,19 @@
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        button, a, input, select { -webkit-tap-highlight-color: transparent; outline: none; }
+        button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+        /* P4 control owner: visible keyboard focus without changing pointer/touch flow. */
+        #appContainer :is(button, a, input, select, textarea, [role="button"]):focus-visible {
+          outline: 2px solid var(--app-primary, #16a34a);
+          outline-offset: 2px;
+        }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
         .tab-content { display: none; }
         .tab-content.active { display: flex; }
         .bottom-sheet-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        #appContainer { transition: all 0.3s ease; width: 100%; max-width: 428px; height: 100vh; }
+        #appContainer { transition: max-width 0.2s ease; width: 100%; max-width: 428px; height: 100vh; height: 100dvh; }
         @media (min-width: 768px) {
             body { background-color: #d1d5db; }
             .pc-mode #appContainer {
@@ -298,4 +303,9 @@ body[data-force-pc="1"] #btnOpenCartMobile{display:none !important;}
 #customerDebtBottomSheet{
   min-height:0 !important;
   overflow:hidden !important;
+}
+
+/* P0 accessibility: the existing bottom-sheet and shell honor reduced motion. */
+@media (prefers-reduced-motion: reduce){
+  #appContainer, .bottom-sheet-transition { transition: none !important; }
 }
