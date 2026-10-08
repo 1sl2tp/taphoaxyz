@@ -1351,3 +1351,36 @@
   text-align:right !important;
 }
 #cartBottomSheet .cart-column-header .cart-total{text-align:right !important;}
+
+/* UI-103 — NUMBER AXIS FIRST (2026-10-08).
+   Header is only a label; price digits end at C's right edge, total digits
+   end at E's right edge. D's number is positioned halfway between
+   price's digit end and the earliest edge of visible total digits.
+   JS measures slack between width of E's label and widest total digits.
+   Translate D as ONE unit (label / full +/- control / readonly number),
+   never shift only the input or resize the control and break hit targets. */
+#cartBottomSheet .cart-column-header .cart-qty{
+  transform:translateX(var(--cart-numeric-axis-shift,0px)) !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control,
+#cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid .cart-qty-readonly{
+  transform:translateX(var(--cart-numeric-axis-shift,0px)) !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control{
+  justify-self:center !important;
+  align-items:center !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > input{
+  justify-self:center !important;
+  text-align:center !important;
+  font-variant-numeric:tabular-nums;
+}
+#cartBottomSheet .cart-column-header .cart-price,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-price{
+  text-align:right !important;
+}
+#cartBottomSheet .cart-column-header .cart-total,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-total,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-total .cart-money-value{
+  text-align:right !important;
+}
