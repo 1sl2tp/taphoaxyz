@@ -28,8 +28,16 @@
       textWidth(formatValue(item,'totalText'),`800 13px ${fontFamily}`)));
     const qtyMax=Math.max(0,...items.map(item=>
       textWidth(formatValue(item,'qtyText'),`700 13px ${fontFamily}`)));
-    const unitWidth=Math.ceil(Math.max(52,unitMax,
-      textWidth('ĐƠN GIÁ',`800 10px ${fontFamily}`))+2);
+    // UI-112: the short price caption follows the largest unit PRICE,
+    // not a fixed label width. Full semantics remain available via title.
+    const priceLabels=['Đơn giá','Đ.giá','Giá','ĐG'];
+    const priceCaption=items.length
+      ? priceLabels.find(label=>textWidth(label.toLocaleUpperCase('vi-VN'),
+          `800 10px ${fontFamily}`)<=unitMax)||'ĐG'
+      : 'Đơn giá';
+    const unitWidth=Math.ceil(Math.max(18,unitMax,
+      textWidth(priceCaption.toLocaleUpperCase('vi-VN'),
+        `800 10px ${fontFamily}`))+2);
     const qtyWidth=Math.ceil(Math.max(22,qtyMax,
       textWidth('SL',`800 10px ${fontFamily}`))+2);
     const labels=['Thành tiền','T.tiền','Tiền','TT'];
@@ -37,7 +45,7 @@
       `800 10px ${fontFamily}`)<=amountMax)||'TT';
     const totalWidth=Math.ceil(Math.max(24,amountMax,
       textWidth(caption.toLocaleUpperCase('vi-VN'),`800 10px ${fontFamily}`))+2);
-    const grid=`24px minmax(0,1fr) ${unitWidth}px ${qtyWidth}px ${totalWidth}px`;
+    const grid=`24px minmax(0,1fr) ${qtyWidth}px ${unitWidth}px ${totalWidth}px`;
     const gridStyle=`display:grid;grid-template-columns:${grid};column-gap:7px;align-items:baseline;box-sizing:border-box;width:100%;min-width:0;`;
     const rowsHtml=items.map((item,index)=>`
       <div style="${gridStyle}padding:11px 0;border-bottom:1px solid #eef2f7;min-height:45px;font-size:13px;line-height:1.4;">
@@ -46,8 +54,8 @@
           <div style="color:#111827;font-weight:750;">${escapeHtml(item.name)}</div>
           ${item.note?'<div style="font-size:11px;line-height:1.35;margin-top:3px;color:#64748b;">'+escapeHtml(item.note)+'</div>':''}
         </div>
-        <div style="text-align:right;white-space:nowrap;font-weight:650;font-variant-numeric:tabular-nums;">${escapeHtml(item.priceText)}</div>
         <div style="text-align:center;white-space:nowrap;font-weight:750;font-variant-numeric:tabular-nums;">${escapeHtml(item.qtyText)}</div>
+        <div style="text-align:right;white-space:nowrap;font-weight:650;font-variant-numeric:tabular-nums;">${escapeHtml(item.priceText)}</div>
         <div style="text-align:right;white-space:nowrap;font-weight:800;color:#111827;font-variant-numeric:tabular-nums;">${escapeHtml(item.totalText)}</div>
       </div>`).join('');
     const isDraft=!!options.isDraft;
@@ -94,8 +102,8 @@
       <div style="padding:0 22px;flex:0 0 auto;">
         <div style="${gridStyle}height:40px;border-bottom:1px solid #e5e7eb;color:#94a3b8;font-size:10px;line-height:1.25;font-weight:800;text-transform:uppercase;align-items:center;">
           <div style="text-align:center;">STT</div><div>Tên</div>
-          <div style="text-align:right;">Đơn giá</div>
           <div style="text-align:center;">SL</div>
+          <div style="text-align:right;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
           <div style="text-align:right;" title="Thành tiền">${escapeHtml(caption)}</div>
         </div>
         <div>${rowsHtml}</div>
