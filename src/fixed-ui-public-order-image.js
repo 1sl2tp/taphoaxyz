@@ -362,7 +362,27 @@
       return Math.max(min,Math.ceil(Math.max(0,...nodes.map(textWidth))+9));
     };
     source.style.setProperty('--order-stt-track',trackWidth('.order-stt',24)+'px');
-    source.style.setProperty('--order-price-track',trackWidth('.order-price',56)+'px');
+    // UI-111/112: SL in column C, price in D. Caption D is the
+    // longest equivalent that fits the widest real price number.
+    const priceHeader=header.querySelector('.order-price');
+    const priceCells=rows.map(row=>row.querySelector('.order-price')).filter(Boolean);
+    const widestPrice=Math.max(0,...priceCells.map(textWidth));
+    const priceLabels=['Đơn giá','Đ.giá','Giá','ĐG'];
+    const chosenPrice=priceLabels.find(label=>{
+      if(!priceHeader)return false;
+      const before=priceHeader.textContent;
+      priceHeader.textContent=label;
+      const result=textWidth(priceHeader);
+      priceHeader.textContent=before;
+      return result<=widestPrice;
+    })||'ĐG';
+    if(priceHeader){
+      priceHeader.textContent=chosenPrice;
+      priceHeader.title='Đơn giá';
+      priceHeader.setAttribute('aria-label','Đơn giá');
+    }
+    source.style.setProperty('--order-price-track',
+      Math.ceil(Math.max(widestPrice,textWidth(priceHeader))+2)+'px');
     source.style.setProperty('--order-qty-track',trackWidth('.order-qty',27)+'px');
     // UI-108: reserve width for the widest REAL amount; choose a caption
     // within that width instead of allowing "THÀNH TIỀN" to push SL aside.
