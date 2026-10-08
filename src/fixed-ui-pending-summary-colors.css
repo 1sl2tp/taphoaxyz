@@ -196,7 +196,8 @@ body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-c
 @media (max-width:620px){
   #tab-da-giao .order-summary-panel .summary-compact-table,
   #tab-don-tam .order-summary-panel .summary-compact-table{
-    min-width:430px !important;
+    min-width:0 !important;
+    width:100% !important;
   }
   body[data-auth-role="user"] #tab-da-giao .order-summary-panel .summary-compact-table,
   body[data-auth-role="user"] #tab-don-tam .order-summary-panel .summary-compact-table{
