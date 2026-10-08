@@ -102,6 +102,18 @@
                     // B/Tên receives all free space between left ID and right metrics.
                     const priceWidth = columnWidth('Đơn giá', head('.cart-price'), priceTexts, numberStyle, 8);
                     const totalWidth = columnWidth('Thành tiền', head('.cart-total'), amountTexts, totalStyle, 8);
+                    // UI-103: Numeric VISUAL axis is defined by real digits, not
+                    // the wider "Thành tiền" header. Its unused left space makes
+                    // the quantity number look too close to Đơn giá. Center the
+                    // quantity NUMBER between the right edge of unit-price digits
+                    // and the left edge of the widest line-total digits.
+                    // The entire +/- frame moves with its central number.
+                    const widestTotalDigits = maxWidth(amountTexts, totalStyle);
+                    const unusedTotalLabelSpace = Math.max(0, totalWidth - widestTotalDigits);
+                    const numericAxisShift = cartEntries.length
+                        ? Math.min(24, Math.round(unusedTotalLabelSpace / 2))
+                        : 0;
+                    cartSheet.style.setProperty('--cart-numeric-axis-shift', numericAxisShift + 'px');
                     const qtyInput = body.querySelector('.cart-qty-control > input');
                     const qtyInputWidth = Math.max(28, maxWidth(quantityTexts, qtyInput || qtyStyle) + 12);
                     // Two 30px buttons + editable number + 2 one-pixel gaps,
