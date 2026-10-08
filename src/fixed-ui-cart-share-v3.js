@@ -5,7 +5,6 @@
   let cartShareCache=null;
   let cartSharePreparePromise=null;
   let cartSharePrepareSignature='';
-  let cartSharePrepareTimer=null;
   let cartShareGeneration=0;
   let detailShareCache=null;
   let detailSharePreparePromise=null;
@@ -284,13 +283,6 @@
     return promise;
   }
 
-  function scheduleCartSharePreparation(delay=120){
-    clearTimeout(cartSharePrepareTimer);
-    cartSharePrepareTimer=setTimeout(()=>{
-      if(currentCartEntries().length)void prepareCartShareCache();
-    },Math.max(0,Number(delay)||0));
-  }
-
   async function prepareDetailShareCache(){
     const source=document.getElementById('orderDetailContentToShare');
     if(!source){
@@ -398,6 +390,10 @@
     showShareReadyHint();
   }
 
+  // UI-113: Expensive PNG rendering is ON-DEMAND only. Never render the
+  // receipt, fetch the capture library or consume a background task on
+  // load, every quantity change, or opening an order. Keeps taps responsive.
+  // When share is requested, existing cache/promise logic still deduplicates.
   window.shareCartOrderImage=shareCartOrderImageV3;
 
   window.shareOrderImage=function(...args){
@@ -418,39 +414,7 @@
     detailShareBtn.setAttribute('data-order-share-version','4-ios-prepared');
   }
 
-  if(typeof renderCartUI==='function'){
-    const renderCartUIBeforeSharePrep=renderCartUI;
-    renderCartUI=function(...args){
-      const result=renderCartUIBeforeSharePrep.apply(this,args);
-      scheduleCartSharePreparation();
-      return result;
-    };
-  }
-
-  if(typeof renderCartFooterActions==='function'){
-    const renderCartFooterActionsBeforeSharePrep=renderCartFooterActions;
-    renderCartFooterActions=function(...args){
-      const result=renderCartFooterActionsBeforeSharePrep.apply(this,args);
-      scheduleCartSharePreparation();
-      return result;
-    };
-  }
-
-  if(typeof openOrderMobile==='function'){
-    const openOrderMobileBeforeSharePrep=openOrderMobile;
-    openOrderMobile=function(...args){
-      const result=openOrderMobileBeforeSharePrep.apply(this,args);
-      detailShareCache=null;
-      setTimeout(()=>void prepareDetailShareCache(),20);
-      return result;
-    };
-  }
-
   document.documentElement.setAttribute('data-ios-share-context',isIosShareContext()?'1':'0');
   document.documentElement.setAttribute('data-pwa-standalone',isStandalonePwa()?'1':'0');
 
-  const prewarm=()=>window.TAPHOA_SHARE_CAPTURE?.ensureHtml2Canvas?.().catch(()=>{});
-  if(typeof requestIdleCallback==='function')requestIdleCallback(prewarm,{timeout:1200});
-  else setTimeout(prewarm,350);
-  scheduleCartSharePreparation(0);
 })();
