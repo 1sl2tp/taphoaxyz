@@ -62,9 +62,14 @@ Quy tắc này được viện dẫn từ `AGENTS.md`. Không tự chia layout g
 - Source: `src/fixed-ui-runtime-6.js` (nhãn mode + tính width), `src/fixed-ui-cart-spacing.css` (grid), `index.html` (đổi version URL). Không thêm API/DB/Edge/log, không đổi nghiệp vụ.
 - Kiểm cả hai mode trên 320/375/390/428px và chuyển qua lại (edit→preview→edit); test PASS chỉ xác nhận hợp đồng, cần ảnh iPhone mới để chốt Visual PASS.
 
-## Sửa lỗi ảnh 13:08 — hai khoảng trống PHẢI có chiều rộng bằng nhau (2026-10-08)
-- Ảnh chụp thực tế cho thấy Đơn giá (vd 241) rất sát nút `−` nhưng nút `+` lại cách xa Thành tiền (241); readonly số `1/15` cũng lệch nhiều về phía giá. Root cause: lưới CSS **5 track kề nhau** buộc track SL sát giá, và phần còn lại bị đẩy ra vùng Tên/cuối bảng. Chỉ `column-gap:4px` hoặc `text-align` không đảm bảo **khoảng cách giữa các MÉP SỐ** bằng nhau.
-- Trên mobile, dùng **5 ô dữ liệu + 2 track đệm co giãn bằng nhau**, tổng 7 CSS track: `STT | Tên | Đơn giá | GAP-A | SL | GAP-B | Thành tiền`. Track dữ liệu được đặt tại cột `1,2,3,5,7` cho cả header và body; hai track `GAP-A = GAP-B = minmax(0,1fr)` trong cùng grid và `column-gap:0`. Track Tên được ưu tiên `minmax(0,6fr)` (<=360px dùng 8fr), nên tên không bị ép quá ngắn.
-- Đơn giá bám mép PHẢI track 3; SL dạng nút chiếm cả track 5 hoặc SL chỉ số căn GIỮA track 5; Thành tiền bám mép TRÁI track 7. Khi đó đo từ mép phải số đơn giá đến nút `−` = đo từ nút `+` đến mép trái số thành tiền; readonly cũng cân hai bên chữ số SL.
-- Header **Số lượng** khi có nút và **SL** khi readonly, đi theo vị trí cột dữ liệu, không tham gia phép tính gap. Tiền không cắt, track độ rộng vẫn dựa vào số tiền lớn nhất đã định dạng, STT/Tên/SL cùng hàng, popup ghi chú không thay đổi.
-- QA phải đối chiếu cả 2 ảnh và đo G1/G2 tại **nội dung thực**, test phải xác nhận 2 spacer bằng nhau và vị trí 1/2/3/5/7. Nếu chỉ CI PASS mà chưa có screenshot sau sửa => visual vẫn chưa xác nhận.
+## Chuẩn Excel 5 cột — đo max nội dung thực tế (thay thế quy tắc 7 track)
+
+Nguồn: ảnh ví dụ bảng tính do người dùng gửi 2026-10-08 20:20.
+
+- Chỉ có **5 cột A–E**, thứ tự `STT | Tên | Đơn giá | SL / Số lượng | Thành tiền`, mỗi sản phẩm một hàng. Bỏ hoàn toàn ý tưởng 7 CSS track với hai khoảng đệm linh hoạt. Cách đó làm tiêu đề và số xa nhau không cần thiết.
+- **Cột A:** rộng bằng nội dung lớn nhất giữa nhãn `STT` và STT của mọi dòng, cộng đệm nhỏ. **Cột B:** rộng bằng `Tên` hoặc tên sản phẩm dài nhất, nhưng nếu vượt khung thì chỉ cột Tên co lại và hiện dấu ba chấm. **Cột C:** bằng giá trị lớn nhất giữa chữ `Đơn giá` và mọi đơn giá được định dạng vi-VN. **Cột D:** bằng nhãn `SL` hay `Số lượng` hoặc số lượng lớn nhất; **nếu có nút** thì bao gồm toàn bộ khung `− số +` (hai nút, giá trị dài nhất, padding và border). **Cột E:** bằng max nhãn `Thành tiền` hoặc thành tiền lớn nhất của các dòng, tính với hàng như `500 × 10 = 5.000`.
+- Tất cả dùng **một bộ độ rộng tính đúng một lần mỗi render cho cả header và tất cả sản phẩm**. Đo chữ theo font trình duyệt bằng canvas sau render, không dự đoán chiều rộng từ số ký tự. Áp dụng `--cart-stt-track`, `--cart-name-track`, `--cart-unit-track`, `--cart-qty-track`, `--cart-total-track`; số lượng có thể dùng `--cart-qty-input-track`.
+- Khoảng hở **4 vị trí đều 6px** giữa năm cột; không dùng hai spacer tracks. Giá căn phải cột C, SL/cụm nút ở giữa D, tiền căn trái cột E; chữ tiêu đề ăn theo trục nội dung. Không còn lấy toàn bộ chiều ngang màn hình kéo giãn khoảng trống giữa ba cột số.
+- Chế độ sửa có nhãn **Số lượng**, bộ `− số +`; chế độ xem chỉ có nhãn **SL**, số thường. Nút ghi chú không ở bảng: chạm Tên sẽ nổi ghi chú, giữ nguyên dữ liệu. Không sửa phép tính tiền hay share/back-end.
+- Đo width theo toàn bộ các dòng (không chỉ dòng 1/2 trong ví dụ). Nếu giá trị tăng khi sửa SL/giá thì lần render tiếp phải tính lại. Không gọi server, DB hay background job để đo chữ.
+- **PASS yêu cầu ảnh Safari/PWA sau triển khai**: 5 cột thẳng hàng, A/C/D/E đủ rộng theo max, B co nếu cần, tên dài cắt dấu ba chấm, đơn giá/SL/thành tiền cách nhau đều theo mép thực. Không khẳng định visual PASS chỉ dựa vào CI.

@@ -65,7 +65,68 @@
 
             if (totalQty === 0) html = `<div class="py-12 text-center text-gray-400 text-sm flex flex-col items-center"><i class="ph ph-shopping-cart text-4xl mb-2 opacity-40"></i>Giỏ hàng trống</div>`;
             document.getElementById('cartItemList').innerHTML = html;
-            
+
+            // Single intrinsic-width ruler, like spreadsheet columns A–E:
+            // the longest header/data content owns each column width.
+            // Names take their natural maximum width up to available space,
+            // then ellipsize. Quantity includes the FULL +/- control in edit.
+            if (cartSheet) {
+                const header = cartSheet.querySelector('.cart-column-header');
+                const body = document.getElementById('cartItemList');
+                if (header && body) {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext && canvas.getContext('2d');
+                    const getStyle = (node) => node ? window.getComputedStyle(node) : null;
+                    const measure = (value, node) => {
+                        const style = getStyle(node);
+                        const text = String(value ?? '');
+                        if (!context || !style) return text.length * 8;
+                        context.font = [style.fontStyle, style.fontWeight, style.fontSize, style.fontFamily]
+                            .filter(Boolean).join(' ');
+                        return context.measureText(text).width;
+                    };
+                    const head = (selector) => header.querySelector(selector);
+                    const numberStyle = body.querySelector('.cart-price .cart-money-value') || head('.cart-price');
+                    const totalStyle = body.querySelector('.cart-total .cart-money-value') || head('.cart-total');
+                    const nameStyle = body.querySelector('.cart-name') || head('.cart-name');
+                    const sttStyle = body.querySelector('.cart-stt') || head('.cart-stt');
+                    const qtyStyle = body.querySelector('.cart-qty-readonly') || head('.cart-qty');
+                    const maxWidth = (values, node) => Math.ceil(Math.max(0, ...values.map(v => measure(v, node))));
+                    const priceTexts = cartEntries.map(([, item]) => Number(item.price || 0).toLocaleString('vi-VN'));
+                    const amountTexts = cartEntries.map(([, item]) =>
+                        ((Number(item.qty) || 0) * (Number(item.price) || 0)).toLocaleString('vi-VN'));
+                    const quantityTexts = cartEntries.map(([, item]) => Number(item.qty || 0).toLocaleString('vi-VN'));
+                    const names = cartEntries.map(([, item]) => String(item.name || ''));
+                    const indexTexts = cartEntries.map((_, idx) => String(idx + 1));
+                    const columnWidth = (label, headerNode, values, valueNode, padding) =>
+                        Math.ceil(Math.max(measure(label, headerNode), maxWidth(values, valueNode)) + padding);
+                    const sttWidth = columnWidth('STT', head('.cart-stt'), indexTexts, sttStyle, 6);
+                    const nameWidth = columnWidth('Tên', head('.cart-name'), names, nameStyle, 6);
+                    const priceWidth = columnWidth('Đơn giá', head('.cart-price'), priceTexts, numberStyle, 8);
+                    const totalWidth = columnWidth('Thành tiền', head('.cart-total'), amountTexts, totalStyle, 8);
+                    const qtyInput = body.querySelector('.cart-qty-control > input');
+                    const qtyInputWidth = Math.max(28, maxWidth(quantityTexts, qtyInput || qtyStyle) + 12);
+                    // Two 30px buttons + editable number + 2 one-pixel gaps,
+                    // 4px internal padding + 2px border, i.e. 96px for 1 digit.
+                    const controlWidth = 30 + qtyInputWidth + 30 + 2 + 4 + 2;
+                    const qtyWidth = isDeliveredReadOnlyPreview
+                        ? columnWidth('SL', head('.cart-qty'), quantityTexts, qtyStyle, 8)
+                        : Math.max(controlWidth, columnWidth('Số lượng', head('.cart-qty'), [], qtyStyle, 8));
+                    const headerStyle = getStyle(header);
+                    const innerWidth = header.clientWidth -
+                        (parseFloat(headerStyle?.paddingLeft) || 0) -
+                        (parseFloat(headerStyle?.paddingRight) || 0);
+                    const gap = 6; // the same 6px gap between ALL five columns
+                    const remaining = Math.max(0, innerWidth - sttWidth - priceWidth - qtyWidth - totalWidth - 4 * gap);
+                    cartSheet.style.setProperty('--cart-stt-track', sttWidth + 'px');
+                    cartSheet.style.setProperty('--cart-name-track', Math.min(nameWidth, remaining) + 'px');
+                    cartSheet.style.setProperty('--cart-unit-track', priceWidth + 'px');
+                    cartSheet.style.setProperty('--cart-qty-input-track', qtyInputWidth + 'px');
+                    cartSheet.style.setProperty('--cart-qty-track', qtyWidth + 'px');
+                    cartSheet.style.setProperty('--cart-total-track', totalWidth + 'px');
+                }
+            }
+
             let strTotal = totalPrice.toLocaleString('vi-VN');
             document.getElementById('headerQuickQty').innerText = totalQty; document.getElementById('headerQuickTotal').innerText = strTotal;
             document.getElementById('cartCountBadgeMob').innerText = totalQty; document.getElementById('cartTotalMob').innerText = strTotal;

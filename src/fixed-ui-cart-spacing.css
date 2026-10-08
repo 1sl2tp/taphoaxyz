@@ -1073,34 +1073,31 @@
   color:#fff;
 }
 
-/* FIXED STYLE: cart-equal-visible-money-gaps-20261008
-   Follow-up images 13:08: old 5-track grid pinned Thành tiền to the far
-   right, leaving unequal empty space beside Số lượng in both modes.
-   The table still has FIVE DATA COLUMNS. The 7 CSS tracks insert TWO
-   equal flexible spacer tracks between unit-price / quantity / total:
-     STT | Tên | Giá | gap-A | SL | gap-B | Tiền
-   Price text ends at track 3, total text starts at track 7, and the
-   qty number or entire +/- control is centered in track 5. Hence
-   the actual visible gaps on both sides of quantity stay equal. */
+/* FIXED STYLE: cart-five-intrinsic-columns-20261008
+   Sheet sample: A=STT, B=Tên, C=Đơn giá, D=SL, E=Thành tiền.
+   Each data/header track is sized to the LARGEST measured content
+   (including its label, price/total or full +/- control). Name can
+   truncate only after the four numeric tracks and four EQUAL gutters
+   have been reserved. No phantom flexible spacer columns.
+   Runtime 6 sets all five --cart-*-track variables after rendering. */
 @media (max-width:480px){
-  #cartBottomSheet .cart-compact-grid{
+  #cartBottomSheet .cart-compact-grid,
+  #cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid{
+    display:grid !important;
     grid-template-columns:
-      22px minmax(0,6fr) var(--cart-unit-track,54px)
-      minmax(0,1fr) 96px minmax(0,1fr) var(--cart-total-track,69px) !important;
+      var(--cart-stt-track,24px)
+      minmax(0,var(--cart-name-track,60px))
+      var(--cart-unit-track,54px)
+      var(--cart-qty-track,96px)
+      var(--cart-total-track,69px) !important;
     grid-template-areas:none !important;
     grid-template-rows:auto !important;
-    column-gap:0 !important;
+    grid-auto-flow:row !important;
+    column-gap:6px !important;
     row-gap:0 !important;
+    justify-content:start !important;
     align-items:center !important;
   }
-  #cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid{
-    grid-template-columns:
-      22px minmax(0,6fr) var(--cart-unit-track,54px)
-      minmax(0,1fr) var(--cart-qty-readonly-track,32px)
-      minmax(0,1fr) var(--cart-total-track,69px) !important;
-  }
-  /* .cart-left is flattened so the 5 actual cells map to 1/2/3/5/7.
-     Grid-row/column are explicit to defeat old named-area rules. */
   #cartBottomSheet .cart-compact-grid .cart-left{
     display:contents !important;
     grid-area:auto !important;
@@ -1124,12 +1121,12 @@
   }
   #cartBottomSheet .cart-compact-grid .cart-qty{
     grid-area:auto !important;
-    grid-column:5 !important;
+    grid-column:4 !important;
     grid-row:1 !important;
   }
   #cartBottomSheet .cart-compact-grid .cart-total{
     grid-area:auto !important;
-    grid-column:7 !important;
+    grid-column:5 !important;
     grid-row:1 !important;
   }
   #cartBottomSheet .cart-column-header .cart-price{text-align:right !important;}
@@ -1143,20 +1140,37 @@
   }
   #cartBottomSheet #cartItemList .cart-compact-grid .cart-qty{
     justify-content:center !important;
+    width:100% !important;
+    min-width:0 !important;
   }
-}
-/* On very narrow screens prioritize a little more space for the name;
-   both numeric spacer tracks must still use the SAME fractional weight. */
-@media (max-width:360px){
-  #cartBottomSheet .cart-compact-grid{
-    grid-template-columns:
-      22px minmax(0,8fr) var(--cart-unit-track,54px)
-      minmax(0,1fr) 96px minmax(0,1fr) var(--cart-total-track,69px) !important;
+  #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control{
+    display:grid !important;
+    box-sizing:border-box;
+    flex:0 0 var(--cart-qty-track,96px) !important;
+    width:var(--cart-qty-track,96px) !important;
+    min-width:0 !important;
+    grid-template-columns:30px var(--cart-qty-input-track,28px) 30px !important;
+    gap:1px !important;
+    padding:0 2px !important;
+    justify-content:center !important;
   }
-  #cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid{
-    grid-template-columns:
-      22px minmax(0,8fr) var(--cart-unit-track,54px)
-      minmax(0,1fr) var(--cart-qty-readonly-track,32px)
-      minmax(0,1fr) var(--cart-total-track,69px) !important;
+  #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > input{
+    box-sizing:border-box;
+    width:var(--cart-qty-input-track,28px) !important;
+    min-width:0 !important;
+    padding:0 !important;
+  }
+  #cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid .cart-qty-readonly{
+    flex:0 0 var(--cart-qty-track,32px) !important;
+    width:var(--cart-qty-track,32px) !important;
+    min-width:0 !important;
+    padding:0 !important;
+  }
+  #cartBottomSheet #cartItemList .cart-compact-grid .cart-name-note-trigger{
+    min-width:0 !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
   }
 }
