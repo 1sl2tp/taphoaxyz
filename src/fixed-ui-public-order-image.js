@@ -7,6 +7,13 @@
   const inFlight=new Map();
   let activeSignature='';
   let currentMode='image';
+  let activeOrderRequest=null;
+
+  function preferReadableTable(){
+    const panel=document.getElementById('orderDetailBottomSheet');
+    const panelWidth=panel?.getBoundingClientRect().width || window.innerWidth;
+    return panelWidth<600;
+  }
 
   function isZaloInAppBrowser(){
     return /Zalo/i.test(String(navigator.userAgent||''));
@@ -125,7 +132,14 @@
       button.id='publicOrderViewToggleButton';
       button.type='button';
       button.className='hidden h-8 px-2.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold items-center justify-center gap-1 allow-fast-click';
-      button.onclick=()=>setViewMode(currentMode==='image'?'table':'image');
+      button.onclick=()=>{
+        if(currentMode==='image'){
+          setViewMode('table');
+          return;
+        }
+        const request=activeOrderRequest;
+        if(request)void renderPublicOrderImageView(request.orderId,request.sheetName,{forceImage:true});
+      };
       owner.insertBefore(button,share);
     }
     return button;
@@ -163,6 +177,7 @@
 
   function disablePublicOrderImageView(){
     activeSignature='';
+    activeOrderRequest=null;
     currentMode='table';
     const viewer=document.getElementById('publicOrderImageViewer');
     const source=document.getElementById('orderDetailContentToShare');
@@ -316,7 +331,7 @@
     setViewMode('image');
   }
 
-  async function renderPublicOrderImageView(orderId,sheetName){
+  async function renderPublicOrderImageView(orderId,sheetName,options={}){
     if(!isPublicOrderDeepLink(orderId)){
       disablePublicOrderImageView();
       return;
@@ -329,8 +344,16 @@
     }
 
     activeSignature=data.signature;
+    activeOrderRequest={orderId,sheetName};
     const ui=ensureViewer();
     if(!ui)return;
+    // A 720px image rendered into a 360–420px panel reduces all text to
+    // around half size. Show the live readable HTML table on narrow panels;
+    // generate the unchanged share-quality image only if the user requests it.
+    if(!options.forceImage && preferReadableTable()){
+      setViewMode('table');
+      return;
+    }
     ui.viewer.innerHTML=loadingMarkup();
     setViewMode('image');
 
