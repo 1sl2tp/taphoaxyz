@@ -1564,9 +1564,25 @@
   .cart-note-dialog{
     width:100%;
     max-width:480px;
-    max-height:calc(100dvh - 12px);
+    max-height:calc(var(--cart-note-visible-height,100dvh) - 8px);
     overflow-y:auto;
     border-radius:20px 20px 0 0;
     padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+  }
+}
+
+/* UI-116: two-line note by default; expand only for actual content.
+   On iPhone use 16px so focusing a note never zooms the whole app. */
+.cart-note-input{
+  height:52px;
+  min-height:52px;
+  max-height:120px;
+  resize:none;
+  overflow-y:hidden;
+}
+@media(max-width:640px){
+  .cart-note-input{font-size:16px;}
+  .cart-note-dialog{
+    scroll-padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
   }
 }
