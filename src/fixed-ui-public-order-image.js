@@ -387,12 +387,39 @@
     }
   }
 
+  // UI-104: share one numeric ruler across the REAL detail header and rows.
+  // Measure actual font metrics in the existing DOM only; no data requests.
+  function syncOrderDetailNumericRuler(){
+    const source=document.getElementById('orderDetailContentToShare');
+    const header=source?.querySelector('.order-column-header');
+    const rows=Array.from(source?.querySelectorAll('#detailModalItems .order-detail-compact-grid')||[]);
+    if(!source||!header||!rows.length)return;
+    const canvas=document.createElement('canvas');
+    const context=canvas.getContext('2d');
+    const textWidth=(node)=>{
+      if(!node)return 0;
+      const style=getComputedStyle(node);
+      if(!context)return (node.textContent||'').length*8;
+      context.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].filter(Boolean).join(' ');
+      return context.measureText((node.textContent||'').trim()).width;
+    };
+    const trackWidth=(selector,min)=>{
+      const nodes=[header.querySelector(selector),...rows.map(row=>row.querySelector(selector))];
+      return Math.max(min,Math.ceil(Math.max(0,...nodes.map(textWidth))+9));
+    };
+    source.style.setProperty('--order-stt-track',trackWidth('.order-stt',24)+'px');
+    source.style.setProperty('--order-price-track',trackWidth('.order-price',56)+'px');
+    source.style.setProperty('--order-qty-track',trackWidth('.order-qty',27)+'px');
+    source.style.setProperty('--order-total-track',trackWidth('.order-total',69)+'px');
+  }
+
   const originalShowOrderDetailMobile=typeof window.showOrderDetailMobile==='function'
     ? window.showOrderDetailMobile
     : null;
 
   window.showOrderDetailMobile=function(orderId,sheetName){
     const result=originalShowOrderDetailMobile?.apply(this,arguments);
+    syncOrderDetailNumericRuler();
     if(isPublicOrderDeepLink(orderId)){
       setTimeout(()=>void renderPublicOrderImageView(orderId,sheetName),0);
     }else{
