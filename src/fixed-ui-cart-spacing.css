@@ -1322,3 +1322,32 @@
 #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control{
   align-self:center !important;
 }
+
+/* UI-102 / 2026-10-08 — Gap theo CHẾ ĐỘ, cùng ruler header/body.
+   Preview: quantity is a plain number, release control width to product name.
+   Edit: protect the entire +/- stepper; never squeeze its border/buttons.
+   All numeric columns stay right anchored, baseline rules remain unchanged. */
+#cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid{
+  grid-template-columns:
+    var(--cart-stt-track,24px) minmax(0,1fr)
+    var(--cart-unit-track,54px)
+    var(--cart-qty-track,32px)
+    var(--cart-total-track,69px) !important;
+  column-gap:7px !important;
+  width:100% !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] .cart-compact-grid{
+  grid-template-columns:
+    var(--cart-stt-track,24px) minmax(0,1fr)
+    var(--cart-unit-track,54px)
+    var(--cart-qty-track,96px)
+    var(--cart-total-track,69px) !important;
+  column-gap:6px !important;
+  width:100% !important;
+}
+#cartBottomSheet .cart-compact-grid .cart-total{
+  justify-self:stretch !important;
+  justify-content:flex-end !important;
+  text-align:right !important;
+}
+#cartBottomSheet .cart-column-header .cart-total{text-align:right !important;}
