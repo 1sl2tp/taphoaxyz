@@ -204,12 +204,10 @@
                     <div onclick="openCustomerDebtModal('${c.maKh}')" class="debt-customer-card allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition">
                         <div class="debt-customer-avatar pointer-events-none">${c.avatarHtml}</div>
                         <div class="debt-customer-body pointer-events-none min-w-0">
-                            <div class="debt-customer-heading">
-                                <p class="debt-customer-name font-bold text-[14px] text-gray-900">${c.name}</p>
-                                <p class="debt-customer-money font-extrabold text-[15px] ${c.debt > 0 ? 'text-danger' : c.debt < 0 ? 'text-success' : 'text-gray-700'}">${Math.abs(c.debt).toLocaleString('vi-VN')}</p>
-                            </div>
+                            <p class="debt-customer-name font-bold text-[14px] text-gray-900">${c.name}</p>
                             <p class="debt-customer-detail text-[11px] text-gray-400 mt-1">${subText}</p>
                         </div>
+                        <p class="debt-customer-money pointer-events-none font-extrabold text-[15px] ${c.debt > 0 ? 'text-danger' : c.debt < 0 ? 'text-success' : 'text-gray-700'}">${Math.abs(c.debt).toLocaleString('vi-VN')}</p>
                     </div>`;
             });
 
