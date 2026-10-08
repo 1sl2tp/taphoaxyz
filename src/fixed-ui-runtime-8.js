@@ -216,7 +216,23 @@
             return String(value || '').trim().toLocaleLowerCase('vi-VN');
         }
 
-        function groupSourceRowsForSupplier(detailRows) {
+        function tobaccoSupplierSequence() {
+            // Supabase taphoa_products_frontend_json() emits source_row
+            // order, the same canonical supplier order used by admin-gia.
+            // Build this rank from the already-loaded product rows.
+            return new Map((appData.sanpham || []).slice(1)
+                .filter(row => normalizeSourceGroupName(row?.[4]) === 'thuốc lá')
+                .map((row,index) => [String(row?.[0] || ''),index]));
+        }
+
+        function sortTobaccoBySupplierRows(rows) {
+            const ranks = tobaccoSupplierSequence();
+            return rows.sort((a,b) =>
+                (ranks.get(String(a.productCode)) ?? Number.MAX_SAFE_INTEGER)
+                - (ranks.get(String(b.productCode)) ?? Number.MAX_SAFE_INTEGER));
+        }
+
+        function groupSourceRowsForSupplier(detailRows, sourceName) {
             const map = new Map();
             (detailRows || []).forEach(row => {
                 const productKey = String(row.productCode || '').trim() || normalizeSourceGroupName(row.productName);
@@ -240,7 +256,11 @@
                     note: String(row.note || '').trim()
                 });
             });
-            return Array.from(map.values()).sort((a,b) => String(a.productName).localeCompare(
+            const groupedRows = Array.from(map.values());
+            if (normalizeSourceGroupName(sourceName) === 'thuốc lá') {
+                return sortTobaccoBySupplierRows(groupedRows);
+            }
+            return groupedRows.sort((a,b) => String(a.productName).localeCompare(
                 String(b.productName),
                 'vi',
                 { sensitivity:'base' }
@@ -275,7 +295,10 @@
                 });
             });
 
-            const groupedRows = groupSourceRowsForSupplier(detailRows);
+            if (normalizeSourceGroupName(sourceName) === 'thuốc lá') {
+                sortTobaccoBySupplierRows(detailRows);
+            }
+            const groupedRows = groupSourceRowsForSupplier(detailRows,sourceName);
             return {
                 detailRows,
                 groupedRows,
