@@ -236,3 +236,25 @@ body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-c
     font-variant-numeric:tabular-nums;
   }
 }
+
+/* 2026-10-08 UI-100: four/five-column finance summary fits its own card.
+   Earlier min-width 430px was removed; do not retain the old overflow-x-auto
+   scrolling viewport when fixed-layout columns fit the available width. */
+@media(max-width:620px){
+  #tab-da-giao .order-summary-panel,
+  #tab-don-tam .order-summary-panel{min-width:0 !important;}
+  #tab-da-giao .order-summary-panel .overflow-x-auto,
+  #tab-don-tam .order-summary-panel .overflow-x-auto{
+    min-width:0 !important;
+    max-width:100% !important;
+    overflow-x:clip !important;
+  }
+  #tab-da-giao .order-summary-panel .summary-compact-table,
+  #tab-don-tam .order-summary-panel .summary-compact-table{
+    box-sizing:border-box !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    table-layout:fixed !important;
+  }
+}
