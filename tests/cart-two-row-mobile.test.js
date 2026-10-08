@@ -8,8 +8,10 @@ const render=fs.readFileSync('src/fixed-ui-runtime-6.js','utf8');
 
 test('mobile cart is two rows: product name, then unit price / quantity / total',()=>{
   const areas='grid-template-areas:"line line line" "unit quantity subtotal"';
-  assert.equal(css.split(areas).length-1,3,
-    'both normal phone and narrow phone must use exactly these two grid rows');
+  assert.ok(css.includes(areas),
+    'mobile cart must keep one name row and one inline information row');
+  const inline=css.slice(css.indexOf('/* FIXED STYLE: cart-inline-fields-20261008'));
+  assert.match(inline,/grid-template-areas:"line line line" "unit quantity subtotal" !important/);
   assert.doesNotMatch(css,/grid-template-areas:[^;]*"quantity quantity"/);
   assert.match(css,/#cartItemList \.cart-price\{[^}]*grid-area:unit/);
   assert.match(css,/#cartItemList \.cart-qty\{[^}]*grid-area:quantity/);
