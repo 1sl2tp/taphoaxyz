@@ -267,7 +267,8 @@
   column-gap:var(--cart-finance-gap,6px) !important;
 }
 #orderDetailContentToShare .order-column-header,
-#orderDetailContentToShare #detailModalItems .order-detail-compact-grid {
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid,
+#orderDetailContentToShare.order-readable-compact #detailModalItems .order-detail-compact-grid {
   column-gap:var(--order-finance-gap,6px) !important;
 }
 /* Same left-edge ruler for header TÊN and body product text. */
