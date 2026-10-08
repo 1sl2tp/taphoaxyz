@@ -12,7 +12,7 @@
             for (const [id, item] of cartEntries) {
                 totalQty += item.qty; totalPrice += (item.qty * item.price);
                 html += `
-                <div class="cart-compact-grid py-3 border-b border-gray-50 text-[12px]">
+                <div class="cart-compact-grid py-3 border-b border-gray-50 text-[12px]" data-cart-readonly="${isDeliveredReadOnlyPreview ? '1' : '0'}">
                     <div class="cart-left">
                         <div class="cart-stt font-bold text-gray-400">${index++}</div>
                         <div class="min-w-0">

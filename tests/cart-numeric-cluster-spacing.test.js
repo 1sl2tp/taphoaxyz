@@ -46,7 +46,7 @@ test('mobile cart label row and price/readonly/edit values share the same vertic
   assert.ok(css.includes('min-height:46px'));
   assert.ok(css.includes('#cartItemList .cart-qty-readonly'));
   assert.ok(css.includes('#cartItemList .cart-qty > .cart-field-caption'));
-  assert.ok(index.includes('fixed-ui-cart-spacing.css?ui=cart-inline-fields-20261008'));
+  assert.ok(index.includes('fixed-ui-cart-spacing.css?ui=cart-preview-parity-20261008'));
 });
 test('sales product quantity shares horizontal row on normal iPhone, with 340px fallback', () => {
   const css=fs.readFileSync('src/fixed-ui-product-media.css','utf8');

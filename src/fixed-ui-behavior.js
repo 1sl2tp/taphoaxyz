@@ -91,6 +91,9 @@ renderCartUI = function() {
   rows.forEach((row, index) => {
     const [maSp, item] = cartEntries[index] || [];
     const priceCell = row.querySelector('.cart-price');
+    // Match the invoice preview: preserve its readonly price markup.
+    // Only the editable shopping-cart row needs an input in place of the price.
+    if (row.dataset.cartReadonly === '1') return;
     if (!maSp || !item || !priceCell) return;
     priceCell.innerHTML = `<span class="cart-field-caption">Đơn giá</span><input type="text" inputmode="numeric" value="${formatCartPriceInputValue(item.price)}" data-price-editor="cart" data-price-id="${maSp}" onfocus="selectCartPriceInputValue(this)" onmouseup="event.preventDefault(); selectCartPriceInputValue(this)" oninput="previewCartPriceInput(this)" onblur="commitCartPriceEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="cart-money-value cart-price-input w-full min-w-0 text-right font-semibold text-gray-700 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 p-0 m-0 tabular-nums">`;
   });
