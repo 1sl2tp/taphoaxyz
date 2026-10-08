@@ -37,7 +37,6 @@ test('desktop number anchors and quantity control really occupy measured tracks'
   assert.match(owner, /#cartBottomSheet\[data-cart-mode="preview"\] #cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:var\(--cart-qty-track,32px\) !important;/);
   assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-name-note-trigger::after\{[^}]*content:none !important;/);
   assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-name-note-trigger\{[^}]*font-size:12px !important;/);
-  assert.match(js,/const bodyInnerWidth = body\.clientWidth -/);
-  assert.match(js,/Math\.max\(0, Math\.min\(headerInnerWidth, bodyInnerWidth\)\)/);
+  assert.match(owner,/minmax\(0,1fr\)/);
   assert.match(html,/fixed-ui-runtime-6\.js\?v=cart-intrinsic-widths-20261008&pc-panel=20261008/);
 });

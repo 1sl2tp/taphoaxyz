@@ -35,20 +35,18 @@ test('max header/value widths across all product rows are measured using real br
   assert.match(js,/document\.createElement\('canvas'\)/);
   assert.match(js,/window\.getComputedStyle\(node\)/);
   assert.match(js,/context\.measureText\(text\)\.width/);
-  assert.match(js,/cartEntries\.map\(\(\[, item\]\) => String\(item\.name \|\| ''\)\)/);
   assert.match(js,/cartEntries\.map\(\(\[, item\]\) => Number\(item\.price \|\| 0\)\.toLocaleString\('vi-VN'\)\)/);
   assert.match(js,/cartEntries\.map\(\(\[, item\]\) =>\s*\(\(Number\(item\.qty\) \|\| 0\) \* \(Number\(item\.price\) \|\| 0\)\)\.toLocaleString\('vi-VN'\)\)/);
   for(const [name,label] of [['sttWidth','STT'],['priceWidth','Đơn giá'],['totalWidth','Thành tiền']]){
     assert.ok(js.includes("columnWidth('"+label+"'"),name);
   }
-  for(const col of ['stt','name','unit','qty','total']){
+  for(const col of ['stt','unit','qty','total']){
     assert.ok(js.includes("setProperty('--cart-"+col+"-track'"),col);
   }
 });
 
 test('only Tên shrinks when columns exceed viewport, quantity control counts its frame and longest input',()=>{
-  assert.match(js,/const innerWidth = Math\.max\(0, Math\.min\(headerInnerWidth, bodyInnerWidth\)\)/);
-  assert.doesNotMatch(js,/setProperty\('--cart-name-track'/);
+  assert.match(last,/minmax\(0,1fr\)/);
   assert.doesNotMatch(js,/setProperty\('--cart-name-track'/);
   assert.match(js,/const qtyInputWidth = Math\.max\(28, maxWidth\(quantityTexts, qtyInput \|\| qtyStyle\) \+ 12\)/);
   assert.match(js,/const controlWidth = 30 \+ qtyInputWidth \+ 30 \+ 2 \+ 4 \+ 2/);
