@@ -35,7 +35,7 @@ test('note editor remains on product-name line, no phantom note row',()=>{
 
 test('small phones retain shared layout and source files have fresh version URLs',()=>{
   assert.match(owner,/@media \(max-width:360px\)\{[\s\S]*grid-template-columns:minmax\(0,1fr\) 104px minmax\(0,1fr\)/);
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-preview-parity-20261008/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-preview-parity-2-20261008/);
   assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*cart-preview-parity=20261008/);
   assert.match(html,/fixed-ui-behavior\.js\?v=[^"]*readonly-preview=20261008/);
 });
