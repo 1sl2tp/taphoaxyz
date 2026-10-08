@@ -186,31 +186,29 @@
                 } else {
                     filteredList.sort((a, b) => b.debt - a.debt);
                 }
-                document.getElementById('debtGroupTitle').innerText = `Còn nợ (${filteredList.length})`;
+                document.getElementById('debtGroupTitle').innerText = 'Danh sách khách';
             } else if (currentDebtFilter === 'du') {
-                document.getElementById('debtGroupTitle').innerText = `Đang dư tiền (${filteredList.length})`;
+                document.getElementById('debtGroupTitle').innerText = 'Danh sách khách';
             } else {
-                document.getElementById('debtGroupTitle').innerText = `Đã hết nợ (${filteredList.length})`;
+                document.getElementById('debtGroupTitle').innerText = 'Danh sách khách';
             }
 
             let listHtml = '';
             filteredList.forEach(c => {
                 let subText = `GD cuối: ${c.lastTime}`;
                 if (currentDebtFilter === 'no' && c.debt > 0 && Number.isFinite(c.daysAgo)) {
-                    subText = `GD cuối: ${c.lastTime} · Nợ ${c.daysAgo} ngày`;
+                    subText = `GD cuối: ${c.lastTime} · Giao cách ${c.daysAgo} ngày`;
                 }
 
                 listHtml += `
-                    <div onclick="openCustomerDebtModal('${c.maKh}')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition flex justify-between items-center">
-                        <div class="pointer-events-none flex items-center gap-3">
-                            ${c.avatarHtml}
-                            <div>
-                                <p class="font-bold text-[14px] text-gray-900">${c.name}</p>
-                                <p class="text-[11px] text-gray-400 mt-0.5">${subText}</p>
+                    <div onclick="openCustomerDebtModal('${c.maKh}')" class="debt-customer-card allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition">
+                        <div class="debt-customer-avatar pointer-events-none">${c.avatarHtml}</div>
+                        <div class="debt-customer-body pointer-events-none min-w-0">
+                            <div class="debt-customer-heading">
+                                <p class="debt-customer-name font-bold text-[14px] text-gray-900">${c.name}</p>
+                                <p class="debt-customer-money font-extrabold text-[15px] ${c.debt > 0 ? 'text-danger' : c.debt < 0 ? 'text-success' : 'text-gray-700'}">${Math.abs(c.debt).toLocaleString('vi-VN')}</p>
                             </div>
-                        </div>
-                        <div class="pointer-events-none text-right">
-                            <p class="font-extrabold text-[15px] ${c.debt > 0 ? 'text-danger' : c.debt < 0 ? 'text-success' : 'text-gray-700'}">${Math.abs(c.debt).toLocaleString('vi-VN')}</p>
+                            <p class="debt-customer-detail text-[11px] text-gray-400 mt-1">${subText}</p>
                         </div>
                     </div>`;
             });
