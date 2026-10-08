@@ -192,6 +192,8 @@
             }
             document.body.appendChild(overlay);
             bindCartNoteVisibleViewport(overlay);
+            // scrollHeight is reliable only once the textarea is in the DOM.
+            fitCartNoteInputHeight(overlay.querySelector('.cart-note-input'));
             requestAnimationFrame(() => {
                 (overlay.querySelector('.cart-note-input') ||
                     overlay.querySelector('.cart-note-close'))?.focus({ preventScroll: true });
