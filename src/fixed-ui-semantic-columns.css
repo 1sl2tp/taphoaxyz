@@ -1,0 +1,147 @@
+/* UI-106 — SEMANTIC TABLE COLUMNS — 2026-10-08
+   Column meaning, not incidental label length, determines alignment.
+   No data/price/quantity transformations or backend calls.
+   Shared geometry: header and every item row use ONE five-column ruler.
+
+   INDEX       : compact, centered, tabular digits.
+   DESCRIPTION : product/customer/source name, left, flexible, min-width:0.
+   MONEY       : price/amount/profit, right, tabular digits, last total rightmost.
+   QUANTITY    : within 5-column cart/order, centered numeric axis.
+   STEPPER     : centered as one complete - [number] + control.
+   FINAL COUNT : when quantity is the last column in source-group tables,
+                 right align to the table edge.
+*/
+#cartBottomSheet .cart-compact-grid {
+  display:grid !important;
+  grid-template-columns:
+    var(--cart-stt-track,24px)
+    minmax(0,1fr)
+    var(--cart-unit-track,54px)
+    var(--cart-qty-track,96px)
+    var(--cart-total-track,69px) !important;
+  grid-template-areas:none !important;
+  width:100% !important;
+  min-width:0 !important;
+  column-gap:6px !important;
+  justify-content:stretch !important;
+}
+#cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid {
+  column-gap:7px !important;
+}
+/* Crucial: do NOT move captions independently of their values. */
+#cartBottomSheet .cart-column-header .cart-qty,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty-control,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty-readonly {
+  transform:none !important;
+}
+#cartBottomSheet .cart-column-header .cart-stt,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-stt {
+  text-align:center !important;
+  font-variant-numeric:tabular-nums;
+}
+#cartBottomSheet .cart-column-header .cart-name,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-name {
+  text-align:left !important;
+  min-width:0 !important;
+}
+#cartBottomSheet .cart-column-header .cart-price,
+#cartBottomSheet .cart-column-header .cart-total,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-price,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-total,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-money-value {
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-price,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-total {
+  justify-content:flex-end !important;
+}
+#cartBottomSheet .cart-column-header .cart-qty,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty-readonly {
+  text-align:center !important;
+  justify-content:center !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control {
+  justify-self:center !important;
+  justify-content:center !important;
+  align-self:center !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > input {
+  text-align:center !important;
+  font-variant-numeric:tabular-nums;
+}
+/* Non-editable order detail — use the shared measured C/D/E widths. */
+#orderDetailContentToShare .order-detail-compact-grid {
+  display:grid !important;
+  grid-template-columns:
+    var(--order-stt-track,24px)
+    minmax(0,1fr)
+    var(--order-price-track,60px)
+    var(--order-qty-track,29px)
+    var(--order-total-track,76px) !important;
+  column-gap:7px !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-stt {
+  text-align:center !important;
+  font-variant-numeric:tabular-nums;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-name,
+#orderDetailContentToShare .order-detail-compact-grid > .min-w-0 {
+  text-align:left !important;
+  min-width:0 !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-price,
+#orderDetailContentToShare .order-detail-compact-grid .order-total {
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-qty {
+  text-align:center !important;
+  font-variant-numeric:tabular-nums;
+}
+/* Summary: source description left; quantities and money are numeric.
+   Preserve each true table structure and its number of columns. */
+.order-summary-panel .summary-compact-table :is(th,td):first-child {
+  text-align:left !important;
+}
+.order-summary-panel .summary-compact-table :is(th,td):not(:first-child) {
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+/* Source-detail / grouped: two text columns may occur, SL is FINAL numeric
+   column so it belongs at the right edge (not center as in a five-col cart). */
+.source-detail-capture .source-detail-grid .source-detail-stt {
+  text-align:center !important;
+  font-variant-numeric:tabular-nums;
+}
+.source-detail-capture .source-detail-grid :is(.source-detail-name,.source-detail-product-cell,.source-detail-buyer-cell,.source-detail-buyer) {
+  text-align:left !important;
+  min-width:0 !important;
+}
+.source-detail-capture .source-detail-grid :is(.source-detail-qty,.source-detail-total-qty) {
+  justify-self:end !important;
+  justify-content:flex-end !important;
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+/* Cards: customer name is a description, monetary value remains rightmost. */
+.order-card-title-row > :first-child,
+.order-card-meta-row > :first-child {
+  min-width:0;
+  text-align:left;
+}
+.order-card-total,
+.order-card-meta-row .profit-only {
+  text-align:right !important;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:620px) {
+  #orderDetailContentToShare .order-detail-compact-grid {column-gap:6px !important;}
+}
+@media(max-width:350px) {
+  #cartBottomSheet .cart-compact-grid {column-gap:4px !important;}
+  #orderDetailContentToShare .order-detail-compact-grid {column-gap:4px !important;}
+}
