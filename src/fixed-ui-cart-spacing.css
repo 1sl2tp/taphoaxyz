@@ -1384,3 +1384,70 @@
 #cartBottomSheet #cartItemList .cart-compact-grid .cart-total .cart-money-value{
   text-align:right !important;
 }
+
+/* UI-104 / 2026-10-08: native responsive order-detail table.
+   The exported 720px image is for sharing, never a substitute for readable
+   mobile text. Header and EACH row share the same measured C/D/E tracks.
+   Reserve full captions to avoid "SL" touching "Thành tiền" at small widths.
+   Description alone is flexible; E is right-anchored. */
+#orderDetailContentToShare .order-detail-compact-grid{
+  display:grid !important;
+  grid-template-columns:
+    var(--order-stt-track,24px)
+    minmax(0,1fr)
+    var(--order-price-track,60px)
+    var(--order-qty-track,29px)
+    var(--order-total-track,76px) !important;
+  column-gap:7px !important;
+  justify-content:stretch !important;
+  min-width:0 !important;
+  width:100% !important;
+}
+#orderDetailContentToShare .order-column-header{
+  align-items:center !important;
+}
+#orderDetailContentToShare .order-column-header > *{
+  box-sizing:border-box !important;
+  min-width:0 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+}
+#orderDetailContentToShare .order-detail-compact-grid :is(.order-price,.order-total){
+  text-align:right !important;
+  justify-self:stretch !important;
+  font-variant-numeric:tabular-nums;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-qty{
+  text-align:center !important;
+  justify-self:stretch !important;
+  font-variant-numeric:tabular-nums;
+}
+#orderDetailContentToShare .order-detail-compact-grid .order-stt{
+  text-align:center !important;
+  justify-self:stretch !important;
+}
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid{
+  align-items:baseline !important;
+}
+@media(max-width:620px){
+  #orderDetailContentToShare .order-detail-compact-grid{
+    column-gap:6px !important;
+  }
+  #orderDetailContentToShare .order-column-header > *{
+    font-size:11px !important;
+    line-height:1.4 !important;
+  }
+  #orderDetailContentToShare #detailModalItems .order-detail-compact-grid{
+    font-size:13px !important;
+    min-height:46px !important;
+    line-height:1.4 !important;
+  }
+  #orderDetailContentToShare #detailModalItems .order-detail-compact-grid .order-name{
+    line-height:1.35 !important;
+  }
+}
+@media(max-width:350px){
+  #orderDetailContentToShare .order-detail-compact-grid{
+    column-gap:4px !important;
+  }
+}
