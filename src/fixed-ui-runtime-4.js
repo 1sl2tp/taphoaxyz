@@ -586,6 +586,7 @@
                 const marketCartonPrice = getSelectedMarketCartonPriceForSale(maSp);
                 const marketIsLower = marketCartonPrice > 0 && giaBan > 0 && marketCartonPrice < giaBan;
                 const employeeMode = Boolean(window.TAPHOA_EMPLOYEE_MODE);
+                const isTobacco = normalizeSearchText(r?.[4]) === 'thuoc la';
                 const salePriceHtml = employeeMode
                     ? ''
                     : marketIsLower
@@ -605,9 +606,9 @@
                             ${imageHtml}
                             <div class="min-w-0 flex-1">
                                 <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
-                                <div class="mt-1 flex items-center gap-2 min-w-0 ${employeeMode ? 'hidden' : ''}">
+                                <div class="sale-product-price-row mt-1 flex items-center gap-2 min-w-0 ${employeeMode ? 'hidden' : ''}">
                                     ${salePriceHtml}
-                                    ${!employeeMode && giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
+                                    ${!employeeMode && !isTobacco && giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
                                     <span data-product-note-wrap="${escapeProductEditorValue(maSp)}" class="sale-note-inline ${qty > 0 && !employeeMode ? '' : 'hidden'}">
                                         <button type="button" class="sale-note-trigger allow-fast-click ${lineNote.trim() ? 'has-note' : ''}"
                                             data-cart-note-id="${escapeProductEditorValue(maSp)}"
