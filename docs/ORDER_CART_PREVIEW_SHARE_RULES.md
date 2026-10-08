@@ -61,3 +61,10 @@ Quy tắc này được viện dẫn từ `AGENTS.md`. Không tự chia layout g
 - **Gap theo mép dữ liệu**: Đơn giá căn phải, SL căn giữa, Thành tiền căn trái; khi giảm độ rộng SL, hai khoảng trống từ mép số hai bên tới số lượng vẫn cân. Các cột còn lại và tổng tiền, ảnh chia sẻ giữ nguyên.
 - Source: `src/fixed-ui-runtime-6.js` (nhãn mode + tính width), `src/fixed-ui-cart-spacing.css` (grid), `index.html` (đổi version URL). Không thêm API/DB/Edge/log, không đổi nghiệp vụ.
 - Kiểm cả hai mode trên 320/375/390/428px và chuyển qua lại (edit→preview→edit); test PASS chỉ xác nhận hợp đồng, cần ảnh iPhone mới để chốt Visual PASS.
+
+## Sửa lỗi ảnh 13:08 — hai khoảng trống PHẢI có chiều rộng bằng nhau (2026-10-08)
+- Ảnh chụp thực tế cho thấy Đơn giá (vd 241) rất sát nút `−` nhưng nút `+` lại cách xa Thành tiền (241); readonly số `1/15` cũng lệch nhiều về phía giá. Root cause: lưới CSS **5 track kề nhau** buộc track SL sát giá, và phần còn lại bị đẩy ra vùng Tên/cuối bảng. Chỉ `column-gap:4px` hoặc `text-align` không đảm bảo **khoảng cách giữa các MÉP SỐ** bằng nhau.
+- Trên mobile, dùng **5 ô dữ liệu + 2 track đệm co giãn bằng nhau**, tổng 7 CSS track: `STT | Tên | Đơn giá | GAP-A | SL | GAP-B | Thành tiền`. Track dữ liệu được đặt tại cột `1,2,3,5,7` cho cả header và body; hai track `GAP-A = GAP-B = minmax(0,1fr)` trong cùng grid và `column-gap:0`. Track Tên được ưu tiên `minmax(0,6fr)` (<=360px dùng 8fr), nên tên không bị ép quá ngắn.
+- Đơn giá bám mép PHẢI track 3; SL dạng nút chiếm cả track 5 hoặc SL chỉ số căn GIỮA track 5; Thành tiền bám mép TRÁI track 7. Khi đó đo từ mép phải số đơn giá đến nút `−` = đo từ nút `+` đến mép trái số thành tiền; readonly cũng cân hai bên chữ số SL.
+- Header **Số lượng** khi có nút và **SL** khi readonly, đi theo vị trí cột dữ liệu, không tham gia phép tính gap. Tiền không cắt, track độ rộng vẫn dựa vào số tiền lớn nhất đã định dạng, STT/Tên/SL cùng hàng, popup ghi chú không thay đổi.
+- QA phải đối chiếu cả 2 ảnh và đo G1/G2 tại **nội dung thực**, test phải xác nhận 2 spacer bằng nhau và vị trí 1/2/3/5/7. Nếu chỉ CI PASS mà chưa có screenshot sau sửa => visual vẫn chưa xác nhận.
