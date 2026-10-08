@@ -365,3 +365,79 @@
   }
   #cartItemList .cart-compact-grid .cart-field-caption{font-size:10px;}
 }
+
+/* Mobile compact two-row cart: screenshot IMG_9475 (16:33).
+   STT + name remain one line. Unit price, Qty, and line total remain
+   within the second logical line. Reduce vertical padding, not legibility. */
+@media (max-width:480px){
+  #cartItemList .cart-compact-grid{
+    grid-template-columns:minmax(0,1fr) 124px minmax(0,1fr) !important;
+    grid-template-areas:"line line line" "unit quantity subtotal" !important;
+    grid-template-rows:max-content max-content !important;
+    column-gap:6px !important;
+    row-gap:3px !important;
+    padding-top:6px !important;
+    padding-bottom:6px !important;
+  }
+  #cartItemList .cart-left{
+    align-items:center !important;
+    min-height:24px;
+  }
+  #cartItemList .cart-price,
+  #cartItemList .cart-qty,
+  #cartItemList .cart-total{
+    min-height:54px !important;
+    align-self:start;
+  }
+  #cartItemList .cart-qty{
+    width:124px !important;
+    min-width:124px !important;
+  }
+  #cartItemList .cart-compact-grid .cart-field-caption{
+    min-height:13px !important;
+    margin:0 0 1px !important;
+    line-height:13px !important;
+    font-size:10px !important;
+  }
+  #cartItemList .cart-price .cart-money-value,
+  #cartItemList .cart-total .cart-money-value{
+    min-height:40px !important;
+    height:40px !important;
+    font-size:13px !important;
+  }
+  #cartItemList .cart-price input.cart-money-value{
+    min-height:40px !important;
+    height:40px !important;
+  }
+  #cartItemList .cart-qty-control{
+    width:124px !important;
+    min-width:124px !important;
+    height:40px !important;
+    grid-template-columns:38px 38px 38px !important;
+    column-gap:1px !important;
+    padding:0 2px !important;
+  }
+  #cartItemList .cart-qty-control > button,
+  #cartItemList .cart-qty-control > input{
+    width:38px !important;
+    min-width:38px !important;
+    height:38px !important;
+  }
+  #cartItemList .cart-qty-readonly{
+    width:124px !important;
+    min-width:124px !important;
+    min-height:40px !important;
+    height:40px !important;
+  }
+}
+@media (max-width:360px){
+  #cartItemList .cart-compact-grid{
+    grid-template-columns:minmax(0,1fr) 124px minmax(0,1fr) !important;
+    column-gap:4px !important;
+  }
+  #cartItemList .cart-price .cart-money-value,
+  #cartItemList .cart-total .cart-money-value{
+    font-size:12px !important;
+    letter-spacing:-.15px;
+  }
+}
