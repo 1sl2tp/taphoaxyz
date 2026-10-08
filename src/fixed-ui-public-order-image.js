@@ -247,11 +247,11 @@
       </div>
       <div style="padding:0 28px;">
         <div style="display:grid;grid-template-columns:34px minmax(0,1fr) 92px 50px 108px;column-gap:10px;align-items:center;height:42px;border-bottom:1px solid #e5e7eb;color:#94a3b8;font-size:11px;font-weight:800;text-transform:uppercase;">
-          <div style="text-align:center;">#</div>
-          <div>TÊN SP</div>
-          <div style="text-align:right;">Đ.GIÁ</div>
-          <div style="text-align:center;">SL</div>
-          <div style="text-align:right;">T.TIỀN</div>
+          <div style="text-align:center;">STT</div>
+          <div>Tên</div>
+          <div style="text-align:right;">Đơn giá</div>
+          <div style="text-align:center;">Số lượng</div>
+          <div style="text-align:right;">Thành tiền</div>
         </div>
         <div>${rowsHtml}</div>
       </div>

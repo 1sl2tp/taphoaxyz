@@ -31,3 +31,8 @@
 ## Quy tắc ưu tiên
 - Chỉ thay đổi repo/phạm vi/branch khi người dùng nói rõ muốn chuyển.
 - Nếu có xung đột giữa thói quen cũ và file này, ưu tiên file này cho dự án `1sl2tp/taphoaxyz`.
+
+## Rule giao diện đơn hàng dùng chung
+- **BẮT BUỘC đọc** `docs/ORDER_CART_PREVIEW_SHARE_RULES.md` khi sửa giỏ hàng, đơn hàng, xem trước, chi tiết đơn, ảnh chia sẻ hoặc ảnh đơn công khai.
+- Giữ cùng **5 cột: STT | Tên | Đơn giá | Số lượng | Thành tiền**. Header và hàng dữ liệu phải thẳng cột; giỏ hàng **chỉ khác ô số lượng** có nút `− / +`.
+- Trước khi kết luận, kiểm tra riêng cart edit, order read-only, share image và mobile 320–428px; không lấy kết quả CSS/test thay cho ảnh iPhone thật.
