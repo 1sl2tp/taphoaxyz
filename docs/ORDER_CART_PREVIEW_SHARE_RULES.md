@@ -53,3 +53,11 @@ Quy tắc này được viện dẫn từ `AGENTS.md`. Không tự chia layout g
 - 5 cột cùng 1 trục ngang; STT, Tên, Đơn giá, SL, Thành tiền là 1 hàng; **không hiển thị ghi chú trong dòng**. Chạm Tên mở hộp nổi ghi chú. Readonly chỉ xem; đang sửa được lưu/hủy độc lập; dữ liệu `cart[itemId].note` và ảnh chia sẻ vẫn giữ nguyên nguồn.
 - CSS popup thuộc `fixed-ui-cart-spacing.css`, chức năng popup thuộc `fixed-ui-runtime-5.js`, nút tên/ruler-max thuộc `fixed-ui-runtime-6.js`. Không dùng interval, API, DB, Edge hoặc lưu binary để hiện ghi chú.
 - PASS khi test + ảnh Safari/PWA ở cả 2 kiểu xác nhận gap mép nội dung trái=phải, không chồng số dài, click tên ghi chú không gây dịch dòng và không sửa nhầm đơn readonly; nếu chưa có ảnh sau deploy => VISUAL PENDING.
+
+## Bổ sung 2026-10-08 — Header SL ngắn chỉ khi xem đơn
+- **Giỏ đang chỉnh sửa**: cột số lượng có nút `− số +` nên tiêu đề vẫn là **Số lượng**; chiều rộng bộ nút 96px, không rút ngắn.
+- **Xem trước/readonly**: tiêu đề của cùng cột hiển thị **SL**, không phải `Số lượng`. Trong `renderCartUI`, khi `data-cart-mode=preview` gán text header `SL`; khi về edit khôi phục `Số lượng`, tránh bị sót nhãn sau chuyển trạng thái.
+- Cột SL readonly có độ rộng theo số lượng lớn nhất của tất cả dòng: `--cart-qty-readonly-track = max(32px, độ dài chuỗi vi-VN × 8px + 8px)`. Cả header và body dùng chung variable, nên không còn giữ 50px thừa. Nếu có số lượng lớn, cột tự tăng để không cắt số. Phần rộng dư dành cho Tên.
+- **Gap theo mép dữ liệu**: Đơn giá căn phải, SL căn giữa, Thành tiền căn trái; khi giảm độ rộng SL, hai khoảng trống từ mép số hai bên tới số lượng vẫn cân. Các cột còn lại và tổng tiền, ảnh chia sẻ giữ nguyên.
+- Source: `src/fixed-ui-runtime-6.js` (nhãn mode + tính width), `src/fixed-ui-cart-spacing.css` (grid), `index.html` (đổi version URL). Không thêm API/DB/Edge/log, không đổi nghiệp vụ.
+- Kiểm cả hai mode trên 320/375/390/428px và chuyển qua lại (edit→preview→edit); test PASS chỉ xác nhận hợp đồng, cần ảnh iPhone mới để chốt Visual PASS.

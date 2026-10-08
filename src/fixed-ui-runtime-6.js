@@ -7,7 +7,11 @@
             // Header and rows must use the same five-column ruler in each mode.
             // Read-only quantity needs a number only; editing reserves room for -/+.
             const cartSheet = document.getElementById('cartBottomSheet');
-            if (cartSheet) cartSheet.dataset.cartMode = isDeliveredReadOnlyPreview ? 'preview' : 'edit';
+            if (cartSheet) {
+                cartSheet.dataset.cartMode = isDeliveredReadOnlyPreview ? 'preview' : 'edit';
+                const qtyHeader = cartSheet.querySelector('.cart-column-header .cart-qty');
+                if (qtyHeader) qtyHeader.textContent = isDeliveredReadOnlyPreview ? 'SL' : 'Số lượng';
+            }
             let totalQty = 0; let totalPrice = 0; let index = 1; let html = '';
             const cartEntries = Object.entries(cart).sort(([, a], [, b]) =>
                 (Number(b.__lastTouched) || 0) - (Number(a.__lastTouched) || 0)
@@ -19,6 +23,11 @@
                 const formattedLen = (value) => Number(value || 0).toLocaleString('vi-VN').length;
                 const unitChars = Math.max(1, ...cartEntries.map(([, item]) => formattedLen(item.price)));
                 const totalChars = Math.max(1, ...cartEntries.map(([, item]) => formattedLen((Number(item.price) || 0) * (Number(item.qty) || 0))));
+                // Readonly has no +/- buttons: let the 'SL' header and largest
+                // displayed quantity determine width instead of reserving 50px.
+                const qtyChars = Math.max(1, ...cartEntries.map(([, item]) => formattedLen(item.qty)));
+                cartSheet.style.setProperty('--cart-qty-readonly-track',
+                    Math.max(32, Math.ceil(qtyChars * 8 + 8)) + 'px');
                 cartSheet.style.setProperty('--cart-unit-track', Math.max(54, Math.ceil(unitChars * 7.2 + 8)) + 'px');
                 cartSheet.style.setProperty('--cart-total-track', Math.max(69, Math.ceil(totalChars * 7.2 + 8)) + 'px');
             }

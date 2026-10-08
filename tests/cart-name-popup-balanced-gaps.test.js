@@ -34,7 +34,7 @@ test('note popup is readonly on preview, cancel is side-effect free and save cha
 
 test('visible numeric gaps, not heading-box widths, define both sides of quantity',()=>{
   assert.match(owner,/#cartBottomSheet \.cart-compact-grid\{[^}]*grid-template-columns:22px minmax\(0,1fr\) var\(--cart-unit-track,54px\) 96px var\(--cart-total-track,69px\) !important;[^}]*column-gap:4px !important;/);
-  assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid\{[^}]*grid-template-columns:22px minmax\(0,1fr\) var\(--cart-unit-track,54px\) 50px var\(--cart-total-track,69px\) !important;/);
+  assert.ok(owner.includes('grid-template-columns:22px minmax(0,1fr) var(--cart-unit-track,54px) var(--cart-qty-readonly-track,32px) var(--cart-total-track,69px) !important;'));
   assert.match(owner,/#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-price\{[^}]*justify-content:flex-end !important;/);
   assert.match(owner,/#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-total\{[^}]*justify-content:flex-start !important;/);
   assert.match(owner,/#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-total \.cart-money-value\{[^}]*text-align:left !important;/);

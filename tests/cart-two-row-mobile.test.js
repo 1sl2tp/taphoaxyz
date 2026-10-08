@@ -36,7 +36,7 @@ test('mobile five-column header/body and images have fresh versions',()=>{
 
 test('readonly and editing use separate compact rulers but common five-column order',()=>{
   assert.match(runtime,/cartSheet\.dataset\.cartMode = isDeliveredReadOnlyPreview \? 'preview' : 'edit'/);
-  assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid,[\s\S]*?#orderDetailContentToShare \.order-detail-compact-grid\{[^}]*grid-template-columns:22px minmax\(0,1fr\) 54px 50px 72px !important;/);
-  assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] #cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:50px !important;/);
+  const final=css.slice(css.indexOf('/* FIXED STYLE: cart-visual-numeric-gaps-and-name-note-popup-20261008')); assert.ok(final.includes('var(--cart-qty-readonly-track,32px) var(--cart-total-track,69px)'));
+  assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] #cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:var\(--cart-qty-readonly-track,32px\) !important;/);
   assert.ok(html.includes('cart-note-gap=20261008'));
 });
