@@ -33,3 +33,94 @@ body[data-force-pc="1"] #customerDebtBottomSheet > .cart-handle{
 body[data-force-pc="1"] #customerDebtContentToShare{
   min-height:0 !important;
 }
+
+
+/* Debt P2/P3/P4 mobile: keep balances, customer identity and actions legible.
+   No new scroll, network, click handlers, or debt mutation owners. */
+@media (max-width:620px){
+  #tab-cong-no > header > .grid > div{
+    flex-direction:column;
+    align-items:stretch;
+    justify-content:flex-start;
+    gap:8px;
+    min-width:0;
+  }
+  #tab-cong-no #totalDebtDisplay,
+  #tab-cong-no #totalSurplusDisplay{
+    align-self:flex-start;
+    max-width:100%;
+    padding-inline:8px;
+    font-size:clamp(12px,3.6vw,15px);
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  #tab-cong-no #quickDebtCustomerButton,
+  #tab-cong-no #quickDebtAmount,
+  #tab-cong-no button[onclick^="submitQuickDebt("]{
+    min-height:44px;
+  }
+  #tab-cong-no #quickDebtAmount,
+  #customerDebtBottomSheet #popupDebtAmount{
+    min-height:44px;
+    font-size:16px !important;
+  }
+  #tab-cong-no #btnFilterNo,
+  #tab-cong-no #btnFilterDu,
+  #tab-cong-no #btnFilterHet{
+    min-width:0;
+    min-height:44px;
+    padding:6px 4px;
+    font-size:12px;
+    line-height:1.25;
+    white-space:normal;
+  }
+  #tab-cong-no #sortContainer{
+    gap:8px;
+    min-width:0;
+  }
+  #tab-cong-no #debtGroupTitle{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  #tab-cong-no #debtSortSelect{
+    flex:0 1 66%;
+    min-width:0;
+    max-width:100%;
+    min-height:40px;
+    font-size:16px !important;
+  }
+  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("]{
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:first-child{
+    flex:1 1 100%;
+    min-width:0;
+  }
+  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:first-child > div:last-child{
+    min-width:0;
+    flex:1 1 auto;
+  }
+  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:first-child p{
+    overflow-wrap:anywhere;
+  }
+  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:last-child{
+    flex:1 1 100%;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  #customerDebtBottomSheet #cDebtModalName{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  #customerDebtBottomSheet button[onclick="shareCustomerDebtImage()"],
+  #customerDebtBottomSheet button[onclick="closeCustomerDebtModal()"]{
+    min-width:40px;
+    min-height:40px;
+  }
+  #customerDebtBottomSheet button[onclick^="submitPopupDebt("]{
+    min-height:44px;
+  }
+}

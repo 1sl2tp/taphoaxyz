@@ -189,3 +189,49 @@ body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-c
   font-weight:500;
   text-align:center;
 }
+
+
+/* Orders P2/P3: mobile cards and summary stay legible without touching data.
+   Only the summary's existing overflow-x-auto parent scrolls sideways. */
+@media (max-width:620px){
+  #tab-da-giao .order-summary-panel .summary-compact-table,
+  #tab-don-tam .order-summary-panel .summary-compact-table{
+    min-width:430px !important;
+  }
+  body[data-auth-role="user"] #tab-da-giao .order-summary-panel .summary-compact-table,
+  body[data-auth-role="user"] #tab-don-tam .order-summary-panel .summary-compact-table{
+    min-width:0 !important;
+  }
+  #tab-da-giao #completedTimeFilterButton,
+  #tab-don-tam #pendingTimeFilterButton{
+    min-height:44px;
+    font-size:12px;
+  }
+  #tab-da-giao .order-time-option,
+  #tab-don-tam .order-time-option{
+    min-height:40px;
+    display:flex;
+    align-items:center;
+  }
+}
+@media (max-width:480px){
+  #completedOrderListContainer .order-card-title-row,
+  #pendingOrderListContainer .order-card-title-row{
+    grid-template-columns:minmax(0,1fr);
+    gap:4px;
+  }
+  #completedOrderListContainer .order-card-title-row > p:first-child,
+  #pendingOrderListContainer .order-card-title-row > p:first-child{
+    white-space:normal;
+    overflow-wrap:anywhere;
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    overflow:hidden;
+  }
+  #completedOrderListContainer .order-card-total,
+  #pendingOrderListContainer .order-card-total{
+    justify-self:end;
+    font-variant-numeric:tabular-nums;
+  }
+}
