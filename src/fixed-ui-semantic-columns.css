@@ -350,10 +350,11 @@
   padding-right:calc(1rem + var(--order-scrollbar-inset,0px)) !important;
 }
 
-/* UI-118 — Debt cards: customer and amount share the same header line.
-   A monetary value never wraps or falls below the card. The customer
-   name truncates only when truly needed; the secondary line is optional.
-   Sorting is a compact control, not a second dominant title. */
+/* UI-118 / UI-119 — Debt cards: preserve the natural card rhythm.
+   Avatar | (customer name, last transaction) | monetary amount. Money
+   is centered VERTICALLY against both lines of customer information, not
+   forced up to the name's baseline. Only the name/detail may truncate.
+   Sorting remains compact without changing monetary semantics. */
 #tab-cong-no .debt-sort-row{
   min-height:36px;
   min-width:0;
@@ -384,9 +385,9 @@
 }
 #tab-cong-no .debt-customer-card{
   display:grid;
-  grid-template-columns:40px minmax(0,1fr);
-  align-items:start;
-  column-gap:12px;
+  grid-template-columns:40px minmax(0,1fr) max-content;
+  align-items:center;
+  column-gap:10px;
   min-width:0;
 }
 #tab-cong-no .debt-customer-avatar{
@@ -394,17 +395,10 @@
   min-width:40px;
   min-height:40px;
   display:flex;
-  align-items:flex-start;
+  align-items:center;
   justify-content:center;
 }
 #tab-cong-no .debt-customer-body{
-  min-width:0;
-}
-#tab-cong-no .debt-customer-heading{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:10px;
   min-width:0;
 }
 #tab-cong-no .debt-customer-name{
@@ -416,8 +410,11 @@
   line-height:1.35;
 }
 #tab-cong-no .debt-customer-money{
-  flex:0 0 auto;
+  grid-column:3;
+  align-self:center;
+  justify-self:end;
   min-width:max-content;
+  margin:0;
   text-align:right;
   white-space:nowrap;
   font-variant-numeric:tabular-nums;
@@ -432,14 +429,13 @@
 }
 @media(max-width:350px){
   #tab-cong-no .debt-customer-card{
-    grid-template-columns:36px minmax(0,1fr);
-    column-gap:9px;
+    grid-template-columns:36px minmax(0,1fr) max-content;
+    column-gap:8px;
   }
   #tab-cong-no .debt-customer-avatar{
     width:36px;
     min-width:36px;
   }
-  #tab-cong-no .debt-customer-heading{gap:6px}
   #tab-cong-no .debt-customer-money{font-size:14px}
   #tab-cong-no #debtSortSelect{max-width:137px}
 }
