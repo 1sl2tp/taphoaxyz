@@ -129,12 +129,39 @@
                     const innerWidth = Math.max(0, header.clientWidth
                         - px(captionLayout?.paddingLeft)
                         - px(captionLayout?.paddingRight));
-                    const gap = innerWidth <= 320 ? 4 : 6;
+                    // A 6px reserve is conservative even if CSS uses 4px
+                    // gutters on an ultra-narrow viewport.
+                    const gap = 6;
                     const availableName = innerWidth
                         - sttWidth - priceWidth - qtyWidth - totalWidth - 4 * gap;
                     cartSheet.dataset.compactTwoLine =
                         (!isDeliveredReadOnlyPreview && innerWidth > 0 && availableName < 68)
                             ? '1' : '0';
+                    // On resize/orientation change, change only the presentation
+                    // flag. No cart rebuild, network request or background timer.
+                    if (!cartSheet.__semanticColumnsObserver && typeof ResizeObserver === 'function') {
+                        const syncNarrowFlag = () => {
+                            const ruler = cartSheet.querySelector('.cart-column-header');
+                            if (!ruler) return;
+                            const style = getComputedStyle(ruler);
+                            const usable = ruler.clientWidth
+                                - px(style.paddingLeft) - px(style.paddingRight);
+                            const props = getComputedStyle(cartSheet);
+                            const track = (name, fallback) =>
+                                px(props.getPropertyValue(name)) || fallback;
+                            const fixed = track('--cart-stt-track', 24)
+                                + track('--cart-unit-track', 54)
+                                + track('--cart-qty-track', 96)
+                                + track('--cart-total-track', 69) + 24;
+                            const next = (cartSheet.dataset.cartMode === 'edit'
+                                && usable > 0 && usable - fixed < 68) ? '1' : '0';
+                            if (cartSheet.dataset.compactTwoLine !== next) {
+                                cartSheet.dataset.compactTwoLine = next;
+                            }
+                        };
+                        cartSheet.__semanticColumnsObserver = new ResizeObserver(syncNarrowFlag);
+                        cartSheet.__semanticColumnsObserver.observe(header);
+                    }
                     // UI-106: semantic columns. Each column is measured once
                     // from all values + visible label; no per-row horizontal shift.
                     // The data row establishes the visual axis, the label follows.
