@@ -191,7 +191,9 @@
 /* UI-111/112: accounting order. One coherent five-track ruler at every width.
    A STT | B Description | C Quantity | D Unit Price | E Amount.
    Captions are adaptive to the displayed NUMERIC widths; never move values. */
-#cartBottomSheet .cart-compact-grid{
+#cartBottomSheet .cart-compact-grid,
+#cartBottomSheet[data-cart-mode="edit"] .cart-compact-grid,
+#cartBottomSheet[data-cart-mode="preview"] .cart-compact-grid{
   grid-template-columns:
     var(--cart-stt-track,24px) minmax(0,1fr)
     var(--cart-qty-track,96px)
