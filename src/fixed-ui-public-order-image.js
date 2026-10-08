@@ -420,7 +420,27 @@
     source.style.setProperty('--order-stt-track',trackWidth('.order-stt',24)+'px');
     source.style.setProperty('--order-price-track',trackWidth('.order-price',56)+'px');
     source.style.setProperty('--order-qty-track',trackWidth('.order-qty',27)+'px');
-    source.style.setProperty('--order-total-track',trackWidth('.order-total',69)+'px');
+    // UI-108: reserve width for the widest REAL amount; choose a caption
+    // within that width instead of allowing "THÀNH TIỀN" to push SL aside.
+    const totalHeader=header.querySelector('.order-total');
+    const moneyCells=rows.map(row=>row.querySelector('.order-total')).filter(Boolean);
+    const widestMoney=Math.max(0,...moneyCells.map(textWidth));
+    const totalLabels=['Thành tiền','T.tiền','Tiền','TT'];
+    const selected=totalLabels.find(label=>{
+      if(!totalHeader)return false;
+      const saved=totalHeader.textContent;
+      totalHeader.textContent=label;
+      const width=textWidth(totalHeader);
+      totalHeader.textContent=saved;
+      return width<=widestMoney;
+    })||'TT';
+    if(totalHeader){
+      totalHeader.textContent=selected;
+      totalHeader.title='Thành tiền';
+      totalHeader.setAttribute('aria-label','Thành tiền');
+    }
+    source.style.setProperty('--order-total-track',
+      Math.ceil(Math.max(widestMoney,textWidth(totalHeader))+9)+'px');
   }
 
   const originalShowOrderDetailMobile=typeof window.showOrderDetailMobile==='function'
