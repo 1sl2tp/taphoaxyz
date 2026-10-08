@@ -192,6 +192,21 @@
       .form-grid{grid-template-columns:1fr 1fr}.form-grid .wide,.form-grid .full{grid-column:1/-1}
       .admin-tabs{width:100%}.admin-tab{flex:1}.market-toolbar{grid-template-columns:1fr}.market-head{align-items:flex-start;flex-direction:column}.market-head-actions{width:100%}.market-head-actions .btn{flex:1}
     }
+
+    /* Admin mobile: accessible search and price comparison tools. */
+    @media screen and (max-width:800px){
+      .top{flex-wrap:wrap}.top-actions{width:100%}
+      #searchInput{grid-column:1/-1;min-height:44px;font-size:16px}
+      .searchbar .btn,.admin-tab{min-height:44px}
+      .market-thumb{width:64px;height:64px}
+      .market-item-name{white-space:normal;line-height:1.35}
+      .market-toolbar input,.market-toolbar select,.field input{font-size:16px}
+    }
+    @media screen and (max-width:520px){
+      .column-item{grid-template-columns:24px minmax(0,1fr) 76px}
+      .column-width{width:100%;min-width:0}
+      .column-moves{grid-column:2/-1;justify-self:end}
+    }
   </style>
 </head>
 <body>
