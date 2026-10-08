@@ -163,14 +163,59 @@
     text-align:right !important;
     min-width:0;
   }
+  /* Name and its optional note button share the FIRST visual row.
+     Previously the empty note button reserved an extra 18px row. */
+  #cartItemList .cart-left > .min-w-0{
+    display:flex;
+    align-items:center;
+    min-width:0;
+    gap:6px;
+  }
   #cartItemList .cart-name{
-    white-space:normal;
-    overflow-wrap:anywhere;
-    display:-webkit-box;
-    -webkit-box-orient:vertical;
-    -webkit-line-clamp:2;
+    flex:1 1 auto;
+    min-width:0;
+    display:block !important;
+    white-space:nowrap !important;
     overflow:hidden;
     text-overflow:ellipsis;
+  }
+  #cartItemList [data-cart-line-note-editor]{
+    flex:0 1 auto;
+    min-width:0;
+    max-width:94px;
+    margin:0 !important;
+  }
+  #cartItemList [data-cart-note-id]{
+    width:100%;
+    min-height:24px;
+    max-height:24px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-align:right;
+  }
+  #cartItemList [data-cart-note-id][data-note-current=""]{
+    width:28px;
+    min-width:28px;
+    font-size:0 !important;
+  }
+  #cartItemList [data-cart-note-id][data-note-current=""]::after{
+    content:"✎";
+    font-size:15px;
+    color:#94a3b8;
+  }
+  #cartItemList [data-cart-note-input-id]{
+    box-sizing:border-box;
+    width:94px;
+    max-width:34vw;
+    min-width:0;
+  }
+  #cartItemList .cart-line-note:not([data-cart-note-id]){
+    min-width:0;
+    max-width:94px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
   }
   #cartItemList .cart-field-caption{
     display:block;
@@ -305,15 +350,18 @@
   }
 }
 
-/* Small-screen guard: preserve long totals and 40px hit targets without
-   squeezing three columns into the narrow 320px view. */
+/* Even at 320px, keep exactly TWO cart rows: name then all three fields.
+   The outer list has horizontal padding, leaving room for 132px Qty and
+   two flexible monetary tracks; amounts remain right aligned. */
 @media (max-width:360px){
   #cartItemList .cart-compact-grid{
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
-    grid-template-areas:"line line" "unit subtotal" "quantity quantity";
+    grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr) !important;
+    grid-template-areas:"line line line" "unit quantity subtotal";
+    column-gap:4px !important;
   }
   #cartItemList .cart-qty{
     grid-area:quantity;
     justify-self:center !important;
   }
+  #cartItemList .cart-compact-grid .cart-field-caption{font-size:10px;}
 }
