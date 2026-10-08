@@ -43,69 +43,126 @@
             const note = String(cart[maSp]?.note || '').trim();
             document.querySelectorAll('[data-cart-note-id]').forEach(el => {
                 if (String(el.dataset.cartNoteId) !== String(maSp)) return;
-                el.textContent = note;
+                // This is the NAME, not an inline note button. Never overwrite it.
                 el.dataset.noteCurrent = note;
+                el.classList.toggle('has-cart-note', !!note);
+                el.title = note ? 'Ghi chú: ' + note : 'Chạm để thêm ghi chú';
             });
-            document.querySelectorAll('[data-cart-note-input-id]').forEach(input => {
-                if (String(input.dataset.cartNoteInputId) !== String(maSp)) return;
+            document.querySelectorAll('[data-line-note-id]').forEach(input => {
+                if (String(input.dataset.lineNoteId) !== String(maSp)) return;
                 if (document.activeElement !== input) input.value = note;
-                input.dataset.noteCurrent = note;
             });
+        }
+
+        function closeCartLineNotePopup() {
+            const overlay = document.getElementById('cartLineNoteOverlay');
+            if (!overlay) return;
+            const trigger = overlay.cartNoteTrigger;
+            overlay.remove();
+            if (trigger && trigger.isConnected) trigger.focus({ preventScroll: true });
         }
 
         function openCartLineNoteEditor(button) {
             if (!button) return;
-            if (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') return;
-            const wrap = button.closest('[data-cart-line-note-editor]');
-            const input = wrap?.querySelector('[data-cart-note-input-id]');
-            if (!input) return;
-            button.classList.add('hidden');
-            input.classList.remove('hidden');
-            input.value = String(button.dataset.noteCurrent || '');
+            const maSp = String(button.dataset.cartNoteId || '');
+            if (!maSp || !cart[maSp]) return;
+            const readonly = button.closest('[data-cart-readonly="1"]') !== null ||
+                (currentAuthRole === 'user' && editingOrderSheet === 'dongiao');
+            closeCartLineNotePopup();
+            const overlay = document.createElement('div');
+            overlay.id = 'cartLineNoteOverlay';
+            overlay.className = 'cart-note-overlay';
+            overlay.cartNoteTrigger = button;
+            overlay.innerHTML = `<div class="cart-note-dialog" role="dialog" aria-modal="true" aria-labelledby="cartNotePopupTitle">
+                <div class="cart-note-heading">
+                    <strong id="cartNotePopupTitle">Ghi chú sản phẩm</strong>
+                    <button type="button" class="cart-note-close" aria-label="Đóng ghi chú">×</button>
+                </div>
+                <div class="cart-note-product"></div>
+                <div class="cart-note-field"></div>
+                <div class="cart-note-actions"></div>
+            </div>`;
+            const field = overlay.querySelector('.cart-note-field');
+            const actions = overlay.querySelector('.cart-note-actions');
+            const note = String(cart[maSp].note || '');
+            overlay.querySelector('.cart-note-product').textContent =
+                String(button.dataset.cartProductName || '');
+            overlay.querySelector('.cart-note-close').addEventListener('click', closeCartLineNotePopup);
+            overlay.addEventListener('click', (event) => {
+                if (event.target === overlay) closeCartLineNotePopup();
+            });
+            overlay.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeCartLineNotePopup();
+                }
+            });
+            if (readonly) {
+                const content = document.createElement('div');
+                content.className = 'cart-note-readonly';
+                content.textContent = note.trim() || 'Chưa có ghi chú';
+                field.appendChild(content);
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'cart-note-secondary';
+                close.textContent = 'Đóng';
+                close.addEventListener('click', closeCartLineNotePopup);
+                actions.appendChild(close);
+            } else {
+                const input = document.createElement('textarea');
+                input.className = 'cart-note-input';
+                input.rows = 3;
+                input.placeholder = 'Nhập ghi chú cho sản phẩm';
+                input.setAttribute('aria-label', 'Nội dung ghi chú');
+                input.dataset.cartNoteInputId = maSp;
+                input.value = note;
+                field.appendChild(input);
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.className = 'cart-note-secondary';
+                cancel.textContent = 'Hủy';
+                cancel.addEventListener('click', closeCartLineNotePopup);
+                const save = document.createElement('button');
+                save.type = 'button';
+                save.className = 'cart-note-save';
+                save.textContent = 'Lưu ghi chú';
+                save.addEventListener('click', () => commitCartLineNoteEditor(input));
+                actions.append(cancel, save);
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                        event.preventDefault();
+                        commitCartLineNoteEditor(input);
+                    }
+                });
+            }
+            document.body.appendChild(overlay);
             requestAnimationFrame(() => {
-                input.focus({ preventScroll: true });
-                input.select();
+                (overlay.querySelector('.cart-note-input') ||
+                    overlay.querySelector('.cart-note-close'))?.focus({ preventScroll: true });
             });
         }
 
         function previewCartLineNote(input) {
+            // Legacy callers can still mirror their edit to the cart model.
             if (!input) return;
             const maSp = String(input.dataset.cartNoteInputId || '');
             if (!maSp || !cart[maSp]) return;
             cart[maSp].note = String(input.value || '');
-            const button = input.closest('[data-cart-line-note-editor]')?.querySelector('[data-cart-note-id]');
-            if (button) {
-                button.textContent = String(input.value || '').trim();
-                button.dataset.noteCurrent = String(input.value || '').trim();
-            }
-            document.querySelectorAll('[data-line-note-id]').forEach(productInput => {
-                if (String(productInput.dataset.lineNoteId) === maSp && document.activeElement !== productInput) {
-                    productInput.value = String(input.value || '');
-                }
-            });
+            syncCartItemNoteDisplay(maSp);
         }
 
         function commitCartLineNoteEditor(input) {
             if (!input) return;
             const maSp = String(input.dataset.cartNoteInputId || '');
-            if (maSp && cart[maSp]) cart[maSp].note = String(input.value || '').trim();
-            const wrap = input.closest('[data-cart-line-note-editor]');
-            const button = wrap?.querySelector('[data-cart-note-id]');
-            if (button) {
-                const note = String(cart[maSp]?.note || '');
-                button.textContent = note;
-                button.dataset.noteCurrent = note;
-                button.classList.remove('hidden');
-            }
-            input.classList.add('hidden');
+            if (!maSp || !cart[maSp]) return;
+            cart[maSp].note = String(input.value || '').trim();
+            syncCartItemNoteDisplay(maSp);
+            closeCartLineNotePopup();
         }
 
-        function cancelCartLineNoteEditor(input) {
-            if (!input) return;
-            const maSp = String(input.dataset.cartNoteInputId || '');
-            input.value = String(cart[maSp]?.note || '');
-            input.classList.add('hidden');
-            input.closest('[data-cart-line-note-editor]')?.querySelector('[data-cart-note-id]')?.classList.remove('hidden');
+        function cancelCartLineNoteEditor() {
+            // The dialog never mutates while typing, so Cancel only closes it.
+            closeCartLineNotePopup();
         }
 
         function previewProductLineNote(input) {

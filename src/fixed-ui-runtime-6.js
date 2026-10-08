@@ -12,6 +12,16 @@
             const cartEntries = Object.entries(cart).sort(([, a], [, b]) =>
                 (Number(b.__lastTouched) || 0) - (Number(a.__lastTouched) || 0)
             );
+            // Reserve the largest displayed amounts once, for header and
+            // every row. Price ends at its track edge; total starts at its edge.
+            // Thus the visible gap on each side of the centered quantity is equal.
+            if (cartSheet) {
+                const formattedLen = (value) => Number(value || 0).toLocaleString('vi-VN').length;
+                const unitChars = Math.max(1, ...cartEntries.map(([, item]) => formattedLen(item.price)));
+                const totalChars = Math.max(1, ...cartEntries.map(([, item]) => formattedLen((Number(item.price) || 0) * (Number(item.qty) || 0))));
+                cartSheet.style.setProperty('--cart-unit-track', Math.max(54, Math.ceil(unitChars * 7.2 + 8)) + 'px');
+                cartSheet.style.setProperty('--cart-total-track', Math.max(69, Math.ceil(totalChars * 7.2 + 8)) + 'px');
+            }
             const lineCount = cartEntries.length;
             for (const [id, item] of cartEntries) {
                 totalQty += item.qty; totalPrice += (item.qty * item.price);
@@ -20,29 +30,13 @@
                     <div class="cart-left">
                         <div class="cart-stt font-bold text-gray-400">${index++}</div>
                         <div class="min-w-0">
-                            <div class="cart-name font-bold text-gray-900 leading-tight">${item.name}</div>
-                            ${isDeliveredReadOnlyPreview
-                                ? (String(item.note || '').trim()
-                                    ? `<div class="cart-line-note text-[10px] text-gray-400 mt-0.5 truncate">${escapeProductEditorValue(String(item.note || '').trim())}</div>`
-                                    : '')
-                                : `<div class="mt-0.5 min-w-0" data-cart-line-note-editor>
-                                    <button type="button"
-                                        data-cart-note-id="${escapeProductEditorValue(id)}"
-                                        data-note-current="${escapeProductEditorValue(String(item.note || '').trim())}"
-                                        onclick="openCartLineNoteEditor(this)"
-                                        aria-label="Ghi chú"
-                                        class="allow-fast-click cart-line-note block w-full min-h-[18px] text-left text-[10px] text-gray-400 truncate">${escapeProductEditorValue(String(item.note || '').trim())}</button>
-                                    <input type="text"
-                                        data-cart-note-input-id="${escapeProductEditorValue(id)}"
-                                        data-note-current="${escapeProductEditorValue(String(item.note || '').trim())}"
-                                        value="${escapeProductEditorValue(String(item.note || '').trim())}"
-                                        oninput="previewCartLineNote(this)"
-                                        onblur="commitCartLineNoteEditor(this)"
-                                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}else if(event.key==='Escape'){event.preventDefault();cancelCartLineNoteEditor(this)}"
-                                        autocomplete="off"
-                                        placeholder="Ghi chú"
-                                        class="hidden w-full h-7 px-2 rounded-md border border-gray-200 bg-white text-[11px] text-gray-700 outline-none focus:border-primary">
-                                </div>`}
+                            <button type="button"
+                                class="allow-fast-click cart-name cart-name-note-trigger font-bold text-gray-900 leading-tight text-left"
+                                data-cart-note-id="${escapeProductEditorValue(id)}"
+                                data-note-current="${escapeProductEditorValue(String(item.note || '').trim())}"
+                                data-cart-product-name="${escapeProductEditorValue(item.name)}"
+                                aria-label="Xem ghi chú sản phẩm ${escapeProductEditorValue(item.name)}"
+                                onclick="openCartLineNoteEditor(this)">${escapeProductEditorValue(item.name)}</button>
                         </div>
                     </div>
                     <div class="cart-price font-semibold text-gray-700"><span class="cart-field-caption">Đơn giá</span><span class="cart-money-value">${item.price.toLocaleString('vi-VN')}</span></div>

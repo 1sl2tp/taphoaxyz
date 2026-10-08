@@ -7,7 +7,7 @@ Cập nhật: 2026-10-08. Phạm vi: **1sl2tp/taphoaxyz**, giao diện đơn hà
 **Năm cột, đúng thứ tự:** `STT | Tên | Đơn giá | Số lượng | Thành tiền`.
 
 - **Hàng tiêu đề** tách riêng, thẳng cột với tất cả dòng sản phẩm. Trên mobile **không ẩn hàng tiêu đề**, không đưa STT/tên sang hàng khác và không lặp nhãn phía trong từng dòng.
-- Một sản phẩm là **một hàng lưới 5 cột**. Sản phẩm dài có thể rút gọn trong UI mobile; ảnh chia sẻ giữ đủ tên và ghi chú. Ghi chú không tạo dòng trống nếu chưa nhập.
+- Một sản phẩm là **một hàng lưới 5 cột**. Sản phẩm dài có thể rút gọn trong UI mobile; ảnh chia sẻ giữ đủ tên và ghi chú. **Không đặt icon/nút/ô ghi chú bên cạnh Tên**; chạm Tên để mở hộp ghi chú nổi bên ngoài bảng, xem readonly hoặc chỉnh sửa khi được phép. Hộp ghi chú không chiếm cột hoặc đẩy lệch hàng.
 - **Đơn đã giao / đơn tạm / hóa đơn xem trước:** cột Số lượng chỉ hiển thị **số**, không có nút.
 - **Giỏ hàng / đang sửa đơn:** giữ nguyên 4 cột còn lại; **duy nhất cột Số lượng** đổi nội dung thành `− số +` và ô nhập; các hàng không thay vị trí khi đổi trạng thái.
 - **Chia sẻ ảnh giỏ / ảnh hóa đơn / ảnh công khai**: dùng đúng năm cột, cùng thứ tự, **chỉ hiển thị số lượng**. Không đưa nút sửa, các input, thông tin nội bộ hay ô trống vào ảnh. Ảnh chia sẻ phải lấy đúng dữ liệu đang xem/chọn; tuyệt đối không gọi lại server chỉ để dựng ảnh.
@@ -45,3 +45,11 @@ Quy tắc này được viện dẫn từ `AGENTS.md`. Không tự chia layout g
 - Width phải dựa trên **chế độ của bottom sheet** `data-cart-mode=preview|edit`, set trong `renderCartUI`: preview dùng 50px cho số, edit 96px cho ba control 30/28/30px. Header và body chọn cùng ruler theo `data-cart-mode`; không ẩn header hay đổi thứ tự.
 - `STT` và tên chính vẫn căn theo trục dọc 34px. Ghi chú bên cạnh tên là thứ yếu; readonly giới hạn phần ghi chú để ưu tiên tên chính, không thay đổi dữ liệu ghi chú.
 - Ảnh sau deploy phải kiểm xem tên dài tăng diện tích hiển thị, `Số lượng` không đè `Thành tiền`, thao tác +/- và số tổng đúng. Unit tests chỉ là contract, pixel thực tế Safari/PWA vẫn cần được xác nhận.
+
+## Quy tắc mới — Gap đo từ MÉP SỐ & ghi chú nổi (2026-10-08)
+- `Đơn giá 139 | Số lượng [− 1 +] | Thành tiền 139`: **g1** từ mép phải chữ số `139` đến mép ngoài trái của cụm `− 1 +`; **g2** từ mép ngoài phải cụm đó đến mép trái chữ số `139`. Yêu cầu **g1 = g2**. Trong readonly, số lượng căn giữa chính xác giữa mép phải đơn giá và mép trái thành tiền.
+- Để làm được, **Đơn giá căn phải track** và **Thành tiền căn trái track** (khác cách căn phải tổng tiền cũ). Số lượng canh giữa; track SL edit 96px / preview 50px, column-gap hai bên 4px. Hàng tiêu đề *theo trục dữ liệu*, không dùng kích thước header để đo gap.
+- Width `Đơn giá` và `Thành tiền` của tất cả dòng + header **dùng chung** CSS variable `--cart-unit-track` và `--cart-total-track` được cập nhật từ **số dài nhất đã format** trong giỏ. Nếu `500 × 10 = 5.000`, phải đủ chỗ cho `5.000`; cấm mỗi dòng tự co track một kiểu.
+- 5 cột cùng 1 trục ngang; STT, Tên, Đơn giá, SL, Thành tiền là 1 hàng; **không hiển thị ghi chú trong dòng**. Chạm Tên mở hộp nổi ghi chú. Readonly chỉ xem; đang sửa được lưu/hủy độc lập; dữ liệu `cart[itemId].note` và ảnh chia sẻ vẫn giữ nguyên nguồn.
+- CSS popup thuộc `fixed-ui-cart-spacing.css`, chức năng popup thuộc `fixed-ui-runtime-5.js`, nút tên/ruler-max thuộc `fixed-ui-runtime-6.js`. Không dùng interval, API, DB, Edge hoặc lưu binary để hiện ghi chú.
+- PASS khi test + ảnh Safari/PWA ở cả 2 kiểu xác nhận gap mép nội dung trái=phải, không chồng số dài, click tên ghi chú không gây dịch dòng và không sửa nhầm đơn readonly; nếu chưa có ảnh sau deploy => VISUAL PENDING.

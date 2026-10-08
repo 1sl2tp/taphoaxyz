@@ -20,7 +20,9 @@ test('typing quantity in a product card re-renders the cart rows, not only the t
   assert.match(commit, /if \(input\.dataset\.qtyEditor === 'cart'\)[\s\S]*?refreshCartTotalsOnly\(\);[\s\S]*?else \{[\s\S]*?renderCartUI\(\);/);
 });
 
-test('cart STT is anchored to the product-name line even when a note exists', () => {
-  assert.match(css, /#cartItemList \.cart-left\s*\{[^}]*align-items\s*:\s*start\s*!important;/);
-  assert.match(css, /#cartItemList \.cart-stt\s*\{[^}]*align-self\s*:\s*start\s*!important;[^}]*line-height\s*:\s*1\.25\s*!important;/);
+test('cart STT and clickable product name share a single center axis', () => {
+  const final=css.slice(css.indexOf('/* FIXED STYLE: cart-five-columns-no-implicit-areas-20261008'));
+  assert.match(final, /#cartItemList \.cart-compact-grid \.cart-stt\{[^}]*align-self:center !important;/);
+  assert.match(final, /#cartItemList \.cart-compact-grid \.cart-left > \.min-w-0\{[^}]*align-self:center !important;/);
+  assert.match(css, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-name-note-trigger\{[^}]*height:34px !important;/);
 });
