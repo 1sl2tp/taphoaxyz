@@ -36,3 +36,21 @@ test('Order detail header and rows share one five-column ruler', () => {
   assert.ok(owner.includes('grid-template-columns:26px minmax(0,1fr) 58px 30px 80px !important'));
   assert.ok(owner.includes('grid-template-columns:22px minmax(0,1fr) 52px 28px 72px !important'));
 });
+
+// Regression from iPhone IMG_9463/9464/9465: captions and quantity axes.
+test('mobile cart label row and price/readonly/edit values share the same vertical geometry', () => {
+  const css=fs.readFileSync('src/fixed-ui-cart-spacing.css','utf8');
+  assert.ok(css.includes('#cartItemList .cart-compact-grid .cart-field-caption'));
+  assert.ok(css.includes('#cartItemList .cart-price .cart-money-value'));
+  assert.ok(css.includes('#cartItemList .cart-total .cart-money-value'));
+  assert.ok(css.includes('min-height:46px'));
+  assert.ok(css.includes('#cartItemList .cart-qty-readonly'));
+  assert.ok(css.includes('#cartItemList .cart-qty > .cart-field-caption'));
+  assert.ok(index.includes('fixed-ui-cart-spacing.css?ui=3photos-qty-20261008'));
+});
+test('sales product quantity shares horizontal row on normal iPhone, with 340px fallback', () => {
+  const css=fs.readFileSync('src/fixed-ui-product-media.css','utf8');
+  assert.ok(css.includes('flex-wrap:nowrap;'));
+  assert.ok(css.includes('flex:0 0 132px;'));
+  assert.ok(css.includes('@media (max-width:340px)'));
+});

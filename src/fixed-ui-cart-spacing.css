@@ -67,6 +67,11 @@
   height:36px !important;
   padding:0 !important;
 }
+#tab-ban-hang .product-card button[onclick^="updateCart("]:first-child,
+#cartItemList .cart-qty-control > button:first-child{
+  background:#f1f5f9;
+  border-radius:999px;
+}
 #tab-ban-hang .product-card input[data-qty-editor="product"],
 #cartItemList .cart-qty-control > input{
   box-sizing:border-box;
@@ -215,10 +220,45 @@
     font-size:16px !important;
   }
   #cartItemList .cart-qty-readonly{
-    min-height:40px;
+    min-height:46px;
+    height:46px;
     display:grid;
     place-items:center;
+    width:100%;
+    font-variant-numeric:tabular-nums;
   }
+  /* Identical label row and value row in view AND edit.
+     Restores the unit-price caption missing in the iPhone capture. */
+  #cartItemList .cart-price,
+  #cartItemList .cart-total,
+  #cartItemList .cart-qty{
+    align-self:start;
+    min-height:70px;
+  }
+  #cartItemList .cart-compact-grid .cart-field-caption{
+    display:block !important;
+    box-sizing:border-box;
+    min-height:20px;
+    margin:0 0 4px;
+    line-height:20px;
+    font-size:11px;
+    font-weight:600;
+    color:#667085;
+  }
+  #cartItemList .cart-price .cart-field-caption{text-align:left}
+  #cartItemList .cart-qty > .cart-field-caption{text-align:center}
+  #cartItemList .cart-total .cart-field-caption{text-align:right}
+  #cartItemList .cart-price .cart-money-value,
+  #cartItemList .cart-total .cart-money-value{
+    display:flex;
+    align-items:center;
+    min-height:46px;
+    height:46px;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  #cartItemList .cart-price .cart-money-value{justify-content:flex-start}
+  #cartItemList .cart-total .cart-money-value{justify-content:flex-end}
   #cartFooterActions > button{
     min-width:0;
     min-height:44px;

@@ -414,18 +414,22 @@ button.product-image-compare-source:hover{
 /* Mobile sales card core flow: give product identity its own readable row.
    Quantity remains the same updateCart/qty-edit owner and is always touch reachable. */
 @media (max-width:480px){
+  /* Main text and stepper share one compact line on a normal phone.
+     The old full-width second row left ~50px empty under the price. */
   #tab-ban-hang .product-card > .flex.justify-between.items-center{
-    flex-wrap:wrap;
-    align-items:stretch;
-    row-gap:8px;
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:8px;
   }
   #tab-ban-hang .product-card > .flex.justify-between.items-center > :first-child{
-    flex:1 1 100%;
+    flex:1 1 auto;
+    min-width:0;
     padding-right:0 !important;
   }
   #tab-ban-hang .product-card > .flex.justify-between.items-center > :last-child{
-    flex:1 1 100%;
-    justify-content:center;
+    flex:0 0 132px;
+    justify-content:flex-end;
+    min-width:132px;
   }
   #tab-ban-hang .product-card .line-clamp-1{
     -webkit-line-clamp:2;
@@ -448,5 +452,18 @@ button.product-image-compare-source:hover{
   #tab-ban-hang .product-card input[data-line-note-id]{
     min-height:40px;
     font-size:16px !important;
+  }
+}
+
+/* Existing smallest-phone breakpoint: keep names legible beside photos. */
+@media (max-width:340px){
+  #tab-ban-hang .product-card > .flex.justify-between.items-center{
+    flex-wrap:wrap;
+    row-gap:6px;
+  }
+  #tab-ban-hang .product-card > .flex.justify-between.items-center > :first-child{flex:1 1 100%}
+  #tab-ban-hang .product-card > .flex.justify-between.items-center > :last-child{
+    flex:1 1 100%;
+    justify-content:flex-end;
   }
 }
