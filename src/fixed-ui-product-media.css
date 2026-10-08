@@ -425,7 +425,7 @@ button.product-image-compare-source:hover{
   }
   #tab-ban-hang .product-card > .flex.justify-between.items-center > :last-child{
     flex:1 1 100%;
-    justify-content:flex-end;
+    justify-content:center;
   }
   #tab-ban-hang .product-card .line-clamp-1{
     -webkit-line-clamp:2;
@@ -441,8 +441,8 @@ button.product-image-compare-source:hover{
     font-size:14px !important;
   }
   #tab-ban-hang .product-card input[data-qty-editor="product"]{
-    width:44px !important;
-    min-width:44px;
+    width:40px !important;
+    min-width:40px;
     font-size:16px !important;
   }
   #tab-ban-hang .product-card input[data-line-note-id]{
