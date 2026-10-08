@@ -1586,3 +1586,46 @@
     scroll-padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
   }
 }
+
+/* UI-122: sale cards must never resize when SL changes 0 ↔ 1.
+   The note icon is painted beside the price but OUT OF FLOW;
+   no additional row, height, padding, or margin on selection. */
+#tab-ban-hang .product-card .sale-product-price-row{
+  position:relative;
+  height:20px;
+  min-height:20px;
+  max-height:20px;
+  flex-wrap:nowrap;
+  line-height:20px;
+}
+#tab-ban-hang .product-card .sale-product-price-row > .sale-note-inline:not(.hidden){
+  display:block !important;
+  position:relative;
+  flex:0 0 0px !important;
+  width:0 !important;
+  min-width:0 !important;
+  max-width:0 !important;
+  height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:visible;
+}
+#tab-ban-hang .product-card .sale-product-price-row > .sale-note-inline .sale-note-trigger{
+  position:absolute !important;
+  left:1px;
+  top:0;
+  transform:translateY(-50%);
+  box-sizing:border-box;
+  height:32px;
+  width:max-content;
+  min-width:32px;
+  max-width:76px;
+  padding:0 5px;
+  white-space:nowrap;
+}
+#tab-ban-hang .product-card .sale-product-price-row .sale-note-summary:not(.hidden){
+  max-width:41px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
