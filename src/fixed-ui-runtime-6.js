@@ -189,6 +189,13 @@
                     const gap = 6;
                     const availableName = innerWidth
                         - sttWidth - priceWidth - qtyWidth - totalWidth - 4 * gap;
+                    // UI-114: increase the SAME gap for header and every row
+                    // only when B/Tên still has enough room. Keep >=110px
+                    // free for product names before borrowing up to 20px.
+                    const gapExtra = Math.min(5, Math.max(0,
+                        Math.floor((availableName - 110) / 22)));
+                    cartSheet.style.setProperty('--cart-finance-gap',
+                        (gap + gapExtra) + 'px');
                     cartSheet.dataset.compactTwoLine =
                         (!isDeliveredReadOnlyPreview && innerWidth > 0 && availableName < 68)
                             ? '1' : '0';
@@ -208,6 +215,13 @@
                                 + track('--cart-unit-track', 54)
                                 + track('--cart-qty-track', 96)
                                 + track('--cart-total-track', 69) + 24;
+                            const freeName = Math.max(0,usable - fixed);
+                            const extra = Math.min(5, Math.max(0,
+                                Math.floor((freeName - 110) / 22)));
+                            const nextGap = (6 + extra) + 'px';
+                            if (cartSheet.style.getPropertyValue('--cart-finance-gap') !== nextGap) {
+                                cartSheet.style.setProperty('--cart-finance-gap',nextGap);
+                            }
                             const next = (cartSheet.dataset.cartMode === 'edit'
                                 && usable > 0 && usable - fixed < 68) ? '1' : '0';
                             if (cartSheet.dataset.compactTwoLine !== next) {
