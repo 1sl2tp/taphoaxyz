@@ -88,7 +88,6 @@
                     const head = (selector) => header.querySelector(selector);
                     const numberStyle = body.querySelector('.cart-price .cart-money-value') || head('.cart-price');
                     const totalStyle = body.querySelector('.cart-total .cart-money-value') || head('.cart-total');
-                    const nameStyle = body.querySelector('.cart-name') || head('.cart-name');
                     const sttStyle = body.querySelector('.cart-stt') || head('.cart-stt');
                     const qtyStyle = body.querySelector('.cart-qty-readonly') || head('.cart-qty');
                     const maxWidth = (values, node) => Math.ceil(Math.max(0, ...values.map(v => measure(v, node))));
@@ -96,12 +95,11 @@
                     const amountTexts = cartEntries.map(([, item]) =>
                         ((Number(item.qty) || 0) * (Number(item.price) || 0)).toLocaleString('vi-VN'));
                     const quantityTexts = cartEntries.map(([, item]) => Number(item.qty || 0).toLocaleString('vi-VN'));
-                    const names = cartEntries.map(([, item]) => String(item.name || ''));
                     const indexTexts = cartEntries.map((_, idx) => String(idx + 1));
                     const columnWidth = (label, headerNode, values, valueNode, padding) =>
                         Math.ceil(Math.max(measure(label, headerNode), maxWidth(values, valueNode)) + padding);
                     const sttWidth = columnWidth('STT', head('.cart-stt'), indexTexts, sttStyle, 6);
-                    const nameWidth = columnWidth('Tên', head('.cart-name'), names, nameStyle, 6);
+                    // B/Tên receives all free space between left ID and right metrics.
                     const priceWidth = columnWidth('Đơn giá', head('.cart-price'), priceTexts, numberStyle, 8);
                     const totalWidth = columnWidth('Thành tiền', head('.cart-total'), amountTexts, totalStyle, 8);
                     const qtyInput = body.querySelector('.cart-qty-control > input');
@@ -112,22 +110,8 @@
                     const qtyWidth = isDeliveredReadOnlyPreview
                         ? columnWidth('SL', head('.cart-qty'), quantityTexts, qtyStyle, 8)
                         : Math.max(controlWidth, columnWidth('Số lượng', head('.cart-qty'), [], qtyStyle, 8));
-                    const headerStyle = getStyle(header);
-                    const bodyStyle = getStyle(body);
-                    const headerInnerWidth = header.clientWidth -
-                        (parseFloat(headerStyle?.paddingLeft) || 0) -
-                        (parseFloat(headerStyle?.paddingRight) || 0);
-                    const bodyInnerWidth = body.clientWidth -
-                        (parseFloat(bodyStyle?.paddingLeft) || 0) -
-                        (parseFloat(bodyStyle?.paddingRight) || 0);
-                    // A desktop split pane and a mobile sheet use the same
-                    // measured ruler. Budget the SMALLER real content width,
-                    // including any scrollbar in a long cart.
-                    const innerWidth = Math.max(0, Math.min(headerInnerWidth, bodyInnerWidth));
-                    const gap = 6; // the same 6px gap between ALL five columns
-                    const remaining = Math.max(0, innerWidth - sttWidth - priceWidth - qtyWidth - totalWidth - 4 * gap);
+                    // CSS 1fr name track also adapts when the panel resizes.
                     cartSheet.style.setProperty('--cart-stt-track', sttWidth + 'px');
-                    cartSheet.style.setProperty('--cart-name-track', Math.min(nameWidth, remaining) + 'px');
                     cartSheet.style.setProperty('--cart-unit-track', priceWidth + 'px');
                     cartSheet.style.setProperty('--cart-qty-input-track', qtyInputWidth + 'px');
                     cartSheet.style.setProperty('--cart-qty-track', qtyWidth + 'px');

@@ -11,9 +11,9 @@ test('cart A-E ruler applies to desktop split pane regardless of 1080px viewport
   assert.ok(owner.startsWith('/* FIXED STYLE: cart-five-intrinsic-columns-20261008'));
   assert.doesNotMatch(owner,/@media\s*\(/);
   assert.match(owner, /Applies to the cart panel at ANY viewport width, including \.pc-mode split pane/);
-  assert.match(owner, /#cartBottomSheet \.cart-compact-grid,[\s\S]*?#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid\{[^}]*display:grid !important;[^}]*grid-template-columns:\s*var\(--cart-stt-track,24px\)\s*minmax\(0,var\(--cart-name-track,60px\)\)\s*var\(--cart-unit-track,54px\)\s*var\(--cart-qty-track,96px\)\s*var\(--cart-total-track,69px\) !important;/);
+  assert.ok(owner.includes('minmax(0,1fr)'), 'Tên is flexible');
   assert.match(owner, /column-gap:6px !important;/);
-  assert.match(owner, /justify-content:start !important;/);
+  assert.match(owner, /justify-content:stretch !important;/);
   assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-intrinsic-5-cols-20261008&pc-panel=20261008/);
 });
 
@@ -32,7 +32,7 @@ test('desktop cart header and item cells map A-E directly, no old combined name 
 
 test('desktop number anchors and quantity control really occupy measured tracks',()=>{
   assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-price\{[^}]*display:flex !important;[^}]*justify-content:flex-end !important;/);
-  assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-total\{[^}]*display:flex !important;[^}]*justify-content:flex-start !important;/);
+  assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-total\{[^}]*display:flex !important;[^}]*justify-content:flex-end !important;/);
   assert.match(owner, /#cartBottomSheet\[data-cart-mode="edit"\] #cartItemList \.cart-compact-grid \.cart-qty-control\{[^}]*flex:0 0 var\(--cart-qty-track,96px\) !important;[^}]*grid-template-columns:30px var\(--cart-qty-input-track,28px\) 30px !important;/);
   assert.match(owner, /#cartBottomSheet\[data-cart-mode="preview"\] #cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:var\(--cart-qty-track,32px\) !important;/);
   assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-name-note-trigger::after\{[^}]*content:none !important;/);

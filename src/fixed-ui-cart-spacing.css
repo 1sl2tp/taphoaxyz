@@ -1086,7 +1086,7 @@
     display:grid !important;
     grid-template-columns:
       var(--cart-stt-track,24px)
-      minmax(0,var(--cart-name-track,60px))
+      minmax(0,1fr)
       var(--cart-unit-track,54px)
       var(--cart-qty-track,96px)
       var(--cart-total-track,69px) !important;
@@ -1095,7 +1095,7 @@
     grid-auto-flow:row !important;
     column-gap:6px !important;
     row-gap:0 !important;
-    justify-content:start !important;
+    justify-content:stretch !important;
     align-items:center !important;
   }
   #cartBottomSheet .cart-compact-grid .cart-left{
@@ -1131,7 +1131,7 @@
   }
   #cartBottomSheet .cart-column-header .cart-price{text-align:right !important;}
   #cartBottomSheet .cart-column-header .cart-qty{text-align:center !important;}
-  #cartBottomSheet .cart-column-header .cart-total{text-align:left !important;}
+  #cartBottomSheet .cart-column-header .cart-total{text-align:right !important;}
   #cartBottomSheet #cartItemList .cart-compact-grid .cart-price{
     justify-content:flex-end !important;
   }
@@ -1183,14 +1183,14 @@
   #cartBottomSheet #cartItemList .cart-compact-grid .cart-total{
     display:flex !important;
     align-items:center !important;
-    justify-content:flex-start !important;
-    text-align:left !important;
+    justify-content:flex-end !important;
+    text-align:right !important;
     min-width:0 !important;
   }
   #cartBottomSheet #cartItemList .cart-compact-grid .cart-total .cart-money-value{
     flex:0 0 auto !important;
     width:auto !important;
-    text-align:left !important;
+    text-align:right !important;
     white-space:nowrap !important;
   }
   #cartBottomSheet #cartItemList .cart-compact-grid .cart-stt,

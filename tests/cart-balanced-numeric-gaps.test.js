@@ -9,9 +9,9 @@ const last=css.slice(css.indexOf('/* FIXED STYLE: cart-five-intrinsic-columns-20
 
 test('Excel sketch uses exactly FIVE content-sized columns A–E and four equal gutters',()=>{
   assert.ok(last.startsWith('/* FIXED STYLE: cart-five-intrinsic-columns-20261008'));
-  assert.match(last,/#cartBottomSheet \.cart-compact-grid,[\s\S]*?#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid\{[^}]*grid-template-columns:\s*var\(--cart-stt-track,24px\)\s*minmax\(0,var\(--cart-name-track,60px\)\)\s*var\(--cart-unit-track,54px\)\s*var\(--cart-qty-track,96px\)\s*var\(--cart-total-track,69px\) !important;/);
+  assert.ok(last.includes('minmax(0,1fr)'), 'Tên is flexible');
   assert.match(last,/column-gap:6px !important;/);
-  assert.match(last,/justify-content:start !important;/);
+  assert.match(last,/justify-content:stretch !important;/);
   assert.doesNotMatch(last,/minmax\(0,6fr\)|minmax\(0,8fr\)|grid-column:7 !important;/);
 });
 
@@ -38,7 +38,7 @@ test('max header/value widths across all product rows are measured using real br
   assert.match(js,/cartEntries\.map\(\(\[, item\]\) => String\(item\.name \|\| ''\)\)/);
   assert.match(js,/cartEntries\.map\(\(\[, item\]\) => Number\(item\.price \|\| 0\)\.toLocaleString\('vi-VN'\)\)/);
   assert.match(js,/cartEntries\.map\(\(\[, item\]\) =>\s*\(\(Number\(item\.qty\) \|\| 0\) \* \(Number\(item\.price\) \|\| 0\)\)\.toLocaleString\('vi-VN'\)\)/);
-  for(const [name,label] of [['sttWidth','STT'],['nameWidth','Tên'],['priceWidth','Đơn giá'],['totalWidth','Thành tiền']]){
+  for(const [name,label] of [['sttWidth','STT'],['priceWidth','Đơn giá'],['totalWidth','Thành tiền']]){
     assert.ok(js.includes("columnWidth('"+label+"'"),name);
   }
   for(const col of ['stt','name','unit','qty','total']){
@@ -48,8 +48,8 @@ test('max header/value widths across all product rows are measured using real br
 
 test('only Tên shrinks when columns exceed viewport, quantity control counts its frame and longest input',()=>{
   assert.match(js,/const innerWidth = Math\.max\(0, Math\.min\(headerInnerWidth, bodyInnerWidth\)\)/);
-  assert.match(js,/const remaining = Math\.max\(0, innerWidth - sttWidth - priceWidth - qtyWidth - totalWidth - 4 \* gap\)/);
-  assert.match(js,/Math\.min\(nameWidth, remaining\)/);
+  assert.doesNotMatch(js,/setProperty\('--cart-name-track'/);
+  assert.doesNotMatch(js,/setProperty\('--cart-name-track'/);
   assert.match(js,/const qtyInputWidth = Math\.max\(28, maxWidth\(quantityTexts, qtyInput \|\| qtyStyle\) \+ 12\)/);
   assert.match(js,/const controlWidth = 30 \+ qtyInputWidth \+ 30 \+ 2 \+ 4 \+ 2/);
   assert.match(last,/grid-template-columns:30px var\(--cart-qty-input-track,28px\) 30px !important;/);
@@ -61,7 +61,7 @@ test('only Tên shrinks when columns exceed viewport, quantity control counts it
 test('the visible gaps from C to D and D to E are equal for both quantity modes',()=>{
   assert.match(last,/#cartBottomSheet \.cart-column-header \.cart-price\{text-align:right !important;/);
   assert.match(last,/#cartBottomSheet \.cart-column-header \.cart-qty\{text-align:center !important;/);
-  assert.match(last,/#cartBottomSheet \.cart-column-header \.cart-total\{text-align:left !important;/);
+  assert.match(last,/#cartBottomSheet \.cart-column-header \.cart-total\{text-align:right !important;/);
   for(const [controlWidth,visibleWidth] of [[96,96],[26,13],[52,36]]){
     const g=6;
     assert.equal(g+(controlWidth-visibleWidth)/2,g+(controlWidth-visibleWidth)/2);

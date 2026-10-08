@@ -81,3 +81,31 @@ Nguồn: ảnh ví dụ bảng tính do người dùng gửi 2026-10-08 20:20.
 - Đơn giá right, SL center, Thành tiền left theo mép số. Khung edit sử dụng `--cart-qty-track`, hai nút 30px, input theo `--cart-qty-input-track`; readonly chỉ có số. Tất cả cột có gap 6px, không tự `space-between` trên desktop.
 - Khi tính vùng còn lại cho Tên, lấy `Math.min(headerInnerWidth, bodyInnerWidth)` sau trừ padding cả hai để không tràn khi body có scrollbar. Tên là cột duy nhất co.
 - Regression bắt buộc kiểm thử breakpoint **desktop 1080px với panel ~480px** và mobile 320/375/390/428px; đổi CSS version trong index.html. Tests và Pages PASS chưa thay cho screenshot Chrome thực tế sau triển khai.
+
+## Canonical Rule 2026-10-08 — Bảng chia 2 nhóm LEFT DETAILS / RIGHT METRICS
+
+**Quy tắc này THAY THẾ mọi hướng dẫn cũ nói Thành tiền căn trái, Tên là track cố định,
+hoặc chừa khoảng trắng sau cột số cuối.** Google Sheet Rule chung AI-38/UI-100 là canonical.
+
+- **Giỏ hàng (edit/readonly):** 5 cột STT | Tên | Đơn giá | Số lượng/SL | Thành tiền, nhưng chia 2 cụm:
+  STT+Tên bám TRÁI; 3 cột số bám PHẢI. Track `Tên = minmax(0,1fr)` lấp phần
+  trắng giữa cụm trái/phải. Các track STT/Đơn giá/SL/Thành tiền dùng width
+  max đo từ header và mọi giá trị hiện có; E/Thành tiền **luôn căn phải**.
+  Giữ 4 gap bằng nhau và bộ `− n +` ở edit, readonly chỉ số.
+- **Tổng hợp theo nguồn** ở hai tab Đơn tạm/Đã giao: Nguồn là track linh hoạt
+  bên trái; SL/Chi/Thu/Lãi dùng `max-content`, đều căn phải và Lãi cuối sát
+  mép phải. Khi vai trò user ẩn Chi/Lãi, lưới đổi sang đúng **3 track**
+  Nguồn | SL | Thu, không để cột rỗng.
+- **Popup Chi tiết/Gộp nguồn đã giao hoặc đơn tạm:** STT + tên trái; cột SL cuối
+  bám mép phải, `max-content` theo SL dài nhất và nhãn. Chi tiết có thêm
+  Tên KH (text linh hoạt), có thể co; Gộp có Tên sản phẩm mở rộng phần giữa.
+  Header/body/TỔNG/ảnh chia sẻ dùng cùng CSS, không đẩy tổng sang cột khác.
+- **Các bảng tương tự:** Chỉ áp dụng khi cấu trúc có nhóm nhận diện/mô tả bên
+  trái và nhóm số liệu bên phải; không áp dụng đại trà lên bảng không có
+  số liệu ở cột cuối. Bảo vệ giá trị, nút nhập, scroll/ellipsis khi hẹp.
+- **Owner trong repo:** `src/fixed-ui-cart-spacing.css` (giỏ), `src/fixed-ui-runtime-6.js`
+  (đo track cố định, KHÔNG khóa Tên), `src/fixed-ui-source-3.css` (summary
+  max-content đã có), `src/fixed-ui-source-4.css` (user-role 3 tracks +
+  source detail shared grid). Không thay SQL/Auth/Giao dịch/API/ảnh dữ liệu.
+- **PASS:** 4 ảnh đối chiếu: Tổng hợp, Chi tiết, Gộp, Giỏ readonly/edit.
+  Ngoài CI/Pages, cần ảnh sau triển khai trên Safari/Chrome để xác nhận pixel.

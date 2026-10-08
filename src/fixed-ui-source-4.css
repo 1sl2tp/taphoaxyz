@@ -874,3 +874,46 @@ body[data-employee-link="true"] #cartFooterActions button[onclick*="goToBanHangF
 body[data-employee-link="true"] #cartFooterActions button[onclick*="requestDeleteEditingOrder"]{
   display:none !important;
 }
+
+/* FIXED STYLE: two-sided-intrinsic-tables-20261008
+   Summary has an existing max-content ruler in source-3. A user role
+   hides Chi+Lãi, so the remaining 3 data columns must occupy 3 tracks. */
+body[data-auth-role="user"] .summary-compact-table{
+  grid-template-columns:minmax(0,1fr) max-content max-content !important;
+}
+
+/* Chi tiết + Gộp: STT/Tên at left, last SL stays at the right edge.
+   The customer-name column in Chi tiết also shrinks when needed.
+   These classes are shared by the on-screen and share-capture tables. */
+.source-detail-capture .source-detail-grid{
+  box-sizing:border-box;
+  width:100%;
+  grid-template-columns:24px minmax(0,1fr) max-content;
+  column-gap:8px;
+  justify-content:stretch;
+}
+.source-detail-capture .source-detail-grid-detail{
+  grid-template-columns:24px minmax(0,1fr) minmax(0,.75fr) max-content;
+}
+.source-detail-capture .source-detail-grid .source-detail-qty,
+.source-detail-capture .source-detail-grid .source-detail-total-qty{
+  justify-self:end;
+  justify-content:flex-end;
+  text-align:right !important;
+  white-space:nowrap;
+  min-width:max-content;
+}
+.source-detail-capture .source-detail-grid .source-detail-product-cell,
+.source-detail-capture .source-detail-grid .source-detail-buyer-cell,
+.source-detail-capture .source-detail-grid .source-detail-name{
+  min-width:0;
+}
+@media(min-width:768px){
+  .source-detail-capture .source-detail-grid{
+    grid-template-columns:28px minmax(0,1fr) max-content;
+    column-gap:10px;
+  }
+  .source-detail-capture .source-detail-grid-detail{
+    grid-template-columns:28px minmax(0,1fr) minmax(0,.75fr) max-content;
+  }
+}
