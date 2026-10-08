@@ -34,3 +34,8 @@ Cập nhật: 2026-10-08. Phạm vi: **1sl2tp/taphoaxyz**, giao diện đơn hà
 - [ ] Chưa có ảnh Safari/PWA thực tế thì **không tuyên bố visual QA đã hoàn tất**.
 
 Quy tắc này được viện dẫn từ `AGENTS.md`. Không tự chia layout giỏ thành 2-3 hàng hoặc thay nhãn bằng pseudo-element khi người dùng chỉ yêu cầu giống hóa đơn xem trước.
+
+## Đối chiếu ảnh thực tế 17:40 — tránh grid implicit (IMG_9481)
+- Trên mobile, CSS cũ từng gán `grid-area:line / unit / quantity / subtotal` cho bốn ô. Chỉ đặt `grid-template-areas:none` **không đủ**: các ô vẫn tham gia vào grid implicit và tạo hàng/cột ảo, khiến mất tên/đơn giá và đè Thành tiền.
+- Source cuối trong `src/fixed-ui-cart-spacing.css` **bắt buộc reset** `grid-area:auto!important`, `grid-row:auto!important` và `grid-column:auto!important` cho `.cart-left/.cart-price/.cart-qty/.cart-total` trên mobile; một hàng phải chứa đủ 5 ô theo thứ tự.
+- Khi cập nhật có CSS từ nhiều file `fixed-ui-source-*.css`, phải kiểm tra cascade thực tế. Không chỉ dựa vào test chuỗi selector: đối chiếu ảnh Safari/PWA có tên, đơn giá, SL, thành tiền, không chồng nút; ảnh 17:40 cho thấy test cũ PASS nhưng UI lỗi.

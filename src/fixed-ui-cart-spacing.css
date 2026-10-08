@@ -798,3 +798,52 @@
     text-overflow:ellipsis !important;
   }
 }
+
+/* FIXED STYLE: cart-five-columns-no-implicit-areas-20261008
+   Regression IMG_9481 17:40: legacy mobile .cart-left/.cart-price/.cart-qty/
+   .cart-total still had grid-area:line/unit/quantity/subtotal. Turning the
+   template areas off alone did NOT clear those item placements: CSS Grid
+   implicitly created extra tracks and pushed the name/price out of view.
+   All five visual cells must be auto-placed in the same explicit grid row. */
+@media (max-width:480px){
+  #cartBottomSheet .cart-compact-grid{
+    grid-template-areas:none !important;
+    grid-template-rows:auto !important;
+    grid-auto-flow:row !important;
+    grid-auto-columns:auto !important;
+    grid-auto-rows:auto !important;
+    row-gap:0 !important;
+  }
+  #cartBottomSheet .cart-compact-grid .cart-left,
+  #cartBottomSheet .cart-compact-grid .cart-price,
+  #cartBottomSheet .cart-compact-grid .cart-qty,
+  #cartBottomSheet .cart-compact-grid .cart-total{
+    grid-area:auto !important;
+    grid-row:auto !important;
+    grid-column:auto !important;
+  }
+  /* .cart-left is the holder of STT and name. Flatten it into exactly
+     TWO direct CSS-grid cells without removing any note/edit handlers. */
+  #cartBottomSheet .cart-compact-grid .cart-left{
+    display:contents !important;
+  }
+  #cartBottomSheet .cart-compact-grid .cart-left > .min-w-0{
+    min-width:0 !important;
+    overflow:hidden;
+  }
+  #cartItemList .cart-compact-grid .cart-name{
+    min-width:0 !important;
+    max-width:100% !important;
+    display:block !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+  }
+  #cartItemList .cart-compact-grid .cart-price,
+  #cartItemList .cart-compact-grid .cart-qty,
+  #cartItemList .cart-compact-grid .cart-total{
+    align-self:center !important;
+    min-height:34px !important;
+    height:34px !important;
+  }
+}

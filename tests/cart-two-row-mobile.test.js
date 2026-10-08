@@ -27,7 +27,7 @@ test('editable shopping cart uses buttons only at the same quantity track as rea
 });
 
 test('mobile five-column header/body and images have fresh versions',()=>{
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=order-five-col-20261008/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=order-five-col-corrected-20261008/);
   assert.match(html,/fixed-ui-markup-3\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-markup-5\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-cart-share-v3\.js\?v=[^"]*order-five-col=20261008/);
