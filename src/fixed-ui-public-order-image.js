@@ -250,7 +250,7 @@
           <div style="text-align:center;">STT</div>
           <div>Tên</div>
           <div style="text-align:right;">Đơn giá</div>
-          <div style="text-align:center;">Số lượng</div>
+          <div style="text-align:center;">SL</div>
           <div style="text-align:right;">Thành tiền</div>
         </div>
         <div>${rowsHtml}</div>
