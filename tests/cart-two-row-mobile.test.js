@@ -39,3 +39,14 @@ test('small phones retain shared layout and source files have fresh version URLs
   assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*cart-preview-parity=20261008/);
   assert.match(html,/fixed-ui-behavior\.js\?v=[^"]*readonly-preview=20261008/);
 });
+
+test('quantity control fits the invoice-preview quantity track even on 320px screens',()=>{
+  const owner=css.slice(css.indexOf('/* FIXED STYLE: cart-preview-parity-20261008'));
+  const control=owner.match(/#cartItemList \.cart-qty-control\{([^}]*)\}/)?.[1]||'';
+  assert.match(control,/width:104px !important;/);
+  assert.match(control,/grid-template-columns:32px 32px 32px !important;/);
+  assert.match(control,/gap:1px !important;/);
+  assert.match(control,/padding:0 2px !important;/);
+  // Three 32px cells, two 1px gaps, 4px padding, 2px border = 104px.
+  assert.equal(32*3+2+4+2,104);
+});
