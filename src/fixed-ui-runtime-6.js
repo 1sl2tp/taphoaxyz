@@ -120,6 +120,21 @@
                     cartSheet.style.setProperty('--cart-qty-input-track', qtyInputWidth + 'px');
                     cartSheet.style.setProperty('--cart-qty-track', qtyWidth + 'px');
                     cartSheet.style.setProperty('--cart-total-track', totalWidth + 'px');
+                    // UI-107: preserve product names if full +/- controls and
+                    // long amounts leave almost no space for description.
+                    // Only edit rows switch to two lines; the numeric C/D/E
+                    // tracks and their captions still share the SAME ruler.
+                    const captionLayout = getStyle(header);
+                    const px = (value) => Number.parseFloat(value) || 0;
+                    const innerWidth = Math.max(0, header.clientWidth
+                        - px(captionLayout?.paddingLeft)
+                        - px(captionLayout?.paddingRight));
+                    const gap = innerWidth <= 320 ? 4 : 6;
+                    const availableName = innerWidth
+                        - sttWidth - priceWidth - qtyWidth - totalWidth - 4 * gap;
+                    cartSheet.dataset.compactTwoLine =
+                        (!isDeliveredReadOnlyPreview && innerWidth > 0 && availableName < 68)
+                            ? '1' : '0';
                     // UI-106: semantic columns. Each column is measured once
                     // from all values + visible label; no per-row horizontal shift.
                     // The data row establishes the visual axis, the label follows.
