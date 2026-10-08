@@ -65,10 +65,52 @@
             });
         }
 
+        function fitCartNoteInputHeight(input) {
+            if (!input) return;
+            // Two compact lines to start; long notes grow until 120px.
+            input.style.height = '52px';
+            const natural = input.scrollHeight || 52;
+            input.style.height = Math.min(120, Math.max(52, natural)) + 'px';
+            input.style.overflowY = natural > 120 ? 'auto' : 'hidden';
+        }
+
+        function bindCartNoteVisibleViewport(overlay) {
+            // Safari/iOS PWA: 100dvh alone does not always exclude
+            // the software keyboard. Use the *visible* viewport while open.
+            const vv = window.visualViewport;
+            const isNarrow = () => window.innerWidth <= 640;
+            const update = () => {
+                if (!overlay.isConnected) return;
+                if (!isNarrow()) {
+                    overlay.style.removeProperty('top');
+                    overlay.style.removeProperty('bottom');
+                    overlay.style.removeProperty('height');
+                    overlay.style.removeProperty('--cart-note-visible-height');
+                    return;
+                }
+                const height = Math.max(1, Math.round(vv?.height || window.innerHeight));
+                const top = Math.max(0, Math.round(vv?.offsetTop || 0));
+                overlay.style.top = top + 'px';
+                overlay.style.bottom = 'auto';
+                overlay.style.height = height + 'px';
+                overlay.style.setProperty('--cart-note-visible-height',height + 'px');
+            };
+            vv?.addEventListener('resize', update);
+            vv?.addEventListener('scroll', update);
+            window.addEventListener('resize', update);
+            overlay.cartNoteViewportCleanup = () => {
+                vv?.removeEventListener('resize', update);
+                vv?.removeEventListener('scroll', update);
+                window.removeEventListener('resize', update);
+            };
+            update();
+        }
+
         function closeCartLineNotePopup() {
             const overlay = document.getElementById('cartLineNoteOverlay');
             if (!overlay) return;
             const trigger = overlay.cartNoteTrigger;
+            overlay.cartNoteViewportCleanup?.();
             overlay.remove();
             if (trigger && trigger.isConnected) trigger.focus({ preventScroll: true });
         }
@@ -122,12 +164,14 @@
             } else {
                 const input = document.createElement('textarea');
                 input.className = 'cart-note-input';
-                input.rows = 3;
+                input.rows = 2;
                 input.placeholder = 'Nhập ghi chú cho sản phẩm';
                 input.setAttribute('aria-label', 'Nội dung ghi chú');
                 input.dataset.cartNoteInputId = maSp;
                 input.value = note;
+                input.addEventListener('input', () => fitCartNoteInputHeight(input));
                 field.appendChild(input);
+                fitCartNoteInputHeight(input);
                 const cancel = document.createElement('button');
                 cancel.type = 'button';
                 cancel.className = 'cart-note-secondary';
@@ -147,6 +191,7 @@
                 });
             }
             document.body.appendChild(overlay);
+            bindCartNoteVisibleViewport(overlay);
             requestAnimationFrame(() => {
                 (overlay.querySelector('.cart-note-input') ||
                     overlay.querySelector('.cart-note-close'))?.focus({ preventScroll: true });
