@@ -331,3 +331,21 @@
   font-weight:800 !important;
 }
 /* Keep the narrow two-line fallback instead of squeezing touch controls. */
+
+/* UI-117 — SCROLL OWNER DETERMINES THE HEADER RULER
+   #cartItemList and #detailModalItems scroll; their headers do NOT.
+   Classic desktop scrollbars consume horizontal pixels, whereas
+   macOS/iOS overlay scrollbars usually do not. Read the actual
+   scrollbar width in JS, never hardcode 12/15/17px, and reserve it
+   ONLY on the header's far-right padding. Left padding stays 16px.
+   A--E values and header use exactly the same available content width.
+   Grouping is semantic, not five equally-sized columns:
+   STT compact / Name flexible / SL centred / Price & Total right. */
+#cartBottomSheet > .cart-column-header {
+  box-sizing:border-box !important;
+  padding-right:calc(1rem + var(--cart-scrollbar-inset,0px)) !important;
+}
+#orderDetailContentToShare > .order-column-header {
+  box-sizing:border-box !important;
+  padding-right:calc(1rem + var(--order-scrollbar-inset,0px)) !important;
+}
