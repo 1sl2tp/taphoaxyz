@@ -411,6 +411,18 @@
     // and makes the qty-to-money gap visibly larger.
     source.style.setProperty('--order-total-track',
       Math.ceil(Math.max(widestMoney,textWidth(totalHeader)))+'px');
+    // UI-114: when Tên has spare width, let C(SL), D(Giá), E(Tiền)
+    // breathe. Same gap is applied to captions and rows, never per-cell.
+    const hStyle=getComputedStyle(header);
+    const inset=(Number.parseFloat(hStyle.paddingLeft)||0)
+      +(Number.parseFloat(hStyle.paddingRight)||0);
+    const usable=Math.max(0,header.clientWidth-inset);
+    const widths=['--order-stt-track','--order-qty-track',
+      '--order-price-track','--order-total-track']
+      .map(name=>Number.parseFloat(source.style.getPropertyValue(name))||0);
+    const remaining=usable-widths.reduce((a,b)=>a+b,0)-4*6;
+    const extra=Math.min(4,Math.max(0,Math.floor((remaining-110)/25)));
+    source.style.setProperty('--order-finance-gap',(6+extra)+'px');
   }
 
   const originalShowOrderDetailMobile=typeof window.showOrderDetailMobile==='function'
