@@ -334,6 +334,32 @@
     }
   }
 
+  // UI-117: order header is outside the real scroll owner.
+  // Use the same visible width for header and rows, including when a
+  // classic scrollbar appears after opening a long saved order.
+  function syncOrderHeaderScrollbar(){
+    const source=document.getElementById('orderDetailContentToShare');
+    const body=source?.querySelector('#detailModalItems');
+    if(!source||!body)return;
+    const style=getComputedStyle(body);
+    const borders=(Number.parseFloat(style.borderLeftWidth)||0)
+      +(Number.parseFloat(style.borderRightWidth)||0);
+    const gutter=Math.max(0,Math.round(body.offsetWidth-body.clientWidth-borders));
+    const value=gutter+'px';
+    if(source.style.getPropertyValue('--order-scrollbar-inset')!==value){
+      source.style.setProperty('--order-scrollbar-inset',value);
+    }
+    if(!body.__orderHeaderScrollbarObserver&&typeof ResizeObserver==='function'){
+      body.__orderHeaderScrollbarObserver=new ResizeObserver(()=>{
+        syncOrderHeaderScrollbar();
+        // When the scrollport changes width, recompute the shared
+        // gaps once; no data requests, row observers or polling.
+        syncOrderDetailNumericRuler();
+      });
+      body.__orderHeaderScrollbarObserver.observe(body);
+    }
+  }
+
   // UI-104: share one numeric ruler across the REAL detail header and rows.
   // Measure actual font metrics in the existing DOM only; no data requests.
   function syncOrderDetailNumericRuler(){
@@ -341,6 +367,7 @@
     const header=source?.querySelector('.order-column-header');
     const rows=Array.from(source?.querySelectorAll('#detailModalItems .order-detail-compact-grid')||[]);
     if(!source||!header||!rows.length)return;
+    syncOrderHeaderScrollbar();
     const panel=document.getElementById('orderDetailBottomSheet');
     const panelWidth=panel?.getBoundingClientRect().width||window.innerWidth;
     source.classList.toggle('order-readable-compact',panelWidth<600);
