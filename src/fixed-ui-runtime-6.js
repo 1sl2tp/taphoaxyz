@@ -105,7 +105,22 @@
                     const sttWidth = columnWidth('STT', head('.cart-stt'), indexTexts, sttStyle, 6);
                     // B/Tên receives all free space between left ID and right metrics.
                     const priceWidth = columnWidth('Đơn giá', head('.cart-price'), priceTexts, numberStyle, 8);
-                    const totalWidth = columnWidth('Thành tiền', head('.cart-total'), amountTexts, totalStyle, 8);
+                    // UI-108: LAST MONEY column is sized by its largest NUMBER,
+                    // never stretched merely to hold the long "Thành tiền" caption.
+                    // Choose the longest semantic caption that fits that number;
+                    // if the amount is unusually short, "TT" is the minimum label.
+                    const totalHead = head('.cart-total');
+                    const widestAmount = maxWidth(amountTexts, totalStyle);
+                    const totalLabelOptions = ['Thành tiền', 'T.tiền', 'Tiền', 'TT'];
+                    const totalLabel = !cartEntries.length
+                        ? 'Thành tiền'
+                        : totalLabelOptions.find(label => measure(label, totalHead) <= widestAmount) || 'TT';
+                    if (totalHead && totalHead.textContent !== totalLabel) {
+                        totalHead.textContent = totalLabel;
+                        totalHead.title = 'Thành tiền';
+                        totalHead.setAttribute('aria-label', 'Thành tiền');
+                    }
+                    const totalWidth = Math.ceil(Math.max(widestAmount, measure(totalLabel, totalHead)) + 8);
                     const qtyInput = body.querySelector('.cart-qty-control > input');
                     const qtyInputWidth = Math.max(28, maxWidth(quantityTexts, qtyInput || qtyStyle) + 12);
                     // Two 30px buttons + editable number + 2 one-pixel gaps,
