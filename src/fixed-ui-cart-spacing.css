@@ -1482,3 +1482,19 @@
 #orderDetailContentToShare.order-readable-compact #detailModalItems .order-name{
   line-height:1.35 !important;
 }
+
+/* UI-105 CANONICAL: BODY ROW FIRST, CAPTION SECOND.
+   Never move price, quantity input, total or shared data tracks to fix labels.
+   Header SL/Số lượng may shift only within the remaining clear space before
+   "Thành tiền". JS measures the ACTUAL rendered caption glyph bounds and
+   clamps label-only offset, reserving at least 8px of visible separation. */
+#cartBottomSheet .cart-column-header .cart-qty{
+  transform:translateX(var(--cart-header-axis-shift,0px)) !important;
+  white-space:nowrap !important;
+  text-align:center !important;
+}
+#cartBottomSheet .cart-column-header .cart-total{
+  transform:none !important;
+  text-align:right !important;
+  white-space:nowrap !important;
+}
