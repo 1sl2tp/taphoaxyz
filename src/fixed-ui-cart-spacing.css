@@ -441,3 +441,153 @@
     letter-spacing:-.15px;
   }
 }
+
+/* FIXED STYLE: cart-inline-fields-20261008
+   Exactly TWO visual rows per item on phones:
+   [STT + product name + note] / [Giá 376 | SL −1+ | Tiền 376].
+   Keep captions accessible in the DOM; use compact visual words only when
+   screen width cannot fit the full Vietnamese captions beside their values. */
+@media (max-width:480px){
+  #cartItemList .cart-compact-grid{
+    grid-template-columns:minmax(0,1fr) 108px minmax(0,1fr) !important;
+    grid-template-areas:"line line line" "unit quantity subtotal" !important;
+    grid-template-rows:max-content max-content !important;
+    column-gap:5px !important;
+    row-gap:3px !important;
+    padding-top:6px !important;
+    padding-bottom:6px !important;
+  }
+  #cartItemList .cart-price,
+  #cartItemList .cart-qty,
+  #cartItemList .cart-total{
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    box-sizing:border-box;
+    min-width:0 !important;
+    min-height:36px !important;
+    height:36px !important;
+    gap:3px !important;
+  }
+  #cartItemList .cart-price,
+  #cartItemList .cart-total{
+    justify-content:space-between !important;
+    width:100% !important;
+  }
+  #cartItemList .cart-qty{
+    width:108px !important;
+    min-width:108px !important;
+    justify-content:space-between !important;
+  }
+  #cartItemList .cart-compact-grid .cart-field-caption{
+    display:inline-block !important;
+    flex:0 0 auto !important;
+    min-width:0 !important;
+    min-height:0 !important;
+    width:auto !important;
+    margin:0 !important;
+    padding:0 !important;
+    font-size:10px !important;
+    line-height:1.2 !important;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  #cartItemList .cart-price .cart-money-value,
+  #cartItemList .cart-total .cart-money-value{
+    display:block !important;
+    flex:0 1 auto;
+    min-width:0 !important;
+    width:auto !important;
+    min-height:0 !important;
+    height:auto !important;
+    font-size:12px !important;
+    font-weight:750;
+    line-height:1.2 !important;
+    text-align:right !important;
+    white-space:nowrap;
+  }
+  #cartItemList .cart-price input.cart-money-value{
+    display:block !important;
+    flex:1 1 0 !important;
+    box-sizing:border-box;
+    width:100% !important;
+    min-width:0 !important;
+    height:32px !important;
+    min-height:32px !important;
+    padding:0 !important;
+    font-size:12px !important;
+    text-align:right !important;
+  }
+  #cartItemList .cart-qty .cart-field-caption{
+    font-size:0 !important;
+  }
+  #cartItemList .cart-qty .cart-field-caption::after{
+    content:"SL";
+    font-size:10px;
+  }
+  #cartItemList .cart-qty-control{
+    flex:0 0 92px !important;
+    width:92px !important;
+    min-width:92px !important;
+    height:36px !important;
+    display:grid !important;
+    grid-template-columns:30px 26px 30px !important;
+    column-gap:1px !important;
+    gap:1px !important;
+    padding:0 2px !important;
+    margin:0 !important;
+  }
+  #cartItemList .cart-qty-control > button{
+    box-sizing:border-box;
+    width:30px !important;
+    min-width:30px !important;
+    height:32px !important;
+    min-height:32px !important;
+    padding:0 !important;
+  }
+  #cartItemList .cart-qty-control > input{
+    box-sizing:border-box;
+    width:26px !important;
+    min-width:26px !important;
+    height:32px !important;
+    min-height:32px !important;
+    padding:0 !important;
+    font-size:14px !important;
+  }
+  #cartItemList .cart-qty-readonly{
+    flex:0 0 92px !important;
+    width:92px !important;
+    min-width:92px !important;
+    height:36px !important;
+    min-height:36px !important;
+    font-size:14px !important;
+  }
+}
+@media (max-width:399px){
+  #cartItemList .cart-price .cart-field-caption,
+  #cartItemList .cart-total .cart-field-caption{
+    font-size:0 !important;
+  }
+  #cartItemList .cart-price .cart-field-caption::after{
+    content:"Giá";
+    font-size:10px;
+  }
+  #cartItemList .cart-total .cart-field-caption::after{
+    content:"Tiền";
+    font-size:10px;
+  }
+}
+@media (max-width:360px){
+  #cartItemList .cart-compact-grid{
+    grid-template-columns:minmax(0,1fr) 108px minmax(0,1fr) !important;
+    column-gap:4px !important;
+  }
+  #cartItemList .cart-price,
+  #cartItemList .cart-total{gap:2px !important;}
+  #cartItemList .cart-price .cart-money-value,
+  #cartItemList .cart-total .cart-money-value,
+  #cartItemList .cart-price input.cart-money-value{
+    font-size:11px !important;
+    letter-spacing:-.15px;
+  }
+}

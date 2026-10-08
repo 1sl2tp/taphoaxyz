@@ -26,7 +26,7 @@ test('empty cart note stays clickable but does not occupy a separate row',()=>{
 });
 
 test('mobile cart latest two-row CSS is cache-busted',()=>{
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-compact-9475-20261008/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-inline-fields-20261008/);
 });
 
 test('latest photo 9475: cart 2-row blocks use compact input and labels at 320-428px',()=>{
@@ -35,4 +35,16 @@ test('latest photo 9475: cart 2-row blocks use compact input and labels at 320-4
   assert.match(css, /#cartItemList \.cart-compact-grid \.cart-field-caption\{[^}]*min-height:13px !important;/);
   assert.match(css, /#cartItemList \.cart-qty-control\{[^}]*width:124px !important;[^}]*height:40px !important;/);
   assert.match(css, /@media \(max-width:360px\)\{[\s\S]*grid-template-columns:minmax\(0,1fr\) 124px minmax\(0,1fr\)/);
+});
+
+test('mobile cart shows caption and numeric/control side by side within each field',()=>{
+  const compact=css.slice(css.indexOf('/* FIXED STYLE: cart-inline-fields-20261008'));
+  assert.match(compact, /#cartItemList \.cart-compact-grid\{[^}]*grid-template-areas:"line line line" "unit quantity subtotal" !important/);
+  assert.match(compact, /#cartItemList \.cart-price,[\s\S]*?#cartItemList \.cart-total\{[^}]*display:flex !important;[^}]*flex-direction:row !important/);
+  assert.match(compact, /#cartItemList \.cart-compact-grid \.cart-field-caption\{[^}]*display:inline-block !important;/);
+  assert.match(compact, /#cartItemList \.cart-price \.cart-money-value,[\s\S]*?#cartItemList \.cart-total \.cart-money-value\{[^}]*min-height:0 !important;/);
+  assert.match(compact, /#cartItemList \.cart-qty-control\{[^}]*width:92px !important;/);
+  assert.match(compact, /#cartItemList \.cart-qty \.cart-field-caption::after\{[^}]*content:"SL";/);
+  assert.match(compact, /@media \(max-width:399px\)\{[\s\S]*content:"Giá";[\s\S]*content:"Tiền";/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-inline-fields-20261008/);
 });
