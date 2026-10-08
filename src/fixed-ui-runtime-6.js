@@ -79,11 +79,15 @@
                     const getStyle = (node) => node ? window.getComputedStyle(node) : null;
                     const measure = (value, node) => {
                         const style = getStyle(node);
-                        const text = String(value ?? '');
+                        let text = String(value ?? '');
+                        if (style?.textTransform === 'uppercase') text = text.toLocaleUpperCase('vi-VN');
+                        if (style?.textTransform === 'lowercase') text = text.toLocaleLowerCase('vi-VN');
                         if (!context || !style) return text.length * 8;
                         context.font = [style.fontStyle, style.fontWeight, style.fontSize, style.fontFamily]
                             .filter(Boolean).join(' ');
-                        return context.measureText(text).width;
+                        const tracking = Number.parseFloat(style.letterSpacing);
+                        const addedSpace = Number.isFinite(tracking) ? Math.max(0, text.length - 1) * tracking : 0;
+                        return context.measureText(text).width + addedSpace;
                     };
                     const head = (selector) => header.querySelector(selector);
                     const numberStyle = body.querySelector('.cart-price .cart-money-value') || head('.cart-price');
@@ -102,18 +106,6 @@
                     // B/Tên receives all free space between left ID and right metrics.
                     const priceWidth = columnWidth('Đơn giá', head('.cart-price'), priceTexts, numberStyle, 8);
                     const totalWidth = columnWidth('Thành tiền', head('.cart-total'), amountTexts, totalStyle, 8);
-                    // UI-103: Numeric VISUAL axis is defined by real digits, not
-                    // the wider "Thành tiền" header. Its unused left space makes
-                    // the quantity number look too close to Đơn giá. Center the
-                    // quantity NUMBER between the right edge of unit-price digits
-                    // and the left edge of the widest line-total digits.
-                    // The entire +/- frame moves with its central number.
-                    const widestTotalDigits = maxWidth(amountTexts, totalStyle);
-                    const unusedTotalLabelSpace = Math.max(0, totalWidth - widestTotalDigits);
-                    const numericAxisShift = cartEntries.length
-                        ? Math.min(24, Math.round(unusedTotalLabelSpace / 2))
-                        : 0;
-                    cartSheet.style.setProperty('--cart-numeric-axis-shift', numericAxisShift + 'px');
                     const qtyInput = body.querySelector('.cart-qty-control > input');
                     const qtyInputWidth = Math.max(28, maxWidth(quantityTexts, qtyInput || qtyStyle) + 12);
                     // Two 30px buttons + editable number + 2 one-pixel gaps,
@@ -128,30 +120,11 @@
                     cartSheet.style.setProperty('--cart-qty-input-track', qtyInputWidth + 'px');
                     cartSheet.style.setProperty('--cart-qty-track', qtyWidth + 'px');
                     cartSheet.style.setProperty('--cart-total-track', totalWidth + 'px');
-                    // UI-105: data numbers are FINAL; only position the header
-                    // inside the remaining visible space between two captions.
-                    // Range bounds measure the rendered uppercase/tracked text,
-                    // not the width of the entire grid cell.
+                    // UI-106: semantic columns. Each column is measured once
+                    // from all values + visible label; no per-row horizontal shift.
+                    // The data row establishes the visual axis, the label follows.
+                    cartSheet.style.setProperty('--cart-numeric-axis-shift', '0px');
                     cartSheet.style.setProperty('--cart-header-axis-shift', '0px');
-                    const qtyCaption = head('.cart-qty');
-                    const totalCaption = head('.cart-total');
-                    if (qtyCaption && totalCaption && document.createRange) {
-                        try {
-                            const captionBounds = (node) => {
-                                const range = document.createRange();
-                                range.selectNodeContents(node);
-                                return range.getBoundingClientRect();
-                            };
-                            const qtyBounds = captionBounds(qtyCaption);
-                            const totalBounds = captionBounds(totalCaption);
-                            const availableShift = Math.max(0,
-                                Math.floor(totalBounds.left - qtyBounds.right - 8));
-                            cartSheet.style.setProperty('--cart-header-axis-shift',
-                                Math.min(numericAxisShift, availableShift) + 'px');
-                        } catch (_) {
-                            // No caption shift is a safe fallback: never overlap.
-                        }
-                    }
                 }
             }
 
