@@ -119,13 +119,27 @@
    the existing compact numeric ruler. */
 #cartItemList .cart-field-caption{display:none}
 @media (max-width:480px){
+  /* The one-line cart should not fill 88% of the phone with empty space.
+     Keep the native bottom-sheet scroll boundary for large orders. */
+  #cartBottomSheet{
+    height:auto !important;
+    max-height:88vh !important;
+    max-height:88dvh !important;
+  }
+  #cartItemList{
+    flex:0 1 auto !important;
+    min-height:0 !important;
+    overflow-y:auto !important;
+  }
   #cartBottomSheet > .cart-compact-grid{display:none !important}
   #cartItemList .cart-compact-grid{
     grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr) !important;
     grid-template-areas:"line line line" "unit quantity subtotal";
     column-gap:8px !important;
-    row-gap:8px;
+    row-gap:6px;
     align-items:start;
+    padding-top:10px !important;
+    padding-bottom:10px !important;
   }
   #cartItemList .cart-left{grid-area:line;min-width:0}
   #cartItemList .cart-price{
@@ -220,12 +234,20 @@
     font-size:16px !important;
   }
   #cartItemList .cart-qty-readonly{
+    box-sizing:border-box;
     min-height:46px;
     height:46px;
     display:grid;
     place-items:center;
-    width:100%;
+    width:132px !important;
+    min-width:132px !important;
+    border:1px solid #e2e8f0;
+    border-radius:999px;
+    background:#f8fafc;
+    font-weight:750;
+    font-size:16px;
     font-variant-numeric:tabular-nums;
+    line-height:1;
   }
   /* Identical label row and value row in view AND edit.
      Restores the unit-price caption missing in the iPhone capture. */
@@ -266,5 +288,18 @@
     padding-right:8px;
     font-size:13px;
     gap:4px;
+  }
+}
+
+/* Small-screen guard: preserve long totals and 40px hit targets without
+   squeezing three columns into the narrow 320px view. */
+@media (max-width:360px){
+  #cartItemList .cart-compact-grid{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    grid-template-areas:"line line" "unit subtotal" "quantity quantity";
+  }
+  #cartItemList .cart-qty{
+    grid-area:quantity;
+    justify-self:center !important;
   }
 }

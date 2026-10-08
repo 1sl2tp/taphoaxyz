@@ -20,7 +20,7 @@
                             ${isDeliveredReadOnlyPreview
                                 ? (String(item.note || '').trim()
                                     ? `<div class="cart-line-note text-[10px] text-gray-400 mt-0.5 truncate">${escapeProductEditorValue(String(item.note || '').trim())}</div>`
-                                    : '<div class="min-h-[18px]"></div>')
+                                    : '')
                                 : `<div class="mt-0.5 min-w-0" data-cart-line-note-editor>
                                     <button type="button"
                                         data-cart-note-id="${escapeProductEditorValue(id)}"

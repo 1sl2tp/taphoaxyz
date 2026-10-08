@@ -46,11 +46,27 @@ test('mobile cart label row and price/readonly/edit values share the same vertic
   assert.ok(css.includes('min-height:46px'));
   assert.ok(css.includes('#cartItemList .cart-qty-readonly'));
   assert.ok(css.includes('#cartItemList .cart-qty > .cart-field-caption'));
-  assert.ok(index.includes('fixed-ui-cart-spacing.css?ui=3photos-qty-20261008'));
+  assert.ok(index.includes('fixed-ui-cart-spacing.css?ui=cart-height-preview-20261008'));
 });
 test('sales product quantity shares horizontal row on normal iPhone, with 340px fallback', () => {
   const css=fs.readFileSync('src/fixed-ui-product-media.css','utf8');
   assert.ok(css.includes('flex-wrap:nowrap;'));
   assert.ok(css.includes('flex:0 0 132px;'));
   assert.ok(css.includes('@media (max-width:340px)'));
+});
+
+// The one-item iPhone preview is content-height, editing and preview use equal
+// sized Qty columns, and narrow phones preserve the full monetary amount.
+test('mobile cart adapts sheet height and preserves the list inner scroll', () => {
+  const css=fs.readFileSync('src/fixed-ui-cart-spacing.css','utf8');
+  assert.match(css, /#cartBottomSheet\s*\{\s*height:auto !important;\s*max-height:88vh !important;\s*max-height:88dvh !important;/);
+  assert.match(css, /#cartItemList\s*\{\s*flex:0 1 auto !important;\s*min-height:0 !important;\s*overflow-y:auto !important;/);
+  assert.ok(css.includes('width:132px !important'));
+  assert.ok(css.includes('@media (max-width:360px)'));
+  assert.ok(index.includes('cart-height-preview-20261008'));
+});
+test('cart preview does not insert phantom empty note height when there is no note', () => {
+  const js=fs.readFileSync('src/fixed-ui-runtime-6.js','utf8');
+  assert.doesNotMatch(js, /: '<div class="min-h-\[18px\]"><\/div>'\)/);
+  assert.ok(js.includes('cart-qty-readonly'));
 });
