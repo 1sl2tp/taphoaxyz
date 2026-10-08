@@ -47,7 +47,7 @@ test('max header/value widths across all product rows are measured using real br
 });
 
 test('only Tên shrinks when columns exceed viewport, quantity control counts its frame and longest input',()=>{
-  assert.match(js,/const innerWidth = header\.clientWidth -/);
+  assert.match(js,/const innerWidth = Math\.max\(0, Math\.min\(headerInnerWidth, bodyInnerWidth\)\)/);
   assert.match(js,/const remaining = Math\.max\(0, innerWidth - sttWidth - priceWidth - qtyWidth - totalWidth - 4 \* gap\)/);
   assert.match(js,/Math\.min\(nameWidth, remaining\)/);
   assert.match(js,/const qtyInputWidth = Math\.max\(28, maxWidth\(quantityTexts, qtyInput \|\| qtyStyle\) \+ 12\)/);
