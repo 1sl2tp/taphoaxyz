@@ -252,3 +252,81 @@
   grid-column:5 !important;
   grid-row:2 !important;
 }
+
+/* UI-114 — SHARED AXES, ADAPTIVE SPACING, QUIETER QUANTITY STEPPER.
+   No per-row translations. Cart runtime calculates 6–11px based on
+   available product-name width. Saved order computes 6–10px.
+   Preserve the actual 30x34px button hit areas; shrink only the
+   PAINTED circle, not the clickable element. */
+#cartBottomSheet .cart-column-header,
+#cartBottomSheet[data-cart-mode="edit"] .cart-column-header,
+#cartBottomSheet[data-cart-mode="preview"] .cart-column-header,
+#cartBottomSheet #cartItemList .cart-compact-grid,
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid,
+#cartBottomSheet[data-cart-mode="preview"] #cartItemList .cart-compact-grid {
+  column-gap:var(--cart-finance-gap,6px) !important;
+}
+#orderDetailContentToShare .order-column-header,
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid {
+  column-gap:var(--order-finance-gap,6px) !important;
+}
+/* Same left-edge ruler for header TÊN and body product text. */
+#cartBottomSheet .cart-column-header .cart-stt,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-stt,
+#orderDetailContentToShare .order-column-header .order-stt,
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid .order-stt{
+  text-align:center !important;
+  justify-self:stretch !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+#cartBottomSheet .cart-column-header .cart-name,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-left > .min-w-0,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-name-note-trigger,
+#orderDetailContentToShare .order-column-header .order-name,
+#orderDetailContentToShare #detailModalItems .order-detail-compact-grid > .min-w-0 {
+  text-align:left !important;
+  justify-self:stretch !important;
+  margin-left:0 !important;
+  padding-left:0 !important;
+  min-width:0 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control{
+  height:36px !important;
+  min-height:36px !important;
+  padding:1px 2px !important;
+  border-color:#e5e7eb !important;
+  box-shadow:0 1px 2px rgba(15,23,42,.045) !important;
+}
+/* Keep hit areas while rendering 26px soft circles. */
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button{
+  box-sizing:border-box;
+  height:34px !important;
+  min-height:34px !important;
+  width:30px !important;
+  min-width:30px !important;
+  background-color:transparent !important;
+  border-radius:999px !important;
+  touch-action:manipulation;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button:first-child {
+  background-image:radial-gradient(circle 13px at center,#f1f5f9 98%,transparent 100%) !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button:last-child {
+  background-image:radial-gradient(circle 13px at center,#16a34a 98%,transparent 100%) !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > input{
+  height:34px !important;
+  min-height:34px !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-price .cart-money-value,
+#orderDetailContentToShare #detailModalItems .order-price{
+  font-weight:650 !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-total .cart-money-value,
+#orderDetailContentToShare #detailModalItems .order-total{
+  font-weight:800 !important;
+}
+/* Keep the narrow two-line fallback instead of squeezing touch controls. */
