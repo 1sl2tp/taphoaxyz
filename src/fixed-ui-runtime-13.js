@@ -41,8 +41,8 @@
                         <div class="order-name font-bold text-gray-900 leading-tight">${tenSp}</div>
                         ${note ? `<div class="order-line-note text-[10px] text-gray-400 mt-0.5 truncate">${escapeProductEditorValue(note)}</div>` : ''}
                     </div>
-                    <div class="order-price font-semibold text-gray-700">${donGia.toLocaleString('vi-VN')}</div>
                     <div class="order-qty font-bold text-gray-700">${sl}</div>
+                    <div class="order-price font-semibold text-gray-700">${donGia.toLocaleString('vi-VN')}</div>
                     <div class="order-total font-extrabold text-gray-900">${tTien.toLocaleString('vi-VN')}</div>
                 </div>`;
             });
@@ -254,8 +254,8 @@
                                 <div class="order-name font-bold text-gray-900 leading-tight">${escapeText(item?.name || id)}</div>
                                 ${String(item?.note || '').trim() ? `<div class="order-line-note text-[10px] text-gray-500 mt-0.5">${escapeText(String(item.note).trim())}</div>` : ''}
                             </div>
-                            <div class="order-price font-semibold text-gray-700">${price.toLocaleString('vi-VN')}</div>
                             <div class="order-qty font-bold text-gray-700">${qty}</div>
+                            <div class="order-price font-semibold text-gray-700">${price.toLocaleString('vi-VN')}</div>
                             <div class="order-total font-extrabold text-gray-900">${lineTotal.toLocaleString('vi-VN')}</div>
                         </div>`;
                 });
