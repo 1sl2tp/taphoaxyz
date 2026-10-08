@@ -28,7 +28,7 @@ test('IMG_9482: wider readonly name track and shorter edit control never eat nam
     assert.ok(nameWidth(viewport,editFixed)>0,'edit '+viewport);
     assert.ok(nameWidth(viewport,previewFixed)>nameWidth(viewport,editFixed),'preview '+viewport);
   }
-  assert.match(owner,/#cartItemList \.cart-compact-grid\[data-cart-readonly="1"\] \.cart-line-note:not\(\[data-cart-note-id\]\)\{[^}]*max-width:48px !important;/);
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=[^"]*qty-modes=9482-9483/);
-  assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*qty-modes=9482-9483/);
+  assert.doesNotMatch(runtime,/data-cart-line-note-editor|cart-line-note text-/);
+  assert.ok(html.includes('fixed-ui-cart-spacing.css?ui=cart-numeric-gap-note-popup-20261008'));
+  assert.ok(html.includes('cart-note-gap=20261008'));
 });

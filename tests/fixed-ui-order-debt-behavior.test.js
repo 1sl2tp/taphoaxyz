@@ -415,7 +415,8 @@ test('order item notes survive product edit cart save reload detail and share',a
   assert.match(runtime5,/function previewCartLineNote\(input\)/);
   assert.match(runtime5,/function commitCartLineNoteEditor\(input\)/);
   assert.match(runtime6,/data-cart-note-id=/);
-  assert.match(runtime6,/data-cart-note-input-id=/);
+  assert.match(runtime5,/input.dataset.cartNoteInputId = maSp;/);
+  assert.doesNotMatch(runtime6,/data-cart-note-input-id=/);
 
   assert.match(overrides,/ghiChu:String\(item\.note\|\|''\)/);
   assert.match(overrides,/async function savePendingOrderItemNoteDirect\(orderId,productCode,note\)/);

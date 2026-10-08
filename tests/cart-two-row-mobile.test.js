@@ -27,7 +27,7 @@ test('editable shopping cart uses buttons only at the same quantity track as rea
 });
 
 test('mobile five-column header/body and images have fresh versions',()=>{
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=order-five-col-corrected-20261008/);
+  assert.ok(html.includes('fixed-ui-cart-spacing.css?ui=cart-numeric-gap-note-popup-20261008'));
   assert.match(html,/fixed-ui-markup-3\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-markup-5\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-cart-share-v3\.js\?v=[^"]*order-five-col=20261008/);
@@ -38,5 +38,5 @@ test('readonly and editing use separate compact rulers but common five-column or
   assert.match(runtime,/cartSheet\.dataset\.cartMode = isDeliveredReadOnlyPreview \? 'preview' : 'edit'/);
   assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid,[\s\S]*?#orderDetailContentToShare \.order-detail-compact-grid\{[^}]*grid-template-columns:22px minmax\(0,1fr\) 54px 50px 72px !important;/);
   assert.match(owner,/#cartBottomSheet\[data-cart-mode="preview"\] #cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:50px !important;/);
-  assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*qty-modes=9482-9483/);
+  assert.ok(html.includes('cart-note-gap=20261008'));
 });
