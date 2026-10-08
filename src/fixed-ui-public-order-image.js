@@ -449,8 +449,11 @@
       totalHeader.title='Thành tiền';
       totalHeader.setAttribute('aria-label','Thành tiền');
     }
+    // UI-109: no phantom 9px after the last money glyph. The last
+    // column is right-anchored; any extra width appears to its LEFT
+    // and makes the qty-to-money gap visibly larger.
     source.style.setProperty('--order-total-track',
-      Math.ceil(Math.max(widestMoney,textWidth(totalHeader))+9)+'px');
+      Math.ceil(Math.max(widestMoney,textWidth(totalHeader)))+'px');
   }
 
   const originalShowOrderDetailMobile=typeof window.showOrderDetailMobile==='function'
