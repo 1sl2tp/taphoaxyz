@@ -110,7 +110,24 @@
                     // Choose the longest semantic caption that fits that number;
                     // if the amount is unusually short, "TT" is the minimum label.
                     const totalHead = head('.cart-total');
-                    const widestAmount = maxWidth(amountTexts, totalStyle);
+                    // DOM glyph bounds include real tabular-number glyph advances,
+                    // font loading and fractional widths. Canvas remains a
+                    // fallback for a hidden/not-yet-painted preview.
+                    const renderedGlyphWidth = node => {
+                        if (!node || !document.createRange) return 0;
+                        try {
+                            const range = document.createRange();
+                            range.selectNodeContents(node);
+                            return Math.max(0, range.getBoundingClientRect().width);
+                        } catch (_) { return 0; }
+                    };
+                    const visibleMoneyWidths = Array.from(
+                        body.querySelectorAll('.cart-total .cart-money-value'),
+                        renderedGlyphWidth
+                    ).filter(width => width > 0);
+                    const widestAmount = visibleMoneyWidths.length
+                        ? Math.max(...visibleMoneyWidths)
+                        : maxWidth(amountTexts, totalStyle);
                     const totalLabelOptions = ['Thành tiền', 'T.tiền', 'Tiền', 'TT'];
                     const totalLabel = !cartEntries.length
                         ? 'Thành tiền'
@@ -126,7 +143,10 @@
                     // than qty -> amount even when both amounts have 3 digits.
                     // Keep one common E track across header and EVERY row;
                     // no per-row shift, so SL and +/- controls remain aligned.
-                    const totalWidth = Math.ceil(Math.max(widestAmount, measure(totalLabel, totalHead)));
+                    const totalWidth = Math.ceil(Math.max(
+                        widestAmount,
+                        renderedGlyphWidth(totalHead) || measure(totalLabel, totalHead)
+                    ));
                     const qtyInput = body.querySelector('.cart-qty-control > input');
                     const qtyInputWidth = Math.max(28, maxWidth(quantityTexts, qtyInput || qtyStyle) + 12);
                     // Two 30px buttons + editable number + 2 one-pixel gaps,
