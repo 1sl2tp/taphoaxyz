@@ -1451,3 +1451,34 @@
     column-gap:4px !important;
   }
 }
+
+/* UI-104b: the actual numeric cell fills its measured grid track.
+   Older global --num-*-cap width declarations must not shrink C/D/E
+   inside the shared ruler, especially when a 2–3 digit SL is displayed. */
+#orderDetailContentToShare .order-detail-compact-grid > :is(.order-stt,.order-price,.order-qty,.order-total){
+  width:100% !important;
+  min-width:0 !important;
+  justify-self:stretch !important;
+  box-sizing:border-box !important;
+}
+#orderDetailContentToShare .order-column-header .order-price,
+#orderDetailContentToShare .order-column-header .order-total{
+  text-align:right !important;
+}
+#orderDetailContentToShare .order-column-header .order-qty{
+  text-align:center !important;
+}
+/* Narrow pane sizing follows the actual pane, not merely the browser viewport. */
+#orderDetailContentToShare.order-readable-compact .order-column-header > *{
+  font-size:11px !important;
+  line-height:1.35 !important;
+}
+#orderDetailContentToShare.order-readable-compact #detailModalItems .order-detail-compact-grid{
+  font-size:14px !important;
+  min-height:46px !important;
+  line-height:1.4 !important;
+  column-gap:6px !important;
+}
+#orderDetailContentToShare.order-readable-compact #detailModalItems .order-name{
+  line-height:1.35 !important;
+}
