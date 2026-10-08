@@ -128,6 +128,30 @@
                     cartSheet.style.setProperty('--cart-qty-input-track', qtyInputWidth + 'px');
                     cartSheet.style.setProperty('--cart-qty-track', qtyWidth + 'px');
                     cartSheet.style.setProperty('--cart-total-track', totalWidth + 'px');
+                    // UI-105: data numbers are FINAL; only position the header
+                    // inside the remaining visible space between two captions.
+                    // Range bounds measure the rendered uppercase/tracked text,
+                    // not the width of the entire grid cell.
+                    cartSheet.style.setProperty('--cart-header-axis-shift', '0px');
+                    const qtyCaption = head('.cart-qty');
+                    const totalCaption = head('.cart-total');
+                    if (qtyCaption && totalCaption && document.createRange) {
+                        try {
+                            const captionBounds = (node) => {
+                                const range = document.createRange();
+                                range.selectNodeContents(node);
+                                return range.getBoundingClientRect();
+                            };
+                            const qtyBounds = captionBounds(qtyCaption);
+                            const totalBounds = captionBounds(totalCaption);
+                            const availableShift = Math.max(0,
+                                Math.floor(totalBounds.left - qtyBounds.right - 8));
+                            cartSheet.style.setProperty('--cart-header-axis-shift',
+                                Math.min(numericAxisShift, availableShift) + 'px');
+                        } catch (_) {
+                            // No caption shift is a safe fallback: never overlap.
+                        }
+                    }
                 }
             }
 
