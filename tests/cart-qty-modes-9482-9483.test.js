@@ -48,6 +48,6 @@ test('readonly quantity uses short SL caption and a width sized to the maximum v
     if(values[0]===1) assert.equal(width,32);
     if(values[0]===123) assert.equal(width,48);
   }
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=[^"]*cart-intrinsic-widths-20261008/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=[^"]*cart-intrinsic-5-cols-20261008/);
   assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*cart-intrinsic-widths-20261008/);
 });
