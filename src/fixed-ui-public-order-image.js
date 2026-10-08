@@ -224,6 +224,16 @@
     page.style.webkitTextSizeAdjust='100%';
     page.style.textSizeAdjust='100%';
 
+    // UI-108: choose the printed amount caption by the largest amount on the
+    // whole order, so every shared page uses the SAME heading and numeric axis.
+    const probe=document.createElement('canvas').getContext('2d');
+    const width=(value,font)=>{if(!probe)return String(value).length*8;
+      probe.font=font;return probe.measureText(String(value)).width;};
+    const widestAmount=Math.max(0,...data.items.map(item=>
+      width(item.lineTotal.toLocaleString('vi-VN'),'800 13px Arial')));
+    const totalCaption=['Thành tiền','T.tiền','Tiền','TT'].find(label=>
+      width(label.toLocaleUpperCase('vi-VN'),'800 11px Arial')<=widestAmount)||'TT';
+
     const rowsHtml=pageItems.map(item=>`
       <div style="display:grid;grid-template-columns:34px minmax(0,1fr) 92px 50px 108px;column-gap:10px;align-items:center;min-height:46px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:13px;box-sizing:border-box;">
         <div style="text-align:center;color:#94a3b8;font-weight:700;">${item.index}</div>
@@ -266,7 +276,7 @@
           <div>Tên</div>
           <div style="text-align:right;">Đơn giá</div>
           <div style="text-align:center;">SL</div>
-          <div style="text-align:right;">Thành tiền</div>
+          <div style="text-align:right;" title="Thành tiền">${totalCaption}</div>
         </div>
         <div>${rowsHtml}</div>
       </div>
