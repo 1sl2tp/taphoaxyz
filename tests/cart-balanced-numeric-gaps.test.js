@@ -18,7 +18,6 @@ test('Excel sketch uses exactly FIVE content-sized columns A–E and four equal 
 test('header and body map STT, Tên, Đơn giá, SL, Thành tiền to columns 1..5',()=>{
   const cases=[
     ['#cartBottomSheet .cart-compact-grid .cart-stt',1],
-    ['#cartBottomSheet .cart-column-header .cart-name',2],
     ['#cartBottomSheet .cart-compact-grid .cart-price',3],
     ['#cartBottomSheet .cart-compact-grid .cart-qty',4],
     ['#cartBottomSheet .cart-compact-grid .cart-total',5]
@@ -28,7 +27,7 @@ test('header and body map STT, Tên, Đơn giá, SL, Thành tiền to columns 1.
     assert.ok(part.includes('grid-column:'+col+' !important;'),selector);
     assert.ok(part.includes('grid-row:1 !important;'),selector);
   }
-  assert.match(last,/#cartBottomSheet \.cart-column-header \.cart-name,\s*#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-left > \.min-w-0\{/);
+  assert.match(last, /#cartBottomSheet \.cart-column-header \.cart-name,\s*#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-left > \.min-w-0\{[^}]*grid-column:2 !important;/);
   assert.match(last,/#cartBottomSheet \.cart-compact-grid \.cart-left\{[^}]*display:contents !important;/);
 });
 

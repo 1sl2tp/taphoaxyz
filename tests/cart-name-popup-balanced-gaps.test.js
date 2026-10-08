@@ -54,7 +54,7 @@ test('numeric columns reserve the longest formatted unit/total across current ca
   assert.match(render,/cartSheet\.style\.setProperty\('--cart-unit-track'/);
   assert.match(render,/cartSheet\.style\.setProperty\('--cart-total-track'/);
   assert.equal((500*10).toLocaleString('vi-VN'),'5.000');
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-numeric-gap-note-popup-20261008/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-intrinsic-5-cols-20261008/);
   assert.match(html,/fixed-ui-runtime-5\.js\?v=[^"]*cart-note-popup=20261008/);
-  assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*cart-note-gap=20261008/);
+  assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*cart-intrinsic-widths-20261008/);
 });
