@@ -2,7 +2,7 @@
 
 (function(){
   const PUBLIC_ORDER_PAGE_SIZE=16;
-  const PUBLIC_ORDER_IMAGE_WIDTH=720;
+  const PUBLIC_ORDER_IMAGE_WIDTH=440;
   const artifactCache=new Map();
   const inFlight=new Map();
   let activeSignature='';
@@ -203,88 +203,22 @@
   }
 
   function buildPageDom(data,pageItems,pageIndex,pageCount){
-    const host=document.createElement('div');
-    host.setAttribute('aria-hidden','true');
-    host.style.position='fixed';
-    host.style.left='-100000px';
-    host.style.top='0';
-    host.style.width=PUBLIC_ORDER_IMAGE_WIDTH+'px';
-    host.style.background='#ffffff';
-    host.style.pointerEvents='none';
-    host.style.zIndex='-1';
-    host.style.webkitTextSizeAdjust='100%';
-    host.style.textSizeAdjust='100%';
-
-    const page=document.createElement('div');
-    page.style.width=PUBLIC_ORDER_IMAGE_WIDTH+'px';
-    page.style.boxSizing='border-box';
-    page.style.background='#ffffff';
-    page.style.color='#1f2937';
-    page.style.fontFamily='Arial, "Helvetica Neue", sans-serif';
-    page.style.webkitTextSizeAdjust='100%';
-    page.style.textSizeAdjust='100%';
-
-    // UI-108: choose the printed amount caption by the largest amount on the
-    // whole order, so every shared page uses the SAME heading and numeric axis.
-    const probe=document.createElement('canvas').getContext('2d');
-    const width=(value,font)=>{if(!probe)return String(value).length*8;
-      probe.font=font;return probe.measureText(String(value)).width;};
-    const widestAmount=Math.max(0,...data.items.map(item=>
-      width(item.lineTotal.toLocaleString('vi-VN'),'800 13px Arial')));
-    const totalCaption=['Thành tiền','T.tiền','Tiền','TT'].find(label=>
-      width(label.toLocaleUpperCase('vi-VN'),'800 11px Arial')<=widestAmount)||'TT';
-
-    const rowsHtml=pageItems.map(item=>`
-      <div style="display:grid;grid-template-columns:34px minmax(0,1fr) 92px 50px 108px;column-gap:10px;align-items:center;min-height:46px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:13px;box-sizing:border-box;">
-        <div style="text-align:center;color:#94a3b8;font-weight:700;">${item.index}</div>
-        <div style="min-width:0;line-height:1.35;overflow-wrap:anywhere;">
-          <div style="color:#111827;font-weight:700;">${escapeHtml(item.name)}</div>
-          ${item.note?'<div style="margin-top:3px;color:#94a3b8;font-size:11px;font-weight:500;">'+escapeHtml(item.note)+'</div>':''}
-        </div>
-        <div style="text-align:right;color:#374151;font-weight:600;font-variant-numeric:tabular-nums;">${item.price.toLocaleString('vi-VN')}</div>
-        <div style="text-align:center;color:#374151;font-weight:700;font-variant-numeric:tabular-nums;">${item.qty}</div>
-        <div style="text-align:right;color:#111827;font-weight:800;font-variant-numeric:tabular-nums;">${item.lineTotal.toLocaleString('vi-VN')}</div>
-      </div>`).join('');
-
-    const footer=pageIndex===pageCount-1 ? `
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:20px 28px 26px;border-top:1px solid #e5e7eb;background:#fff;">
-        <div>
-          <div style="font-size:12px;color:#94a3b8;font-weight:600;">Số lượng</div>
-          <div style="margin-top:5px;font-size:17px;color:#111827;font-weight:800;">${data.items.length} mã · ${data.totalQty} sản phẩm</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:12px;color:#94a3b8;font-weight:600;">Tổng thanh toán</div>
-          <div style="margin-top:4px;font-size:27px;color:#16a34a;font-weight:800;font-variant-numeric:tabular-nums;">${data.total.toLocaleString('vi-VN')}</div>
-        </div>
-      </div>` : `
-      <div style="padding:14px 28px 18px;text-align:right;color:#94a3b8;font-size:11px;font-weight:700;">Còn tiếp…</div>`;
-
-    page.innerHTML=`
-      <div style="padding:22px 28px 18px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
-        <div style="display:flex;justify-content:space-between;gap:20px;align-items:flex-start;">
-          <div>
-            <div style="font-size:12px;color:#94a3b8;font-weight:700;">Mã đơn: ${escapeHtml(data.orderId)}</div>
-            <div style="margin-top:7px;font-size:20px;color:#111827;font-weight:800;">${escapeHtml(data.customer)}</div>
-            <div style="margin-top:6px;font-size:12px;color:#64748b;">Thời gian: ${escapeHtml(data.time||'--')}</div>
-          </div>
-          <div style="font-size:11px;color:#94a3b8;font-weight:700;white-space:nowrap;">Trang ${pageIndex+1}/${pageCount}</div>
-        </div>
-      </div>
-      <div style="padding:0 28px;">
-        <div style="display:grid;grid-template-columns:34px minmax(0,1fr) 92px 50px 108px;column-gap:10px;align-items:center;height:42px;border-bottom:1px solid #e5e7eb;color:#94a3b8;font-size:11px;font-weight:800;text-transform:uppercase;">
-          <div style="text-align:center;">STT</div>
-          <div>Tên</div>
-          <div style="text-align:right;">Đơn giá</div>
-          <div style="text-align:center;">SL</div>
-          <div style="text-align:right;" title="Thành tiền">${totalCaption}</div>
-        </div>
-        <div>${rowsHtml}</div>
-      </div>
-      ${footer}`;
-
-    host.appendChild(page);
-    document.body.appendChild(host);
-    return {host,page};
+    // UI-110: public deep-link image shares the exact portrait document
+    // ruler with cart and saved-order image sharing.
+    const portrait=window.TAPHOA_ORDER_PORTRAIT;
+    if(!portrait)throw new Error('portrait_order_renderer_unavailable');
+    const items=pageItems.map(item=>({
+      index:item.index,name:item.name,note:item.note,
+      priceText:item.price.toLocaleString('vi-VN'),
+      qtyText:item.qty.toLocaleString('vi-VN'),
+      totalText:item.lineTotal.toLocaleString('vi-VN')
+    }));
+    return portrait.createPage({
+      orderId:data.orderId,customer:data.customer,time:data.time,
+      items,lineCount:data.items.length,totalQty:data.totalQty,
+      totalPriceText:data.total.toLocaleString('vi-VN'),
+      pageIndex,pageCount,isLastPage:pageIndex===pageCount-1
+    });
   }
 
   function trimCache(){
@@ -335,8 +269,8 @@
     const ui=ensureViewer();
     if(!ui)return;
     ui.viewer.innerHTML=artifact.urls.map((url,index)=>`
-      <div class="mx-auto mb-3 max-w-[720px] overflow-hidden rounded-xl bg-white shadow-sm border border-gray-200">
-        <img src="${url}" alt="Đơn hàng trang ${index+1}" draggable="false" style="display:block;width:100%;height:auto;max-width:720px;-webkit-user-select:none;user-select:none;" />
+      <div class="mx-auto mb-3 max-w-[440px] overflow-hidden rounded-xl bg-white shadow-sm border border-gray-200">
+        <img src="${url}" alt="Đơn hàng trang ${index+1}" draggable="false" style="display:block;width:100%;height:auto;max-width:440px;-webkit-user-select:none;user-select:none;" />
       </div>`).join('');
     setViewMode('image');
   }
