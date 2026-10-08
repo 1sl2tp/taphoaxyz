@@ -164,7 +164,7 @@
 
             productSearchIndex = rows
                 .filter(row => String(row?.[1] || '').trim())
-                .map(row => {
+                .map((row, sourcePosition) => {
                     const nameRaw = String(row[1] || '').trim();
                     const codeRaw = String(row[0] || '').trim();
                     const sourceRaw = String(row[4] || '').trim();
@@ -172,6 +172,7 @@
                     const codeNorm = normalizeSearchText(codeRaw);
                     return {
                         row,
+                        sourcePosition,
                         nameRaw,
                         sourceRaw,
                         nameNorm,
@@ -214,12 +215,18 @@
             const queryNorm = normalizeSearchText(queryRaw);
             const queryTokens = queryNorm ? queryNorm.split(' ').filter(Boolean) : [];
 
-            return productSearchIndex
-                .filter(entry => {
-                    const matchSource = currentFilter === 'Tất cả' || entry.sourceRaw === currentFilter;
-                    return matchSource && matchesSearchTokens(entry, queryTokens);
-                })
-                .map(entry => entry.row);
+            const matched = productSearchIndex.filter(entry => {
+                const matchSource = currentFilter === 'Tất cả' || entry.sourceRaw === currentFilter;
+                return matchSource && matchesSearchTokens(entry, queryTokens);
+            });
+            // UI-121: supplier sequence is canonical for Thuốc lá. Supabase
+            // bootstrap already orders by taphoa_products.source_row, matching
+            // admin-gia. Restore that order only for the Tobacco source filter,
+            // regardless of search text; leave all other sources A–Z.
+            if (normalizeSearchText(currentFilter) === 'thuoc la') {
+                matched.sort((a,b) => a.sourcePosition - b.sourcePosition);
+            }
+            return matched.map(entry => entry.row);
         }
 
         function getProductListScroller() {
