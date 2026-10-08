@@ -1,3 +1,28 @@
+        // UI-117: header and scrolling rows must have the same CONTENT
+        // width. The list alone owns the vertical scrollbar. Reserve its
+        // measured width on the non-scrolling header (never shift cells).
+        function syncCartHeaderScrollbar() {
+            const sheet = document.getElementById('cartBottomSheet');
+            const body = document.getElementById('cartItemList');
+            if (!sheet || !body) return;
+            const style = window.getComputedStyle(body);
+            const borders = (parseFloat(style.borderLeftWidth) || 0)
+                + (parseFloat(style.borderRightWidth) || 0);
+            const gutter = Math.max(0, Math.round(body.offsetWidth - body.clientWidth - borders));
+            const value = gutter + 'px';
+            if (sheet.style.getPropertyValue('--cart-scrollbar-inset') !== value) {
+                sheet.style.setProperty('--cart-scrollbar-inset', value);
+            }
+            // One observer attached to the scroll owner, not to rows.
+            // A scrollbar appearing changes the scrollport content box.
+            if (!body.__cartHeaderScrollbarObserver && typeof ResizeObserver === 'function') {
+                body.__cartHeaderScrollbarObserver = new ResizeObserver(() => {
+                    syncCartHeaderScrollbar();
+                });
+                body.__cartHeaderScrollbarObserver.observe(body);
+            }
+        }
+
         function renderCartUI() {
             const activeTabId = getActiveTabId();
             const isOrderPreview = !!editingOrderId && !!editingOrderSheet
@@ -65,6 +90,7 @@
 
             if (totalQty === 0) html = `<div class="py-12 text-center text-gray-400 text-sm flex flex-col items-center"><i class="ph ph-shopping-cart text-4xl mb-2 opacity-40"></i>Giỏ hàng trống</div>`;
             document.getElementById('cartItemList').innerHTML = html;
+            syncCartHeaderScrollbar();
 
             // Single intrinsic-width ruler, like spreadsheet columns A–E:
             // the longest header/data content owns each column width.
@@ -255,6 +281,8 @@
         function openCartMobile() {
             if(window.innerWidth >= 768 && document.body.classList.contains('pc-mode')) return;
             document.getElementById('cartModalWrapper').classList.remove('pointer-events-none', 'opacity-0');
+            // Only geometry, no data load. Useful after the sheet becomes visible.
+            requestAnimationFrame(syncCartHeaderScrollbar);
             setTimeout(() => document.getElementById('cartBottomSheet').classList.remove('translate-y-full'), 10);
         }
         function closeCartMobile() {
