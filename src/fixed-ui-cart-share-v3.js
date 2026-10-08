@@ -188,6 +188,15 @@
         </div>`;
     }).join('');
 
+    // UI-108: exported 720px capture obeys the same money-first caption rule.
+    const probe=document.createElement('canvas').getContext('2d');
+    const measure=(str,font)=>{if(!probe)return str.length*8;probe.font=font;return probe.measureText(str).width;};
+    const longestAmount=Math.max(0,...entries.map(([,item])=>
+      measure(((Number(item?.qty)||0)*(Number(item?.price)||0)).toLocaleString('vi-VN'),
+        '800 12px "Be Vietnam Pro", sans-serif')));
+    const totalCaption=['Thành tiền','T.tiền','Tiền','TT']
+      .find(label=>measure(label.toLocaleUpperCase('vi-VN'),
+        '800 10px "Be Vietnam Pro", sans-serif')<=longestAmount)||'TT';
     const meta=getOrderMeta();
     const host=document.createElement('div');
     host.setAttribute('aria-hidden','true');
@@ -220,7 +229,7 @@
           <div>Tên</div>
           <div style="text-align:right;">Đơn giá</div>
           <div style="text-align:center;">SL</div>
-          <div style="text-align:right;">Thành tiền</div>
+          <div style="text-align:right;" title="Thành tiền">${totalCaption}</div>
         </div>
         <div>${rows}</div>
       </div>
