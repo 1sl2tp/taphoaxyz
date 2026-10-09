@@ -7,6 +7,7 @@ export function orderRpcPayload(payload={}) {
     status:String(payload.status||'pending'),
     note:String(payload.ghiChu||payload.note||''),
     edit_order_id:String(payload.editOrderId||payload.edit_order_id||''),
+    ...(payload.refreshCostSnapshot===true?{refresh_cost_snapshot:true}:{}),
     items:(payload.items||[]).map((item,index)=>({
       product_id:String(item.maSP||item.product_id||''),
       qty:num(item.sl??item.qty),

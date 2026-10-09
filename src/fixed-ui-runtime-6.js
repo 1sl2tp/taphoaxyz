@@ -23,6 +23,59 @@
             }
         }
 
+
+        // Explicit admin action. Never refresh snapshots on open, idle or render.
+        let cartPriceRefreshInFlight = false;
+        async function refreshEditedOrderPrices() {
+            const orderId = String(editingOrderId || '');
+            const allowed = !!orderId && editingOrderSheet === 'dontam'
+                && editingOrderInSaleMode && currentAuthRole !== 'user'
+                && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
+            if (!allowed || cartPriceRefreshInFlight || !Object.keys(cart).length) return;
+            cartPriceRefreshInFlight = true;
+            const button = document.getElementById('cartRefreshPricesButton');
+            if (button) button.disabled = true;
+            try {
+                const state = await window.TAPHOA_PRODUCTION.refresh(['products']);
+                if (!Array.isArray(state?.products)) throw new Error('Không đọc được danh mục giá hiện tại.');
+                const catalog = new Map(state.products.map(p => [
+                    String(p?.id ?? p?.maSP ?? p?.product_code ?? ''), p
+                ]));
+                const updates = [];
+                for (const [id, line] of Object.entries(cart)) {
+                    const p = catalog.get(String(id));
+                    const saleRaw = p?.gia ?? p?.price ?? p?.unit_price;
+                    const costRaw = p?.von ?? p?.cost ?? p?.unit_cost;
+                    const sale = Number(saleRaw);
+                    const cost = Number(costRaw);
+                    if (!p || p.is_active === false
+                        || saleRaw === null || saleRaw === undefined || saleRaw === ''
+                        || costRaw === null || costRaw === undefined || costRaw === ''
+                        || !Number.isFinite(sale) || sale <= 0
+                        || !Number.isFinite(cost) || cost < 0) {
+                        throw new Error('Sản phẩm ' + (line.name || id)
+                            + ' chưa có đủ giá vốn và giá bán hợp lệ. Giỏ hàng chưa thay đổi.');
+                    }
+                    updates.push([id, sale]);
+                }
+                if (orderId !== String(editingOrderId || '')
+                    || !editingOrderInSaleMode || editingOrderSheet !== 'dontam') return;
+                // Edit existing lines in place; keep quantities, notes, STT and order ID.
+                for (const [id, price] of updates) cart[id].price = price;
+                window.__TAPHOA_REPRICE_DRAFT_ID = orderId;
+                renderCartUI();
+                renderProductList();
+                showToast('Đã lấy giá vốn + giá bán mới cho ' + updates.length
+                    + ' sản phẩm. Bấm Cập nhật đơn để lưu.', 'success');
+            } catch (error) {
+                showAlertPopup('Không thể cập nhật giá', error?.message || 'Vui lòng thử lại.');
+            } finally {
+                cartPriceRefreshInFlight = false;
+                const current = document.getElementById('cartRefreshPricesButton');
+                if (current) current.disabled = false;
+            }
+        }
+
         function renderCartUI() {
             const activeTabId = getActiveTabId();
             const isOrderPreview = !!editingOrderId && !!editingOrderSheet
@@ -32,6 +85,26 @@
             // Header and rows must use the same five-column ruler in each mode.
             // Read-only quantity needs a number only; editing reserves room for -/+.
             const cartSheet = document.getElementById('cartBottomSheet');
+            const editBadge = document.getElementById('cartEditBadge');
+            if (editBadge?.parentElement) {
+                editBadge.parentElement.classList.add('cart-edit-header-group');
+                let priceButton = document.getElementById('cartRefreshPricesButton');
+                if (!priceButton) {
+                    priceButton = document.createElement('button');
+                    priceButton.id = 'cartRefreshPricesButton';
+                    priceButton.type = 'button';
+                    priceButton.className = 'cart-price-refresh hidden';
+                    priceButton.textContent = 'Giá mới';
+                    priceButton.setAttribute('aria-label', 'Cập nhật giá vốn và giá bán mới cho đơn tạm');
+                    priceButton.addEventListener('click', refreshEditedOrderPrices);
+                    editBadge.insertAdjacentElement('afterend', priceButton);
+                }
+                const visible = !!editingOrderId && editingOrderSheet === 'dontam'
+                    && editingOrderInSaleMode && currentAuthRole !== 'user'
+                    && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
+                priceButton.classList.toggle('hidden', !visible);
+                priceButton.disabled = cartPriceRefreshInFlight;
+            }
             if (cartSheet) {
                 cartSheet.dataset.cartMode = isDeliveredReadOnlyPreview ? 'preview' : 'edit';
                 const qtyHeader = cartSheet.querySelector('.cart-column-header .cart-qty');
@@ -78,9 +151,9 @@
                         ${isDeliveredReadOnlyPreview
                             ? `<div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums">${item.qty}</div>`
                             : `<div class="cart-qty-control border border-gray-200 rounded-full bg-white shadow-sm">
-                                <button onclick="updateCart('${id}', '${item.name}', ${item.price}, -1)" class="allow-fast-click w-4 h-4 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><i class="ph-bold ph-minus text-[8px]"></i></button>
+                                <button onclick="updateCart('${id}', '${item.name}', ${item.price}, -1)" class="allow-fast-click w-4 h-4 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
                                 <input type="number" value="${item.qty}" min="1" step="1" inputmode="numeric" data-qty-editor="cart" data-qty-id="${id}" data-qty-price="${item.price}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-6 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[11px]">
-                                <button onclick="updateCart('${id}', '${item.name}', ${item.price}, 1)" class="allow-fast-click w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[8px]"></i></button>
+                                <button onclick="updateCart('${id}', '${item.name}', ${item.price}, 1)" class="allow-fast-click w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
                             </div>`}
                     </div>
                     <div class="cart-price font-semibold text-gray-700"><span class="cart-field-caption">Đơn giá</span><span class="cart-money-value">${item.price.toLocaleString('vi-VN')}</span></div>

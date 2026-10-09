@@ -270,10 +270,16 @@
             let spDict = {}; appData.sanpham.slice(1).forEach(sp => { spDict[sp[0]] = sp[1]; });
 
             cart = {};
-            items.forEach(r => {
+            window.__TAPHOA_REPRICE_DRAFT_ID = null;
+            // Existing rows are ordered by saved line_no. Numeric product
+            // IDs must not reorder STT when an order is reopened.
+            const touchBase = __cartTouchSeq + items.length;
+            items.forEach((r, index) => {
                 let maSp = r[2]; let qty = Number(r[3]); let price = Number(r[4]); let note = String(r[9] || '');
-                cart[maSp] = { name: spDict[maSp] || maSp, price: price, qty: qty, note };
+                cart[maSp] = { name: spDict[maSp] || maSp, price, qty, note,
+                    __lastTouched: touchBase - index };
             });
+            __cartTouchSeq = touchBase;
 
             editingOrderId = orderId;
             editingOrderSheet = sheetName;

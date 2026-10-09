@@ -1629,3 +1629,22 @@
   text-overflow:ellipsis;
   white-space:nowrap;
 }
+
+
+/* UI-130: crisp icons and compact reprice button for the pending-order cart. */
+#cartBottomSheet #cartItemList .cart-qty-control > button svg{
+ display:block;width:14px;height:14px;flex:none;
+}
+#cartBottomSheet #cartItemList .cart-qty-control > button{transform:none !important;}
+#cartBottomSheet .cart-edit-header-group{flex-wrap:wrap;min-width:0;row-gap:5px;}
+#cartBottomSheet .cart-price-refresh{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:28px;padding:4px 9px;border:1px solid #c7d7ef;border-radius:8px;
+ background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;line-height:1.2;white-space:nowrap;
+}
+#cartBottomSheet .cart-price-refresh.hidden{display:none !important;}
+#cartBottomSheet .cart-price-refresh:disabled{opacity:.55;pointer-events:none;}
+#cartBottomSheet .cart-price-refresh:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
+@media(max-width:400px){
+ #cartBottomSheet .cart-price-refresh{min-height:26px;padding:3px 7px;font-size:10px;}
+}

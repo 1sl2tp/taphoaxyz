@@ -1,6 +1,6 @@
 import {createAuthService} from './core/auth.js';
 import {createApi} from './core/api.js';
-import {orderRpcPayload} from './core/business.js';
+import {orderRpcPayload} from './core/business.js?v=cart-reprice-20261009';
 import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
 import {CONFIG} from './core/config.js';

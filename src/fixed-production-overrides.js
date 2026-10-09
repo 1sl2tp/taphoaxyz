@@ -185,6 +185,9 @@
 
   dayToanBoGioHang=async function(tab){
     if(orderMutationInFlight)return;
+    if(typeof cartPriceRefreshInFlight !== 'undefined' && cartPriceRefreshInFlight){
+      showAlertPopup('Đang cập nhật giá','Vui lòng chờ lấy giá mới xong trước khi lưu đơn.');return;
+    }
     if(currentAuthRole==='user'&&tab==='dongiao')return denyPermission('User chỉ được tạo Đơn tạm, không được Bán ngay.');
     if(currentAuthRole==='user'&&tab==='dontam'&&editingOrderSheet==='dongiao')return denyPermission('Đơn đã giao chỉ để xem. Hãy quay lại Bán hàng để tạo Đơn tạm mới.');
     if(tab==='dontam'&&!hasPermission('canCreateDraft'))return denyPermission('Tài khoản này không được tạo Đơn tạm.');
@@ -196,9 +199,19 @@
     const targetSheet=isPromotingDraft?'dongiao':sourceSheet;
     const status=targetSheet==='dongiao'?'done':'pending';
     let backendEditOrderId=editingOrderId?backendOrderIdFor(sourceSheet,editingOrderId):'';
-    const items=Object.entries(cart).map(([maSP,item],index)=>({
-      maSP:String(maSP),sl:Number(item.qty)||0,gia:Number(item.price)||0,lineNo:index+1,ghiChu:String(item.note||'')
-    })).filter(item=>item.sl>0);
+    const stagedNewCost = Boolean(editingOrderId)
+      && String(window.__TAPHOA_REPRICE_DRAFT_ID||'')===String(editingOrderId);
+    const refreshCostSnapshot = stagedNewCost && sourceSheet==='dontam'
+      && !isPromotingDraft && currentAuthRole!=='user';
+    if(isPromotingDraft && stagedNewCost){
+      showAlertPopup('Giá mới chưa được lưu','Bấm Cập nhật đơn để lưu giá trước khi chuyển sang Đã giao.');
+      return;
+    }
+    const items=Object.entries(cart)
+      .sort(([,a],[,b])=>(Number(b.__lastTouched)||0)-(Number(a.__lastTouched)||0))
+      .map(([maSP,item],index)=>({
+        maSP:String(maSP),sl:Number(item.qty)||0,gia:Number(item.price)||0,lineNo:index+1,ghiChu:String(item.note||'')
+      })).filter(item=>item.sl>0);
 
     orderMutationInFlight=true;
     showLoading(isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
@@ -213,11 +226,12 @@
         const result=await backend().deliverOrder(backendEditOrderId);
         if(result?.ok!==true)throw new Error('Không thể chuyển đơn tạm sang Đã giao.');
       }else{
-        const result=await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items});
+        const result=await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items,refreshCostSnapshot});
         if(result?.ok!==true)throw new Error('Không thể lưu đơn hàng.');
       }
 
       showToast(isPromotingDraft?'Đã duyệt đơn sang Đã giao!':editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
+      window.__TAPHOA_REPRICE_DRAFT_ID = null;
       resetSaleSession();
       closeCartMobile();
       await refreshOrderUiAfterMutation();

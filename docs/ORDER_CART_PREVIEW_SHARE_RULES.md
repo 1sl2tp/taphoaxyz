@@ -2,6 +2,15 @@
 
 Cập nhật: 2026-10-08. Phạm vi: **1sl2tp/taphoaxyz**, giao diện đơn hàng của TAPHOA; không liên quan YouTube, Chat, Supabase hay nghiệp vụ định giá.
 
+## CANONICAL 09/10/2026 — 5 cột và nút cập nhật giá đơn tạm
+
+- Chuẩn UI-111 hiện hành: **STT | Tên | Số lượng | Đơn giá | Thành tiền**. Mọi ví dụ bên dưới nói Giá trước SL, 7 tracks, hoặc căn trái Thành tiền là **LỊCH SỬ**, không dùng để sửa mới.
+- Nút −/+ của giỏ dùng SVG vector 14px, rõ nét, không scale icon. Chỉ cập nhật giao diện, không sửa nghiệp vụ số lượng.
+- Nút **Giá mới** cạnh **Đang sửa đơn** chỉ xuất hiện cho admin đang sửa **đơn tạm đã lưu**. Chỉ click thật mới đọc domain products từ Supabase một lần, kiểm đủ mã SP + giá vốn/bán hợp lệ của mọi dòng rồi áp dụng tại chỗ. Thiếu một dòng = không đổi bất cứ dòng nào.
+- Sau click, cart giữ nguyên mã đơn, số lượng, STT, thứ tự, ghi chú; chỉ thay giá bán hiển thị. Người dùng bấm **Cập nhật đơn** để lưu.
+- SaveOrder dùng flag `refresh_cost_snapshot` tùy chọn; SQL `taphoa_save_order` chỉ cho admin + đơn pending tồn tại + lưu pending lấy vốn mới từ `taphoa_products.input_price_vnd`. Không có flag giữ vốn cũ. Cấm tác động giá vốn đơn đã giao, role customer, đơn mới hay từ link nhân viên.
+- 1 click giá = tối đa 1 products-domain read, 1 nút lưu = 1 canonical order mutation; không cron, media proxy hoặc Sheet query mới. Test order ID/STT/số lượng/ghi chú và ảnh thật sau deploy trước khi đóng gate.
+
 ## Một chuẩn duy nhất
 
 **Năm cột, đúng thứ tự:** `STT | Tên | Đơn giá | Số lượng | Thành tiền`.
