@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_save_order(p_order jsonb, p_command_id 
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $function$
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -222,5 +222,4 @@ begin
   insert into public.taphoa_command_log(command_id,operation,result) values(p_command_id,'save_order',v_result);
   return v_result;
 end;
-$function$
-
+$$;

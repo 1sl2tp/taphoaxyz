@@ -79,7 +79,7 @@ test('SQL and UI protect frozen cost and use vector quantity controls',()=>{
   const css=read('src/fixed-ui-cart-spacing.css');
   assert.match(sql,/v_role <> 'admin' or v_edit_id is null or v_status <> 'pending'/);
   assert.match(sql,/v_refresh_costs and v_old_status <> 'pending'/);
-  assert.match(sql,/case when v_refresh_costs[\\s\\S]*then coalesce\\(p\\.input_price_vnd,0\\)/);
+  assert.match(sql,/case when v_refresh_costs[\s\S]*then coalesce\(p\.input_price_vnd,0\)/);
   assert.match(overrides,/refreshCostSnapshot/);
   assert.match(overrides,/__lastTouched/);
   assert.match(script,/<svg viewBox="0 0 24 24"/);
