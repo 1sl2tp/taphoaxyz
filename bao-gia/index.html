@@ -34,8 +34,9 @@ td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-ch
 .price-line,.market-refs{justify-content:flex-start;flex-wrap:wrap}
 .card td.change-note{display:block;width:auto;padding:0 8px 8px 104px;text-align:left}
 }
-/* UI-124 — Mobile quotation: compact hierarchy and readable money.
-   Keep full values/refs (no hidden prices). No horizontal scroll or microtext. */
+/* UI-124/127 — Mobile quotation: compact hierarchy, legible money, centered photos.
+   Maintain the original photo aspect ratio; align the image to the ENTIRE
+   variable-height product row, not to its first text line. Desktop/print unchanged. */
 @media screen and (max-width:680px){
   .page{padding:8px 8px 28px}
   .hero{padding:12px 13px;border-radius:14px}
@@ -56,17 +57,17 @@ td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-ch
   .card{overflow:hidden;border-radius:14px}
   .card table,.card tbody,.card tr,.card td{display:block}
   .card thead{display:none}
-  .card tr{position:relative;min-height:104px;border-bottom:1px solid #edf0f4}
+  .card tr{position:relative;min-height:116px;border-bottom:1px solid #edf0f4}
   .card tr:last-child{border-bottom:0}
   .card td:first-child{padding:10px 10px 0}
-  .product-main{display:block;padding-left:80px}
-  .product-visual{position:absolute;left:10px;top:10px;width:70px;height:70px;
-    border-radius:9px}
+  .product-main{display:block;padding-left:102px}
+  .product-visual{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+    width:92px;height:92px;border-radius:10px}
   .product-copy{min-width:0;overflow-wrap:anywhere}
   .name{font-size:13.5px;line-height:1.3;font-weight:800}
   .code{font-size:10px;line-height:1.3;margin-top:3px}
   .badge{font-size:9px;padding:2px 5px;margin-left:5px;vertical-align:1px}
-  .card td.price{min-width:0;text-align:left;padding:5px 9px 5px 90px}
+  .card td.price{min-width:0;text-align:left;padding:5px 9px 5px 112px}
   .price-line,.market-refs{justify-content:flex-start;align-items:baseline;gap:5px;flex-wrap:wrap}
   .price-line+.price-line{margin-top:3px}
   .price-label{min-width:48px;text-align:left;font-size:10px;line-height:1.3}
@@ -75,10 +76,19 @@ td{padding:12px;border-bottom:1px solid #eef0f3;vertical-align:middle}tr:last-ch
   .market-refs{margin-top:5px;gap:4px}
   .market-ref{font-size:9px;line-height:1.25;padding:2px 4px;white-space:normal}
   .card td.change-note{width:auto;min-width:0;text-align:left;
-    padding:0 10px 9px 90px;font-size:11px;line-height:1.3;
+    padding:0 10px 9px 112px;font-size:11px;line-height:1.3;
     white-space:normal;overflow-wrap:anywhere}
+  .product-thumb{object-fit:contain;transform:none;padding:2px}
   .changed-date{font-size:10px}
   .old{margin-right:4px}
+}
+/* UI-127 narrow devices: keep price/name space when the viewport is 320–359px. */
+@media screen and (max-width:359px){
+  .card tr{min-height:108px}
+  .product-main{padding-left:90px}
+  .product-visual{width:80px;height:80px}
+  .card td.price{padding-left:100px}
+  .card td.change-note{padding-left:100px}
 }
 @media print{body{background:#fff}.page{max-width:none;padding:0}.hero{border:0;box-shadow:none;padding:0 0 14px}.tabs,.toolbar{display:none}.card{border:1px solid #d0d5dd;border-radius:0}.foot{padding-top:8px}tr{break-inside:avoid}th,td{padding:7px 8px}.badge{border:1px solid #98a2b3;background:#fff;color:#344054}}
 </style>
