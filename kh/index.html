@@ -89,6 +89,7 @@ const error=document.getElementById('error');
 
 let pinConfigured=false;
 let pinBusy=false;
+let pinSetupProof=''; // Memory only: never persist or log the setup verification code.
 
 function rootUrl(){return '/?'+params.toString();}
 function readSkipCount(){try{return Math.max(0,Number(localStorage.getItem(skipKey))||0)}catch{return 0}}
@@ -181,6 +182,7 @@ function hideLoginPanel(){
 }
 function renderGate(state){
   pinConfigured=state?.pin_configured===true;
+  pinSetupProof='';
   if(pinConfigured){
     title.textContent='Nhập mã PIN';
     description.textContent='Liên kết này đã được bảo vệ. Nhập PIN để tiếp tục.';
@@ -189,10 +191,10 @@ function renderGate(state){
     skip.classList.add('hidden');
     warning.classList.add('hidden');
   }else{
-    title.textContent='Bảo vệ liên kết';
-    description.textContent='Tạo PIN 6 số để người chỉ có link không thể xem thông tin của bạn.';
-    submit.textContent='Tạo PIN';
-    submit.dataset.idle='Tạo PIN';
+    title.textContent='Xác minh chủ liên kết';
+    description.textContent='Nhập mã xác minh 6 số đã được cấp cùng liên kết. Nếu chưa có, bạn vẫn có thể xem đơn và liên hệ quản trị để được cấp mã.';
+    submit.textContent='Tiếp theo';
+    submit.dataset.idle='Tiếp theo';
     skip.classList.remove('hidden');
     warning.classList.toggle('hidden',readSkipCount()<2);
   }
@@ -224,6 +226,17 @@ wirePinInputs();
 submit.addEventListener('click',async()=>{
   const pin=getPinValue();
   if(!/^\d{6}$/.test(pin)){setError('PIN gồm 6 chữ số.');return;}
+  if(!pinConfigured && !pinSetupProof){
+    pinSetupProof=pin;
+    title.textContent='Tạo PIN mới';
+    description.textContent='Nhập PIN mới gồm 6 số. Chỉ lưu sau khi mã xác minh chủ liên kết hợp lệ.';
+    submit.textContent='Tạo PIN';
+    submit.dataset.idle='Tạo PIN';
+    setError('');
+    clearPin();
+    focusPin();
+    return;
+  }
   setBusy(submit,true,pinConfigured?'Đang kiểm tra…':'Đang tạo…');
   setError('');
   try{
@@ -234,18 +247,23 @@ submit.addEventListener('click',async()=>{
         throw new Error('invalid');
       }
     }else{
-      const data=await rpc('taphoa_public_pin_create',{p_public_slug:kh,p_pin:pin});
+      const data=await rpc('taphoa_public_pin_create',{p_public_slug:kh,p_pin:pin,p_setup_pin:pinSetupProof});
       if(data?.ok!==true){
         if(data?.error==='pin_already_set'){await loadGate();return;}
         throw new Error(data?.error||'create_failed');
       }
+      pinSetupProof='';
       clearSkipCount();
     }
     saveAccess(pin,'pin');
     enter();
   }catch(err){
     const code=String(err?.message||'');
-    setError(code.includes('locked')?'PIN đang tạm khóa. Thử lại sau.':pinConfigured?'PIN không đúng.':'Không tạo được PIN. Vui lòng thử lại.');
+    if(!pinConfigured){
+      pinSetupProof='';
+      renderGate({pin_configured:false});
+    }
+    setError(code.includes('locked')?'Mã xác minh tạm khóa sau nhiều lần nhập sai. Thử lại sau.':pinConfigured?'PIN không đúng.':'Không xác minh được chủ liên kết. Kiểm tra lại mã đã được cấp.');
     clearPin({invalid:true});
     focusPin();
   }finally{
