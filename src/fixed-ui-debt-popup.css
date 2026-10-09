@@ -37,7 +37,7 @@ body[data-force-pc="1"] #customerDebtContentToShare{
 
 /* Debt P2/P3/P4 mobile: keep balances, customer identity and actions legible.
    No new scroll, network, click handlers, or debt mutation owners. */
-@media (max-width:620px){
+/* UI-126: panel-scoped controls; no viewport breakpoint for a fixed 428px workspace. */
   #tab-cong-no #quickDebtCustomerButton,
   #tab-cong-no #quickDebtAmount,
   #tab-cong-no button[onclick^="submitQuickDebt("]{
@@ -80,7 +80,6 @@ body[data-force-pc="1"] #customerDebtContentToShare{
   #customerDebtBottomSheet button[onclick^="submitPopupDebt("]{
     min-height:44px;
   }
-}
 
 /* UI-125 — The app is a centered 428px mobile panel even when desktop
    browser windows are different sizes. Never select a compact debt layout
