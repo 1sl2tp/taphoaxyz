@@ -80,8 +80,32 @@
   function abortVoiceSession(){
     if(!voiceSession)return;
     const session=voiceSession;
+    // Undo visible interim speech when user cancels or switches search fields.
+    if(!session.finalDelivered && session.latestInterim && session.input.isConnected){
+      session.input.value=session.initialValue;
+    }
     finishVoiceSession(session);
     try{session.recognition.abort()}catch(_){}
+  }
+  function normalizeSpokenQuery(value){
+    return String(value||'').replace(/\s+/g,' ').trim().replace(/[.!?。！？]+$/u,'').trim();
+  }
+  function commitVoiceQuery(session,value){
+    if(voiceSession!==session || session.finalDelivered
+       || session.input.disabled || session.input.readOnly || !session.input.isConnected)return false;
+    const query=normalizeSpokenQuery(value);
+    if(!query)return false;
+    session.finalDelivered=true;
+    session.input.value=query;
+    // Existing native 'input' owner performs the search exactly once.
+    // No direct RPC or second search writer is created for voice.
+    session.input.dataset.taphoaVoiceReady='1';
+    try{
+      session.input.dispatchEvent(new Event('input',{bubbles:true}));
+    }finally{
+      delete session.input.dataset.taphoaVoiceReady;
+    }
+    return true;
   }
   function startVoiceSession(input,button){
     if(input.disabled||input.readOnly)return;
@@ -106,34 +130,66 @@
     }
     recognition.lang='vi-VN';
     recognition.continuous=false;
-    recognition.interimResults=false;
+    // Show words immediately; search only once on the first FINAL or onend.
+    recognition.interimResults=true;
     recognition.maxAlternatives=1;
-    const session={input,button,recognition,finalDelivered:false};
+    const session={input,button,recognition,finalDelivered:false,
+      initialValue:input.value,latestInterim:'',hadError:false};
     voiceSession=session;
     button.setAttribute('data-listening','true');
     button.setAttribute('aria-pressed','true');
     button.setAttribute('aria-label','Dừng tìm kiếm bằng giọng nói');
     recognition.onresult=event=>{
       if(voiceSession!==session||session.finalDelivered||input.disabled||input.readOnly||!input.isConnected)return;
-      const transcript=Array.from(event.results||[])
-        .filter(result=>result.isFinal!==false)
+      const results=Array.from(event.results||[]);
+      const finals=results.filter(result=>result.isFinal!==false)
+        .map(result=>String(result[0]?.transcript||'').trim()).filter(Boolean).join(' ');
+      if(finals){
+        if(commitVoiceQuery(session,finals)){
+          // Single utterance: close microphone after committing the first final.
+          try{recognition.stop()}catch(_){}
+        }
+        return;
+      }
+      const interim=normalizeSpokenQuery(results
+        .filter(result=>result.isFinal===false)
         .map(result=>String(result[0]?.transcript||'').trim())
-        .filter(Boolean).join(' ').trim();
-      if(!transcript)return;
-      session.finalDelivered=true;
-      // The existing input handler remains the ONLY owner of search requests.
-      input.value=transcript;
-      input.dispatchEvent(new Event('input',{bubbles:true}));
+        .filter(Boolean).join(' '));
+      if(interim){
+        session.latestInterim=interim;
+        input.value=interim; // Immediate visual feedback, zero search/RPC on partial words.
+      }
+    };
+    recognition.onspeechend=()=>{
+      if(voiceSession===session&&!session.finalDelivered){
+        try{recognition.stop()}catch(_){}
+      }
     };
     recognition.onerror=event=>{
       if(voiceSession!==session)return;
-      const blocked=['not-allowed','service-not-allowed','audio-capture'].includes(event.error);
+      session.hadError=true;
+      if(!session.finalDelivered&&session.latestInterim&&input.isConnected){
+        input.value=session.initialValue;
+      }
       finishVoiceSession(session);
-      if(blocked){
+      const code=String(event?.error||'');
+      if(['not-allowed','service-not-allowed','audio-capture'].includes(code)){
         window.alert?.('Không truy cập được micro. Hãy kiểm tra quyền micro trong trình duyệt.');
+      }else if(code==='network'||code==='language-not-supported'){
+        window.alert?.('Dịch vụ nhận diện giọng nói của trình duyệt chưa sẵn sàng. Vui lòng thử lại.');
+      }else if(code==='no-speech'||code==='nomatch'){
+        window.alert?.('Chưa nghe rõ giọng nói. Bấm micro và nói lại.');
       }
     };
-    recognition.onend=()=>finishVoiceSession(session);
+    recognition.onend=()=>{
+      if(voiceSession!==session)return;
+      // Some browsers return only an interim transcript before ending;
+      // commit that once rather than silently discarding the query.
+      if(!session.hadError && !session.finalDelivered && session.latestInterim){
+        commitVoiceQuery(session,session.latestInterim);
+      }
+      finishVoiceSession(session);
+    };
     try{recognition.start()}catch(_){
       finishVoiceSession(session);
       window.alert?.('Không thể bắt đầu nhận giọng nói. Hãy kiểm tra micro.');
@@ -234,6 +290,12 @@
     for(const input of document.querySelectorAll('input'))ensureVoiceSearch(input);
     document.addEventListener('focusin',selectExistingSearchText);
     document.addEventListener('click',selectExistingSearchText);
+    document.addEventListener('input',event=>{
+      // Human typing takes priority over a still-running microphone session.
+      if(voiceSession?.input===event.target && !voiceSession.finalDelivered){
+        abortVoiceSession();
+      }
+    });
     const css=document.createElement('style');
     css.id='taphoa-no-hints-style';
     css.textContent='[role="tooltip"],.tippy-box,.tooltip,[data-popper-placement][role="tooltip"]{display:none!important}' + voiceCss;

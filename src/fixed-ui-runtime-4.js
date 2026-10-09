@@ -417,9 +417,13 @@
 
         function scheduleProductSearchRender() {
             resetProductListScroll();
+            const input = document.getElementById('searchProductInput');
+            // Voice FINAL is one complete query, not a keystroke sequence:
+            // bypass only the existing market typing debounce (no extra RPC).
+            const voiceReady = input?.dataset.taphoaVoiceReady === '1';
             if (productSearchMode === 'market') {
                 clearTimeout(marketSearchTimer);
-                marketSearchTimer = setTimeout(() => renderMarketSearchResults(false), 180);
+                marketSearchTimer = setTimeout(() => renderMarketSearchResults(false), voiceReady ? 0 : 180);
                 return;
             }
             ownProductVisibleLimit = PRODUCT_PAGE_SIZE;
