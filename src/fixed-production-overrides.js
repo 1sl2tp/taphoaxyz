@@ -216,11 +216,11 @@
     orderMutationInFlight=true;
     showLoading(isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
     try{
-      if(isPromotingDraft&&!backendEditOrderId){
-        await refreshFixedSheets(['dontam']);
+      if(editingOrderId&&!backendEditOrderId){
+        await refreshFixedSheets([sourceSheet]);
         backendEditOrderId=backendOrderIdFor(sourceSheet,editingOrderId);
       }
-      if(isPromotingDraft&&!backendEditOrderId)throw new Error('Không tìm thấy ID database của đơn tạm. Hãy tải lại danh sách đơn.');
+      if(editingOrderId&&!backendEditOrderId)throw new Error('Không tìm thấy đơn gốc. Chưa lưu để tránh tạo đơn khác.');
 
       if(isPromotingDraft){
         const result=await backend().deliverOrder(backendEditOrderId);
