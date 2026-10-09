@@ -5,7 +5,7 @@ Cập nhật: 2026-10-08. Phạm vi: **1sl2tp/taphoaxyz**, giao diện đơn hà
 ## CANONICAL 09/10/2026 — 5 cột và nút cập nhật giá đơn tạm
 
 - Chuẩn UI-111 hiện hành: **STT | Tên | Số lượng | Đơn giá | Thành tiền**. Mọi ví dụ bên dưới nói Giá trước SL, 7 tracks, hoặc căn trái Thành tiền là **LỊCH SỬ**, không dùng để sửa mới.
-- Nút −/+ của giỏ dùng SVG vector 14px, rõ nét, không scale icon. Chỉ cập nhật giao diện, không sửa nghiệp vụ số lượng.
+- Nút −/+ giỏ dùng SVG vector 16px, nét vẽ 2px thực; dấu trừ #334155 trên nền #e9eef5, dấu cộng trắng trên nền xanh. Nút sản phẩm dùng glyph 14px và dấu trừ tương phản tương đương. Không scale icon, đổi ruler 5 cột hoặc nghiệp vụ số lượng.
 - Nút **Giá mới** cạnh **Đang sửa đơn** chỉ xuất hiện cho admin đang sửa **đơn tạm đã lưu**. Chỉ click thật mới đọc domain products từ Supabase một lần, kiểm đủ mã SP + giá vốn/bán hợp lệ của mọi dòng rồi áp dụng tại chỗ. Thiếu một dòng = không đổi bất cứ dòng nào.
 - Sau click, cart giữ nguyên mã đơn, số lượng, STT, thứ tự, ghi chú; chỉ thay giá bán hiển thị. Người dùng bấm **Cập nhật đơn** để lưu.
 - SaveOrder dùng flag `refresh_cost_snapshot` tùy chọn; SQL `taphoa_save_order` chỉ cho admin + đơn pending tồn tại + lưu pending lấy vốn mới từ `taphoa_products.input_price_vnd`. Không có flag giữ vốn cũ. Cấm tác động giá vốn đơn đã giao, role customer, đơn mới hay từ link nhân viên.

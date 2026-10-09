@@ -1633,7 +1633,16 @@
 
 /* UI-130: crisp icons and compact reprice button for the pending-order cart. */
 #cartBottomSheet #cartItemList .cart-qty-control > button svg{
- display:block;width:14px;height:14px;flex:none;
+ display:block;width:16px;height:16px;flex:none;stroke-width:3;
+}
+/* UI-130 contrast refinement: minus is now legible against gray. */
+#cartBottomSheet #cartItemList .cart-qty-control > button:first-child,
+#tab-ban-hang .product-card button[onclick^="updateCart("]:first-child{
+ color:#334155 !important;background:#e9eef5 !important;
+}
+#cartBottomSheet #cartItemList .cart-qty-control > button:last-child{color:#fff !important;}
+#tab-ban-hang .product-card button[onclick^="updateCart("] i{
+ font-size:14px !important;line-height:1 !important;
 }
 #cartBottomSheet #cartItemList .cart-qty-control > button{transform:none !important;}
 #cartBottomSheet .cart-edit-header-group{flex-wrap:wrap;min-width:0;row-gap:5px;}
