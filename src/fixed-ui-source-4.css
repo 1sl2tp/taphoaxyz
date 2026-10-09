@@ -482,43 +482,39 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 }
 
 
-/* FIXED STYLE: responsive-source-filter-labels */
+/* UI-126 — Sales uses the resolved in-app mode, never the outer Chrome
+   viewport. A 428px app panel must look identical in 500px and 730px windows. */
 #sourceTagsContainer .source-tag-label-mobile{display:none;}
-@media (max-width:620px){
-  #sourceTagsContainer{
-    gap:5px !important;
-    overflow-x:auto;
-  }
-  #sourceTagsContainer .source-filter-chip,
-  #sourceTagsContainer .market-source-filter-chip{
-    padding-left:9px !important;
-    padding-right:9px !important;
-    font-size:12px !important;
-  }
-  #sourceTagsContainer .source-tag-label-full{display:none;}
-  #sourceTagsContainer .source-tag-label-mobile{display:inline;}
+body[data-resolved-mode="mobile"] #sourceTagsContainer{
+  gap:5px !important;
+  overflow-x:auto;
 }
+body[data-resolved-mode="mobile"] #sourceTagsContainer .source-filter-chip,
+body[data-resolved-mode="mobile"] #sourceTagsContainer .market-source-filter-chip{
+  padding-left:9px !important;
+  padding-right:9px !important;
+  font-size:12px !important;
+}
+body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-full{display:none;}
+body[data-resolved-mode="mobile"] #sourceTagsContainer .source-tag-label-mobile{display:inline;}
 
-
-/* P4 mobile sales search: 16px input avoids Safari text zoom; 40px mode button. */
-@media (max-width:480px){
-  #tab-ban-hang #searchProductInput{
-    height:44px;
-    min-height:44px;
-    font-size:16px !important;
-  }
-  body:not([data-employee-mode="true"]) #tab-ban-hang #searchProductInput{
-    padding-left:48px !important;
-  }
-  #tab-ban-hang #salesSearchModeToggle{
-    width:40px;
-    height:40px;
-    left:4px;
-  }
-  #tab-ban-hang #sourceTagsContainer .source-filter-chip,
-  #tab-ban-hang #sourceTagsContainer .market-source-filter-chip{
-    min-height:36px;
-  }
+/* Mobile sales search needs >=16px to avoid iOS focus zoom. */
+body[data-resolved-mode="mobile"] #tab-ban-hang #searchProductInput{
+  height:44px;
+  min-height:44px;
+  font-size:16px !important;
+}
+body[data-resolved-mode="mobile"]:not([data-employee-mode="true"]) #tab-ban-hang #searchProductInput{
+  padding-left:48px !important;
+}
+body[data-resolved-mode="mobile"] #tab-ban-hang #salesSearchModeToggle{
+  width:40px;
+  height:40px;
+  left:4px;
+}
+body[data-resolved-mode="mobile"] #tab-ban-hang #sourceTagsContainer .source-filter-chip,
+body[data-resolved-mode="mobile"] #tab-ban-hang #sourceTagsContainer .market-source-filter-chip{
+  min-height:36px;
 }
 
 /* FIXED STYLE: sales-supermarket-search-toggle */
@@ -537,16 +533,14 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 .market-quick-price.market-source-go{color:#e85d04;}
 .market-quick-price.market-source-vnm{color:#2563eb;}
 .market-quick-price.market-source-other{color:#334155;}
-@media (max-width:480px){
-  body[data-resolved-mode="mobile"] .market-quick-card{
-    min-height:64px;
-    padding-top:8px !important;
-    padding-bottom:8px !important;
-  }
-  body[data-resolved-mode="mobile"] .market-quick-thumb{
-    width:64px !important;
-    height:64px !important;
-  }
+body[data-resolved-mode="mobile"] .market-quick-card{
+  min-height:64px;
+  padding-top:8px !important;
+  padding-bottom:8px !important;
+}
+body[data-resolved-mode="mobile"] .market-quick-thumb{
+  width:64px !important;
+  height:64px !important;
 }
 
 
