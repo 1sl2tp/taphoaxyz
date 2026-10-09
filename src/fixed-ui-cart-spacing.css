@@ -1683,3 +1683,67 @@
   outline:2px solid #065f46;
   outline-offset:2px;
 }
+
+/* UI-132 / 2026-10-09: the cart's 30px green circle looked softer
+   than the 36px Sales circle. Use the SAME Phosphor plus glyph as
+   Sales with a 34px button, within the EXISTING 96px cart qty track.
+   1px frame x2 + 34 + 24 + 34 + 1px gaps x2 = exactly 96px.
+   No fractional scaling, shadows, filter, gradients or data changes. */
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control {
+  box-sizing:border-box !important;
+  width:96px !important;
+  min-width:96px !important;
+  height:36px !important;
+  min-height:36px !important;
+  display:grid !important;
+  grid-template-columns:34px 24px 34px !important;
+  gap:1px !important;
+  padding:0 !important;
+  border:1px solid #e2e8f0 !important;
+  border-radius:999px !important;
+  background:#fff !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button {
+  box-sizing:border-box !important;
+  width:34px !important;
+  min-width:34px !important;
+  height:34px !important;
+  min-height:34px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
+  transition:none !important;
+  display:grid !important;
+  place-items:center !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button:last-child {
+  background:#16a34a !important;
+  background-image:none !important;
+  color:#fff !important;
+  opacity:1 !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button:last-child i.ph-plus {
+  display:block !important;
+  font-size:14px !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  transform:none !important;
+}
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > input {
+  box-sizing:border-box !important;
+  width:24px !important;
+  min-width:24px !important;
+  height:34px !important;
+  min-height:34px !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:center !important;
+  font-variant-numeric:tabular-nums;
+}
