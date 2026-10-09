@@ -150,10 +150,10 @@
                         <span class="cart-field-caption">Số lượng</span>
                         ${isDeliveredReadOnlyPreview
                             ? `<div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums">${item.qty}</div>`
-                            : `<div class="cart-qty-control border border-gray-200 rounded-full bg-white shadow-sm">
+                            : `<div class="cart-qty-control border border-gray-200 rounded-full bg-white">
                                 <button onclick="updateCart('${id}', '${item.name}', ${item.price}, -1)" class="allow-fast-click w-4 h-4 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
                                 <input type="number" value="${item.qty}" min="1" step="1" inputmode="numeric" data-qty-editor="cart" data-qty-id="${id}" data-qty-price="${item.price}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-6 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[11px]">
-                                <button onclick="updateCart('${id}', '${item.name}', ${item.price}, 1)" class="allow-fast-click w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+                                <button onclick="updateCart('${id}', '${item.name}', ${item.price}, 1)" class="allow-fast-click w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
                             </div>`}
                     </div>
                     <div class="cart-price font-semibold text-gray-700"><span class="cart-field-caption">Đơn giá</span><span class="cart-money-value">${item.price.toLocaleString('vi-VN')}</span></div>

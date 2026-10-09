@@ -1657,3 +1657,29 @@
 @media(max-width:400px){
  #cartBottomSheet .cart-price-refresh{min-height:26px;padding:3px 7px;font-size:10px;}
 }
+
+/* UI-130C — Crisp GREEN + edge in Cart only (image 2026-10-09).
+   Preserve the existing 30px button and the same five-column ruler.
+   Do not leave a blurry ring from the former shadow-sm wrapper. */
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty-control{
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty-control > button:last-child{
+  -webkit-appearance:none;
+  appearance:none;
+  box-shadow:none !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  border:0 !important;
+  background-clip:padding-box;
+  border-radius:50% !important;
+  transform:none !important;
+  opacity:1 !important;
+  outline:0;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty-control > button:last-child:focus-visible{
+  outline:2px solid #065f46;
+  outline-offset:2px;
+}
