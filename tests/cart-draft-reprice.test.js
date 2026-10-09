@@ -86,3 +86,28 @@ test('SQL and UI protect frozen cost and use vector quantity controls',()=>{
   assert.match(css,/\.cart-qty-control > button svg/);
   assert.match(script,/cartRefreshPricesButton/);
 });
+
+test('delivered edit uses fresh sale prices without opting into cost rewrite',async()=>{
+  const x=fixture([
+    {id:'20',gia:230,von:125,is_active:true},
+    {id:'10',gia:310,von:195,is_active:true}
+  ]);
+  x.sandbox.editingOrderId='DG41';
+  x.sandbox.editingOrderSheet='dongiao';
+  await x.sandbox.callRefresh();
+  assert.equal(x.counts().reads,1);
+  assert.equal(x.cart['20'].price,230);
+  assert.equal(x.cart['10'].price,310);
+  assert.equal(x.cart['20'].qty,2);
+  assert.equal(x.cart['20'].note,'Giữ ghi chú');
+  assert.equal(x.cart['20'].__lastTouched,9);
+  assert.equal(x.sandbox.window.__TAPHOA_REPRICE_DRAFT_ID,null);
+  assert.match(x.messages[0][1],/công nợ/);
+});
+test('delivered edit in read-only mode cannot reprice',async()=>{
+  const x=fixture([{id:'20',gia:230,von:125,is_active:true}]);
+  x.sandbox.editingOrderSheet='dongiao';
+  x.sandbox.editingOrderInSaleMode=false;
+  await x.sandbox.callRefresh();
+  assert.equal(x.counts().reads,0);
+});

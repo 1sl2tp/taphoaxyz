@@ -28,7 +28,9 @@
         let cartPriceRefreshInFlight = false;
         async function refreshEditedOrderPrices() {
             const orderId = String(editingOrderId || '');
-            const allowed = !!orderId && editingOrderSheet === 'dontam'
+            const sourceSheet = editingOrderSheet;
+            const isDraft = sourceSheet === 'dontam';
+            const allowed = !!orderId && (isDraft || sourceSheet === 'dongiao')
                 && editingOrderInSaleMode && currentAuthRole !== 'user'
                 && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
             if (!allowed || cartPriceRefreshInFlight || !Object.keys(cart).length) return;
@@ -59,14 +61,18 @@
                     updates.push([id, sale]);
                 }
                 if (orderId !== String(editingOrderId || '')
-                    || !editingOrderInSaleMode || editingOrderSheet !== 'dontam') return;
-                // Edit existing lines in place; keep quantities, notes, STT and order ID.
+                    || !editingOrderInSaleMode || editingOrderSheet !== sourceSheet) return;
+                // Same order and line identities; no DB mutation until explicit Save.
+                // Delivered orders keep frozen historical costs on normal save.
                 for (const [id, price] of updates) cart[id].price = price;
-                window.__TAPHOA_REPRICE_DRAFT_ID = orderId;
+                window.__TAPHOA_REPRICE_DRAFT_ID = isDraft ? orderId : null;
                 renderCartUI();
                 renderProductList();
-                showToast('Đã lấy giá vốn + giá bán mới cho ' + updates.length
-                    + ' sản phẩm. Bấm Cập nhật đơn để lưu.', 'success');
+                showToast(isDraft
+                    ? 'Đã lấy giá vốn + giá bán mới cho ' + updates.length
+                      + ' sản phẩm. Bấm Cập nhật đơn để lưu.'
+                    : 'Đã lấy giá bán mới cho ' + updates.length
+                      + ' sản phẩm. Giá vốn đã giao giữ nguyên; lưu sẽ điều chỉnh tổng đơn, công nợ và có thể thông báo khách.', 'success');
             } catch (error) {
                 showAlertPopup('Không thể cập nhật giá', error?.message || 'Vui lòng thử lại.');
             } finally {
@@ -95,11 +101,17 @@
                     priceButton.type = 'button';
                     priceButton.className = 'cart-price-refresh hidden';
                     priceButton.textContent = 'Giá mới';
-                    priceButton.setAttribute('aria-label', 'Cập nhật giá vốn và giá bán mới cho đơn tạm');
                     priceButton.addEventListener('click', refreshEditedOrderPrices);
                     editBadge.insertAdjacentElement('afterend', priceButton);
                 }
-                const visible = !!editingOrderId && editingOrderSheet === 'dontam'
+                const isDraftEdit = editingOrderSheet === 'dontam';
+                const isDeliveredEdit = editingOrderSheet === 'dongiao';
+                priceButton.setAttribute('aria-label', isDraftEdit
+                    ? 'Cập nhật giá vốn và giá bán cho đơn tạm'
+                    : 'Cập nhật giá bán cho đơn đã giao, giữ vốn lịch sử; lưu sẽ điều chỉnh công nợ');
+                priceButton.title = isDraftEdit ? 'Cập nhật giá vốn và giá bán của đơn tạm'
+                    : 'Cập nhật giá bán; giữ giá vốn cũ, lưu sẽ tính lại công nợ';
+                const visible = !!editingOrderId && (isDraftEdit || isDeliveredEdit)
                     && editingOrderInSaleMode && currentAuthRole !== 'user'
                     && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
                 priceButton.classList.toggle('hidden', !visible);
