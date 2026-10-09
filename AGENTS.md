@@ -36,3 +36,14 @@
 - **BẮT BUỘC đọc** `docs/ORDER_CART_PREVIEW_SHARE_RULES.md` khi sửa giỏ hàng, đơn hàng, xem trước, chi tiết đơn, ảnh chia sẻ hoặc ảnh đơn công khai.
 - Giữ cùng **5 cột: STT | Tên | Số lượng | Đơn giá | Thành tiền** (UI-111 canonical). Header và hàng dữ liệu phải thẳng cột; giỏ hàng **chỉ khác ô số lượng** có nút `− / +`.
 - Trước khi kết luận, kiểm tra riêng cart edit, order read-only, share image và mobile 320–428px; không lấy kết quả CSS/test thay cho ảnh iPhone thật.
+
+## SDD — SPEC → TEST → ACCEPTANCE (RULE 04, 2026-10-09)
+
+Trước khi thay đổi TAPHOA, đọc [RULE 04 — SDD/Spec/Test/Acceptance](https://github.com/1sl2tp/infrastructure/blob/main/rules/04-SDD-SPEC-TEST-ACCEPTANCE.md) và [RULE CHUNG Google Sheets](https://docs.google.com/spreadsheets/d/1vu8mlXSr_E6klO3UjrsoWjos2MefCWkDra3MBbI6NHQ/edit) tab **08 - SDD SPEC TEST ACCEPTANCE**, sau các rule owner/resource hiện hành của repo.
+
+- Mỗi task có SPEC ID; mô tả Given/When/Then, root owner và read/write path, MUST-STAY, case lỗi, rollback, nguồn chứng cứ và resource impact. Lỗi UI nhỏ dùng 1 dòng Spec, **không thêm tool GraphRAG/server/cron**.
+- Trước patch khóa E0 SPEC + owner; test theo từng case E1/E2; đọc đúng commit/release E3; kiểm hành vi trên production/device thực E4; resource và user acceptance E5. Mock/unit xanh **không** phải bằng chứng UI thật đã sửa xong.
+- Drift Check: không mở rộng file/provider/permission, không vô tình làm khác hành vi cũ. Với bug người dùng còn nhìn thấy, test string/CSS/CI đạt không được gọi DONE. Chưa có browser/account thực → `PROD PENDING`.
+- Đơn hàng phải giữ orderId/STT/SL/note và lịch sử giá vốn; search voice một FINAL → một input; UI cần ảnh Chrome/Safari theo scope.
+- Docs-only update **không deploy production** và không cập nhật trạng thái nguồn nghiệp vụ; không sửa task `CURRENT_WORK` đang chờ nghiệm thu chỉ vì thêm SDD rule.
+
