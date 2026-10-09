@@ -36,8 +36,29 @@
     strip(root);
     for(const el of root.querySelectorAll(selector))strip(el);
   }
+  /* UI-128 — Search-only select-all on focus/tap.
+     A new query replaces the old one with one keystroke. Delegate on document
+     so fields rebuilt by sales, price management or supplier tabs inherit it.
+     Never touch quantity, price, PIN, notes, textarea or user-typed events. */
+  function isSearchInput(el){
+    if(!(el instanceof Element)||el.tagName!=='INPUT'||el.disabled||el.readOnly)return false;
+    const type=String(el.type||el.getAttribute('type')||'text').toLowerCase();
+    if(type!=='search'&&type!=='text')return false;
+    if(el.getAttribute('data-search-autoselect')==='off')return false;
+    return type==='search'
+      || /search|tim[-_]?kiem/i.test(String(el.id||'')+' '+String(el.name||''))
+      || el.getAttribute('data-search-autoselect')==='all';
+  }
+  function selectExistingSearchText(event){
+    const el=event.target;
+    if(!isSearchInput(el)||!String(el.value||'').length)return;
+    // Selection only: never set value, dispatch input/change or invoke a search.
+    try{el.select()}catch(_){}
+  }
   function start(){
     scan(document.documentElement);
+    document.addEventListener('focusin',selectExistingSearchText);
+    document.addEventListener('click',selectExistingSearchText);
     const css=document.createElement('style');
     css.id='taphoa-no-hints-style';
     css.textContent='[role="tooltip"],.tippy-box,.tooltip,[data-popper-placement][role="tooltip"]{display:none!important}';
