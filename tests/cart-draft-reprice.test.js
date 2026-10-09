@@ -112,12 +112,15 @@ test('delivered edit in read-only mode cannot reprice',async()=>{
   assert.equal(x.counts().reads,0);
 });
 
-test('cart green plus shares Sales glyph and fits the existing 96px quantity track',()=>{
+test('cart plus is square and fits centered inside the existing 96px quantity track',()=>{
   const source=read('src/fixed-ui-runtime-6.js');
   const css=read('src/fixed-ui-cart-spacing.css');
   assert.match(source,/aria-label="Tăng số lượng"><i class="ph-bold ph-plus/);
-  assert.match(css,/grid-template-columns:34px 24px 34px !important/);
+  assert.match(css,/grid-template-columns:32px 24px 32px !important/);
   assert.match(css,/background:#16a34a !important/);
   assert.match(css,/font-size:14px !important/);
-  assert.equal(2+34+24+34+2,96);
+  assert.equal(2+32+24+32+2,92); // 2px breathing room at each side of 96px quantity track
+  assert.match(css,/max-width:32px !important/);
+  assert.match(css,/max-height:32px !important/);
+  assert.match(css,/aspect-ratio:1 \/ 1 !important/);
 });

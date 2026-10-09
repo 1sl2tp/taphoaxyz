@@ -1684,19 +1684,24 @@
   outline-offset:2px;
 }
 
-/* UI-132 / 2026-10-09: the cart's 30px green circle looked softer
-   than the 36px Sales circle. Use the SAME Phosphor plus glyph as
-   Sales with a 34px button, within the EXISTING 96px cart qty track.
-   1px frame x2 + 34 + 24 + 34 + 1px gaps x2 = exactly 96px.
-   No fractional scaling, shadows, filter, gradients or data changes. */
+/* UI-132/133 / 2026-10-09: fixed oval green plus in cart.
+   Screenshot proved rendered 30px wide x 34px tall due to clipping at
+   the 96px quantity-column edge. Leave 2px breathing room each side:
+   92px framed control = border 2 + 32px minus + 1px gap + 24px number
+   + 1px gap + 32px plus. Source Sales Phosphor glyph is preserved.
+   Each button is a locked 32 x 32 square with a circular painted edge.
+   No scale, shadow, backend or order data changes. */
 #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control {
   box-sizing:border-box !important;
-  width:96px !important;
-  min-width:96px !important;
-  height:36px !important;
-  min-height:36px !important;
+  width:92px !important;
+  min-width:92px !important;
+  max-width:92px !important;
+  height:34px !important;
+  min-height:34px !important;
+  max-height:34px !important;
+  justify-self:center !important;
   display:grid !important;
-  grid-template-columns:34px 24px 34px !important;
+  grid-template-columns:32px 24px 32px !important;
   gap:1px !important;
   padding:0 !important;
   border:1px solid #e2e8f0 !important;
@@ -1708,10 +1713,14 @@
 }
 #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button {
   box-sizing:border-box !important;
-  width:34px !important;
-  min-width:34px !important;
-  height:34px !important;
-  min-height:34px !important;
+  width:32px !important;
+  min-width:32px !important;
+  max-width:32px !important;
+  height:32px !important;
+  min-height:32px !important;
+  max-height:32px !important;
+  aspect-ratio:1 / 1 !important;
+  flex:0 0 32px !important;
   margin:0 !important;
   padding:0 !important;
   border:0 !important;
@@ -1740,8 +1749,8 @@
   box-sizing:border-box !important;
   width:24px !important;
   min-width:24px !important;
-  height:34px !important;
-  min-height:34px !important;
+  height:32px !important;
+  min-height:32px !important;
   margin:0 !important;
   padding:0 !important;
   text-align:center !important;
