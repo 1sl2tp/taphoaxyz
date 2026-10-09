@@ -115,9 +115,12 @@ test('delivered edit in read-only mode cannot reprice',async()=>{
 test('cart plus is square and fits centered inside the existing 96px quantity track',()=>{
   const source=read('src/fixed-ui-runtime-6.js');
   const css=read('src/fixed-ui-cart-spacing.css');
-  assert.match(source,/aria-label="Tăng số lượng"><i class="ph-bold ph-plus/);
+  assert.match(source,/aria-label="Tăng số lượng"><svg class="cart-plus-circle"/);
+  assert.match(source,/preserveAspectRatio="xMidYMid meet"/);
+  assert.match(source,/<circle cx="16" cy="16" r="15\.5" fill="#16a34a"/);
   assert.match(css,/grid-template-columns:32px 24px 32px !important/);
-  assert.match(css,/background:#16a34a !important/);
+  assert.match(css,/background:transparent !important/);
+  assert.match(css,/svg\.cart-plus-circle/);
   assert.match(css,/font-size:14px !important/);
   assert.equal(2+32+24+32+2,92); // 2px breathing room at each side of 96px quantity track
   assert.match(css,/max-width:32px !important/);

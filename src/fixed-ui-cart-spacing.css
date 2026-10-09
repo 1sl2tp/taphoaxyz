@@ -1684,7 +1684,7 @@
   outline-offset:2px;
 }
 
-/* UI-132/133 / 2026-10-09: fixed oval green plus in cart.
+/* UI-132/133/134 / 2026-10-09: preserve circular painted shape despite compressed button viewport.
    Screenshot proved rendered 30px wide x 34px tall due to clipping at
    the 96px quantity-column edge. Leave 2px breathing room each side:
    92px framed control = border 2 + 32px minus + 1px gap + 24px number
@@ -1733,17 +1733,29 @@
   place-items:center !important;
 }
 #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button:last-child {
-  background:#16a34a !important;
+  background:transparent !important;
   background-image:none !important;
   color:#fff !important;
   opacity:1 !important;
+  overflow:visible !important;
 }
-#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button:last-child i.ph-plus {
+/* Paint the green disk inside a square SVG with xMidYMid meet, not
+   on the HTML button. Even a 30x34 button viewport yields a 30x30 circle.
+   This is intentionally scoped to the Cart "+"; Sales remains unchanged. */
+#cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > button:last-child svg.cart-plus-circle {
   display:block !important;
-  font-size:14px !important;
-  font-weight:700 !important;
-  line-height:1 !important;
+  flex:0 0 auto !important;
+  width:30px !important;
+  min-width:30px !important;
+  max-width:30px !important;
+  height:30px !important;
+  min-height:30px !important;
+  max-height:30px !important;
+  aspect-ratio:1 / 1 !important;
+  overflow:visible !important;
   transform:none !important;
+  filter:none !important;
+  box-shadow:none !important;
 }
 #cartBottomSheet[data-cart-mode="edit"] #cartItemList .cart-compact-grid .cart-qty-control > input {
   box-sizing:border-box !important;
