@@ -38,22 +38,6 @@ body[data-force-pc="1"] #customerDebtContentToShare{
 /* Debt P2/P3/P4 mobile: keep balances, customer identity and actions legible.
    No new scroll, network, click handlers, or debt mutation owners. */
 @media (max-width:620px){
-  #tab-cong-no > header > .grid > div{
-    flex-direction:column;
-    align-items:stretch;
-    justify-content:flex-start;
-    gap:8px;
-    min-width:0;
-  }
-  #tab-cong-no #totalDebtDisplay,
-  #tab-cong-no #totalSurplusDisplay{
-    align-self:flex-start;
-    max-width:100%;
-    padding-inline:8px;
-    font-size:clamp(12px,3.6vw,15px);
-    font-variant-numeric:tabular-nums;
-    white-space:nowrap;
-  }
   #tab-cong-no #quickDebtCustomerButton,
   #tab-cong-no #quickDebtAmount,
   #tab-cong-no button[onclick^="submitQuickDebt("]{
@@ -82,33 +66,6 @@ body[data-force-pc="1"] #customerDebtContentToShare{
     flex:1 1 auto;
     min-width:0;
   }
-  #tab-cong-no #debtSortSelect{
-    flex:0 1 66%;
-    min-width:0;
-    max-width:100%;
-    min-height:40px;
-    font-size:16px !important;
-  }
-  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("]{
-    flex-wrap:wrap;
-    gap:8px;
-  }
-  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:first-child{
-    flex:1 1 100%;
-    min-width:0;
-  }
-  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:first-child > div:last-child{
-    min-width:0;
-    flex:1 1 auto;
-  }
-  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:first-child p{
-    overflow-wrap:anywhere;
-  }
-  #debtCustomerListContainer > div[onclick^="openCustomerDebtModal("] > div:last-child{
-    flex:1 1 100%;
-    font-variant-numeric:tabular-nums;
-    white-space:nowrap;
-  }
   #customerDebtBottomSheet #cDebtModalName{
     min-width:0;
     overflow:hidden;
@@ -123,4 +80,53 @@ body[data-force-pc="1"] #customerDebtContentToShare{
   #customerDebtBottomSheet button[onclick^="submitPopupDebt("]{
     min-height:44px;
   }
+}
+
+/* UI-125 — The app is a centered 428px mobile panel even when desktop
+   browser windows are different sizes. Never select a compact debt layout
+   from OUTER viewport width (e.g. 500 vs 730px). Only use the actual
+   in-panel summary grid width. */
+#tab-cong-no > header > .grid{
+  container-type:inline-size;
+}
+#tab-cong-no > header > .grid > div{
+  min-width:0;
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  gap:4px;
+}
+#tab-cong-no #totalDebtDisplay,
+#tab-cong-no #totalSurplusDisplay{
+  flex:0 0 auto;
+  max-width:100%;
+  align-self:center;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+@container (max-width:330px){
+  #tab-cong-no > header > .grid > div{
+    flex-direction:column;
+    align-items:stretch;
+    justify-content:flex-start;
+    gap:6px;
+  }
+  #tab-cong-no #totalDebtDisplay,
+  #tab-cong-no #totalSurplusDisplay{
+    align-self:flex-start;
+  }
+}
+/* Select size is also independent of Chrome's outer window.
+   Only coarse-touch input uses >=16px to prevent iOS native focus zoom. */
+#tab-cong-no #debtSortSelect{
+  flex:0 0 auto;
+  width:142px;
+  min-width:0;
+  max-width:142px;
+  height:36px;
+  min-height:36px;
+  font-size:12px !important;
+}
+@media (hover:none) and (pointer:coarse){
+  #tab-cong-no #debtSortSelect{font-size:16px !important;}
 }
