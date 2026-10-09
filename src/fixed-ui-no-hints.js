@@ -108,18 +108,19 @@
     recognition.continuous=false;
     recognition.interimResults=false;
     recognition.maxAlternatives=1;
-    const session={input,button,recognition};
+    const session={input,button,recognition,finalDelivered:false};
     voiceSession=session;
     button.setAttribute('data-listening','true');
     button.setAttribute('aria-pressed','true');
     button.setAttribute('aria-label','Dừng tìm kiếm bằng giọng nói');
     recognition.onresult=event=>{
-      if(voiceSession!==session||input.disabled||input.readOnly||!input.isConnected)return;
+      if(voiceSession!==session||session.finalDelivered||input.disabled||input.readOnly||!input.isConnected)return;
       const transcript=Array.from(event.results||[])
         .filter(result=>result.isFinal!==false)
         .map(result=>String(result[0]?.transcript||'').trim())
         .filter(Boolean).join(' ').trim();
       if(!transcript)return;
+      session.finalDelivered=true;
       // The existing input handler remains the ONLY owner of search requests.
       input.value=transcript;
       input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -190,6 +191,9 @@
   const voiceCss=String.raw`
 .taphoa-voice-search-wrap{position:relative;display:block;flex:1 1 auto;min-width:0;width:100%;max-width:100%}
 .taphoa-voice-search-wrap>.taphoa-voice-search-input{box-sizing:border-box;width:100%!important;min-width:0}
+/* The built-in search X occupies the same right edge as the voice button. */
+.taphoa-voice-search-input[type=search]::-webkit-search-cancel-button,
+.taphoa-voice-search-input[type=search]::-webkit-search-decoration{display:none!important}
 .taphoa-voice-search-host>.taphoa-voice-search-input,
 .taphoa-voice-search-wrap>.taphoa-voice-search-input{padding-right:47px!important}
 .taphoa-voice-search-host{position:relative}
