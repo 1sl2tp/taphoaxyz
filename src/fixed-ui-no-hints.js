@@ -77,11 +77,11 @@
     session.button.setAttribute('aria-pressed','false');
     session.button.setAttribute('aria-label','Tìm kiếm bằng giọng nói');
   }
-  function abortVoiceSession(){
+  function abortVoiceSession(preserveInput=false){
     if(!voiceSession)return;
     const session=voiceSession;
     // Undo visible interim speech when user cancels or switches search fields.
-    if(!session.finalDelivered && session.latestInterim && session.input.isConnected){
+    if(!preserveInput && !session.finalDelivered && session.latestInterim && session.input.isConnected){
       session.input.value=session.initialValue;
     }
     finishVoiceSession(session);
@@ -293,7 +293,7 @@
     document.addEventListener('input',event=>{
       // Human typing takes priority over a still-running microphone session.
       if(voiceSession?.input===event.target && !voiceSession.finalDelivered){
-        abortVoiceSession();
+        abortVoiceSession(true); // Preserve the user's new typed text.
       }
     });
     const css=document.createElement('style');

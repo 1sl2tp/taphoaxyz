@@ -69,3 +69,13 @@ test('sales market search bypasses 180ms debounce only for voice final',()=>{
     assert.match(read(path),/voice-one-tap=20261009/);
   }
 });
+
+test('typing during interim voice preview aborts microphone without deleting typed text',()=>{
+  const x=setup();
+  x.recognition.onresult({results:[speech('sữa bột',false)]});
+  x.input.value='new human typed text';
+  x.context.abortVoiceSession(true);
+  assert.equal(x.input.value,'new human typed text');
+  assert.equal(x.events.length,0);
+  assert.equal(x.recognition.abortCount,1);
+});
