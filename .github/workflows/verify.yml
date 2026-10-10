@@ -35,18 +35,23 @@ jobs:
           node-version: 22
 
       - name: Install
+        id: install
         run: npm install --no-audit --no-fund
 
       - name: Run all contracts
         run: npm test
 
       - name: Build production
+        id: build
+        if: ${{ always() && steps.install.outcome == 'success' }}
         run: npm run build:production
 
       - name: Parse application modules
+        if: ${{ always() && steps.install.outcome == 'success' }}
         run: find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
       - name: Reject old business Supabase runtime refs
+        if: ${{ always() && steps.install.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -59,6 +64,7 @@ jobs:
           echo "OK: active runtime/deploy code has no old Supabase project ref."
 
       - name: Verify production security contract
+        if: ${{ always() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
