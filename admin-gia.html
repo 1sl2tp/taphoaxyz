@@ -214,7 +214,7 @@
     .care-filter input{min-width:180px;flex:1 1 200px}
     .care-columns{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr)}
     .care-list{min-width:0;max-height:calc(100dvh - 365px);overflow:auto}
-    .care-list table{min-width:710px;width:100%;font-size:12px;table-layout:auto}
+    .care-list table{min-width:900px;width:100%;font-size:12px;table-layout:auto}
     .care-list th,.care-list td{height:auto;padding:8px}
     .care-list td.num,.care-list th.num{text-align:right;font-variant-numeric:tabular-nums}
     .care-list tr.active td{background:#eff6ff}
@@ -228,6 +228,14 @@
     .care-note{background:#fffbeb;color:#92400e;padding:10px;border:1px solid #fde68a;border-radius:8px}
     .care-detail textarea{width:100%;min-height:125px;resize:vertical;border:1px solid var(--grid);border-radius:8px;padding:10px;line-height:1.5;font:inherit;font-size:13px;background:#fbfdff}
     @media(max-width:900px){.admin-tabs{width:100%;flex-wrap:wrap}.care-columns{grid-template-columns:1fr}.care-list{max-height:320px}.care-detail{max-height:none;border-left:0;border-top:1px solid var(--grid)}}
+
+    .care-finance-cards{display:grid;grid-template-columns:repeat(4,minmax(125px,1fr));gap:8px;padding:10px;background:#f0f6ff;border-bottom:1px solid var(--grid)}
+    .care-finance-cards>div{padding:10px;border:1px solid var(--grid);background:#fff;border-radius:9px}
+    .care-finance-cards span{display:block;font-size:11px;color:var(--muted);font-weight:700}
+    .care-finance-cards strong{display:block;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums}
+    .care-finance-cards small{font-size:10px;color:#64748b}
+    .care-tools input[type=date]{max-width:152px}
+    @media(max-width:760px){.care-finance-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.care-tools input[type=date]{max-width:100%}}
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -459,6 +467,14 @@
           <div class="care-tools">
             <label for="careInactiveDays">Lâu chưa mua</label>
             <select id="careInactiveDays"><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option></select>
+            <label for="carePeriod">Kỳ doanh thu</label>
+            <select id="carePeriod" aria-label="Chọn kỳ doanh thu và lợi nhuận">
+              <option value="all">Toàn thời gian</option><option value="7">7 ngày</option>
+              <option value="30">30 ngày</option><option value="90">90 ngày</option>
+              <option value="custom">Tùy chọn ngày</option>
+            </select>
+            <input id="carePeriodStart" type="date" class="hidden" aria-label="Từ ngày" title="Từ ngày">
+            <input id="carePeriodEnd" type="date" class="hidden" aria-label="Đến ngày" title="Đến ngày">
             <button id="careRefreshBtn" class="btn" type="button">Làm mới</button>
           </div>
         </div>
@@ -470,6 +486,12 @@
           <div class="analytics-card"><span>Có đơn tạm</span><strong id="carePending">—</strong></div>
           <div class="analytics-card"><span>Lâu chưa mua</span><strong id="careLapsed">—</strong></div>
           <div class="analytics-card"><span>Còn nợ</span><strong id="careOwing">—</strong></div>
+        </div>
+        <div class="care-finance-cards">
+          <div><span>Doanh thu bán hàng · kỳ</span><strong id="careSystemRevenue">—</strong><small>Từ đơn đã giao</small></div>
+          <div><span>Giá vốn hàng bán · kỳ</span><strong id="careSystemCost">—</strong><small>Giá vốn lúc giao</small></div>
+          <div><span>Lãi gộp · kỳ</span><strong id="careSystemProfit">—</strong><small>Chưa trừ chi phí khác</small></div>
+          <div><span>Biên lãi gộp / vốn</span><strong id="careSystemMargin">—</strong><small id="careSystemCostPct">—</small></div>
         </div>
         <div class="care-filter care-tools">
           <input id="careSearch" placeholder="Tìm khách hàng…" autocomplete="off" aria-label="Tìm khách hàng">
@@ -483,8 +505,8 @@
         </div>
         <div class="care-columns">
           <div class="care-list">
-            <table><thead><tr><th>Khách</th><th>Nhóm</th><th class="num">Đơn giao</th><th class="num">TB/đơn</th><th>Mua cuối</th><th class="num">Đơn tạm</th><th class="num">Công nợ</th></tr></thead>
-              <tbody id="careBody"><tr><td colspan="7" class="empty">Chưa tải báo cáo.</td></tr></tbody>
+            <table><thead><tr><th>Khách</th><th>Nhóm</th><th class="num">Đơn kỳ</th><th class="num">Doanh thu kỳ</th><th class="num">Lãi gộp kỳ</th><th class="num">Biên lãi</th><th class="num">Nợ khác kỳ</th><th class="num">Công nợ hiện tại</th></tr></thead>
+              <tbody id="careBody"><tr><td colspan="8" class="empty">Chưa tải báo cáo.</td></tr></tbody>
             </table>
           </div>
           <section id="careDetail" class="care-detail"><p>Chọn khách để xem lịch sử, nhận xét và lời nhắn gợi ý.</p></section>
