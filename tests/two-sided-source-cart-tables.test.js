@@ -45,7 +45,7 @@ test('source-detail Chi tiết and Gộp: shared header, data, footer and captur
 test('both view/edit cart and all same-type source tables use cache-refreshed static assets',()=>{
   assert.match(page,/fixed-ui-cart-spacing\.css\?ui=[^"]*right-groups=20261008/);
   assert.match(page,/fixed-ui-source-4\.css\?v=[^"]*right-groups=20261008/);
-  assert.match(page,/fixed-ui-runtime-6\.js\?v=[^"]*right-groups=20261008/);
+  assert.match(page,/fixed-ui-runtime-6\.js\?v=semantic-columns-20261008c[^"]*/);
   assert.match(cart, /#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid/);
   assert.match(cart,/cart-qty-control/);
   assert.match(cart,/cart-qty-readonly/);

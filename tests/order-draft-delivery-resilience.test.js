@@ -10,8 +10,8 @@ test('draft promotion uses dedicated deliverOrder instead of re-saving the order
 });
 
 test('promotion refuses to operate without the real backend UUID',()=>{
-  assert.match(source,/if\(isPromotingDraft&&!backendEditOrderId\)[\s\S]*refreshFixedSheets\(\['dontam'\]\)/);
-  assert.match(source,/if\(isPromotingDraft&&!backendEditOrderId\)throw new Error\('Không tìm thấy ID database của đơn tạm\./);
+  assert.match(source,/if\(editingOrderId&&!backendEditOrderId\)\{[\s\S]*refreshFixedSheets\(\[sourceSheet\]\)/);
+  assert.match(source,/if\(editingOrderId&&!backendEditOrderId\)throw new Error\('Không tìm thấy đơn gốc\. Chưa lưu để tránh tạo đơn khác\.'/);
 });
 
 test('successful order mutation is not reported as failed when UI refresh fails',()=>{

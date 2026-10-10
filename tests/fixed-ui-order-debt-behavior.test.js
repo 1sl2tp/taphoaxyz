@@ -405,8 +405,8 @@ test('order item notes survive product edit cart save reload detail and share',a
   ]);
 
   assert.ok(runtime4.includes('data-product-note-wrap="${escapeProductEditorValue(maSp)}"'));
-  assert.ok(runtime4.includes('data-line-note-id="${escapeProductEditorValue(maSp)}"'));
-  assert.ok(runtime4.includes('placeholder="Ghi chú màu / loại..."'));
+  assert.ok(runtime4.includes('data-cart-note-id="${escapeProductEditorValue(maSp)}"'));
+  assert.ok(runtime4.includes('onclick="openCartLineNoteEditor(this)"'));
 
   assert.match(runtime5,/function previewProductLineNote\(input\)/);
   assert.match(runtime5,/cart\[maSp\]\.note = String\(input\.value \|\| ''\)/);

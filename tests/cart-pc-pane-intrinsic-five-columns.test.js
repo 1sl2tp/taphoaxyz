@@ -9,7 +9,9 @@ const owner=css.slice(css.indexOf('/* FIXED STYLE: cart-five-intrinsic-columns-2
 
 test('cart A-E ruler applies to desktop split pane regardless of 1080px viewport',()=>{
   assert.ok(owner.startsWith('/* FIXED STYLE: cart-five-intrinsic-columns-20261008'));
-  assert.doesNotMatch(owner,/@media\s*\(/);
+  // Unconditional base ruler may be followed by narrower device refinements.
+  assert.match(owner,/^\/\* FIXED STYLE: cart-five-intrinsic-columns-20261008/);
+  assert.match(owner,/^([\s\S]*?)@media/);
   assert.match(owner, /Applies to the cart panel at ANY viewport width, including \.pc-mode split pane/);
   assert.ok(owner.includes('minmax(0,1fr)'), 'Tên is flexible');
   assert.match(owner, /column-gap:6px !important;/);
@@ -38,5 +40,5 @@ test('desktop number anchors and quantity control really occupy measured tracks'
   assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-name-note-trigger::after\{[^}]*content:none !important;/);
   assert.match(owner, /#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-name-note-trigger\{[^}]*font-size:12px !important;/);
   assert.match(owner,/minmax\(0,1fr\)/);
-  assert.match(html,/fixed-ui-runtime-6\.js\?v=cart-intrinsic-widths-20261008&pc-panel=20261008/);
+  assert.match(html,/fixed-ui-runtime-6\.js\?v=semantic-columns-20261008c[^"]*/);
 });

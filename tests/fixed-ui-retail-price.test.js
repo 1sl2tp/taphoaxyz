@@ -62,7 +62,7 @@ test('narrow viewport source filters use short labels without changing source va
   assert.match(runtime,/source-tag-label-full/);
   assert.match(runtime,/source-tag-label-mobile/);
   assert.match(runtime,/filterSource\('\$\{src\}'\)/);
-  assert.match(css,/responsive-source-filter-labels/);
+  assert.match(css,/UI-126[^\n]*Sales uses the resolved in-app mode/);
   assert.match(css,/source-tag-label-full\{display:none/);
   assert.match(css,/source-tag-label-mobile\{display:inline/);
 });
@@ -160,12 +160,12 @@ test('supermarket mode shows source filters and sends selected source to RPC',as
 });
 
 
-test('responsive source labels depend on viewport width rather than resolved mobile mode',async()=>{
+test('responsive source labels follow resolved application mobile mode',async()=>{
   const css=await read('src/fixed-ui-source-4.css');
-  assert.match(css,/@media \(max-width:620px\)/);
-  assert.match(css,/#sourceTagsContainer \.source-tag-label-full\{display:none;\}/);
-  assert.match(css,/#sourceTagsContainer \.source-tag-label-mobile\{display:inline;\}/);
-  assert.doesNotMatch(css,/body\[data-resolved-mode="mobile"\] #sourceTagsContainer/);
+  assert.match(css,/body\[data-resolved-mode="mobile"\] #sourceTagsContainer \.source-tag-label-full\{display:none;\}/);
+  assert.match(css,/body\[data-resolved-mode="mobile"\] #sourceTagsContainer \.source-tag-label-mobile\{display:inline;\}/);
+  assert.match(css,/body\[data-resolved-mode="mobile"\] #sourceTagsContainer\{/);
+  assert.doesNotMatch(css,/@media \(max-width:620px\)/);
 });
 
 
@@ -200,8 +200,7 @@ test('product lists use 60-item progressive rendering and infinite scroll',async
 
 test('narrow source chips keep original 12px font size',async()=>{
   const css=await read('src/fixed-ui-source-4.css');
-  assert.match(css,/@media \(max-width:620px\)/);
-  assert.match(css,/#sourceTagsContainer \.source-filter-chip,[\s\S]*font-size:12px !important/);
+  assert.match(css,/body\[data-resolved-mode="mobile"\] #sourceTagsContainer \.source-filter-chip,[\s\S]*font-size:12px !important/);
   assert.doesNotMatch(css,/font-size:11px !important/);
 });
 

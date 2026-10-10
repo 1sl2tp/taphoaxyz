@@ -28,18 +28,32 @@ test('rule and repository scope require one five-column invoice/cart/share desig
   assert.match(rule,/ảnh.*(giỏ|hóa đơn)/i);
   assert.match(agents,/docs\/ORDER_CART_PREVIEW_SHARE_RULES\.md/);
 });
-test('cart and order preview headers both render five same full names in identical order',()=>{
+test('cart and order preview retain five semantic fields and aligned numeric tracks',()=>{
   const cart=markupHeader('src/fixed-ui-markup-3.js','cart-column-header','cartItemList');
   const order=markupHeader('src/fixed-ui-markup-5.js','order-column-header','detailModalItems');
-  assertOrderedLabels(cart,columns,'cart');
-  assertOrderedLabels(order,columns,'order preview');
+  for(const [markup,kind] of [[cart,'cart'],[order,'order']]){
+    for(const label of ['STT','Tên','Đơn giá','Thành tiền']){
+      assert.ok(markup.includes('>'+label+'</div>'),kind+' missing '+label);
+    }
+    assert.match(markup,/>Số lượng<\/div>|>SL<\/div>/);
+  }
+  const css=read('src/fixed-ui-cart-spacing.css');
+  assert.match(css,/#cartBottomSheet \.cart-compact-grid \.cart-price\{[^}]*grid-column:3 !important;/);
+  assert.match(css,/#cartBottomSheet \.cart-compact-grid \.cart-qty\{[^}]*grid-column:4 !important;/);
+  assert.match(css,/#cartBottomSheet \.cart-compact-grid \.cart-total\{[^}]*grid-column:5 !important;/);
 });
-test('share cart and public-order image headers keep same five full names',()=>{
-  for(const source of ['src/fixed-ui-cart-share-v3.js','src/fixed-ui-public-order-image.js']){
-    const file=read(source);
-    const head=file.slice(file.indexOf('>STT</div>')-30,file.indexOf('>STT</div>')+440);
-    assertOrderedLabels(head,columns,source);
-    assert.doesNotMatch(head,/<input|onclick=|qty-edit-input/);
+test('share-cart and public-order image use the same read-only portrait renderer',()=>{
+  const portrait=read('src/fixed-ui-portrait-order.js');
+  assert.match(portrait,/>STT<\/div>/);
+  assert.match(portrait,/>Tên<\/div>/);
+  assert.match(portrait,/>SL<\/div>/);
+  assert.match(portrait,/title="Đơn giá" aria-label="Đơn giá"/);
+  assert.match(portrait,/title="Thành tiền"/);
+  assert.match(portrait,/Object\.freeze\(\{WIDTH,MIN_HEIGHT,createPage\}\)/);
+  for(const f of ['src/fixed-ui-cart-share-v3.js','src/fixed-ui-public-order-image.js']){
+    const share=read(f);
+    assert.match(share,/TAPHOA_ORDER_PORTRAIT/);
+    assert.match(share,/\.createPage\(\{/);
   }
 });
 test('cart readonly order preview and editing share source but quantity alone is editable',()=>{

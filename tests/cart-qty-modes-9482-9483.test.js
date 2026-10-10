@@ -30,7 +30,7 @@ test('IMG_9482: wider readonly name track and shorter edit control never eat nam
   }
   assert.doesNotMatch(runtime,/data-cart-line-note-editor|cart-line-note text-/);
   assert.ok(html.includes('fixed-ui-cart-spacing.css?ui=cart-intrinsic-5-cols-20261008'));
-  assert.ok(html.includes('cart-intrinsic-widths-20261008'));
+  assert.ok(html.includes('fixed-ui-runtime-6.js?v=semantic-columns-20261008c'));
 });
 
 test('readonly quantity uses short SL caption and a width sized to the maximum value',()=>{
@@ -49,5 +49,5 @@ test('readonly quantity uses short SL caption and a width sized to the maximum v
     if(values[0]===123) assert.equal(width,48);
   }
   assert.match(html,/fixed-ui-cart-spacing\.css\?ui=[^"]*cart-intrinsic-5-cols-20261008/);
-  assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*cart-intrinsic-widths-20261008/);
+  assert.match(html,/fixed-ui-runtime-6\.js\?v=semantic-columns-20261008c[^"]*/);
 });

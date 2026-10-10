@@ -56,5 +56,5 @@ test('numeric columns reserve the longest formatted unit/total across current ca
   assert.equal((500*10).toLocaleString('vi-VN'),'5.000');
   assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-intrinsic-5-cols-20261008/);
   assert.match(html,/fixed-ui-runtime-5\.js\?v=[^"]*cart-note-popup=20261008/);
-  assert.match(html,/fixed-ui-runtime-6\.js\?v=[^"]*cart-intrinsic-widths-20261008/);
+  assert.match(html,/fixed-ui-runtime-6\.js\?v=semantic-columns-20261008c[^"]*/);
 });

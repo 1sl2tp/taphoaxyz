@@ -37,9 +37,11 @@ test('max header/value widths across all product rows are measured using real br
   assert.match(js,/context\.measureText\(text\)\.width/);
   assert.match(js,/cartEntries\.map\(\(\[, item\]\) => Number\(item\.price \|\| 0\)\.toLocaleString\('vi-VN'\)\)/);
   assert.match(js,/cartEntries\.map\(\(\[, item\]\) =>\s*\(\(Number\(item\.qty\) \|\| 0\) \* \(Number\(item\.price\) \|\| 0\)\)\.toLocaleString\('vi-VN'\)\)/);
-  for(const [name,label] of [['sttWidth','STT'],['priceWidth','Đơn giá'],['totalWidth','Thành tiền']]){
-    assert.ok(js.includes("columnWidth('"+label+"'"),name);
-  }
+  assert.match(js,/const sttWidth = columnWidth\('STT'/);
+  // Current captions fit measured values; preserve the real-font measurement contract.
+  assert.match(js,/const priceWidth = Math\.ceil\(Math\.max\(widestPrice,measure\(priceLabel,priceHead\)\)\+2\)/);
+  assert.match(js,/const totalWidth = Math\.ceil\(Math\.max\(/);
+  assert.match(js,/widestAmount/);
   for(const col of ['stt','unit','qty','total']){
     assert.ok(js.includes("setProperty('--cart-"+col+"-track'"),col);
   }
@@ -65,5 +67,5 @@ test('the visible gaps from C to D and D to E are equal for both quantity modes'
     assert.equal(g+(controlWidth-visibleWidth)/2,g+(controlWidth-visibleWidth)/2);
   }
   assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-intrinsic-5-cols-20261008/);
-  assert.match(html,/fixed-ui-runtime-6\.js\?v=cart-intrinsic-widths-20261008/);
+  assert.match(html,/fixed-ui-runtime-6\.js\?v=semantic-columns-20261008c[^"]*/);
 });
