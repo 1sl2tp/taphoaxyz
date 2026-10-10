@@ -702,6 +702,7 @@
     function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden'); }
     async function rpc(name,args={}){ if(!client)client=await auth.getClient();const {data,error}=await client.rpc(name,args);if(error)throw error;return data; }
     async function enter(info){
+      customerCare.reset();
       identity=info?.identity||null;
       if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
       if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}

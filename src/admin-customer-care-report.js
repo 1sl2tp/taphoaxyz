@@ -3,7 +3,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
   const $=id=>document.getElementById(id);
   const number=v=>Number(v||0).toLocaleString('vi-VN',{maximumFractionDigits:1});
   const day=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
-  let rows=[],loaded=false,loading=false,selected='';
+  let rows=[],loaded=false,loading=false,selected='',generation=0;
   function address(row){
     const name=String(row.name||'').trim();
     if(/^(Cô|Bác|Chú)\s/i.test(name))return {name,from:'em'};
@@ -106,10 +106,10 @@ export function createCustomerCareReport({rpc,getIdentity}){
     const identity=getIdentity();
     if(identity?.role!=='admin'||document.getElementById('customerCarePane')?.classList.contains('hidden'))return;
     if(loading||(!force&&loaded))return;
-    loading=true;$('careStatus').textContent='Đang tải báo cáo…';
+    loading=true;const requestGeneration=++generation;$('careStatus').textContent='Đang tải báo cáo…';
     try{
       const data=await rpc('taphoa_admin_customer_care_report',{p_inactive_days:elapsed()});
-      if(getIdentity()?.uid!==identity.uid)return;
+      if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid)return;
       rows=Array.isArray(data?.customers)?data.customers:[];
       for(const [id,key] of [
         ['careTotal','total_customers'],['careBought','bought_customers'],
@@ -121,9 +121,16 @@ export function createCustomerCareReport({rpc,getIdentity}){
         ' · chỉ khách nhóm KH · lý do đơn tạm chưa được ghi nhận.';
     }catch(e){
       $('careStatus').textContent='Không tải được báo cáo: '+String(e?.message||'Có lỗi');
-    }finally{loading=false;}
+    }finally{if(generation===requestGeneration)loading=false;}
   }
-  function reset(){rows=[];loaded=false;selected='';}
+  function reset(){
+    generation++;loading=false;rows=[];loaded=false;selected='';
+    $('careBody').replaceChildren();
+    $('careDetail').textContent='Chọn khách để xem báo cáo.';
+    $('careStatus').textContent='Bấm tab để đọc báo cáo.';
+    for(const id of ['careTotal','careBought','careNever','carePending','careLapsed','careOwing'])$(id).textContent='—';
+    $('careSearch').value='';$('careFilter').value='all';
+  }
   $('careRefreshBtn').addEventListener('click',()=>load(true));
   $('careInactiveDays').addEventListener('change',()=>{loaded=false;load(true);});
   $('careSearch').addEventListener('input',render);
