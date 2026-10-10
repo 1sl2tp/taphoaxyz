@@ -28,7 +28,7 @@ test('canonical money: delivered snapshots only; cost missing disqualifies gross
  assert.match(sql,/i\.qty\*i\.unit_price_vnd/);
  assert.match(sql,/i\.qty\*i\.unit_cost_vnd_snapshot/);
  assert.match(sql,/o\.status='delivered'/);
- assert.match(sql,/cost_missing_lines/);
+ assert.match(sql,/missing_cost_lines/);
  assert.match(sql,/coalesce\(pf\.missing,0\)=0/);
  assert.match(sql,/then round\(100\*\(pf\.revenue-pf\.cost\)\/pf\.revenue,2\)/);
  assert.match(sql,/sf\.revenue>0/);
