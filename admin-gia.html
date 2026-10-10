@@ -1732,7 +1732,7 @@
           $('marketRunUpdateBtn').textContent='Tiếp tục cập nhật';
         }else{
           const lastTime=(last&&last.finished_at)||settings.last_completed_at;
-          $('marketUpdateStatus').textContent='Tự động '+Number(settings.interval_days||7)+' ngày/lần · chỉ nguồn đã gán · '+(lastTime?'lần cuối '+new Date(lastTime).toLocaleString('vi-VN'):'chưa có lần hoàn tất');
+          $('marketUpdateStatus').textContent='Chỉ cập nhật khi bấm nút · nguồn đã gán · '+(lastTime?'lần cuối '+new Date(lastTime).toLocaleString('vi-VN'):'chưa có lần hoàn tất');
           $('marketRunUpdateBtn').textContent='Cập nhật nguồn đã gán';
         }
       }catch(error){
