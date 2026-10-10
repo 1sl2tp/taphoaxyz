@@ -5,7 +5,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
   const amount=v=>v===null||v===undefined?'—':number(v);
   const percent=v=>v===null||v===undefined?'—':number(v)+'%';
   const day=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
-  let rows=[],loaded=false,loading=false,selected='',generation=0;
+  let rows=[],loaded=false,loading=false,selected='',generation=0,reloadQueued=false;
   function address(row){
     const name=String(row.name||'').trim();
     if(/^(Cô|Bác|Chú)\s/i.test(name))return {name,from:'em'};
@@ -155,7 +155,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
       const data=await rpc('taphoa_admin_customer_care_report',{
         p_inactive_days:elapsed(),p_start_date:period.p_start_date,p_end_date:period.p_end_date
       });
-      if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid)return;
+      if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
       rows=Array.isArray(data?.customers)?data.customers:[];
       for(const [id,key] of [
         ['careTotal','total_customers'],['careBought','bought_customers'],
@@ -173,10 +173,18 @@ export function createCustomerCareReport({rpc,getIdentity}){
         ' · công nợ hiện tại vẫn tính toàn thời gian · lý do đơn tạm chưa được ghi nhận.';
     }catch(e){
       $('careStatus').textContent='Không tải được báo cáo: '+String(e?.message||'Có lỗi');
-    }finally{if(generation===requestGeneration)loading=false;}
+    }finally{
+      if(generation===requestGeneration){
+        loading=false;
+        if(reloadQueued){
+          reloadQueued=false;
+          if(!document.getElementById('customerCarePane')?.classList.contains('hidden'))void load(true);
+        }
+      }
+    }
   }
   function reset(){
-    generation++;loading=false;rows=[];loaded=false;selected='';
+    generation++;loading=false;reloadQueued=false;rows=[];loaded=false;selected='';
     $('careBody').replaceChildren();
     $('careDetail').textContent='Chọn khách để xem báo cáo.';
     $('careStatus').textContent='Bấm tab để đọc báo cáo.';
@@ -184,17 +192,22 @@ export function createCustomerCareReport({rpc,getIdentity}){
       'careSystemRevenue','careSystemCost','careSystemProfit','careSystemMargin','careSystemCostPct'])$(id).textContent='—';
     $('careSearch').value='';$('careFilter').value='all';
   }
-  $('careRefreshBtn').addEventListener('click',()=>load(true));
-  $('careInactiveDays').addEventListener('change',()=>{loaded=false;load(true);});
+  function refreshPeriod(){
+    loaded=false;
+    if(loading){reloadQueued=true;return;}
+    void load(true);
+  }
+  $('careRefreshBtn').addEventListener('click',refreshPeriod);
+  $('careInactiveDays').addEventListener('change',refreshPeriod);
   $('carePeriod').addEventListener('change',()=>{
     periodVisibility();loaded=false;
-    if($('carePeriod').value!=='custom')load(true);
+    if($('carePeriod').value!=='custom')refreshPeriod();
     else $('careStatus').textContent='Chọn từ ngày và đến ngày để tải báo cáo.';
   });
   for(const id of ['carePeriodStart','carePeriodEnd']){
     $(id).addEventListener('change',()=>{
       loaded=false;
-      if($('carePeriodStart').value&&$('carePeriodEnd').value)load(true);
+      if($('carePeriodStart').value&&$('carePeriodEnd').value)refreshPeriod();
     });
   }
   $('careSearch').addEventListener('input',render);

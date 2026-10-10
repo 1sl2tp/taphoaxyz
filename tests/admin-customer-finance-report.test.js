@@ -51,3 +51,10 @@ test('weighted margin is computed from money totals, not simple average of custo
  assert.equal(Math.round(10000*(revenue-cost)/revenue)/100,19);
  assert.notEqual(19,((c1.sales-c1.cost)/c1.sales+(c2.sales-c2.cost)/c2.sales)*50);
 });
+
+test('quick time switches serialize refreshes and ignore stale period result',()=>{
+ assert.match(js,/reloadQueued=false/);
+ assert.match(js,/if\(loading\)\{reloadQueued=true;return;\}/);
+ assert.match(js,/generation!==requestGeneration\|\|getIdentity\(\)\?\.uid!==identity\.uid\|\|reloadQueued/);
+ assert.match(js,/function refreshPeriod\(/);
+});
