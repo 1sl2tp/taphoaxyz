@@ -52,6 +52,9 @@ jobs:
       - name: Install build dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Require all contract tests to pass before publishing
+        run: npm test
+
       - name: Build exact main commit
         run: npm run build:production
         env:
