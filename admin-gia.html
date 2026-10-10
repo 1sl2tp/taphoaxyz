@@ -207,6 +207,27 @@
       .column-width{width:100%;min-width:0}
       .column-moves{grid-column:2/-1;justify-self:end}
     }
+
+    .care-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .care-tools input,.care-tools select{font:inherit;min-height:38px;border:1px solid #cbd5e1;background:#fff;border-radius:7px;padding:7px 10px}
+    .care-filter{padding:10px;border-bottom:1px solid var(--grid)}
+    .care-filter input{min-width:180px;flex:1 1 200px}
+    .care-columns{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr)}
+    .care-list{min-width:0;max-height:calc(100dvh - 365px);overflow:auto}
+    .care-list table{min-width:710px;width:100%;font-size:12px;table-layout:auto}
+    .care-list th,.care-list td{height:auto;padding:8px}
+    .care-list td.num,.care-list th.num{text-align:right;font-variant-numeric:tabular-nums}
+    .care-list tr.active td{background:#eff6ff}
+    .care-list button{background:none;border:0;padding:0;text-align:left;font-weight:800;color:#1d4ed8}
+    .care-detail{max-height:calc(100dvh - 365px);overflow:auto;min-width:0;border-left:1px solid var(--grid);padding:14px}
+    .care-detail h3{font-size:18px;margin:0 0 5px}.care-detail p{font-size:12px;line-height:1.55}
+    .care-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+    .care-stats>div{border:1px solid var(--grid);border-radius:8px;background:#fbfdff;padding:8px;overflow-wrap:anywhere}
+    .care-stats span{display:block;font-size:10px;color:#64748b}
+    .care-stats strong{display:block;margin-top:3px;font-size:13px}
+    .care-note{background:#fffbeb;color:#92400e;padding:10px;border:1px solid #fde68a;border-radius:8px}
+    .care-detail textarea{width:100%;min-height:125px;resize:vertical;border:1px solid var(--grid);border-radius:8px;padding:10px;line-height:1.5;font:inherit;font-size:13px;background:#fbfdff}
+    @media(max-width:900px){.admin-tabs{width:100%;flex-wrap:wrap}.care-columns{grid-template-columns:1fr}.care-list{max-height:320px}.care-detail{max-height:none;border-left:0;border-top:1px solid var(--grid)}}
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -237,6 +258,7 @@
         <button id="goodsTabBtn" class="admin-tab active" type="button">Hàng hóa</button>
         <button id="marketTabBtn" class="admin-tab" type="button">Siêu thị</button>
         <button id="analyticsTabBtn" class="admin-tab" type="button">Lượt truy cập</button>
+        <button id="customerCareTabBtn" class="admin-tab" type="button">Báo cáo KH</button>
       </div>
 
       <div id="goodsPane">
@@ -430,6 +452,44 @@
           </div>
         </div>
       </section>
+
+      <section id="customerCarePane" class="analytics-panel hidden" aria-label="Báo cáo khách hàng Admin">
+        <div class="analytics-head">
+          <div><strong>Báo cáo & chăm sóc khách hàng</strong><small>Chỉ nhóm KH; chỉ đọc khi mở tab; không gửi tin tự động</small></div>
+          <div class="care-tools">
+            <label for="careInactiveDays">Lâu chưa mua</label>
+            <select id="careInactiveDays"><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option></select>
+            <button id="careRefreshBtn" class="btn" type="button">Làm mới</button>
+          </div>
+        </div>
+        <div id="careStatus" class="analytics-status" aria-live="polite">Bấm tab để đọc báo cáo.</div>
+        <div class="analytics-cards">
+          <div class="analytics-card"><span>Khách hàng</span><strong id="careTotal">—</strong></div>
+          <div class="analytics-card"><span>Đã có đơn giao</span><strong id="careBought">—</strong></div>
+          <div class="analytics-card"><span>Chưa có đơn giao</span><strong id="careNever">—</strong></div>
+          <div class="analytics-card"><span>Có đơn tạm</span><strong id="carePending">—</strong></div>
+          <div class="analytics-card"><span>Lâu chưa mua</span><strong id="careLapsed">—</strong></div>
+          <div class="analytics-card"><span>Còn nợ</span><strong id="careOwing">—</strong></div>
+        </div>
+        <div class="care-filter care-tools">
+          <input id="careSearch" placeholder="Tìm khách hàng…" autocomplete="off" aria-label="Tìm khách hàng">
+          <select id="careFilter" aria-label="Lọc khách hàng">
+            <option value="all">Tất cả khách</option><option value="never">Chưa có đơn giao</option>
+            <option value="lapsed">Lâu chưa mua</option><option value="pending">Có đơn tạm</option>
+            <option value="repeat">Mua lặp lại</option><option value="owing">Còn nợ</option>
+            <option value="demo">Dữ liệu thử</option>
+          </select>
+          <span id="careCount" class="pager-info"></span>
+        </div>
+        <div class="care-columns">
+          <div class="care-list">
+            <table><thead><tr><th>Khách</th><th>Nhóm</th><th class="num">Đơn giao</th><th class="num">TB/đơn</th><th>Mua cuối</th><th class="num">Đơn tạm</th><th class="num">Công nợ</th></tr></thead>
+              <tbody id="careBody"><tr><td colspan="7" class="empty">Chưa tải báo cáo.</td></tr></tbody>
+            </table>
+          </div>
+          <section id="careDetail" class="care-detail"><p>Chọn khách để xem lịch sử, nhận xét và lời nhắn gợi ý.</p></section>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -492,6 +552,7 @@
 
   <script type="module">
     import {createAuthService} from './src/core/auth.js';
+    import {createCustomerCareReport} from './src/admin-customer-care-report.js';
 
     const auth=createAuthService();
     const PAGE_SIZE=100;
@@ -499,6 +560,7 @@
     let selectedSource='';
     let adminView='goods';
     let analyticsLoaded=false,analyticsLoading=false;
+    const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
     let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketSearchTags=[];
     const MARKET_PAGE_SIZE=100;
@@ -647,13 +709,15 @@
     }
 
     function switchAdminView(view){
-      adminView=view==='market'?'market':view==='analytics'?'analytics':'goods';
+      adminView=['goods','market','analytics','customers'].includes(view)?view:'goods';
       $('goodsTabBtn').classList.toggle('active',adminView==='goods');
       $('marketTabBtn').classList.toggle('active',adminView==='market');
       $('analyticsTabBtn').classList.toggle('active',adminView==='analytics');
+      $('customerCareTabBtn').classList.toggle('active',adminView==='customers');
       $('goodsPane').classList.toggle('hidden',adminView!=='goods');
       $('marketPane').classList.toggle('hidden',adminView!=='market');
       $('analyticsPane').classList.toggle('hidden',adminView!=='analytics');
+      $('customerCarePane').classList.toggle('hidden',adminView!=='customers');
       clearTimeout(marketStatusTimer);
       if(adminView==='market'){
         loadMarketMappings(true);
@@ -664,6 +728,8 @@
         },15000);
       }else if(adminView==='analytics'){
         loadQuoteAnalytics(false);
+      }else if(adminView==='customers'){
+        customerCare.load(false);
       }
     }
 
@@ -2226,6 +2292,7 @@
     $('goodsTabBtn').addEventListener('click',()=>switchAdminView('goods'));
     $('marketTabBtn').addEventListener('click',()=>switchAdminView('market'));
     $('analyticsTabBtn').addEventListener('click',()=>switchAdminView('analytics'));
+    $('customerCareTabBtn').addEventListener('click',()=>switchAdminView('customers'));
     $('analyticsRefreshBtn').addEventListener('click',()=>loadQuoteAnalytics(true));
     $('analyticsDays').addEventListener('change',()=>loadQuoteAnalytics(true));
     $('marketOwnSource').addEventListener('change',()=>loadMarketMappings(true));
@@ -2293,7 +2360,7 @@
     $('marketRunUpdateBtn').addEventListener('click',runMarketUpdate);
 
     $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Đang đăng nhập…';try{await enter(await auth.login($('username').value,$('password').value));$('loginMsg').textContent='';}catch(error){showLogin(error?.message||'Không đăng nhập được');}});
-    $('logoutBtn').addEventListener('click',async()=>{await auth.logout().catch(()=>{});identity=null;client=null;showLogin();});
+    $('logoutBtn').addEventListener('click',async()=>{await auth.logout().catch(()=>{});identity=null;client=null;customerCare.reset();showLogin();});
     // UI-136: shared search owner selects once on focus entry only.
     // Do not reselect on click while the user edits an existing query.
     $('searchInput').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadPage(true),220);});
