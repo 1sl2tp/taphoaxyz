@@ -30,3 +30,8 @@ test('read-only report RPC is permission-gated and scoped to customer group',()=
  assert.match(sql,/revoke all on function public\.taphoa_admin_customer_care_report\(integer\) from public,anon/i);
  assert.doesNotMatch(sql,/\b(insert into|update public\.|delete from|taphoa_chat_notify_customer)\b/i);
 });
+
+test('customer care module imports cleanly without browser side effects',async()=>{
+ const mod=await import('../src/admin-customer-care-report.js');
+ assert.equal(typeof mod.createCustomerCareReport,'function');
+});
