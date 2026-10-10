@@ -49,10 +49,13 @@
       || /search|tim[-_]?kiem/i.test(String(el.id||'')+' '+String(el.name||''))
       || el.getAttribute('data-search-autoselect')==='all';
   }
+  const composingSearchInputs=new WeakSet();
   function selectExistingSearchText(event){
     const el=event.target;
-    if(!isSearchInput(el)||!String(el.value||'').length)return;
-    // Selection only: never set value, dispatch input/change or invoke a search.
+    // Focus entry only. A second click must position the caret, not select
+    // everything again (especially during Vietnamese IME composition).
+    if(event.type!=='focusin'||!isSearchInput(el)||composingSearchInputs.has(el)
+       ||!String(el.value||'').length)return;
     try{el.select()}catch(_){}
   }
   /* UI-129 — A single optional microphone for actual search inputs.
@@ -289,7 +292,17 @@
     scan(document.documentElement);
     for(const input of document.querySelectorAll('input'))ensureVoiceSearch(input);
     document.addEventListener('focusin',selectExistingSearchText);
-    document.addEventListener('click',selectExistingSearchText);
+    document.addEventListener('compositionstart',event=>{
+      if(isSearchInput(event.target))composingSearchInputs.add(event.target);
+      // Manual typing supersedes microphone interim text; never write to
+      // input.value from speech callbacks once the native IME takes control.
+      if(voiceSession?.input===event.target&&!voiceSession.finalDelivered){
+        abortVoiceSession(true);
+      }
+    },true);
+    document.addEventListener('compositionend',event=>{
+      composingSearchInputs.delete(event.target);
+    },true);
     document.addEventListener('input',event=>{
       // Human typing takes priority over a still-running microphone session.
       if(voiceSession?.input===event.target && !voiceSession.finalDelivered){

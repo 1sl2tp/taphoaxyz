@@ -436,16 +436,24 @@ function render(){
       input.addEventListener('focus',()=>{
         requestAnimationFrame(()=>input.select());
       });
-      input.addEventListener('input',()=>{
-        formatPriceWhileTyping(input);
-        updateSaveState();
+      // Keep the native raw edit untouched while typing. Formatting the
+      // value on every input event used to jump the caret in the middle.
+      let composing=false;
+      input.addEventListener('compositionstart',()=>{composing=true;});
+      input.addEventListener('compositionend',()=>{
+        composing=false;
+        if(document.activeElement!==input){
+          normalizePriceInput(input);
+          updateSaveState();
+        }
       });
+      input.addEventListener('input',()=>updateSaveState());
       input.addEventListener('blur',()=>{
-        normalizePriceInput(input);
+        if(!composing)normalizePriceInput(input);
         updateSaveState();
       });
       input.addEventListener('keydown',e=>{
-        if(e.key!=='Enter')return;
+        if(e.key!=='Enter'||e.isComposing||e.keyCode===229||composing)return;
         e.preventDefault();
         normalizePriceInput(input);
         updateSaveState();

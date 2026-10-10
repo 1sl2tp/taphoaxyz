@@ -2294,8 +2294,8 @@
 
     $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Đang đăng nhập…';try{await enter(await auth.login($('username').value,$('password').value));$('loginMsg').textContent='';}catch(error){showLogin(error?.message||'Không đăng nhập được');}});
     $('logoutBtn').addEventListener('click',async()=>{await auth.logout().catch(()=>{});identity=null;client=null;showLogin();});
-    $('searchInput').addEventListener('focus',e=>e.target.select());
-    $('searchInput').addEventListener('click',e=>e.target.select());
+    // UI-136: shared search owner selects once on focus entry only.
+    // Do not reselect on click while the user edits an existing query.
     $('searchInput').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadPage(true),220);});
     $('sourceChips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectedSource=b.dataset.source||'';loadPage(true);});
     $('addSourceBtn').addEventListener('click',()=>openSourceDialog('create'));
@@ -2398,7 +2398,7 @@
       }
     });
     $('productBody').addEventListener('click',e=>{
-      if(e.target.matches('.cell-input'))e.target.select();
+      // A focused numeric input must permit a second click to move its caret.
       const row=e.target.closest('tr');if(!row)return;
       const item=items[Number(row.dataset.index)];
       if(e.target.closest('.auto-price-btn')){
@@ -2467,7 +2467,14 @@
       if(row&&e.target.matches('.cell-input'))queueSave(row);
     });
     $('productBody').addEventListener('keydown',e=>{
+      if(e.isComposing||e.keyCode===229||e.target.dataset.imeComposing==='1')return;
       if(e.key==='Enter'&&e.target.matches('.cell-input')){e.preventDefault();e.target.blur();}
+    });
+    $('productBody').addEventListener('compositionstart',e=>{
+      if(e.target.matches('.cell-input'))e.target.dataset.imeComposing='1';
+    });
+    $('productBody').addEventListener('compositionend',e=>{
+      if(e.target.matches('.cell-input'))delete e.target.dataset.imeComposing;
     });
 
     try{const restored=await auth.restore();if(restored)await enter(restored);else showLogin();}
