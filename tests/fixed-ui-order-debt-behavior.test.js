@@ -430,7 +430,7 @@ test('order item notes survive product edit cart save reload detail and share',a
 
   assert.match(runtime13,/let note = String\(r\[9\] \|\| ''\)\.trim\(\)/);
   assert.match(runtime13,/class="order-line-note/);
-  assert.match(share,/String\(item\?\.note \|\| ''\)\.trim\(\)/);
+  assert.match(share,/note:String\(item\?\.note\s*\|\|\s*''\)\.trim\(\)/);
 });
 
 

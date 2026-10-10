@@ -31,7 +31,7 @@ test('mobile five-column header/body and images have fresh versions',()=>{
   assert.match(html,/fixed-ui-markup-3\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-markup-5\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-cart-share-v3\.js\?v=portrait-one-order-20261008[^"]*/);
-  assert.match(html,/fixed-ui-public-order-image\.js\?v=[^"]*order-five-col=20261008/);
+  assert.match(html,/fixed-ui-public-order-image\.js\?v=portrait-one-order-20261008[^"]*/);
 });
 
 test('readonly and editing use separate compact rulers but common five-column order',()=>{
