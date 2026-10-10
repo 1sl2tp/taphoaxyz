@@ -9,6 +9,24 @@
   let updateInFlight=null;
   let lastCheckAt=0;
   let controllerReloading=false;
+  let userHasInteracted=false;
+  // Reading a quote/order or viewing media is an active user task even with
+  // an empty cart or no unfinished form input.
+  for(const eventType of ['pointerdown','keydown','input','touchstart']){
+    document.addEventListener(eventType,()=>{userHasInteracted=true;},
+      {capture:true,passive:true});
+  }
+  function editingInput(){
+    const active=document.activeElement;
+    if(!active)return false;
+    const tag=String(active.tagName||'').toLowerCase();
+    return tag==='input'||tag==='textarea'||tag==='select'||Boolean(active.isContentEditable);
+  }
+  function safeToReload(){
+    if(document.hidden||userHasInteracted||editingInput()||hasLiveCart())return false;
+    if(window.TAPHOA_PRODUCTION?.getIdentity?.())return false;
+    return true;
+  }
 
   function currentBuildId(){
     return String(document.querySelector('meta[name="app-build-id"]')?.content||'').trim();
@@ -37,7 +55,7 @@
 
   function freshNavigate(targetBuild){
     if(!targetBuild||controllerReloading)return false;
-    if(hasLiveCart()){
+    if(!safeToReload()){
       sessionStorage.setItem('taphoa-pwa-update-pending',targetBuild);
       return false;
     }
@@ -143,7 +161,7 @@
     }
     // A new worker took control during app startup. One reload is enough to
     // make the fresh controller serve the newest app shell.
-    if(!hasLiveCart()){
+    if(safeToReload()){
       controllerReloading=true;
       location.reload();
     }
@@ -161,6 +179,7 @@
 
   window.TAPHOA_PWA_UPDATE=Object.freeze({
     check:()=>checkForUpdate({force:true}),
-    getBuildId:currentBuildId
+    getBuildId:currentBuildId,
+    safeToReload
   });
 })();
