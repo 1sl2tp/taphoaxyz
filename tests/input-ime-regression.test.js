@@ -32,3 +32,9 @@ test('admin second click keeps numeric caret; composing Enter cannot blur',()=>{
  assert.match(admin,/e\.isComposing\|\|e\.keyCode===229\|\|e\.target\.dataset\.imeComposing/);
  assert.ok(!admin.includes("addEventListener('click',e=>e.target.select())"));
 });
+
+test('shared IME focus owner cache-busted on every TAPHOA search page',()=>{
+ for(const name of ['index.html','admin-gia.html','bao-gia/index.html','ncc/index.html','kh/index.html']){
+  assert.match(load(name),/fixed-ui-no-hints\.js[^"']*ime-caret=20261010/);
+ }
+});
