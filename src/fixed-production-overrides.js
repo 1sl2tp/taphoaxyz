@@ -979,7 +979,10 @@
     refreshFixedSheets(names).catch(error=>console.warn('refresh fixed UI',error));
   });
 
-  window.onload=async function(){
+  // The sales UI only needs parsed markup and evaluated scripts. Waiting for
+  // window.load also waits for unrelated image/icon/font resources on cold open.
+  // DOMContentLoaded runs after the deferred production bridge module is ready.
+  document.addEventListener('DOMContentLoaded',async function(){
     loadUiPreferences();
     const apiInput=document.getElementById('inputScriptUrl');
     if(apiInput){apiInput.value='taphoa://production';apiInput.readOnly=true;}
@@ -1002,5 +1005,5 @@
       console.error('restore',error);
       showLoginScreen();
     }
-  };
+  },{once:true});
 })();
