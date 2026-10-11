@@ -14,10 +14,12 @@ Sau đăng nhập chỉ có 4 chức năng:
 Chạy project qua HTTP server từ thư mục gốc, ví dụ:
 
 ```bash
-python -m http.server 8080
+npm install --no-audit --no-fund
+npm run build:production
+python -m http.server 8080 --directory dist
 ```
 
-Sau đó mở `http://localhost:8080`.
+Sau đó mở `http://localhost:8080`. Trang bán hàng dùng `dist/src/tailwind.generated.css` được dựng từ các class trong `index.html` và `src/**/*.js`. Không mở trực tiếp `index.html` ở root trước khi build: CSS sản xuất được tạo ở bước build, không dùng Tailwind CDN trên trình duyệt.
 
 Không tách riêng `index.html` khỏi thư mục `src/`, vì source được tổ chức theo module để bảo trì.
 

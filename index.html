@@ -17,17 +17,16 @@
     <link rel="apple-touch-icon" sizes="180x180" href="./src/assets/app-icon-180-bag-v5.png">
     <title>Bán Hàng</title>
     <!-- Startup critical path: start the existing CSS/CDN handshakes early; no new data calls. -->
-    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <script defer src="./src/fixed-pwa-auto-update.js?v=pwa-auto-update-20260921&ui137-safe-resume=20261010"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Generated at build: no Tailwind compiler runs in the browser. -->
+    <link rel="stylesheet" href="./src/tailwind.generated.css?v=BUILD_CSS_HASH">
     <!-- Icons are decorative: loading them must not block parsing the sales shell. -->
     <script defer src="https://unpkg.com/@phosphor-icons/web"></script>
     <script type="module" src="./src/fixed-production-bridge.js?v=shared-cart-20260923&perf=hidden-tabs-20260924&reprice=20261009"></script>
     <!-- Fonts use swap; initialize after markup without delaying first HTML parse. -->
     <script defer src="./src/fixed-ui-font-loader.js?v=font-auto-load-20260921"></script>
-    <script>tailwind.config={theme:{extend:{fontFamily:{sans:['\"Be Vietnam Pro\"','sans-serif']},colors:{primary:'#16a34a',primaryLight:'#f0fdf4',success:'#16a34a',danger:'#ef4444',warning:'#f97316',dark:'#1e293b'}}}};</script>
     <link rel="stylesheet" href="./src/fixed-ui-source-1.css?v=scroll-owner-20261007">
     <link rel="stylesheet" href="./src/fixed-ui-source-2.css?v=global-font-sharp-20260922">
     <link rel="stylesheet" href="./src/fixed-ui-source-3.css">
