@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
 import {cp,mkdir,readFile,readdir,rm,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 
@@ -47,6 +48,34 @@ function normalizeBuildIdentity(relativePath,buffer){
   return buffer;
 }
 
+// Compile exactly once in CI/build. Never run Tailwind CDN/JIT in the client.
+const cssFile='dist/src/tailwind.generated.css';
+const cli=path.resolve('node_modules/tailwindcss/lib/cli.js');
+const compiled=spawnSync(process.execPath, [
+  cli, '--input','src/tailwind.input.css','--output',cssFile,
+  '--config','tailwind.config.cjs','--minify'
+],{encoding:'utf8',maxBuffer:8*1024*1024});
+if(compiled.error||compiled.status!==0){
+  throw new Error('Tailwind static CSS build failed: '+String(compiled.stderr||compiled.error||compiled.status));
+}
+const css=await readFile(cssFile,'utf8');
+if(css.length<20000||css.length>500000){
+  throw new Error('Unexpected Tailwind CSS size '+css.length+' bytes');
+}
+// Fail the release if core Bán hàng layout / login / palette utilities were missed.
+const requiredSelectors=['.flex{','.hidden{','.fixed{','.w-full{','.bg-primary{','.text-primary{','.text-white{','.rounded-xl{'];
+for(const selector of requiredSelectors){
+  if(!css.includes(selector))throw new Error('Tailwind missing required selector '+selector);
+}
+const cssHash=createHash('sha256').update(css).digest('hex').slice(0,16);
+const cssIndex='dist/index.html';
+const unversionedIndex=await readFile(cssIndex,'utf8');
+if(!unversionedIndex.includes('tailwind.generated.css?v=BUILD_CSS_HASH')){
+  throw new Error('Missing Tailwind CSS version placeholder in index.html');
+}
+await writeFile(cssIndex,unversionedIndex.replace('BUILD_CSS_HASH',cssHash));
+
+// Hash the complete release including the new compiled CSS and its versioned URL.
 const files=await listFiles('dist');
 const digest=createHash('sha256');
 for(const relativePath of files){
