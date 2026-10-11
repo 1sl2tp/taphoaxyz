@@ -61,7 +61,14 @@
                 </tr>`;
             document.getElementById('completedSummaryTableBody').innerHTML = sumHtml;
 
+            // Keep an edited order at its original DG/DT position. Backend refresh
+            // may return updated rows first; the issued display number never changes.
             let orderHtml = ''; let orderKeys = Object.keys(orders).reverse();
+            orderKeys.sort((a,b) => {
+                const left = /^D[GT](\\d+)$/i.exec(a);
+                const right = /^D[GT](\\d+)$/i.exec(b);
+                return left && right ? Number(right[1]) - Number(left[1]) : 0;
+            });
             document.getElementById('completedCountBadge').innerText = orderKeys.length;
 
             orderKeys.forEach((k, idx) => {
