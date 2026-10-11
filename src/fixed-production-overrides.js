@@ -71,12 +71,26 @@
   }
 
   async function refreshOrderUiAfterMutation(){
+    // Keep the scroll owner of each order tab at its pre-edit position.
+    // Do not change scroll behavior when switching filters or tabs normally.
+    const nodes = ['pendingOrderListContainer','completedOrderListContainer']
+      .map(id=>document.getElementById(id)?.closest('.overflow-y-auto'))
+      .filter((node,index,array)=>node&&array.indexOf(node)===index)
+      .map(node=>({node,top:node.scrollTop}));
+    const restorePosition=()=>{
+      for(const {node,top} of nodes){
+        if(node.isConnected)node.scrollTop=top;
+      }
+    };
     try{
       await refreshFixedSheets(['dontam','dongiao','thuchi']);
+      restorePosition();
+      requestAnimationFrame(restorePosition);
     }catch(refreshError){
       console.warn('refresh order UI after successful mutation',refreshError);
       setTimeout(()=>{
         refreshFixedSheets(['dontam','dongiao','thuchi'])
+          .then(()=>{restorePosition();requestAnimationFrame(restorePosition);})
           .catch(error=>console.warn('retry refresh order UI',error));
       },500);
     }
