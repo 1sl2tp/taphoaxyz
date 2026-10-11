@@ -304,8 +304,8 @@
             // may return updated rows first; the issued display number never changes.
             let orderHtml = ''; let orderKeys = Object.keys(orders).reverse();
             orderKeys.sort((a,b) => {
-                const left = /^D[GT](\\d+)$/i.exec(a);
-                const right = /^D[GT](\\d+)$/i.exec(b);
+                const left = /^D[GT]([0-9]+)$/i.exec(a);
+                const right = /^D[GT]([0-9]+)$/i.exec(b);
                 return left && right ? Number(right[1]) - Number(left[1]) : 0;
             });
             document.getElementById('pendingCountBadge').innerText = orderKeys.length;
