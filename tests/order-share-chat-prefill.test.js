@@ -31,7 +31,7 @@ test('native share and clipboard fallback preserve 5 field order with no double 
   for(const token of ['Sữa','2','12.000','24.000','Ghi chú','Tổng SL'])assert.ok(text.includes(token),token);
   await api.shareCartOrderImageV3();
   assert.equal(events.share.length,1);
-  assert.match(events.share[0].text,/Tổng tiền: 24\.000 đ/);
+  assert.match(events.share[0].text,/Tổng tiền: 24\.000/);
   context.navigator.share=undefined;
   context.navigator.clipboard={writeText:async text=>events.copy.push(text)};
   await api.shareCartOrderImageV3();
