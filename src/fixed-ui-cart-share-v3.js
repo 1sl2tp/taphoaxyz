@@ -141,6 +141,98 @@
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
+  // Every TAPHOA customer ID is the canonical V21 account UUID. Do not
+  // match customers by display name or send to a guessed conversation.
+  const CHAT_URL='https://chat.taphoa.xyz/';
+  const CHAT_ORIGIN='https://chat.taphoa.xyz';
+  const UUID_PATTERN=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let liveChatShare=null;
+
+  function cartChatCustomerId(){
+    const id=String(typeof selectedCustomer!=='undefined'?selectedCustomer?.id||'':'').trim();
+    return UUID_PATTERN.test(id)?id.toLowerCase():'';
+  }
+
+  function detailChatCustomerId(){
+    // A detail popup may show a different order from the cart's selected KH.
+    // Resolve from its actual order row, never fall back to selectedCustomer.
+    const code=String(document.getElementById('detailModalOrderCode')?.textContent||'')
+      .replace(/^Mã đơn\s*:\s*/i,'').trim();
+    if(!code||typeof appData==='undefined')return'';
+    const sheets=[typeof editingOrderSheet!=='undefined'?editingOrderSheet:'',
+      window.activeViewingSheet,'dongiao','dontam'].filter(Boolean);
+    const ids=new Set();
+    for(const sheet of new Set(sheets)){
+      for(const row of Array.isArray(appData[sheet])?appData[sheet].slice(1):[]){
+        if(String(row?.[0]||'').trim()!==code)continue;
+        const id=String(row?.[1]||'').trim();
+        if(UUID_PATTERN.test(id))ids.add(id.toLowerCase());
+      }
+    }
+    return ids.size===1?[...ids][0]:'';
+  }
+
+  function beginChatOrderShare(customerId){
+    const contactId=String(customerId||'').toLowerCase();
+    if(!UUID_PATTERN.test(contactId)||!globalThis.crypto?.getRandomValues)return null;
+    const random=new Uint8Array(16);
+    crypto.getRandomValues(random);
+    const token=Array.from(random,b=>b.toString(16).padStart(2,'0')).join('');
+    const url=CHAT_URL+'?taphoa_share='+token+'&contact='+encodeURIComponent(contactId);
+
+    // Opening MUST happen in the original click before any await/canvas capture.
+    // This is an explicit image-share gesture; there is NO automatic send.
+    let target;
+    try{target=window.open(url,'taphoa-order-chat');}catch{return null;}
+    if(!target)return null;
+    if(liveChatShare?.cancel)liveChatShare.cancel();
+    let ready=false;
+    let delivered=false;
+    let artifact=null;
+    let stopped=false;
+    const onMessage=event=>{
+      if(stopped||event.origin!==CHAT_ORIGIN||event.source!==target)return;
+      const data=event.data||{};
+      if(data.token!==token)return;
+      if(data.type==='TAPHOA_ORDER_IMAGE_READY'){
+        if(String(data.contactId||'').toLowerCase()!==contactId)return;
+        ready=true;
+        maybeTransfer();
+      }else if(data.type==='TAPHOA_ORDER_IMAGE_ATTACHED'){
+        stopped=true;
+        window.removeEventListener('message',onMessage);
+        if(liveChatShare?.token===token)liveChatShare=null;
+      }
+    };
+    function maybeTransfer(){
+      if(!ready||!artifact||delivered||stopped)return;
+      delivered=true;
+      const file=new File([artifact.blob],artifact.fileName||'donhang.png',{type:'image/png'});
+      try{target.postMessage({type:'TAPHOA_ORDER_IMAGE_FILE',token,contactId,file},CHAT_ORIGIN);}
+      catch{
+        delivered=false;
+        if(typeof showToast==='function')showToast('Không thể chuyển ảnh sang Chat.','info');
+      }
+    }
+    function cancel(){
+      stopped=true;
+      window.removeEventListener('message',onMessage);
+    }
+    const session={token,cancel,setArtifact(result){
+      if(!(result?.blob instanceof Blob)||!result.blob.size){
+        cancel();
+        return false;
+      }
+      artifact=result;
+      maybeTransfer();
+      return true;
+    }};
+    window.addEventListener('message',onMessage);
+    liveChatShare=session;
+    try{target.focus?.();}catch{}
+    return session;
+  }
+
   function getOrderMeta(){
     const orderId = typeof editingOrderId !== 'undefined' ? editingOrderId : '';
     const sheet = typeof editingOrderSheet !== 'undefined' ? editingOrderSheet : '';
@@ -342,6 +434,14 @@
       if(originalShareOrderImage) return originalShareOrderImage();
       return;
     }
+    const directChat=beginChatOrderShare(detailChatCustomerId());
+    if(directChat){
+      const artifact=await prepareDetailShareCache();
+      if(!directChat.setArtifact(artifact)&&typeof showAlertPopup==='function'){
+        showAlertPopup('Lỗi tạo ảnh','Không tạo được ảnh đơn hàng.');
+      }
+      return;
+    }
 
     const signature=detailShareSignature(source);
     const ready=detailShareCache?.signature===signature ? detailShareCache : null;
@@ -367,6 +467,14 @@
     const entries=currentCartEntries();
     if(!entries.length){
       if(typeof showAlertPopup==='function') showAlertPopup('Giỏ hàng trống','Không có sản phẩm để chia sẻ.');
+      return;
+    }
+    const directChat=beginChatOrderShare(cartChatCustomerId());
+    if(directChat){
+      const artifact=await prepareCartShareCache();
+      if(!directChat.setArtifact(artifact)&&typeof showAlertPopup==='function'){
+        showAlertPopup('Lỗi tạo ảnh','Không tạo được ảnh giỏ hàng.');
+      }
       return;
     }
 
