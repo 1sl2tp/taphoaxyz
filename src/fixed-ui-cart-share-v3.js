@@ -449,7 +449,7 @@
       out.push(`${i+1}. ${String(item?.name||id)} | ${vi(qty)} | ${vi(price)} | ${vi(line)}`);
       if(String(item?.note||'').trim())out.push('   Ghi chú: '+String(item.note).trim());
     });
-    out.push('Tổng SL: '+vi(quantity),'Tổng tiền: '+vi(total)+' đ');
+    out.push('Tổng SL: '+vi(quantity),'Tổng tiền: '+vi(total));
     return out.join('\n');
   }
 
