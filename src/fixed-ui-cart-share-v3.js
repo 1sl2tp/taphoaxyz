@@ -428,74 +428,107 @@
     }
   }
 
+  // Single tap: use the OS share sheet for the visible order text, or the
+  // browser's Copy facility on platforms without native text sharing.
+  // No popup, no html2canvas, no new site, and works as installed PWA.
+  function cartNativeShareText(entries){
+    const meta=getOrderMeta();
+    const vi=n=>(Number(n)||0).toLocaleString('vi-VN');
+    const out=[
+      meta.isCreatingSaleDraft?'ĐƠN ĐANG TẠO':'ĐƠN HÀNG'+(meta.orderId?' '+meta.orderId:''),
+      'Khách: '+meta.customer,
+      'Thời gian: '+meta.time,
+      'STT | Tên | SL | Đơn giá | Thành tiền'
+    ];
+    let total=0,quantity=0;
+    entries.forEach(([id,item],i)=>{
+      const qty=Number(item?.qty)||0;
+      const price=Number(item?.price)||0;
+      const line=qty*price;
+      quantity+=qty;total+=line;
+      out.push(`${i+1}. ${String(item?.name||id)} | ${vi(qty)} | ${vi(price)} | ${vi(line)}`);
+      if(String(item?.note||'').trim())out.push('   Ghi chú: '+String(item.note).trim());
+    });
+    out.push('Tổng SL: '+vi(quantity),'Tổng tiền: '+vi(total));
+    return out.join('\n');
+  }
+
+  function detailNativeShareText(source){
+    const get=(selector)=>String(source?.querySelector(selector)?.textContent||'').trim();
+    const orderId=get('#detailModalOrderCode');
+    const out=[
+      'ĐƠN HÀNG'+(orderId?' · '+orderId:''),
+      get('#detailModalKH'),
+      get('#detailModalTime'),
+      'STT | Tên | SL | Đơn giá | Thành tiền'
+    ].filter(Boolean);
+    const rows=[...source.querySelectorAll('#detailModalItems .order-detail-compact-grid')];
+    for(const [i,row] of rows.entries()){
+      const col=selector=>String(row.querySelector(selector)?.textContent||'').trim();
+      out.push(`${col('.order-stt')||i+1}. ${col('.order-name')} | ${col('.order-qty')} | ${col('.order-price')} | ${col('.order-total')}`);
+      if(col('.order-line-note'))out.push('   Ghi chú: '+col('.order-line-note'));
+    }
+    const sum=get('#detailModalTotal');
+    if(sum)out.push('Tổng tiền: '+sum);
+    return out.join('\n');
+  }
+
+  async function shareNativeOrderText(title,text){
+    if(nativeShareInFlight)return;
+    nativeShareInFlight=true;
+    try{
+      if(typeof navigator.share==='function'){
+        try{
+          await navigator.share({title,text});
+          return;
+        }catch(error){
+          if(isShareCancel(error))return;
+          // Share API unsupported/denied: fall back to system clipboard.
+        }
+      }
+      let copied=false;
+      try{
+        if(navigator.clipboard?.writeText){
+          await navigator.clipboard.writeText(text);
+          copied=true;
+        }else{
+          const textarea=document.createElement('textarea');
+          textarea.value=text;
+          textarea.readOnly=true;
+          textarea.style.position='fixed';
+          textarea.style.opacity='0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try{copied=document.execCommand('copy');}finally{textarea.remove();}
+        }
+      }catch{}
+      if(copied){
+        if(typeof showToast==='function')showToast('Đã sao chép đơn hàng. Có thể dán vào ứng dụng bạn chọn.','success');
+      }else if(typeof showAlertPopup==='function'){
+        showAlertPopup('Không thể chia sẻ','Trình duyệt không cho mở bảng Chia sẻ/Sao chép. Hãy thử lại.');
+      }
+    }finally{nativeShareInFlight=false;}
+  }
+
   async function shareDetailOrderImageV3(){
     const source=document.getElementById('orderDetailContentToShare');
     if(!source){
-      if(originalShareOrderImage) return originalShareOrderImage();
+      if(originalShareOrderImage)return originalShareOrderImage();
       return;
     }
-    const directChat=beginChatOrderShare(detailChatCustomerId());
-    if(directChat){
-      const artifact=await prepareDetailShareCache();
-      if(!directChat.setArtifact(artifact)&&typeof showAlertPopup==='function'){
-        showAlertPopup('Lỗi tạo ảnh','Không tạo được ảnh đơn hàng.');
-      }
-      return;
-    }
-
-    const signature=detailShareSignature(source);
-    const ready=detailShareCache?.signature===signature ? detailShareCache : null;
-    if(ready){
-      try{
-        await shareOrDownloadPng(ready.blob,ready.fileName,ready.title,ready.text);
-      }catch(error){
-        if(isShareCancel(error))return;
-        if(typeof showAlertPopup==='function')showAlertPopup('Lỗi chia sẻ',error?.message||String(error));
-      }
-      return;
-    }
-
-    const prepared=await prepareDetailShareCache();
-    if(!prepared){
-      if(typeof showAlertPopup==='function')showAlertPopup('Lỗi tạo ảnh','Không tạo được ảnh đơn hàng.');
-      return;
-    }
-    showShareReadyHint();
+    const detail=detailNativeShareText(source);
+    await shareNativeOrderText('Đơn hàng',detail);
   }
 
   async function shareCartOrderImageV3(){
     const entries=currentCartEntries();
     if(!entries.length){
-      if(typeof showAlertPopup==='function') showAlertPopup('Giỏ hàng trống','Không có sản phẩm để chia sẻ.');
+      if(typeof showAlertPopup==='function')showAlertPopup('Giỏ hàng trống','Không có sản phẩm để chia sẻ.');
       return;
     }
-    const directChat=beginChatOrderShare(cartChatCustomerId());
-    if(directChat){
-      const artifact=await prepareCartShareCache();
-      if(!directChat.setArtifact(artifact)&&typeof showAlertPopup==='function'){
-        showAlertPopup('Lỗi tạo ảnh','Không tạo được ảnh giỏ hàng.');
-      }
-      return;
-    }
-
-    const signature=cartShareSignature(entries);
-    const ready=cartShareCache?.signature===signature ? cartShareCache : null;
-    if(ready){
-      try{
-        await shareOrDownloadPng(ready.blob,ready.fileName,ready.title,ready.text);
-      }catch(error){
-        if(isShareCancel(error))return;
-        if(typeof showAlertPopup==='function')showAlertPopup('Lỗi chia sẻ',error?.message||String(error));
-      }
-      return;
-    }
-
-    const prepared=await prepareCartShareCache();
-    if(!prepared){
-      if(typeof showAlertPopup==='function')showAlertPopup('Lỗi tạo ảnh','Không tạo được ảnh giỏ hàng.');
-      return;
-    }
-    showShareReadyHint();
+    const meta=getOrderMeta();
+    const title=meta.isCreatingSaleDraft?'Đơn đang tạo':'Đơn hàng';
+    await shareNativeOrderText(title,cartNativeShareText(entries));
   }
 
   // UI-113: Expensive PNG rendering is ON-DEMAND only. Never render the
@@ -512,14 +545,14 @@
   const cartShareBtn=document.getElementById('cartShareOrderBtn');
   if(cartShareBtn){
     cartShareBtn.onclick=shareCartOrderImageV3;
-    cartShareBtn.setAttribute('data-cart-share-version','4-ios-prepared');
+    cartShareBtn.setAttribute('data-cart-share-version','5-system-share');
   }
 
   const detailShareBtn=document.getElementById('orderDetailShareButton');
   if(detailShareBtn){
     detailShareBtn.removeAttribute('onclick');
     detailShareBtn.onclick=shareDetailOrderImageV3;
-    detailShareBtn.setAttribute('data-order-share-version','4-ios-prepared');
+    detailShareBtn.setAttribute('data-order-share-version','5-system-share');
   }
 
   document.documentElement.setAttribute('data-ios-share-context',isIosShareContext()?'1':'0');
