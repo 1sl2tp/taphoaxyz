@@ -30,8 +30,8 @@ test('mobile five-column header/body and images have fresh versions',()=>{
   assert.ok(html.includes('fixed-ui-cart-spacing.css?ui=cart-intrinsic-5-cols-20261008'));
   assert.match(html,/fixed-ui-markup-3\.js\?v=[^"]*order-five-col=20261008/);
   assert.match(html,/fixed-ui-markup-5\.js\?v=[^"]*order-five-col=20261008/);
-  assert.match(html,/fixed-ui-cart-share-v3\.js\?v=portrait-one-order-20261008[^"]*/);
-  assert.match(html,/fixed-ui-public-order-image\.js\?v=portrait-one-order-20261008[^"]*/);
+  assert.match(html,/fixed-ui-cart-share-v3\.js\?v=system-share-copy-20261013[^"]*/);
+  assert.match(html,/fixed-ui-public-order-image\.js\?v=system-share-copy-20261013[^"]*/);
 });
 
 test('readonly and editing use separate compact rulers but common five-column order',()=>{
