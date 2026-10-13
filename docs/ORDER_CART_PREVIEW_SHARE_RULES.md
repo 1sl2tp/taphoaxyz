@@ -32,6 +32,8 @@ Cập nhật: 2026-10-08. Phạm vi: **1sl2tp/taphoaxyz**, giao diện đơn hà
 4. **Một chủ sở hữu căn cột**: `src/fixed-ui-cart-spacing.css`. Bất kỳ thay đổi header/row nào phải sửa ở đây và kiểm tra cả cart + order detail (cùng width và padding).
 5. **Hiển thị chia sẻ**: không sửa logic `TAPHOA_SHARE_CAPTURE`, iOS fallback, việc chuẩn bị cache/click-to-share hay thêm network call. Không dựng thêm pack/không ghi DB/log/không thay Edge function.
 
+**Ngoại lệ đã thống nhất 13/10/2026 — nút Chia sẻ gửi ảnh đơn vào Chat KH:** Khi giỏ/chi tiết đơn có mã khách UUID chuẩn từ dữ liệu TAPHOA, một lần bấm Chia sẻ mở `chat.taphoa.xyz` đến chính tài khoản KH đó, giữ nguyên ảnh PNG đang tạo theo đường capture cũ, chuyển file qua `postMessage` với origin chính xác + nonce + cửa sổ opener. Chat đợi đăng nhập Admin, xác minh liên hệ tồn tại và conversation đúng rồi mới đính kèm vào bản nháp; **không tự gửi** (người dùng bấm Gửi). Với popup bị chặn, khách chưa gán hoặc không xác minh được mã KH thì giữ luồng chia sẻ hệ điều hành/preview hiện có; tuyệt đối không dò tên KH hoặc chuyển ảnh cho người khác. Không thêm backend/Storage trung gian, lịch nền, RPC, log, Edge, không tác động bản in 5 cột; chưa có xác minh Safari/iOS PWA thực tế thì ghi **E4 PENDING**, không gọi PROD VERIFIED. Spec: `SPEC-TAPHOA-CHAT-ORDER-IMAGE-PREFILL-20261013` (Rule chung tab 08 row111).
+
 ## Checklist trước khi commit
 
 - [ ] Kiểm tra header 5 cột ở cart, xem trước, đơn đã lưu, chia sẻ và ảnh công khai.
