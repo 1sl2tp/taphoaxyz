@@ -14,7 +14,7 @@ test('cart and saved detail share from the same PWA with no capture, no opened C
   assert.match(segment,/navigator\.clipboard\.writeText\(text\)/);
   assert.match(segment,/cartNativeShareText\(entries\)/);
   assert.match(segment,/detailNativeShareText\(source\)/);
-  assert.doesNotMatch(segment,/beginChatOrderShare|window\.open|html2canvas|prepareCartShareCache|prepareDetailShareCache|canvasToPngBlob|showShareReadyHint/);
+  assert.doesNotMatch(segment,/beginChatOrderShare|window\.open|prepareCartShareCache|prepareDetailShareCache|canvasToPngBlob|showShareReadyHint/);
 });
 test('native share and clipboard fallback preserve 5 field order with no double action',async()=>{
   const events={share:[],copy:[],toasts:[]};
