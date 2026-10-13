@@ -54,7 +54,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   // The shared portrait renderer replaced the old open-before-prep path.
   assert.match(cartShare,/function prepareDetailClone\(source\)/);
   assert.match(cartShare,/TAPHOA_ORDER_PORTRAIT/);
-  assert.match(cartShare,/data-cart-share-version','4-ios-prepared/);
+  assert.match(cartShare,/data-cart-share-version','5-system-share/);
   assert.match(sourceShare,/const sourceShareCache = new Map\(\)/);
   assert.match(sourceShare,/prepareSourceDetailShare/);
   assert.match(sourceShare,/captureLongSourceSharePages\(source, baseName, modeLabel, showProgress = true\)/);
