@@ -1,5 +1,14 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-TAPHOA-CART-NEWEST-FIRST-20261015 — Thêm mới lên đầu, sửa SL giữ vị trí
+
+- **Lỗi xác định từ source:** `src/fixed-ui-behavior.js::updateCart` đã gán `__lastTouched = ++__cartTouchSeq` khi sản phẩm chưa ở giỏ; nhưng `src/fixed-ui-runtime-5.js::previewQtyInput/commitQtyEditor` cho phép **nhập số lượng trực tiếp ở thẻ sản phẩm** để tạo sản phẩm mới mà không gán `__lastTouched`. `src/fixed-ui-runtime-6.js::renderCartUI` và các đường lưu/chia sẻ sắp theo dấu này giảm dần, nên các dòng nhập SL trực tiếp bị tụt cuối sau những dòng thêm bằng dấu +. Ảnh Chrome của người dùng hiển thị các dòng Dau nep bên dưới dù vừa tìm/thêm.
+- **Chuẩn duy nhất của giỏ bán hàng:** Sản phẩm **chưa có trong giỏ**, được thêm qua **dấu + hoặc nhập SL lần đầu**, phải nhận thứ tự tăng dần từ cùng `__cartTouchSeq`, nên **mới nhất ở hàng 1**. Một lần tạo dòng = một lần stamp; `input` rồi `blur/Enter` không ghi stamp lần nữa. Khi đã có sản phẩm, tăng/giảm SL, đổi đơn giá, ghi chú hoặc sửa input chỉ đổi dữ liệu, **không làm nhảy hàng**. Xóa hết rồi thêm lại là một lần thêm mới, lên đầu. Dòng người dùng không thấy/sửa chưa được phép không được thay đổi.
+- **Đơn đã lưu/tạm:** `loadOrderIntoCart` trong `src/fixed-ui-runtime-12.js` dùng thứ tự đã lưu và `touchBase` hiện hành; **không đảo ngược STT khi mở đơn**. Nếu trong lúc sửa đơn thêm mã SP mới thì mã ấy lên đầu, dòng cũ giữ tương quan. `renderCartUI` và `fixed-ui-behavior` cùng dựa trên `__lastTouched`, không tạo quy tắc sort khác.
+- **Ảnh hưởng:** thay cực nhỏ tại `previewQtyInput` và `commitQtyEditor` trong `src/fixed-ui-runtime-5.js`. Không đổi schema, tính giá, số lượng, 5 cột, STT lưu đơn, hành vi chia sẻ, backend, nguồn media, API, cron, băng thông, cache/SW hoặc đồng bộ giỏ khách. Có test mô phỏng click + → nhập SL sản phẩm mới → nhập SL sửa lại → Enter/blur → thay SL cũ → xóa/thêm lại → đơn đã lưu.
+- **Gate:** E1 code/test; E2 repo actions; E3 deploy cùng phiên bản runtime-5 mới với cache query thay đổi; E4 người dùng chụp giỏ sau thao tác thực. Đạt E3 không có nghĩa E4 đã xác nhận.
+
+
 Cập nhật: 2026-10-08. Phạm vi: **1sl2tp/taphoaxyz**, giao diện đơn hàng của TAPHOA; không liên quan YouTube, Chat, Supabase hay nghiệp vụ định giá.
 
 ## CANONICAL 09/10/2026 — 5 cột và nút cập nhật giá đơn tạm
