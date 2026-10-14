@@ -246,8 +246,12 @@
 
             const qty = Math.max(1, parsed);
             const meta = getQtyMeta(maSp, input);
+            const isNewCartLine = !cart[maSp];
             const existing = cart[maSp] || {};
             cart[maSp] = { ...existing, name: meta.name, price: meta.price, qty, note: String(existing.note || '') };
+            // Same insertion sequence as the + button: first NEW line goes to
+            // the top, while editing qty/blur never moves an existing line.
+            if (isNewCartLine) cart[maSp].__lastTouched = ++__cartTouchSeq;
 
             syncQtyEditors(maSp, qty, input);
 
@@ -278,8 +282,12 @@
             input.value = qty;
 
             const meta = getQtyMeta(maSp, input);
+            const isNewCartLine = !cart[maSp];
             const existing = cart[maSp] || {};
             cart[maSp] = { ...existing, name: meta.name, price: meta.price, qty, note: String(existing.note || '') };
+            // Same insertion sequence as the + button: first NEW line goes to
+            // the top, while editing qty/blur never moves an existing line.
+            if (isNewCartLine) cart[maSp].__lastTouched = ++__cartTouchSeq;
             syncQtyEditors(maSp, qty, input);
 
             if (input.dataset.qtyEditor === 'cart') {
