@@ -49,6 +49,17 @@ async function staleWhileRevalidate(request,event){
   return networkPromise;
 }
 
+// Use the last-good public shell immediately on returning PWA launches.
+// Revalidate once in background; no business RPC or session state is cached here.
+// Explicit version-updater navigation bypasses this shortcut to fetch the new build.
+async function navigationCachedFirst(request,event){
+  const cache=await caches.open(CACHE_NAME);
+  const cached=await cache.match(request)||await cache.match('./');
+  if(!cached)return networkFirst(new Request(request,{cache:'no-cache'}));
+  event.waitUntil(networkFirst(new Request(request,{cache:'no-cache'})).catch(()=>null));
+  return cached;
+}
+
 function isFastCachedAsset(request,url){
   if(url.searchParams.has('v'))return true;
   return request.destination==='image'||request.destination==='font';
@@ -67,7 +78,11 @@ self.addEventListener('fetch',event=>{
   }
 
   if(request.mode==='navigate'||request.destination==='document'){
-    event.respondWith(networkFirst(new Request(request,{cache:'no-cache'})));
+    if(url.searchParams.has('__taphoa_build')){
+      event.respondWith(networkFirst(new Request(request,{cache:'no-cache'})));
+    }else{
+      event.respondWith(navigationCachedFirst(request,event));
+    }
     return;
   }
 
