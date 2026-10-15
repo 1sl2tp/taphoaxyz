@@ -783,7 +783,7 @@
           return '<tr><td>'+esc(new Date(row.last_seen_at).toLocaleString('vi-VN'))+'</td><td>'+esc(device)+'</td><td title="'+esc(approx)+'">'+esc(place)+'</td><td>'+esc(row.ip_masked||'—')+'</td><td>'+esc(row.browser||'—')+'</td><td>'+esc(row.os||'—')+'</td><td class="num">'+esc(analyticsNumber(row.view_count))+'</td></tr>';
         }).join('')||'<tr><td colspan="7">Chưa có lượt truy cập.</td></tr>';
         analyticsLoaded=true;
-        $('analyticsStatus').textContent='Đang xem '+days+' ngày gần nhất · dữ liệu chỉ cập nhật khi mở/làm mới tab.';
+        $('analyticsStatus').textContent='Đang xem '+days+' ngày gần nhất · khu vực IP chỉ mang tính ước tính; dữ liệu cập nhật khi mở/làm mới tab.';
       }catch(error){
         $('analyticsStatus').textContent='Không tải được báo cáo: '+(error?.message||'Lỗi không xác định');
       }finally{
