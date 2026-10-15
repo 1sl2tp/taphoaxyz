@@ -11,9 +11,14 @@ test('public quote records lightweight visit and enriches coarse IP location wit
   assert.match(quote,/taphoa_public_quote_record_visit/);
   assert.match(quote,/taphoa_public_quote_enrich_visit/);
   assert.match(quote,/taphoa\.quote\.visitor\.v1/);
-  assert.match(quote,/https:\/\/ipapi\.co\/json\//);
+  assert.match(quote,/https:\/\/ipwho\.is\//);
   assert.match(quote,/maskPublicIp/);
+  assert.match(quote,/taphoa\.quote\.ipgeo\.v2/);
+  assert.match(quote,/86400000/);
   assert.match(quote,/3600000/);
+  assert.match(quote,/raw\.success!==true/);
+  assert.match(quote,/if\(!\(geo\.ip_masked\|\|geo\.city\|\|geo\.region\|\|geo\.country\)\)return/);
+  assert.doesNotMatch(quote,/p_ip\s*:/);
   assert.doesNotMatch(quote,/navigator\.geolocation/);
 });
 
@@ -21,7 +26,10 @@ test('admin analytics is lazy and exposes total, daily, device and coarse IP loc
   assert.match(admin,/id="analyticsTabBtn"[^>]*>Lượt truy cập</);
   assert.match(admin,/id="analyticsTotal"/);
   assert.match(admin,/id="analyticsDailyBody"/);
-  assert.match(admin,/Khu vực \(IP\)/);
+  assert.match(admin,/Khu vực IP \(ước tính\)/);
+  assert.match(admin,/IP \(ẩn bớt\)/);
+  assert.match(admin,/Mỗi lần mở\/tải lại/);
+  assert.match(admin,/slice\(0,10\)/);
   assert.match(admin,/row\.ip_masked/);
   assert.match(admin,/row\.device_model/);
   assert.match(admin,/taphoa_admin_quote_visit_report/);
