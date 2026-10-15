@@ -609,30 +609,38 @@ function maskPublicIp(value){
   return '';
 }
 async function quoteIpGeo(){
-  const key='taphoa.quote.ipgeo.v1';
+  // An IP lookup provides only a rough network area, not a person's address.
+  // Cache one result per browser/day. Failed requests also back off to avoid
+  // repeated network calls and provider quotas on every page refresh.
+  const key='taphoa.quote.ipgeo.v2';
   try{
     const cached=JSON.parse(localStorage.getItem(key)||'null');
-    if(cached&&Date.now()-Number(cached.at||0)<3600000&&cached.data)return cached.data;
+    const ttl=cached?.ok?86400000:(cached?.limited?86400000:3600000);
+    if(cached&&Date.now()-Number(cached.at||0)<ttl)return cached.data||{};
   }catch{}
   const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(),2500);
+  const timer=setTimeout(()=>ctrl.abort(),4500);
+  let limited=false;
   try{
-    const res=await fetch('https://ipapi.co/json/',{signal:ctrl.signal,credentials:'omit'});
+    const res=await fetch('https://ipwho.is/',{signal:ctrl.signal,credentials:'omit'});
+    limited=res.status===429;
     if(!res.ok)throw new Error('geo '+res.status);
     const raw=await res.json();
+    if(raw.success!==true || !(raw.city||raw.region||raw.country))throw new Error('geo unavailable');
     const data={
       ip_masked:maskPublicIp(raw.ip),
       city:String(raw.city||'').slice(0,80),
       region:String(raw.region||'').slice(0,100),
-      country:String(raw.country_name||raw.country||'').slice(0,80),
-      postal:String(raw.postal||'').slice(0,24),
-      latitude:Number.isFinite(Number(raw.latitude))?Number(raw.latitude):null,
-      longitude:Number.isFinite(Number(raw.longitude))?Number(raw.longitude):null,
-      org:String(raw.org||'').slice(0,120)
+      country:String(raw.country||'').slice(0,80),
+      postal:'',
+      latitude:null,
+      longitude:null,
+      org:String(raw.connection?.org||raw.connection?.isp||'').slice(0,120)
     };
-    try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data}));}catch{}
+    try{localStorage.setItem(key,JSON.stringify({at:Date.now(),ok:true,data}));}catch{}
     return data;
   }catch{
+    try{localStorage.setItem(key,JSON.stringify({at:Date.now(),ok:false,limited,data:{}}));}catch{}
     return {};
   }finally{
     clearTimeout(timer);
@@ -653,11 +661,13 @@ function recordQuoteVisit(){
       p_referrer_host:info.referrer,
       p_source:activeSource
     })
-  }).then(()=>({info,visitor})).catch(()=>null);
+  }).then(res=>res.ok?{info,visitor}:null).catch(()=>null);
 }
 async function enrichQuoteVisit(base){
   if(!base)return;
   const geo=await quoteIpGeo();
+  // An upstream outage must not wipe an earlier successful geo enrichment.
+  if(!(geo.ip_masked||geo.city||geo.region||geo.country))return;
   fetch(SUPABASE+'/rest/v1/rpc/taphoa_public_quote_enrich_visit',{
     method:'POST',
     keepalive:true,

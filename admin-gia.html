@@ -421,7 +421,7 @@
         <div class="analytics-head">
           <div>
             <strong>Lượt truy cập báo giá</strong>
-            <small>Đếm lượt mở /bao-gia/. Chỉ đọc báo cáo khi mở tab này; không theo dõi nền.</small>
+            <small>Mỗi lần mở/tải lại /bao-gia/ được tính một lượt, không đồng nghĩa một khách hàng. Chỉ đọc báo cáo khi mở tab này.</small>
           </div>
           <div class="analytics-actions">
             <select id="analyticsDays" aria-label="Khoảng thời gian">
@@ -435,16 +435,16 @@
         <div id="analyticsStatus" class="analytics-status">Mở tab để đọc báo cáo.</div>
         <div class="analytics-cards">
           <div class="analytics-card"><span>Tổng lượt truy cập</span><strong id="analyticsTotal">—</strong></div>
-          <div class="analytics-card"><span>Hôm nay</span><strong id="analyticsToday">—</strong></div>
+          <div class="analytics-card"><span>Lượt mở hôm nay</span><strong id="analyticsToday">—</strong></div>
           <div class="analytics-card"><span>7 ngày gần nhất</span><strong id="analyticsWeek">—</strong></div>
-          <div class="analytics-card"><span>Thiết bị khác nhau</span><strong id="analyticsUnique">—</strong></div>
+          <div class="analytics-card"><span>Trình duyệt khác nhau</span><strong id="analyticsUnique">—</strong></div>
         </div>
         <div class="analytics-grid">
           <div class="analytics-block">
             <h3>Theo ngày</h3>
             <div class="analytics-table-wrap">
               <table class="analytics-table">
-                <thead><tr><th>Ngày</th><th class="num">Lượt</th><th class="num">Thiết bị</th></tr></thead>
+                <thead><tr><th>Ngày</th><th class="num">Lượt mở</th><th class="num">Trình duyệt</th></tr></thead>
                 <tbody id="analyticsDailyBody"></tbody>
               </table>
             </div>
@@ -453,7 +453,7 @@
             <h3>Truy cập gần đây</h3>
             <div class="analytics-table-wrap">
               <table class="analytics-table">
-                <thead><tr><th>Gần nhất</th><th>Thiết bị</th><th>Khu vực (IP)</th><th>IP</th><th>Trình duyệt</th><th>HĐH</th><th class="num">Lượt/ngày</th></tr></thead>
+                <thead><tr><th>Gần nhất</th><th>Thiết bị</th><th title="Ước tính theo IP mạng; không phải vị trí GPS hay địa chỉ của khách">Khu vực IP (ước tính)</th><th>IP (ẩn bớt)</th><th>Trình duyệt</th><th>HĐH</th><th class="num">Lượt/ngày</th></tr></thead>
                 <tbody id="analyticsRecentBody"></tbody>
               </table>
             </div>
@@ -758,7 +758,8 @@
 
     const analyticsNumber=value=>Number(value||0).toLocaleString('vi-VN');
     const analyticsDate=value=>{
-      const d=new Date(String(value||'')+'T00:00:00');
+      const day=String(value||'').slice(0,10);
+      const d=/^\d{4}-\d{2}-\d{2}$/.test(day)?new Date(day+'T00:00:00'):new Date(NaN);
       return Number.isNaN(d.getTime())?String(value||''):d.toLocaleDateString('vi-VN');
     };
     async function loadQuoteAnalytics(force=false){
@@ -776,9 +777,9 @@
         $('analyticsDailyBody').innerHTML=daily.map(row=>'<tr><td>'+esc(analyticsDate(row.day))+'</td><td class="num">'+esc(analyticsNumber(row.views))+'</td><td class="num">'+esc(analyticsNumber(row.unique_visitors))+'</td></tr>').join('')||'<tr><td colspan="3">Chưa có lượt truy cập.</td></tr>';
         const recent=Array.isArray(data?.recent)?data.recent:[];
         $('analyticsRecentBody').innerHTML=recent.map(row=>{
-          const place=[row.city,row.region,row.country,row.postal].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ')||'—';
+          const place=[row.city,row.region,row.country].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ')||'Chưa xác định';
           const device=[row.device_model,row.device_type].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ')||'—';
-          const approx=(row.latitude!=null&&row.longitude!=null)?'≈ '+row.latitude+', '+row.longitude:'';
+          const approx='Khu vực ước tính từ IP mạng, có thể sai khi dùng VPN hoặc mạng di động.';
           return '<tr><td>'+esc(new Date(row.last_seen_at).toLocaleString('vi-VN'))+'</td><td>'+esc(device)+'</td><td title="'+esc(approx)+'">'+esc(place)+'</td><td>'+esc(row.ip_masked||'—')+'</td><td>'+esc(row.browser||'—')+'</td><td>'+esc(row.os||'—')+'</td><td class="num">'+esc(analyticsNumber(row.view_count))+'</td></tr>';
         }).join('')||'<tr><td colspan="7">Chưa có lượt truy cập.</td></tr>';
         analyticsLoaded=true;
