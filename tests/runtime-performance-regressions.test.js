@@ -74,3 +74,32 @@ test('TAPHOA revision sync is event-driven with no visible-tab interval poll',as
   assert.match(migration,/create policy "taphoa_revisions_signal_read"/i);
   assert.match(migration,/alter publication supabase_realtime add table public\.taphoa_revisions/i);
 });
+
+
+test('verified cached account opens before expensive business bootstrap',async()=>{
+  const [bridge,auth]=await Promise.all([
+    read('src/fixed-production-bridge.js'),
+    read('src/core/auth.js')
+  ]);
+  const section=bridge.slice(bridge.indexOf('async function attachSession(info)'),bridge.indexOf('async function login(username,password)'));
+  assert.ok(section.length>0,'attachSession owner must exist');
+  assert.match(auth,/const identity=await readAccess\(c\);[\s\S]*return \{session:data\.session,identity,client:c\}/);
+  assert.match(section,/snapshot\.load\(uid\)/);
+  assert.match(section,/cachedRole===verifiedRole/,'account role must match before restoring the cache');
+  assert.ok(section.indexOf('appState.setBootstrap(cached.data)')<section.indexOf('await bootstrap();await startSync();'),
+    'cached data must be mounted ahead of the first network bootstrap');
+  assert.match(section,/void startSync\(\)[\s\S]*\.then\(\(\)=>syncOnce\(\)\)/,
+    'background refresh must use the existing revision sync owner');
+  assert.doesNotMatch(section,/setInterval|taphoa_app_bootstrap.*taphoa_app_bootstrap/);
+});
+
+test('PWA returns its last-good public shell without waiting on the network',async()=>{
+  const [sw,html]=await Promise.all([read('sw.js'),read('index.html')]);
+  assert.match(sw,/async function navigationCachedFirst\(request,event\)/);
+  assert.match(sw,/const cached=await cache\.match\(request\)\|\|await cache\.match\('\.\/'\)/);
+  assert.match(sw,/event\.waitUntil\(networkFirst\(/);
+  assert.match(sw,/url\.searchParams\.has\('__taphoa_build'\)/,'explicit build refresh bypasses cached shell');
+  assert.match(sw,/version\.json[\s\S]*cache:'no-store'/);
+  assert.match(html,/<script async src="https:\/\/unpkg\.com\/@phosphor-icons\/web"><\/script>/,
+    'decorative CDN must not block DOMContentLoaded');
+});
