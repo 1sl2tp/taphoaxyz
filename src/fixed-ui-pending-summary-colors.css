@@ -215,11 +215,25 @@ body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-c
     align-items:center;
   }
 }
+/* SPEC-TAPHOA-ORDER-CARD-MOBILE-DENSITY-20261015:
+   On phones the name and amount share one baseline like the desktop card.
+   Preserve 2-line wrapping only for unusually long customer names. */
 @media (max-width:480px){
+  #completedOrderListContainer > .allow-fast-click,
+  #pendingOrderListContainer > .allow-fast-click{
+    padding:11px 12px;
+    margin-bottom:8px;
+  }
+  #completedOrderListContainer > .allow-fast-click > .pointer-events-none,
+  #pendingOrderListContainer > .allow-fast-click > .pointer-events-none{
+    gap:10px;
+  }
   #completedOrderListContainer .order-card-title-row,
   #pendingOrderListContainer .order-card-title-row{
-    grid-template-columns:minmax(0,1fr);
-    gap:4px;
+    grid-template-columns:minmax(0,1fr) max-content;
+    column-gap:8px;
+    row-gap:0;
+    align-items:baseline;
   }
   #completedOrderListContainer .order-card-title-row > p:first-child,
   #pendingOrderListContainer .order-card-title-row > p:first-child{
@@ -232,8 +246,16 @@ body[data-auth-role="user"] .order-summary-panel .summary-compact-table td:nth-c
   }
   #completedOrderListContainer .order-card-total,
   #pendingOrderListContainer .order-card-total{
+    grid-column:2;
+    grid-row:1;
     justify-self:end;
+    align-self:baseline;
     font-variant-numeric:tabular-nums;
+  }
+  #completedOrderListContainer .order-product-preview,
+  #pendingOrderListContainer .order-product-preview{
+    margin-top:3px;
+    padding-top:3px;
   }
 }
 
