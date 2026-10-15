@@ -89,3 +89,11 @@ Không rewrite toàn bộ. Mỗi lần sửa thật một vùng thì chuyển ow
 
 **Lỗi đang nằm ở Platform, Shell, Screen, Component hay Control?**  
 Nếu chưa trả lời được thì chưa thêm CSS/JS.
+
+## UI-POLICY-20261016 · Thông báo chính sách khách hàng
+
+- Dùng **một owner nội dung và modal duy nhất**: `src/customer-policy-notice.js` + `src/customer-policy-notice.css`.
+- Mount qua `index.html` (bán hàng) và `bao-gia/index.html` (báo giá công khai); không chạm backend, đơn hàng, tìm kiếm, giỏ, phân quyền hoặc chat.
+- Mỗi trang mở một lần mỗi phiên duyệt và mỗi phiên bản thông báo; bấm **Đã đọc · Tiếp tục** / đóng, có nút xem lại. Chỉ dùng `sessionStorage` cho trạng thái đã xem, không coi đó là chữ ký hay đồng ý công nợ.
+- Modal scroll nội dung riêng, footer action không trôi, đóng/mở bằng nút, Escape; an toàn iPhone safe-area / PWA và `@media print`.
+- Bản chính sách là **thông tin cho khách tự chọn hình thức thanh toán**, không tự cấp hạn mức, khóa đơn hoặc gửi tin tự động. Khi thay đổi nội dung, nâng VERSION trong script và query asset ở 2 trang.

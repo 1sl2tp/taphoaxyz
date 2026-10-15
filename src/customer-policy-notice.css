@@ -1,0 +1,42 @@
+/* UI-POLICY-20261016: one shared, isolated notice on home and /bao-gia/. */
+.tp-policy-overlay[hidden]{display:none!important}
+.tp-policy-overlay{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:clamp(10px,2.5vw,28px);padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom));background:rgba(15,23,42,.67);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#172a25}
+.tp-policy-dialog{width:min(100%,760px);max-height:min(91dvh,820px);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border-radius:24px;background:#fff;border:1px solid rgba(255,255,255,.82);box-shadow:0 28px 90px rgba(0,0,0,.3);font-size:14px;line-height:1.65}
+.tp-policy-header{background:linear-gradient(125deg,#103d34 0%,#176e54 100%);padding:20px 27px 21px;color:#fff}
+.tp-policy-header-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.tp-policy-brand{display:flex;align-items:center;gap:9px;letter-spacing:.12em;text-transform:uppercase;font-size:10px;font-weight:800;color:#d5f3e8}
+.tp-policy-brand-mark{width:21px;height:21px;display:grid;place-items:center;border-radius:7px;background:#def8e7;color:#176e54;font-size:14px}
+.tp-policy-close{border:1px solid rgba(255,255,255,.33);border-radius:50%;background:rgba(255,255,255,.12);color:#fff;width:37px;height:37px;display:grid;place-items:center;font-family:inherit;font-size:25px;line-height:1;cursor:pointer;flex-shrink:0}
+.tp-policy-close:hover{background:rgba(255,255,255,.23)}
+.tp-policy-label{margin-top:12px;font-size:12px;font-weight:750;letter-spacing:.02em;color:#bbf1dd}
+.tp-policy-header h2{color:#fff;font-size:clamp(21px,3.8vw,28px);line-height:1.2;letter-spacing:-.03em;margin:4px 0 8px;font-weight:800}
+.tp-policy-header p{color:#e2f4ec;margin:0;font-size:13px;line-height:1.6;max-width:590px}
+.tp-policy-tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+.tp-policy-tags span{font-size:10px;font-weight:700;padding:4px 9px;border-radius:50px;background:rgba(255,255,255,.12);color:#f1fff8;border:1px solid rgba(255,255,255,.17)}
+.tp-policy-content{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:21px 28px 8px;-webkit-overflow-scrolling:touch;background:#fff}
+.tp-policy-content p{margin:0 0 12px;color:#34433d;line-height:1.7;font-size:13.5px}
+.tp-policy-content .tp-policy-greeting{font-weight:750;color:#122f25}
+.tp-policy-section{margin:20px 0 0;padding:17px 0 3px;border-top:1px solid #e9efec}
+.tp-policy-section h3{display:flex;align-items:center;gap:10px;margin:0 0 13px;color:#163e2f;font-size:16px;font-weight:800;line-height:1.35;letter-spacing:-.015em}
+.tp-policy-num{flex-shrink:0;width:34px;height:34px;display:grid;place-items:center;background:#e5f6ed;color:#10714d;border-radius:11px;font-size:12px;font-weight:900;letter-spacing:.02em}
+.tp-policy-section ul{padding:0 0 0 19px;margin:0 0 13px}
+.tp-policy-section li{padding-left:2px;margin:0 0 10px;font-size:13.5px;line-height:1.7;color:#34433d}
+.tp-policy-section li::marker{color:#24966a}
+.tp-policy-content strong{color:#123e30;font-weight:750}
+.tp-policy-emphasis{background:#eef8f2;border-left:3px solid #209767;border-radius:0 10px 10px 0;padding:12px 14px;font-size:13.5px;font-weight:750;color:#12462e;line-height:1.6;margin:14px 0}
+.tp-policy-section-final{padding-bottom:12px}
+.tp-policy-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 26px;padding-bottom:max(14px,env(safe-area-inset-bottom));border-top:1px solid #e8eeeb;background:#fff;box-shadow:0 -6px 16px rgba(17,45,34,.025)}
+.tp-policy-footer-hint{font-size:11px;color:#66776c;line-height:1.45}
+.tp-policy-continue{flex-shrink:0;appearance:none;border:0;border-radius:12px;min-height:46px;padding:11px 22px;background:#126b4b;color:#fff;font:750 13px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;cursor:pointer;display:flex;gap:11px;align-items:center;justify-content:center;box-shadow:0 3px 9px rgba(18,107,75,.15)}
+.tp-policy-continue:hover{background:#0b5239}
+.tp-policy-continue:active{transform:translateY(1px)}
+.tp-policy-close:focus-visible,.tp-policy-continue:focus-visible,.tp-policy-reopen:focus-visible{outline:3px solid #52d99d;outline-offset:3px}
+.tp-policy-reopen{font:700 11px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;border:1px solid #c7e4d3;border-radius:999px;background:#effaf3;color:#155b3f;min-height:32px;padding:6px 12px}
+.tp-policy-reopen:hover{background:#daf4e6}
+.tp-policy-reopen--home{position:fixed;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));z-index:100;box-shadow:0 3px 14px rgba(15,38,24,.15)}
+.tp-policy-reopen--quote{margin-top:6px}
+.tp-policy-overlay *{box-sizing:border-box}
+@media(max-width:640px){.tp-policy-overlay{padding:0;align-items:flex-end}.tp-policy-dialog{width:100%;max-height:calc(100dvh - max(10px,env(safe-area-inset-top)));border-radius:23px 23px 0 0;border-bottom:none}.tp-policy-header{padding:16px 18px 17px}.tp-policy-header h2{font-size:23px}.tp-policy-tags{margin-top:10px}.tp-policy-content{padding:15px 18px 5px}.tp-policy-section{margin-top:12px;padding-top:15px}.tp-policy-footer{padding:12px 17px max(13px,env(safe-area-inset-bottom))}.tp-policy-footer-hint{display:none}.tp-policy-continue{width:100%;min-height:48px}.tp-policy-reopen--home{font-size:10px;padding:6px 9px;min-height:30px}}
+@media(max-height:590px){.tp-policy-header{padding-top:10px;padding-bottom:11px}.tp-policy-label{margin-top:5px}.tp-policy-tags{display:none}.tp-policy-footer{padding-top:8px;padding-bottom:max(8px,env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){.tp-policy-continue:active{transform:none}}
+@media print{.tp-policy-overlay,.tp-policy-reopen{display:none!important}}
