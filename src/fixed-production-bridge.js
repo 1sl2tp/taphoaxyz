@@ -372,6 +372,23 @@ async function startSync(){
 
 async function attachSession(info){
   identity=info?.identity||null;bootstrapped=false;
+  // auth.restore/login has ALREADY verified taphoa_access_context online.
+  // Display only this account's matching-role snapshot immediately, and let
+  // the existing revision sync reconcile the changed domains in background.
+  // Never treat the local identity hint or an unverified session as authority.
+  const uid=currentUid();
+  const cached=uid&&!publicAccess&&!employeeAccess?snapshot.load(uid):null;
+  const cachedRole=String(cached?.data?.user?.role||'').toLowerCase();
+  const verifiedRole=String(identity?.role||'').toLowerCase();
+  if(cached?.data&&verifiedRole&&cachedRole===verifiedRole){
+    appState.setBootstrap(cached.data);
+    bootstrapped=true;
+    void startSync()
+      .then(()=>syncOnce())
+      .catch(error=>console.warn('taphoa cached session sync',error));
+    return {identity,state:appState.get()};
+  }
+  // First-ever login or changed privileges: load canonical data before UI.
   await bootstrap();await startSync();
   return {identity,state:appState.get()};
 }
