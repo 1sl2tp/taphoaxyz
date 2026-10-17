@@ -58,31 +58,26 @@ test('debt image lazy-loads through the same helper as order images',async()=>{
   assert.deepEqual(actions,['loading','host','capture','png','remove','hide']);
 });
 
-test('debt Save exports one generated PNG without opening the OS text share sheet',async()=>{
+test('debt Save calls one direct PNG download even in installed iOS PWA',async()=>{
   const actions=[];
   const png={size:42,type:'image/png'};
-  let savedFile;
   const context={
     createCustomerDebtPngBlob:async()=>png,
-    window:{TAPHOA_IOS_SHARE_FALLBACK:{shouldUse:()=>false}},
-    navigator:{share:()=>{throw Error('native share must not be used to save');}},
-    File:class{constructor(chunks,name,options){
-      savedFile={chunks,name,options};
-    }},
-    URL:{createObjectURL:()=> 'blob:png',revokeObjectURL:()=>actions.push('revoke')},
-    document:{createElement:tag=>{
-      assert.equal(tag,'a');
-      return {href:'',download:'',click(){actions.push('click');},
-        remove(){actions.push('remove');}};
-    },body:{appendChild(){actions.push('append');}}},
-    setTimeout:callback=>callback(),
+    window:{
+      TAPHOA_IMAGE_SAVE:{savePng:(data,name)=>{
+        assert.equal(data,png);assert.equal(name,'congno.png');actions.push('save');
+      }},
+      TAPHOA_IOS_SHARE_FALLBACK:{
+        shouldUse:()=>true,
+        open:()=>{throw Error('iOS preview must not appear on save');}
+      }
+    },
+    navigator:{share:()=>{throw Error('native share must not open on save');}},
+    File:class{constructor(){throw Error('Save must not instantiate a share File');}},
     showToast:()=>actions.push('toast'),
     showAlertPopup:(...args)=>{throw Error('unexpected alert '+args)},
   };
   const save=vm.runInNewContext('('+saveShare+')',context);
   await save('save');
-  assert.equal(savedFile.name,'congno.png');
-  assert.equal(savedFile.chunks.length,1);
-  assert.equal(savedFile.chunks[0],png);
-  assert.deepEqual(actions,['append','click','remove','revoke','toast']);
+  assert.deepEqual(actions,['save','toast']);
 });
