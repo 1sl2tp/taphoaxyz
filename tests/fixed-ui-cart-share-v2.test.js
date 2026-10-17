@@ -70,7 +70,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   ]);
   assert.match(markup5,/id=\\\"orderDetailShareButton\\\"/);
   assert.match(cartShare,/detailShareBtn\.removeAttribute\('onclick'\)/);
-  assert.match(cartShare,/detailShareBtn\.onclick=shareDetailOrderImageV3/);
+  assert.match(cartShare,/detailShareBtn\.onclick=\(\)=>\{/);
   assert.match(cartShare,/if\(isIosShareContext\(\)\) return \{files\}/);
   assert.match(cartShare,/navigator\.userActivation/);
   assert.match(cartShare,/nativeShareInFlight/);
