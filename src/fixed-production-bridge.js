@@ -701,11 +701,45 @@ async function attachDebtNoticeImage(result){
     });
     if(attachError)throw attachError;
     if(!attached?.ok)throw Error('debt_image_attach_failed');
+    return true;
   }catch(error){
     // A media failure never rolls back a collected payment or creates another transaction.
     console.warn('[taphoa] finance notice image not attached:',String(error?.message||error));
   }finally{
     debtNoticeImagesInFlight.delete(commandId);
+  }
+}
+// Backfill ONLY the test customer’s recent, already-sent Chat notices when the
+// admin explicitly opens their debt ledger. One small read per session; no
+// repeating timers, new messages or bookkeeping mutations.
+const repairRecentFinanceImagesAttempted=new Set();
+async function repairRecentFinanceImages(customerId){
+  const id=String(customerId||'').trim();
+  if(!id||publicAccess||employeeAccess||identity?.role!=='admin'
+     ||repairRecentFinanceImagesAttempted.has(id))return 0;
+  const customer=(appState.get().customers||[]).find(c=>
+    String(first(c,['id','maKH','customer_id'],''))===id);
+  if(String(first(customer||{},['username','user_name','login'],'')).toLowerCase()!=='test')return 0;
+  repairRecentFinanceImagesAttempted.add(id);
+  try{
+    const client=await auth.getClient();
+    const {data,error}=await client.rpc('taphoa_test_finance_unattached_notices',{
+      p_customer_id:id,p_limit:3
+    });
+    if(error)throw error;
+    const rows=Array.isArray(data)?data:[];
+    let attached=0;
+    for(const receipt of rows){
+      if(await attachDebtNoticeImage(receipt))attached++;
+    }
+    if(attached>0)window.dispatchEvent(new CustomEvent('taphoa-finance-images-repaired',{
+      detail:{customerId:id,count:attached}
+    }));
+    return attached;
+  }catch(error){
+    repairRecentFinanceImagesAttempted.delete(id);
+    console.warn('[taphoa] finance image repair:',String(error?.message||error));
+    return 0;
   }
 }
 async function debtTransaction(customerId,type,amount,note=''){
@@ -781,7 +815,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
-  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
+  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
