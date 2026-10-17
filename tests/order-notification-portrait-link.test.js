@@ -12,7 +12,7 @@ test('order notifications attach a real PNG to their existing text and link',()=
   assert.match(bridge,/taphoa_order_notice_image_attach/);
   assert.match(bridge,/if\(!publicAccess&&!employeeAccess\)void attachOrderNoticePortrait\(result\?\.order\)/);
   assert.match(bridge,/void attachOrderNoticePortrait\(result\?\.order\)/);
-  assert.match(bridge,/\['done','delivered'\]/);
+  assert.match(bridge,/\['pending','done','delivered'\]/);
   assert.doesNotMatch(bridge,/createElement\('img'\).*send/);
 });
 
