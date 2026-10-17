@@ -18,18 +18,18 @@ function latestFunction(name){
   return sql.slice(start,end+3);
 }
 
-test('order receipt is compact, shows code counts preview time and direct app link',()=>{
+test('order receipt shows code and both counts, total and direct mini app link without duplicate details',()=>{
   const fn=latestFunction('taphoa_chat_order_receipt');
   for(const pattern of [
     /tongMa/,
     /tongSL/,
-    /' sản phẩm'/,
+    /' sản phẩm · '/,
     /taphoa_chat_money\(v_total_vnd\)/,
-    /taphoa_chat_order_lines\(p_order_json,2\)/,
-    /taphoa_chat_when\(v_at\)/,
     /taphoa_customer_mini_link\(v_customer,'don',null,null,v_code\)/,
     /Xem đơn:/,
   ])assert.match(fn,pattern);
+  assert.doesNotMatch(fn,/taphoa_chat_order_lines\(p_order_json,2\)/);
+  assert.doesNotMatch(fn,/taphoa_chat_when\(v_at\)/);
   assert.doesNotMatch(fn,/taphoa_chat_balance_label\(p_balance_vnd,false\)/);
 });
 
