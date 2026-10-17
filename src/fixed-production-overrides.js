@@ -197,6 +197,30 @@
     });
   };
 
+  // A draft-to-delivered click must never silently discard unsaved cart edits.
+  // It intentionally does NOT save automatically: first update the draft,
+  // then use the existing single delivery command for precise accounting.
+  async function assertDraftAlreadySavedForDelivery(orderId,customerId,cartItems){
+    const detail=await backend().orderDetail(orderId);
+    const saved=detail?.order||detail;
+    if(!saved||String(saved.status||saved.trangThai||'').toLowerCase()!=='pending'){
+      throw new Error('Đơn đã thay đổi trạng thái. Mở lại đơn trước khi giao.');
+    }
+    if(String(saved.customer_id||saved.maKH||'')!==String(customerId||'')){
+      throw new Error('Khách đang chọn không khớp với đơn tạm đã lưu.');
+    }
+    const normalize=rows=>(Array.isArray(rows)?rows:[]).map(item=>[
+      String(item.product_id||item.maSP||'').trim(),
+      Number(item.qty??item.sl)||0,
+      Number(item.unit_price??item.gia)||0,
+      String(item.note??item.ghiChu??'').trim()
+    ]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+    const current=normalize(cartItems),persisted=normalize(saved.items);
+    if(JSON.stringify(current)!==JSON.stringify(persisted)){
+      throw new Error('Đơn tạm có thay đổi chưa lưu. Bấm Cập nhật đơn trước khi chuyển sang Đã giao.');
+    }
+  }
+
   dayToanBoGioHang=async function(tab){
     if(orderMutationInFlight)return;
     if(typeof cartPriceRefreshInFlight !== 'undefined' && cartPriceRefreshInFlight){
@@ -237,6 +261,7 @@
       if(editingOrderId&&!backendEditOrderId)throw new Error('Không tìm thấy đơn gốc. Chưa lưu để tránh tạo đơn khác.');
 
       if(isPromotingDraft){
+        await assertDraftAlreadySavedForDelivery(backendEditOrderId,selectedCustomer.id,items);
         const result=await backend().deliverOrder(backendEditOrderId);
         if(result?.ok!==true)throw new Error('Không thể chuyển đơn tạm sang Đã giao.');
       }else{
