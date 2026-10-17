@@ -33,6 +33,6 @@ test('test-only backfill runs after explicit debt ledger open and is protected b
   assert.match(migration,/cmd\.created_at>=now\(\)-interval '18 minutes'/);
   assert.match(migration,/NOT EXISTS \([\s\S]*?v21_media_assets/);
   assert.doesNotMatch(migration,/INSERT INTO (?:public\.)?taphoa_debt_ledger|INSERT INTO (?:public\.)?v21_messages/i);
-  assert.match(shell,/finance-png=20261017-delivered-only/);
+  assert.match(shell,/finance-png=20261017-draft-labelled/);
   assert.match(shell,/finance-image-repair=20261017c/);
 });
