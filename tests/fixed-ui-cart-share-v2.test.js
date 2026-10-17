@@ -55,7 +55,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(cartShare,/function prepareDetailClone\(source\)/);
   assert.match(cartShare,/TAPHOA_ORDER_PORTRAIT/);
   assert.match(cartShare,/data-cart-share-version','5-system-share/);
-  assert.match(cartShare,/data-order-share-version','6-saved-order-image/);
+  assert.match(cartShare,/data-order-share-version','7-manual-send-save-copy/);
   assert.match(cartShare,/const artifact=await prepareDetailShareCache\(\)/);
   assert.match(cartShare,/shareOrDownloadPng\(artifact\.blob,artifact\.fileName/);
   assert.match(sourceShare,/const sourceShareCache = new Map\(\)/);
