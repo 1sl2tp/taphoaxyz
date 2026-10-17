@@ -39,6 +39,7 @@ declare
   v_notice text;
   v_url text;
   v_result jsonb;
+  v_sent_message uuid;
 begin
   if not coalesce((ctx->>'allowed')::boolean,false) or ctx->>'taphoa_role'<>'admin' then
     raise exception 'taphoa_access_denied' using errcode='42501';
@@ -116,7 +117,7 @@ Ghi chú: ' || left(btrim(p_note),120);
     if coalesce(v_url,'')<>'' then
       v_notice := v_notice || E'\nXem công nợ: ' || v_url;
     end if;
-    perform public.taphoa_chat_notify_customer(
+    v_sent_message := public.taphoa_chat_notify_customer(
       p_customer_id,
       (ctx->>'account_id')::uuid,
       'taphoa:' || p_command_id::text || ':collection',
@@ -145,7 +146,7 @@ Ghi chú: ' || left(btrim(p_note),120);
 Xem công nợ: ' || v_url;
     end if;
 
-    perform public.taphoa_chat_notify_customer(
+    v_sent_message := public.taphoa_chat_notify_customer(
       p_customer_id,
       (ctx->>'account_id')::uuid,
       'taphoa:' || p_command_id::text || ':debt',
@@ -153,6 +154,8 @@ Xem công nợ: ' || v_url;
     );
   end if;
 
+  -- Disabled notifications must not trigger an extra ticket/upload request.
+  v_result := v_result || jsonb_build_object('notice_sent',v_sent_message IS NOT NULL);
   insert into public.taphoa_command_log(command_id,operation,result)
   values(p_command_id,'debt_transaction',v_result);
 
