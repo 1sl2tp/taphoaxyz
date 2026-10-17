@@ -9,7 +9,7 @@ const sql=readFileSync('supabase/migrations/20261017165000_chat_manual_saved_ord
 const shell=readFileSync('index.html','utf8');
 
 test('saved-order share uses exactly three explicit actions, not an automatic native share',()=>{
-  const actions=[...share.matchAll(/data-order-share-action="(send|save|copy)"/g)].map(m=>m[1]);
+  const actions=[...share.matchAll(/role="menuitem" data-order-share-action="(send|save|copy)"/g)].map(m=>m[1]);
   assert.deepEqual(actions,['send','save','copy']);
   assert.match(share,/Gửi đơn/);
   assert.match(share,/>Lưu<\/button>/);
