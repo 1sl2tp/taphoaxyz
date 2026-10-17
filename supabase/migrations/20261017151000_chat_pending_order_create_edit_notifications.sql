@@ -262,47 +262,7 @@ begin
    return jsonb_build_object('ok',false,'reason','not_saved_customer_order');
  end if;
  v_code := v_order.display_prefix||v_order.display_no::text;
- if v_code !~ '^(DG|DT)[0-9]+ then
-   return jsonb_build_object('ok',false,'reason','invalid_order_code');
- end if;
- select m.* into v_msg
- from public.v21_messages m
- join public.v21_conversations c on c.id=m.conversation_id
- where m.sender_account_id=v_sender
-  and m.deleted_at is null
-  and (c.member_a=v_order.customer_account_id or c.member_b=v_order.customer_account_id)
-  and (m.client_id like 'taphoa:%:order' or m.client_id like 'taphoa:%:order-edit' or m.client_id like 'taphoa:%:deliver')
-  and (
-    position(' · '||v_code||' · ' in m.body)>0
-    or position(' · '||v_code||E'\n' in m.body)>0
-  )
-  and m.created_at>=greatest(v_order.updated_at-interval '90 seconds',now()-interval '20 minutes')
- order by m.created_at desc,m.id desc
- limit 1;
- if v_msg.id is null
-  or not v21_private.chat_outbound_allowed(v_order.customer_account_id,v_msg.client_id)
- then
-   return jsonb_build_object('ok',false,'reason','notice_not_enabled_or_not_sent');
- end if;
- if exists(select 1 from public.v21_media_assets a
-  where a.message_id=v_msg.id and a.kind='image' and a.deleted_at is null) then
-   return jsonb_build_object('ok',false,'reason','image_already_attached');
- end if;
- v_asset_id:=gen_random_uuid();
- insert into v21_private.taphoa_order_notice_image_uploads(
-  message_id,order_id,sender_account_id,conversation_id,asset_id,storage_key)
- values(v_msg.id,p_order_id,v_sender,v_msg.conversation_id,v_asset_id,
-  v_sender::text||'/'||v_msg.conversation_id::text||'/'||v_asset_id::text)
- on conflict(message_id) do nothing;
- select * into v_ticket from v21_private.taphoa_order_notice_image_uploads
- where message_id=v_msg.id;
- if v_ticket.attached_at is not null or v_ticket.created_at<now()-interval '20 minutes' then
-   return jsonb_build_object('ok',false,'reason','image_already_sent_or_expired');
- end if;
- return jsonb_build_object('ok',true,'order_id',v_ticket.order_id,'message_id',v_ticket.message_id,
-  'asset_id',v_ticket.asset_id,'storage_key',v_ticket.storage_key);
-end;
-$$; then
+ if v_code !~ '^(DG|DT)[0-9]+$' then
    return jsonb_build_object('ok',false,'reason','invalid_order_code');
  end if;
  select m.* into v_msg
