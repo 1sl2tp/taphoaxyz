@@ -44,7 +44,7 @@ test('app shell stays hidden until authentication restore resolves',async()=>{
 
 test('PWA keeps versioned assets fast without globally forcing no-store',async()=>{
   const sw=await read('sw.js');
-  assert.match(sw,/taphoa-runtime-v37/);
+  assert.match(sw,/taphoa-runtime-v38/);
   assert.match(sw,/async function staleWhileRevalidate/);
   assert.match(sw,/url\.searchParams\.has\('v'\)/);
   assert.match(sw,/request\.destination==='image'\|\|request\.destination==='font'/);
