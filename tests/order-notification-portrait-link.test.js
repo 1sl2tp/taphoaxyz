@@ -15,3 +15,10 @@ test('order notifications attach a real PNG to their existing text and link',()=
   assert.match(bridge,/\['done','delivered'\]/);
   assert.doesNotMatch(bridge,/createElement\('img'\).*send/);
 });
+
+test('portrait PNG size is saved before release of canvas memory',()=>{
+  assert.match(bridge,/const pngWidth=canvas\.width;/);
+  assert.match(bridge,/const pngHeight=canvas\.height;/);
+  assert.match(bridge,/p_width_px:pngWidth,p_height_px:pngHeight/);
+  assert.doesNotMatch(bridge,/p_width_px:canvas\.width,p_height_px:canvas\.height/);
+});

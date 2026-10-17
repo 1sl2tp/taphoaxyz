@@ -539,6 +539,11 @@ async function attachOrderNoticePortrait(order){
     const canvas=await capture.captureElement(built.page,{
       width,height,scale:1.2,renderTimeout:12000,libraryTimeout:6000
     });
+    // canvasToPngBlob() releases canvas memory by resetting dimensions to 1×1.
+    // Preserve the REAL PNG dimensions first, or the Chat media will be
+    // incorrectly registered as a tiny 1×1 image on web / mobile PWA.
+    const pngWidth=canvas.width;
+    const pngHeight=canvas.height;
     const blob=await capture.canvasToPngBlob(canvas,'Không tạo được ảnh đơn hàng.');
     if(blob.size<1||blob.size>15728640)throw Error('portrait_exceeds_media_limit');
     const object=await client.storage.from('v21-media').upload(ticket.storage_key,blob,{
@@ -547,7 +552,7 @@ async function attachOrderNoticePortrait(order){
     if(object.error)throw object.error;
     const {data:attached,error:attachError}=await client.rpc('taphoa_order_notice_image_attach',{
       p_order_id:id,p_asset_id:ticket.asset_id,p_size_bytes:blob.size,
-      p_width_px:canvas.width,p_height_px:canvas.height
+      p_width_px:pngWidth,p_height_px:pngHeight
     });
     if(attachError)throw attachError;
     if(!attached?.ok)throw Error('order_image_attach_failed');
