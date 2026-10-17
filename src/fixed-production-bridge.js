@@ -509,12 +509,12 @@ async function attachOrderNoticePortrait(order){
     const {data:ticket,error:ticketError}=await client.rpc('taphoa_order_notice_image_ticket',{p_order_id:id});
     if(ticketError)throw ticketError;
     // No eligible sent message = no image rendering / upload / extra network.
-    if(!ticket?.ok)return;
+    if(!ticket?.ok)return false;
     const portrait=window.TAPHOA_ORDER_PORTRAIT;
     const capture=window.TAPHOA_SHARE_CAPTURE;
     if(!portrait?.createPage||!capture?.captureElement||!capture?.canvasToPngBlob)throw Error('portrait_renderer_unavailable');
     const items=Array.isArray(order.items)?order.items:[];
-    if(!items.length||items.length>130)return;
+    if(!items.length||items.length>130)return false;
     const format=v=>(Number(v)||0).toLocaleString('vi-VN');
     const displayCode=String(order.displayCode||order.display_code||order.maDon||'').trim();
     const stamp=order.delivered_at||order.ngay||order.created_at;
@@ -559,13 +559,28 @@ async function attachOrderNoticePortrait(order){
     });
     if(attachError)throw attachError;
     if(!attached?.ok)throw Error('order_image_attach_failed');
+    return true;
   }catch(error){
     // Existing text + customer order link remains available on image failure.
     console.warn('[taphoa] order notice image not attached:',String(error?.message||error));
+    return false;
   }finally{
     built?.host?.remove?.();
     orderImageUploadsInFlight.delete(eventKey);
   }
+}
+
+async function manualShareOrder(orderId,requestId){
+  if(employeeAccess||publicAccess||identity?.role!=='admin')throw Error('taphoa_admin_required');
+  const id=String(orderId||'').trim(),nonce=String(requestId||'').trim();
+  if(!/^[0-9a-f-]{36}$/i.test(id)||!/^[0-9a-f-]{36}$/i.test(nonce))
+    throw Error('saved_order_request_invalid');
+  const response=await business.manualShareOrder(id,nonce);
+  if(!response?.ok)return response;
+  // The server has already sent the canonical text to this order's customer.
+  // Upload to the matching existing message without changing the order or debt.
+  const imageAttached=await attachOrderNoticePortrait(response.order);
+  return {...response,image_attached:imageAttached===true};
 }
 
 async function saveOrder(payload){
@@ -817,7 +832,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
-  saveOrder,deliverOrder,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
+  saveOrder,deliverOrder,manualShareOrder,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
