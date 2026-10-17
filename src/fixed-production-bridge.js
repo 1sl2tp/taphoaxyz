@@ -493,13 +493,14 @@ async function debtLedger(customerId){
    Attach the portrait PNG to THAT SAME message only when notifications are enabled.
    This never affects order creation or activates any customer-care schedule. */
 const orderImageUploadsInFlight=new Set();
-async function attachOrderNoticePortrait(order){
+async function attachOrderNoticePortrait(order,{manual=false}={}){
   const id=String(order?.order_id||order?.id||'').trim();
   const state=String(order?.status||order?.trangThai||'').toLowerCase();
-  // Saved drafts (DT) are real order-create/edit events; render their same
-  // canonical image alongside delivered (DG) notices; no extra notification.
-  if(!id||!['pending','done','delivered'].includes(state)
-    ||!order?.customer_id||publicAccess||employeeAccess)return;
+  // Automatic images are ONLY for delivered orders (DG).
+  // A draft can have an image solely after an EXPLICIT manual "Gửi đơn" click.
+  const eligible=['done','delivered'].includes(state)
+    ||(manual===true&&state==='pending');
+  if(!id||!eligible||!order?.customer_id||publicAccess||employeeAccess)return false;
   const eventKey=id+'|'+String(order?.updated_at||order?.delivered_at||'');
   if(orderImageUploadsInFlight.has(eventKey))return;
   orderImageUploadsInFlight.add(eventKey);
@@ -579,7 +580,7 @@ async function manualShareOrder(orderId,requestId){
   if(!response?.ok)return response;
   // The server has already sent the canonical text to this order's customer.
   // Upload to the matching existing message without changing the order or debt.
-  const imageAttached=await attachOrderNoticePortrait(response.order);
+  const imageAttached=await attachOrderNoticePortrait(response.order,{manual:true});
   return {...response,image_attached:imageAttached===true};
 }
 
