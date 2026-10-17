@@ -497,7 +497,7 @@ async function attachOrderNoticePortrait(order){
   const id=String(order?.order_id||order?.id||'').trim();
   const state=String(order?.status||order?.trangThai||'').toLowerCase();
   // Saved drafts (DT) are real order-create/edit events; render their same
-  // canonical image alongside delivered (DG) notices.
+  // canonical image alongside delivered (DG) notices; no extra notification.
   if(!id||!['pending','done','delivered'].includes(state)
     ||!order?.customer_id||publicAccess||employeeAccess)return;
   const eventKey=id+'|'+String(order?.updated_at||order?.delivered_at||'');
