@@ -641,8 +641,8 @@
     if(!artifact?.blob)throw Error('Không tạo được ảnh đơn hàng.');
     const saver=window.TAPHOA_IMAGE_SAVE?.savePng;
     if(!saver)throw Error('Chưa tải bộ lưu ảnh. Vui lòng làm mới trang.');
-    saver(artifact.blob,artifact.fileName);
-    if(typeof showToast==='function')showToast('Đã yêu cầu tải ảnh xuống thiết bị.','info');
+    const mode=saver(artifact.blob,artifact.fileName);
+    if(mode!=='preview'&&typeof showToast==='function')showToast('Đã yêu cầu tải ảnh xuống thiết bị.','info');
   }
   async function copyDetailOrderImage(){
     const clip=navigator.clipboard;
@@ -722,8 +722,8 @@
     const artifact=await cartPngArtifact();
     const saver=window.TAPHOA_IMAGE_SAVE?.savePng;
     if(!saver)throw Error('Chưa tải bộ lưu ảnh. Vui lòng làm mới trang.');
-    saver(artifact.blob,artifact.fileName);
-    if(typeof showToast==='function')showToast('Đã yêu cầu tải ảnh xuống thiết bị.','info');
+    const mode=saver(artifact.blob,artifact.fileName);
+    if(mode!=='preview'&&typeof showToast==='function')showToast('Đã yêu cầu tải ảnh xuống thiết bị.','info');
   }
   async function copyCartPng(){
     if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')
