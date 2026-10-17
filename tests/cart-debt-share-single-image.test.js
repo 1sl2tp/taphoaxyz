@@ -17,7 +17,7 @@ test('cart share button opens only send/save/copy and never native title+text',(
   assert.match(cart,/prepareCartShareCache\(\)/);
   assert.match(cart,/new ClipboardItem\(\{'image\/png':png\}\)/);
   assert.match(cart,/prod\.manualShareOrder\(orderId,crypto\.randomUUID\(\)\)/);
-  assert.match(cart,/Không.*sửa.*chưa lưu/);
+  assert.match(cart,/Đơn đang sửa chưa lưu/);
   assert.doesNotMatch(cart,/cartShareBtn\.onclick=shareCartOrderImageV3/);
   assert.match(shell,/cart-single-png=20261017/);
 });
