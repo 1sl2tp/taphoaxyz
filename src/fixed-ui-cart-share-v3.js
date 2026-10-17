@@ -656,10 +656,7 @@
       if(typeof showToast==='function')showToast('Đã sao chép ảnh đơn hàng.','success');
       return;
     }
-    const source=document.getElementById('orderDetailContentToShare');
-    if(!source||!clip?.writeText)throw Error('Thiết bị chưa hỗ trợ sao chép.');
-    await clip.writeText(detailNativeShareText(source));
-    if(typeof showToast==='function')showToast('Trình duyệt chưa hỗ trợ sao chép ảnh; đã sao chép nội dung đơn.','info');
+    throw Error('Thiết bị chưa hỗ trợ sao chép ảnh. Hãy chọn Lưu hoặc Gửi.');
   }
   detailShareMenu.addEventListener('click',event=>{
     const btn=event.target.closest('[data-order-share-action]');
