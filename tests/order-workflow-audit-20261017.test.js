@@ -52,7 +52,7 @@ test('web and installed PWA Save never confuse blob navigation with saving to Ph
   assert.match(shell,/fixed-ui-runtime-12\.js/);
 });
 
-test('Copy image never downgrades to text without the user's request',()=>{
+test('Copy image never silently downgrades to text',()=>{
   const st=share.indexOf('async function copyDetailOrderImage(');
   const en=share.indexOf("detailShareMenu.addEventListener('click'",st);
   assert.ok(st>=0&&en>st);
