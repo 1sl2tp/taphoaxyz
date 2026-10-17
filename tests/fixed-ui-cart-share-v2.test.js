@@ -29,7 +29,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
 
   assert.doesNotMatch(html,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
   assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=order-empty-state-20260922'));
-  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=system-share-copy-20261013'));
+  assert.ok(html.indexOf('fixed-ui-share-capture.js?v=iphone-share-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=saved-order-image-20261017'));
 
   assert.match(helper,/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js/);
   assert.match(helper,/cdn\.jsdelivr\.net\/npm\/html2canvas@1\.4\.1\/dist\/html2canvas\.min\.js/);
@@ -55,6 +55,9 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(cartShare,/function prepareDetailClone\(source\)/);
   assert.match(cartShare,/TAPHOA_ORDER_PORTRAIT/);
   assert.match(cartShare,/data-cart-share-version','5-system-share/);
+  assert.match(cartShare,/data-order-share-version','6-saved-order-image/);
+  assert.match(cartShare,/const artifact=await prepareDetailShareCache\(\)/);
+  assert.match(cartShare,/shareOrDownloadPng\(artifact\.blob,artifact\.fileName/);
   assert.match(sourceShare,/const sourceShareCache = new Map\(\)/);
   assert.match(sourceShare,/prepareSourceDetailShare/);
   assert.match(sourceShare,/captureLongSourceSharePages\(source, baseName, modeLabel, showProgress = true\)/);
@@ -76,7 +79,7 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
 
   const fallback=await readFile('src/fixed-ui-ios-share-fallback.js','utf8');
   assert.ok(html.indexOf('fixed-ui-ios-share-fallback.js?v=ios-pwa-preview-20260921') < html.indexOf('fixed-ui-runtime-10.js?v=order-empty-state-20260922'));
-  assert.ok(html.indexOf('fixed-ui-ios-share-fallback.js?v=ios-pwa-preview-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=system-share-copy-20261013'));
+  assert.ok(html.indexOf('fixed-ui-ios-share-fallback.js?v=ios-pwa-preview-20260921') < html.indexOf('fixed-ui-cart-share-v3.js?v=saved-order-image-20261017'));
   assert.match(fallback,/function shouldUse\(\)/);
   assert.match(fallback,/navigator\.standalone===true/);
   assert.match(fallback,/Nhấn giữ trực tiếp lên ảnh/);

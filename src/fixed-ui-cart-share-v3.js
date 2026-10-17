@@ -113,7 +113,13 @@
       if(nativeShareInFlight)return;
       const activation=navigator.userActivation;
       if(activation && activation.isActive===false){
-        if(typeof showToast==='function')showToast('Bấm Chia sẻ lại để mở bảng chia sẻ.','info');
+        // Generating the existing saved-order PNG can outlast Safari's
+        // click activation. Show the image preview, never substitute text.
+        if(isIosShareContext() && iosPwaFallback?.open){
+          iosPwaFallback.open(files,{title:title||'Ảnh đơn hàng'});
+          return;
+        }
+        if(typeof showToast==='function')showToast('Ảnh đơn hàng đã sẵn sàng. Bấm Chia sẻ lại để gửi ảnh.','info');
         return;
       }
 
@@ -513,11 +519,17 @@
   async function shareDetailOrderImageV3(){
     const source=document.getElementById('orderDetailContentToShare');
     if(!source){
-      if(originalShareOrderImage)return originalShareOrderImage();
+      if(typeof showAlertPopup==='function')showAlertPopup('Chưa mở chi tiết đơn','Hãy mở một đơn đã lưu trước khi chia sẻ ảnh.');
       return;
     }
-    const detail=detailNativeShareText(source);
-    await shareNativeOrderText('Đơn hàng',detail);
+    // Same real saved-order portrait used by public-order image viewer.
+    // Never create an unrelated cart demo or replace its PNG with plain text.
+    const artifact=await prepareDetailShareCache();
+    if(!artifact?.blob){
+      if(typeof showAlertPopup==='function')showAlertPopup('Không tạo được ảnh đơn','Vui lòng mở lại đơn đã lưu rồi thử chia sẻ ảnh.');
+      return;
+    }
+    await shareOrDownloadPng(artifact.blob,artifact.fileName,artifact.title,artifact.text);
   }
 
   async function shareCartOrderImageV3(){
@@ -552,7 +564,7 @@
   if(detailShareBtn){
     detailShareBtn.removeAttribute('onclick');
     detailShareBtn.onclick=shareDetailOrderImageV3;
-    detailShareBtn.setAttribute('data-order-share-version','5-system-share');
+    detailShareBtn.setAttribute('data-order-share-version','6-saved-order-image');
   }
 
   document.documentElement.setAttribute('data-ios-share-context',isIosShareContext()?'1':'0');

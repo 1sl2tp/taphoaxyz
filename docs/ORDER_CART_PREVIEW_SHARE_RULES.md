@@ -1,5 +1,13 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## 17/10/2026 — Ảnh Chia sẻ phải là ảnh của đơn ĐÃ LƯU
+
+- Dùng duy nhất `TAPHOA_ORDER_PORTRAIT.createPage` qua `prepareDetailClone/prepareDetailShareCache` với dữ liệu popup chi tiết đơn. Ảnh có mã DG/DT, tên khách, thời gian, STT/Tên/SL/Đơn giá/Thành tiền và chân tổng. Không tự dựng ảnh giỏ hàng giả, không chụp các nút Xóa/Sửa/Duyệt vào ảnh gửi khách.
+- Nút **Chia sẻ** ở chi tiết đơn chia sẻ file PNG của chính đơn đã lưu; không chỉ gửi văn bản. Chỉ capture khi nhấn; cache theo nội dung, không polling. Giỏ chưa lưu có luồng riêng; không được gửi như hóa đơn chính thức.
+- Khi thông báo đơn đã được bật theo khách, luồng Chat/Zalo phải dùng chính renderer chuẩn và order_id thật, kèm link của đúng khách. Không gửi ảnh nếu cài đặt đang tắt. Chỉ tuyên bố gửi ảnh thành công sau khi kiểm tra bảng media + storage.
+- iOS PWA mất kích hoạt vì render PNG bất đồng bộ: mở trình xem/chia sẻ ảnh hiện có, không thay ảnh bằng text. Giữ nguyên quyền người dùng, chi phí mạng, công nợ, đơn, lịch tự động.
+
+
 ## SPEC-TAPHOA-CART-NEWEST-FIRST-20261015 — Thêm mới lên đầu, sửa SL giữ vị trí
 
 - **Lỗi xác định từ source:** `src/fixed-ui-behavior.js::updateCart` đã gán `__lastTouched = ++__cartTouchSeq` khi sản phẩm chưa ở giỏ; nhưng `src/fixed-ui-runtime-5.js::previewQtyInput/commitQtyEditor` cho phép **nhập số lượng trực tiếp ở thẻ sản phẩm** để tạo sản phẩm mới mà không gán `__lastTouched`. `src/fixed-ui-runtime-6.js::renderCartUI` và các đường lưu/chia sẻ sắp theo dấu này giảm dần, nên các dòng nhập SL trực tiếp bị tụt cuối sau những dòng thêm bằng dấu +. Ảnh Chrome của người dùng hiển thị các dòng Dau nep bên dưới dù vừa tìm/thêm.

@@ -8,13 +8,14 @@ const start=code.indexOf('  // Single tap: use the OS share sheet');
 const end=code.indexOf('  // UI-113:',start);
 const segment=code.slice(start,end);
 
-test('cart and saved detail share from the same PWA with no capture, no opened Chat',()=>{
+test('saved-order detail shares its portrait PNG, while draft cart can share text',()=>{
   assert.match(segment,/async function shareNativeOrderText/);
   assert.match(segment,/navigator\.share\(\{title,text\}\)/);
-  assert.match(segment,/navigator\.clipboard\.writeText\(text\)/);
   assert.match(segment,/cartNativeShareText\(entries\)/);
-  assert.match(segment,/detailNativeShareText\(source\)/);
-  assert.doesNotMatch(segment,/beginChatOrderShare|window\.open|prepareCartShareCache|prepareDetailShareCache|canvasToPngBlob|showShareReadyHint/);
+  assert.match(segment,/const artifact=await prepareDetailShareCache\(\)/);
+  assert.match(segment,/shareOrDownloadPng\(artifact\.blob,artifact\.fileName,artifact\.title,artifact\.text\)/);
+  assert.doesNotMatch(segment,/beginChatOrderShare|window\.open/);
+  assert.doesNotMatch(segment,/await shareNativeOrderText\('Đơn hàng',detail\)/);
 });
 test('native share and clipboard fallback preserve 5 field order with no double action',async()=>{
   const events={share:[],copy:[],toasts:[]};
