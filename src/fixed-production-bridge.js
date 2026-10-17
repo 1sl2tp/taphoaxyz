@@ -600,10 +600,121 @@ async function batchOrders(action,ids){
   if(publicAccess)throw new Error('public_pending_only');
   const result=await business.batchOrders(action,ids);await refresh(['orders','debt']);return result;
 }
+/* One compact debt/collection PNG, attached to the exact committed Chat notice.
+   The transaction returned its before/after balances inside the DB transaction;
+   never re-read the mutable ledger to build an old receipt. */
+const debtNoticeImagesInFlight=new Set();
+function createDebtNoticeCanvas(result){
+  const kind=String(result.receipt_kind||'');
+  if(!['collection','payment'].includes(kind))throw Error('unsupported_finance_receipt');
+  const number=value=>{
+    const n=Number(value);
+    if(!Number.isFinite(n))throw Error('invalid_finance_snapshot');
+    return n;
+  };
+  const before=number(result.balance_before_vnd),after=number(result.balance_after_vnd);
+  const amount=number(result.amount_vnd);
+  if(amount<=0)throw Error('invalid_finance_amount');
+  const money=value=>Math.abs(number(value)).toLocaleString('vi-VN')+'đ';
+  const balanceLabel=(value,previous=false)=>{
+    if(value>0)return (previous?'Nợ trước':'Còn nợ');
+    if(value<0)return (previous?'Dư trước':'Còn dư');
+    return previous?'Trước giao dịch':'Đã hết nợ';
+  };
+  const id=String(result.customer_id||'');
+  const customer=(appState.get().customers||[]).find(row=>
+    String(first(row,['id','maKH','customer_id'],''))===id);
+  const customerName=String(first(customer||{},['tenKH','display_name','name','username'],'')||'Khách hàng').slice(0,60);
+  const receiptAt=new Date(result.receipt_at);
+  const time=Number.isNaN(receiptAt.getTime())?'':receiptAt.toLocaleString('vi-VN',{
+    timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',
+    day:'2-digit',month:'2-digit',year:'numeric'
+  });
+  const width=620,height=460,scale=1.5;
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
+  const ctx=canvas.getContext('2d');
+  if(!ctx)throw Error('canvas_unavailable');
+  ctx.scale(scale,scale);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
+  ctx.fillStyle='#102A43';ctx.fillRect(0,0,width,105);
+  ctx.textAlign='left';
+  ctx.fillStyle='#b9d3df';ctx.font='600 14px system-ui,sans-serif';
+  ctx.fillText('TẠP HÓA · PHIẾU ĐỐI SOÁT CÔNG NỢ',28,36);
+  ctx.font='700 26px system-ui,sans-serif';ctx.fillStyle='#fff';
+  ctx.fillText(kind==='collection'?'ĐÃ THU TIỀN':'GHI NỢ',28,76);
+  ctx.font='14px system-ui,sans-serif';ctx.textAlign='right';ctx.fillStyle='#e1ebf2';
+  ctx.fillText(time,width-28,76);
+  ctx.textAlign='left';
+  ctx.font='600 15px system-ui,sans-serif';ctx.fillStyle='#334155';
+  ctx.fillText('Khách hàng',28,145);
+  ctx.font='700 18px system-ui,sans-serif';ctx.fillStyle='#0f172a';
+  ctx.fillText(customerName.length>42?customerName.slice(0,41)+'…':customerName,28,171);
+  ctx.fillStyle='#eef4f8';ctx.fillRect(28,192,width-56,92);
+  ctx.fillStyle='#526477';ctx.font='600 14px system-ui,sans-serif';
+  ctx.fillText(kind==='collection'?'SỐ TIỀN ĐÃ THU':'SỐ TIỀN GHI NỢ',44,224);
+  ctx.fillStyle=kind==='collection'?'#047857':'#9a5a0b';
+  ctx.font='700 32px system-ui,sans-serif';
+  ctx.fillText(money(amount),44,265);
+  ctx.fillStyle='#dbe3e9';ctx.fillRect(28,317,width-56,1);
+  ctx.fillStyle='#475569';ctx.font='15px system-ui,sans-serif';
+  ctx.fillText(balanceLabel(before,true),28,308);
+  ctx.fillText(balanceLabel(after,false),28,348);
+  ctx.textAlign='right';ctx.fillStyle='#0f172a';ctx.font='700 18px system-ui,sans-serif';
+  ctx.fillText(money(before),width-28,308);
+  ctx.fillStyle=after>0?'#b45309':'#047857';
+  ctx.fillText(money(after),width-28,348);
+  ctx.textAlign='left';
+  const note=String(result.receipt_note||'').trim();
+  if(note&&!['Thu tiền mặt','Ghi nợ phát sinh'].includes(note)){
+    ctx.font='13px system-ui,sans-serif';ctx.fillStyle='#64748b';
+    ctx.fillText('Ghi chú: '+(note.length>67?note.slice(0,66)+'…':note),28,388);
+  }
+  ctx.fillStyle='#e2e8f0';ctx.fillRect(28,413,width-56,1);
+  ctx.fillStyle='#64748b';ctx.font='13px system-ui,sans-serif';
+  ctx.fillText('Đối chiếu chi tiết trong mục Công nợ của khách hàng.',28,438);
+  return canvas;
+}
+async function attachDebtNoticeImage(result){
+  const commandId=String(result?.notice_command_id||'');
+  if(!result?.notice_sent||!commandId||!result?.customer_id||debtNoticeImagesInFlight.has(commandId))return;
+  debtNoticeImagesInFlight.add(commandId);
+  try{
+    const client=await auth.getClient();
+    const {data:ticket,error:ticketError}=await client.rpc('taphoa_debt_notice_image_ticket',{p_command_id:commandId});
+    if(ticketError)throw ticketError;
+    // No eligible Chat notice means no image creation/storage egress.
+    if(!ticket?.ok)return;
+    const canvas=createDebtNoticeCanvas(result);
+    const pngWidth=canvas.width,pngHeight=canvas.height;
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>
+      value?resolve(value):reject(Error('debt_image_export_failed')),'image/png'));
+    canvas.width=1;canvas.height=1;
+    if(blob.size<1||blob.size>15728640)throw Error('debt_image_too_large');
+    const uploaded=await client.storage.from('v21-media').upload(ticket.storage_key,blob,{
+      contentType:'image/png',upsert:false,cacheControl:'3600'
+    });
+    if(uploaded.error)throw uploaded.error;
+    const {data:attached,error:attachError}=await client.rpc('taphoa_debt_notice_image_attach',{
+      p_command_id:commandId,p_asset_id:ticket.asset_id,
+      p_size_bytes:blob.size,p_width_px:pngWidth,p_height_px:pngHeight
+    });
+    if(attachError)throw attachError;
+    if(!attached?.ok)throw Error('debt_image_attach_failed');
+  }catch(error){
+    // A media failure never rolls back a collected payment or creates another transaction.
+    console.warn('[taphoa] finance notice image not attached:',String(error?.message||error));
+  }finally{
+    debtNoticeImagesInFlight.delete(commandId);
+  }
+}
 async function debtTransaction(customerId,type,amount,note=''){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_read_only');
-  const result=await business.debtTransaction(customerId,type,amount,note);await refresh(['debt']);return result;
+  const result=await business.debtTransaction(customerId,type,amount,note);
+  void attachDebtNoticeImage(result);
+  await refresh(['debt']);
+  return result;
 }
 async function createCustomer(name){
   if(employeeAccess)throw new Error('employee_read_only');
