@@ -324,8 +324,19 @@
       appData.thuchi=[header,...other,...backend().ledgerToRows(detail)];
       renderCongNo();
     }catch(error){console.warn('debt ledger',error);}
-    return fixedOpenCustomerDebtModal(maKh);
+    const opened=fixedOpenCustomerDebtModal(maKh);
+    // One-time, test-only repair of an existing Chat PNG after explicit ledger open.
+    // Runs after the modal opens and NEVER mutates the customer's balance.
+    void Promise.resolve(opened)
+      .then(()=>backend()?.repairRecentFinanceImages?.(maKh))
+      .catch(error=>console.warn('debt notice repair',error));
+    return opened;
   };
+
+  window.addEventListener('taphoa-finance-images-repaired',event=>{
+    const count=Number(event?.detail?.count)||0;
+    if(count>0)showToast('Đã bổ sung '+count+' ảnh công nợ vào Chat test','success');
+  });
 
 
   const PUBLIC_LINK_SESSION_KEY='taphoa.public.link.v1';
