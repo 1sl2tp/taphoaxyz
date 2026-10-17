@@ -51,14 +51,14 @@ test('cash collection and manual debt payment each emit one canonical customer r
   const fn=latestFunction('taphoa_debt_transaction');
 
   assert.match(fn,/if\s+v_entry_type='collection'\s+then[\s\S]*?taphoa_chat_notify_customer/i);
-  assert.match(fn,/v_notice\s*:=\s*'Đã thu '\s*\|\|\s*public\.taphoa_chat_money\(v_amount_vnd\)/);
+  assert.match(fn,/v_notice\s*:=\s*'✅ Đã thu · '\s*\|\|\s*public\.taphoa_chat_money\(v_amount_vnd\)/);
   assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':collection'/);
 
   assert.match(fn,/elsif\s+v_entry_type='payment'\s+then[\s\S]*?taphoa_chat_notify_customer/i);
-  assert.match(fn,/v_notice\s*:=\s*'Ghi nợ '\s*\|\|\s*public\.taphoa_chat_money\(v_amount_vnd\)/);
+  assert.match(fn,/v_notice\s*:=\s*'🧾 Ghi nợ · '\s*\|\|\s*public\.taphoa_chat_money\(v_amount_vnd\)/);
   assert.match(fn,/taphoa_chat_balance_label\(v_balance_before,true\)/);
   assert.match(fn,/taphoa_chat_balance_label\(v_balance_after,false\)/);
-  assert.match(fn,/taphoa_chat_when\(now\(\)\)/);
+  assert.doesNotMatch(fn,/taphoa_chat_when\(now\(\)\)/);
   assert.match(fn,/taphoa_customer_mini_link\([\s\S]*?'no'/i);
   assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':debt'/);
 
