@@ -283,7 +283,7 @@
     });
     const meta=getOrderMeta();
     const built=portrait.createPage({
-      isDraft:meta.isCreatingSaleDraft,
+      isDraft:meta.isCreatingSaleDraft||/^DT[0-9]+$/.test(meta.orderId),
       orderId:meta.orderId,customer:meta.customer,time:meta.time,
       items,lineCount:items.length,totalQty,
       totalPriceText:totalPrice.toLocaleString('vi-VN')
