@@ -530,7 +530,7 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
       };
     });
     built=portrait.createPage({
-      isDraft:false,orderId:displayCode,customer:String(order.tenKH||'Khách hàng'),
+      isDraft:state==='pending',orderId:displayCode,customer:String(order.tenKH||'Khách hàng'),
       time:stampText,items:mapped,lineCount:mapped.length,
       totalQty:order.tongSL??mapped.reduce((sum,x)=>sum+Number(String(x.qtyText).replace(/[^0-9]/g,'')),0),
       totalPriceText:format(order.tongTien)
