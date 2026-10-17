@@ -16,7 +16,7 @@ function saveFunction(source,name,next){
 }
 
 test('single shared PNG download does not show any chooser, Web Share or preview',()=>{
-  assert.match(shell,/fixed-ui-image-save\.js\?v=download-one-png-20261017/);
+  assert.match(shell,/fixed-ui-image-save\.js\?v=ios-preview-no-new-tab-20261017/);
   assert.ok(shell.indexOf('fixed-ui-image-save.js')<shell.indexOf('fixed-ui-runtime-12.js'));
   assert.ok(shell.indexOf('fixed-ui-image-save.js')<shell.indexOf('fixed-ui-cart-share-v3.js'));
   const actions=[];
@@ -42,7 +42,7 @@ test('single shared PNG download does not show any chooser, Web Share or preview
   assert.deepEqual(actions,['create','append','download','remove','scheduled','revoke']);
 });
 
-test('both detail and cart Lưu trigger exactly one download in iPhone PWA',async()=>{
+test('both detail and cart Lưu delegate one save action to platform-aware helper',async()=>{
   const lines=[
     ['saveDetailOrderImage','copyDetailOrderImage','prepareDetailShareCache'],
     ['saveCartPng','copyCartPng','cartPngArtifact']
