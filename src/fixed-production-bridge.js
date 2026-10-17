@@ -1,6 +1,6 @@
 import {createAuthService} from './core/auth.js';
 import {createApi} from './core/api.js?v=finance-png-20261017b';
-import {orderRpcPayload} from './core/business.js?v=finance-png-20261017b';
+import {orderRpcPayload} from './core/business.js?v=manual-send-order-20261017';
 import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
 import {CONFIG} from './core/config.js';
