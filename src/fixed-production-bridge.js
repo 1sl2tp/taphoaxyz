@@ -488,18 +488,94 @@ async function debtLedger(customerId){
   if(publicAccess)return publicRpc('taphoa_public_debt_ledger_access',{p_before_at:null,p_before_id:null,p_limit:50});
   return business.debtLedger(customerId);
 }
+
+/* Order message is created by the server (text + deep link).
+   Attach the portrait PNG to THAT SAME message only when notifications are enabled.
+   This never affects order creation or activates any customer-care schedule. */
+const orderImageUploadsInFlight=new Set();
+async function attachOrderNoticePortrait(order){
+  const id=String(order?.order_id||order?.id||'').trim();
+  const state=String(order?.status||order?.trangThai||'').toLowerCase();
+  if(!id||!['done','delivered'].includes(state)
+    ||!order?.customer_id||publicAccess||employeeAccess)return;
+  const eventKey=id+'|'+String(order?.updated_at||order?.delivered_at||'');
+  if(orderImageUploadsInFlight.has(eventKey))return;
+  orderImageUploadsInFlight.add(eventKey);
+  let built=null;
+  try{
+    const client=await auth.getClient();
+    const {data:ticket,error:ticketError}=await client.rpc('taphoa_order_notice_image_ticket',{p_order_id:id});
+    if(ticketError)throw ticketError;
+    // No eligible sent message = no image rendering / upload / extra network.
+    if(!ticket?.ok)return;
+    const portrait=window.TAPHOA_ORDER_PORTRAIT;
+    const capture=window.TAPHOA_SHARE_CAPTURE;
+    if(!portrait?.createPage||!capture?.captureElement||!capture?.canvasToPngBlob)throw Error('portrait_renderer_unavailable');
+    const items=Array.isArray(order.items)?order.items:[];
+    if(!items.length||items.length>130)return;
+    const format=v=>(Number(v)||0).toLocaleString('vi-VN');
+    const displayCode=String(order.displayCode||order.display_code||order.maDon||'').trim();
+    const stamp=order.delivered_at||order.ngay||order.created_at;
+    const stampText=stamp?new Date(stamp).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}):'';
+    const mapped=items.map((item,i)=>{
+      const qty=Number(item.qty??item.sl)||0;
+      const price=Number(item.unit_price??item.gia)||0;
+      return{
+        index:i+1,name:String(item.product_name||item.tenSP||item.ten||item.product_id||''),
+        note:String(item.note||item.ghiChu||'').trim(),
+        qtyText:format(qty),priceText:format(price),totalText:format(qty*price)
+      };
+    });
+    built=portrait.createPage({
+      isDraft:false,orderId:displayCode,customer:String(order.tenKH||'Khách hàng'),
+      time:stampText,items:mapped,lineCount:mapped.length,
+      totalQty:order.tongSL??mapped.reduce((sum,x)=>sum+Number(String(x.qtyText).replace(/[^0-9]/g,'')),0),
+      totalPriceText:format(order.tongTien)
+    });
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const width=Math.ceil(built.page.scrollWidth);
+    const height=Math.ceil(built.page.scrollHeight)+2;
+    if(height>19500)throw Error('portrait_exceeds_canvas_limit');
+    const canvas=await capture.captureElement(built.page,{
+      width,height,scale:1.2,renderTimeout:12000,libraryTimeout:6000
+    });
+    const blob=await capture.canvasToPngBlob(canvas,'Không tạo được ảnh đơn hàng.');
+    if(blob.size<1||blob.size>15728640)throw Error('portrait_exceeds_media_limit');
+    const object=await client.storage.from('v21-media').upload(ticket.storage_key,blob,{
+      contentType:'image/png',upsert:false,cacheControl:'3600'
+    });
+    if(object.error)throw object.error;
+    const {data:attached,error:attachError}=await client.rpc('taphoa_order_notice_image_attach',{
+      p_order_id:id,p_asset_id:ticket.asset_id,p_size_bytes:blob.size,
+      p_width_px:canvas.width,p_height_px:canvas.height
+    });
+    if(attachError)throw attachError;
+    if(!attached?.ok)throw Error('order_image_attach_failed');
+  }catch(error){
+    // Existing text + customer order link remains available on image failure.
+    console.warn('[taphoa] order notice image not attached:',String(error?.message||error));
+  }finally{
+    built?.host?.remove?.();
+    orderImageUploadsInFlight.delete(eventKey);
+  }
+}
+
 async function saveOrder(payload){
   if(employeeAccess)throw new Error('employee_read_only');
   const result=publicAccess
     ?await publicRpc('taphoa_public_save_pending_access',{p_order:orderRpcPayload({...payload,status:'pending'}),p_command_id:crypto.randomUUID()})
     :await business.saveOrder(payload);
+  if(!publicAccess&&!employeeAccess)void attachOrderNoticePortrait(result?.order);
   await refresh(['orders','debt']);
   return result;
 }
 async function deliverOrder(id){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
-  const result=await business.deliverOrder(id);await refresh(['orders','debt']);return result;
+  const result=await business.deliverOrder(id);
+  void attachOrderNoticePortrait(result?.order);
+  await refresh(['orders','debt']);
+  return result;
 }
 async function reverseOrder(id,reason='Hoàn đơn'){
   if(employeeAccess)throw new Error('employee_read_only');
