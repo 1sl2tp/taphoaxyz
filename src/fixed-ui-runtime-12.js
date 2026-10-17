@@ -191,8 +191,8 @@
                     // iOS share preview is only for "Gửi", never for "Lưu".
                     const saver=window.TAPHOA_IMAGE_SAVE?.savePng;
                     if(!saver)throw new Error('Chưa tải bộ lưu ảnh. Vui lòng làm mới trang.');
-                    saver(blob,'congno.png');
-                    showToast('Đã yêu cầu tải ảnh công nợ xuống thiết bị.','info');
+                    const mode=saver(blob,'congno.png');
+                    if(mode!=='preview')showToast('Đã yêu cầu tải ảnh công nợ xuống thiết bị.','info');
                     return;
                 }
                 const file = new File([blob], 'congno.png', { type:'image/png' });
