@@ -317,7 +317,7 @@
     const totalPriceText=getText(source,'#detailModalTotal')
       ||(items.reduce((sum,item)=>sum+number(item.totalText),0)).toLocaleString('vi-VN');
     return portrait.createPage({
-      isDraft:false,
+      isDraft:/^DT[0-9]+$/.test(orderCode||meta.orderId),
       orderId:orderCode||meta.orderId,
       customer,time,items,lineCount:items.length,totalQty,totalPriceText
     });
