@@ -56,7 +56,7 @@ test('cash collection preserves before and after balances, note and customer deb
   assert.match(receipt,/taphoa_chat_balance_label\(v_balance_after,false\)/);
   assert.match(receipt,/taphoa_customer_mini_link\(p_customer_id,'no',null,null,null\)/);
   assert.match(receipt,/Xem công nợ:/);
-  assert.match(receipt,/taphoa:%:collection/);
+  assert.match(receipt,/'taphoa:'\\s*\\|\\|\\s*p_command_id::text\\s*\\|\\|\\s*':collection'/);
   assert.doesNotMatch(send,/if v_client_id like 'taphoa:%:collection' then/);
 });
 

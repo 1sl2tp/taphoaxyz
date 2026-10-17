@@ -34,7 +34,8 @@ test('admin order save notifies customers only when the resulting order is deliv
   assert.match(fn,/v_notice\s*:=\s*'Đơn '\s*\|\|\s*v_display_code\s*\|\|\s*' đã được sửa'/);
   assert.match(fn,/taphoa_chat_order_receipt\([\s\S]*?'Đơn '\s*\|\|\s*v_display_code\s*\|\|\s*' đã giao'/);
   assert.equal((fn.match(/taphoa_chat_notify_customer/g)||[]).length,1);
-  assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':order'/);
+  assert.match(fn,/'taphoa:'\\s*\\|\\|\\s*p_command_id::text\\s*\\|\\|/);
+  assert.match(fn,/then ':order-edit' else ':order' end/);
 });
 
 test('dedicated delivery mutation emits exactly one detailed delivered receipt',()=>{
