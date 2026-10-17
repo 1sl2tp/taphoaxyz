@@ -47,6 +47,8 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
         p_amount:num(amount),p_note:String(note||''),p_command_id:id
       });
       // The same id links the committed debt transaction to its optional Chat PNG.
+      // notice_sent is computed server-side from customer/event consent; callers
+      // must not upload a receipt when there was no actual Chat notification.
       return {...result,notice_command_id:id};
     },
     createCustomer:name=>gateway.rpc('taphoa_admin_create_customer',{
