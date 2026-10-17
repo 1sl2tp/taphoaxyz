@@ -761,7 +761,7 @@
       String(row.product_id||row.maSP||row.code||'').trim(),
       Number(row.qty??row.sl)||0,
       Number(row.unit_price??row.gia)||0,
-      String(row.note??row.ghiChu||'').trim()
+      String((row.note??row.ghiChu)||'').trim()
     ]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
   }
   async function sendCartSavedOrder(){
