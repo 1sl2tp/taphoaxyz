@@ -615,7 +615,7 @@ function createDebtNoticeCanvas(result){
   const before=number(result.balance_before_vnd),after=number(result.balance_after_vnd);
   const amount=number(result.amount_vnd);
   if(amount<=0)throw Error('invalid_finance_amount');
-  const money=value=>Math.abs(number(value)).toLocaleString('vi-VN')+'đ';
+  const money=value=>Math.abs(number(value)).toLocaleString('vi-VN');
   const balanceLabel=(value,previous=false)=>{
     if(value>0)return (previous?'Nợ trước':'Còn nợ');
     if(value<0)return (previous?'Dư trước':'Còn dư');
@@ -652,7 +652,7 @@ function createDebtNoticeCanvas(result){
   ctx.fillText(customerName.length>42?customerName.slice(0,41)+'…':customerName,28,171);
   ctx.fillStyle='#eef4f8';ctx.fillRect(28,192,width-56,92);
   ctx.fillStyle='#526477';ctx.font='600 14px system-ui,sans-serif';
-  ctx.fillText(kind==='collection'?'SỐ TIỀN ĐÃ THU':'SỐ TIỀN GHI NỢ',44,224);
+  ctx.fillText(kind==='collection'?'SỐ TIỀN ĐÃ THU (VND)':'SỐ TIỀN GHI NỢ (VND)',44,224);
   ctx.fillStyle=kind==='collection'?'#047857':'#9a5a0b';
   ctx.font='700 32px system-ui,sans-serif';
   ctx.fillText(money(amount),44,265);
