@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 const bridge=fs.readFileSync('src/fixed-production-bridge.js','utf8');
 test('order notifications attach a real PNG to their existing text and link',()=>{
-  assert.match(bridge,/async function attachOrderNoticePortrait\(order\)/);
+  assert.match(bridge,/async function attachOrderNoticePortrait\(order,\{manual=false\}=\{\}\)/);
   assert.match(bridge,/taphoa_order_notice_image_ticket/);
   assert.match(bridge,/if\(!ticket\?\.ok\)return/);
   assert.match(bridge,/TAPHOA_ORDER_PORTRAIT/);
