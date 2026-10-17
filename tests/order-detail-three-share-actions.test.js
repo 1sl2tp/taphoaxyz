@@ -29,7 +29,7 @@ test('manual share changes no orders or debt and attaches media to Chat notice',
   assert.match(business,/taphoa_manual_send_saved_order/);
   assert.match(bridge,/async function manualShareOrder\(orderId,requestId\)/);
   assert.match(bridge,/business\.manualShareOrder\(id,nonce\)/);
-  assert.match(bridge,/attachOrderNoticePortrait\(response\.order\)/);
+  assert.match(bridge,/attachOrderNoticePortrait\(response\.order,\{manual:true\}\)/);
   assert.match(bridge,/image_attached:imageAttached===true/);
   assert.match(sql,/taphoa_role'<>'admin'/);
   assert.match(sql,/status IN \('pending','delivered'\)/);
