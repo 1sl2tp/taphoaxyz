@@ -189,19 +189,12 @@
                 const file = new File([blob], 'congno.png', { type:'image/png' });
                 const fallback = window.TAPHOA_IOS_SHARE_FALLBACK;
                 if (action === 'save') {
-                    if (fallback?.shouldUse?.()) {
-                        fallback.open([file], {title:'Lưu ảnh công nợ'});
-                    } else {
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href=url;link.download='congno.png';
-                        document.body.appendChild(link);
-                        try {link.click();} finally {
-                            link.remove();
-                            setTimeout(()=>URL.revokeObjectURL(url),1200);
-                        }
-                        showToast('Đã yêu cầu lưu một ảnh công nợ.','success');
-                    }
+                    // "Lưu" downloads exactly one PNG immediately on web/PWA.
+                    // iOS share preview is only for "Gửi", never for "Lưu".
+                    const saver=window.TAPHOA_IMAGE_SAVE?.savePng;
+                    if(!saver)throw new Error('Chưa tải bộ lưu ảnh. Vui lòng làm mới trang.');
+                    saver(blob,'congno.png');
+                    showToast('Đã yêu cầu tải ảnh công nợ xuống thiết bị.','info');
                     return;
                 }
                 if (fallback?.shouldUse?.()) {
