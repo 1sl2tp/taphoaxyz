@@ -544,6 +544,10 @@
     await shareNativeOrderText(title,cartNativeShareText(entries));
   }
 
+  // UI-113: Expensive PNG rendering is ON-DEMAND only. Never render the
+  // receipt, fetch the capture library or consume a background task on
+  // load, every quantity change, or opening an order. Keeps taps responsive.
+  // When share is requested, existing cache/promise logic still deduplicates.
   // The order-detail share button is one compact action menu. Saved orders
   // are sent to their own canonical customer; the menu never edits the cart.
   const detailShareMenu=document.createElement('div');
@@ -686,10 +690,6 @@
   window.addEventListener('resize',hideDetailShareMenu);
   document.addEventListener('scroll',hideDetailShareMenu,true);
 
-  // UI-113: Expensive PNG rendering is ON-DEMAND only. Never render the
-  // receipt, fetch the capture library or consume a background task on
-  // load, every quantity change, or opening an order. Keeps taps responsive.
-  // When share is requested, existing cache/promise logic still deduplicates.
   window.shareCartOrderImage=shareCartOrderImageV3;
 
   window.shareOrderImage=function(...args){
