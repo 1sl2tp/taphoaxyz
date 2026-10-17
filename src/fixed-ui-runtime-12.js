@@ -71,7 +71,7 @@
 
             let captureHost = null;
             try {
-                showLoading("Đang tạo ảnh gửi Zalo...");
+                showLoading("Đang tạo ảnh công nợ...");
 
                 const sourceWidth = Math.ceil(source.getBoundingClientRect().width);
                 const width = Math.min(760, Math.max(360, sourceWidth));
@@ -142,23 +142,22 @@
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
                 const captureHeight = Math.ceil(clone.scrollHeight) + 4;
-                const canvas = await html2canvas(clone, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    width: width,
+                // Match the working order-image path: lazy-load html2canvas
+                // through the shared helper, with a bounded render and PNG export.
+                // The debt modal must not call the unloaded global directly.
+                const capture = window.TAPHOA_SHARE_CAPTURE;
+                if (!capture?.captureElement || !capture?.canvasToPngBlob) {
+                    throw new Error('Chưa tải bộ tạo ảnh công nợ. Vui lòng tải lại trang.');
+                }
+                const canvas = await capture.captureElement(clone, {
+                    width,
                     height: captureHeight,
-                    windowWidth: width,
-                    windowHeight: captureHeight,
-                    scrollX: 0,
-                    scrollY: 0
+                    scale: 1.4,
+                    renderTimeout: 12000,
+                    libraryTimeout: 6500
                 });
 
-                const blob = await new Promise((resolve, reject) => {
-                    canvas.toBlob(result => result ? resolve(result) : reject(new Error("Không tạo được ảnh công nợ.")), 'image/png');
-                });
-
-                return blob;
+                return await capture.canvasToPngBlob(canvas, 'Không tạo được ảnh công nợ.');
             } finally {
                 captureHost?.remove();
                 hideLoading();
