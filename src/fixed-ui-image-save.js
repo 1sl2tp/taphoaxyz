@@ -1,14 +1,34 @@
 'use strict';
-// Shared one-tap PNG download for Order / Cart / Debt on web and installed PWA.
-// This is a file download, not navigator.share and not the iOS share preview.
-// Browser/OS download destinations and any native permission prompt remain theirs.
+// One PNG per action, with explicit iOS/PWA handling.
+// WebKit sometimes navigates to blob: instead of downloading; never invoke a
+// fake "direct save" on iPhone/iPad where Safari has no Photos-write API.
 (function(){
+  function isIosWebkit(){
+    const ua=String(navigator?.userAgent||'');
+    return /iPad|iPhone|iPod/i.test(ua)
+      || (navigator?.platform==='MacIntel'&&Number(navigator?.maxTouchPoints)>1);
+  }
   function savePng(blob,fileName){
     if(!(blob instanceof Blob)||!blob.size||blob.type!=='image/png'){
       throw new Error('Ảnh PNG không hợp lệ, vui lòng thử lại.');
     }
     const name=String(fileName||'anh.png').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,100);
     const safeName=/\.png$/i.test(name)?name:name+'.png';
+
+    if(isIosWebkit()){
+      // iOS Safari and installed PWA may open blob: URLs as another website,
+      // displaying "Mở trong…" / "Thêm…". Keep the image inside the PWA.
+      // Saving to Photos is user-mediated: long press and "Lưu vào Ảnh".
+      const viewer=window.TAPHOA_IOS_SHARE_FALLBACK;
+      if(!viewer?.open)throw new Error('Chưa tải màn xem ảnh. Vui lòng tải lại ứng dụng.');
+      const ok=viewer.open([new File([blob],safeName,{type:'image/png'})],{
+        title:'Lưu ảnh',mode:'save'
+      });
+      if(!ok)throw new Error('Không thể hiển thị ảnh để lưu.');
+      return 'preview';
+    }
+
+    // Desktop browsers: normal direct download; do not invoke share/preview.
     const url=URL.createObjectURL(blob);
     const anchor=document.createElement('a');
     anchor.href=url;
@@ -20,10 +40,9 @@
       anchor.click();
     }finally{
       anchor.remove();
-      // Safari/iOS can consume the blob after the click task completes.
       setTimeout(()=>URL.revokeObjectURL(url),30000);
     }
     return true;
   }
-  window.TAPHOA_IMAGE_SAVE=Object.freeze({savePng});
+  window.TAPHOA_IMAGE_SAVE=Object.freeze({savePng,isIosWebkit});
 })();
