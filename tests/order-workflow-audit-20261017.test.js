@@ -51,3 +51,13 @@ test('web and installed PWA Save never confuse blob navigation with saving to Ph
   assert.match(shell,/fixed-ui-ios-share-fallback\.js/);
   assert.match(shell,/fixed-ui-runtime-12\.js/);
 });
+
+test('Copy image never downgrades to text without the user's request',()=>{
+  const st=share.indexOf('async function copyDetailOrderImage(');
+  const en=share.indexOf("detailShareMenu.addEventListener('click'",st);
+  assert.ok(st>=0&&en>st);
+  const handler=share.slice(st,en);
+  assert.match(handler,/Thiết bị chưa hỗ trợ sao chép ảnh/);
+  assert.doesNotMatch(handler,/writeText|detailNativeShareText/);
+  assert.match(share,/ClipboardItem\(\{'image\/png':png\}\)/);
+});
