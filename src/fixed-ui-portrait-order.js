@@ -61,7 +61,7 @@
     const isDraft=!!options.isDraft;
     const isLast=options.isLastPage!==false;
     const orderId=String(options.orderId??'').trim();
-    const title=isDraft?'Đơn đang tạo':'Mã đơn: '+(orderId||'--');
+    const title=isDraft?(orderId?'Đơn tạm: '+orderId:'Đơn đang tạo'):'Mã đơn: '+(orderId||'--');
     const pageIndex=Number(options.pageIndex)||0;
     const pageCount=Math.max(1,Number(options.pageCount)||1);
     const pageNumber=pageCount>1
