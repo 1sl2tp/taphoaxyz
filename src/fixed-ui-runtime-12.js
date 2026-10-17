@@ -186,8 +186,6 @@
             }
             try {
                 const blob = await pendingBlob;
-                const file = new File([blob], 'congno.png', { type:'image/png' });
-                const fallback = window.TAPHOA_IOS_SHARE_FALLBACK;
                 if (action === 'save') {
                     // "Lưu" downloads exactly one PNG immediately on web/PWA.
                     // iOS share preview is only for "Gửi", never for "Lưu".
@@ -197,6 +195,8 @@
                     showToast('Đã yêu cầu tải ảnh công nợ xuống thiết bị.','info');
                     return;
                 }
+                const file = new File([blob], 'congno.png', { type:'image/png' });
+                const fallback = window.TAPHOA_IOS_SHARE_FALLBACK;
                 if (fallback?.shouldUse?.()) {
                     fallback.open([file], {title:'Công nợ'});
                 } else if (navigator.share && navigator.canShare?.({files:[file]})) {
