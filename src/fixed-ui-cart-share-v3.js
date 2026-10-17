@@ -523,6 +523,7 @@
       return;
     }
     // Same real saved-order portrait used by public-order image viewer.
+    // Source is the persisted order's detail rows, not an editable cart snapshot.
     // Never create an unrelated cart demo or replace its PNG with plain text.
     const artifact=await prepareDetailShareCache();
     if(!artifact?.blob){
