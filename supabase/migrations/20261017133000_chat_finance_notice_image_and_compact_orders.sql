@@ -161,25 +161,57 @@ end;
 $$;
 
 -- Text is intentionally short because the image contains full order rows.
-CREATE OR REPLACE FUNCTION public.taphoa_chat_order_receipt(
-  p_order_json jsonb,p_heading text,p_balance_vnd bigint DEFAULT NULL
+create or replace function public.taphoa_chat_order_receipt(
+  p_order_json jsonb,
+  p_heading text,
+  p_balance_vnd bigint default null::bigint
 )
-RETURNS text LANGUAGE plpgsql IMMUTABLE SET search_path TO public AS $$
-DECLARE
-  v_total_vnd bigint := round(coalesce(nullif(p_order_json->>'tongTien','')::numeric,0)*1000)::bigint;
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_total_vnd numeric := coalesce(nullif(p_order_json->>'tongTien','')::numeric,0);
   v_codes text := coalesce(nullif(p_order_json->>'tongMa',''),'0');
   v_qty text := public.taphoa_chat_qty(coalesce(nullif(p_order_json->>'tongSL','')::numeric,0));
+  v_lines text := public.taphoa_chat_order_lines(p_order_json,2);
+  v_code text := coalesce(nullif(p_order_json->>'displayCode',''),nullif(p_order_json->>'display_code',''),nullif(p_order_json->>'maDon',''),'--');
   v_customer uuid := nullif(p_order_json->>'customer_id','')::uuid;
-  v_code text := coalesce(p_order_json->>'displayCode',p_order_json->>'display_code','');
+  v_order_id uuid := nullif(coalesce(p_order_json->>'order_id',p_order_json->>'id'),'')::uuid;
+  v_at timestamptz := coalesce(
+    nullif(p_order_json->>'delivered_at','')::timestamptz,
+    nullif(p_order_json->>'created_at','')::timestamptz,
+    nullif(p_order_json->>'ngay','')::timestamptz,
+    now()
+  );
+  v_kind text;
+  v_url text;
   v_body text;
-BEGIN
-  v_body:=btrim(coalesce(p_heading,'')) || E'\n'
-    ||v_codes||' mã · '||v_qty||' sản phẩm · '||public.taphoa_chat_money(v_total_vnd);
-  IF p_balance_vnd IS NOT NULL THEN
-    v_body:=v_body||E'\n'||public.taphoa_chat_balance_label(p_balance_vnd,false);
-  END IF;
-  RETURN v_body;
-END;
+begin
+  v_kind := case
+    when lower(btrim(coalesce(p_heading,''))) like '%sửa%'
+      or lower(btrim(coalesce(p_heading,''))) like '%cập nhật%' then 'Cập nhật'
+    when lower(btrim(coalesce(p_heading,''))) like '%giao%' then 'Đã giao'
+    when lower(btrim(coalesce(p_heading,''))) like '%tạo%' then 'Tạo đơn'
+    else coalesce(nullif(btrim(p_heading),''),'Đơn hàng')
+  end;
+
+  -- Only the heading and compact order totals in text.
+  -- Detailed products and transaction time remain visible on the attached image.
+  v_body := v_kind || ' · ' || v_code || E'\n'
+    || v_codes || ' mã · ' || v_qty || ' sản phẩm · '
+    || public.taphoa_chat_money(v_total_vnd);
+
+  if v_customer is not null and v_order_id is not null and v_code<>'--' then
+    v_url := public.taphoa_customer_mini_link(v_customer,'don',null,null,v_code);
+    if v_url is not null then
+      v_body := v_body || E'\nXem đơn: ' || v_url;
+    end if;
+  end if;
+
+  return v_body;
+end;
 $$;
 
 -- Order image ticket must continue to match the new two-line compact heading.
