@@ -178,16 +178,9 @@ declare
   v_total_vnd numeric := coalesce(nullif(p_order_json->>'tongTien','')::numeric,0);
   v_codes text := coalesce(nullif(p_order_json->>'tongMa',''),'0');
   v_qty text := public.taphoa_chat_qty(coalesce(nullif(p_order_json->>'tongSL','')::numeric,0));
-  v_lines text := public.taphoa_chat_order_lines(p_order_json,2);
   v_code text := coalesce(nullif(p_order_json->>'displayCode',''),nullif(p_order_json->>'display_code',''),nullif(p_order_json->>'maDon',''),'--');
   v_customer uuid := nullif(p_order_json->>'customer_id','')::uuid;
   v_order_id uuid := nullif(coalesce(p_order_json->>'order_id',p_order_json->>'id'),'')::uuid;
-  v_at timestamptz := coalesce(
-    nullif(p_order_json->>'delivered_at','')::timestamptz,
-    nullif(p_order_json->>'created_at','')::timestamptz,
-    nullif(p_order_json->>'ngay','')::timestamptz,
-    now()
-  );
   v_kind text;
   v_url text;
   v_body text;
