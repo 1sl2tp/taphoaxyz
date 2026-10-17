@@ -44,8 +44,8 @@
         </div>
         <div data-ios-share-images style="flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px;background:#eef2f7;"></div>
         <div style="flex:none;background:#fff;border-top:1px solid #e5e7eb;padding:10px 14px calc(10px + env(safe-area-inset-bottom));">
-          <div style="font:700 12px/1.35 'Be Vietnam Pro',sans-serif;color:#374151;text-align:center;">Nhấn giữ trực tiếp lên ảnh → Chia sẻ</div>
-          <div style="font:500 10px/1.35 'Be Vietnam Pro',sans-serif;color:#9ca3af;text-align:center;margin-top:3px;">PWA iPhone dùng ảnh thật để tránh lỗi Share Sheet của WebKit.</div>
+          <div data-ios-share-instruction style="font:700 12px/1.35 'Be Vietnam Pro',sans-serif;color:#374151;text-align:center;">Nhấn giữ trực tiếp lên ảnh → Chia sẻ</div>
+          <div data-ios-share-hint style="font:500 10px/1.35 'Be Vietnam Pro',sans-serif;color:#9ca3af;text-align:center;margin-top:3px;">PWA iPhone dùng ảnh thật để tránh lỗi Share Sheet của WebKit.</div>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <button type="button" data-ios-share-copy style="display:none;flex:1;height:42px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#374151;font:700 12px 'Be Vietnam Pro',sans-serif;">Sao chép ảnh</button>
             <button type="button" data-ios-share-save style="flex:1;height:42px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 12px 'Be Vietnam Pro',sans-serif;">Lưu ảnh</button>
@@ -74,11 +74,27 @@
     const title=host.querySelector('[data-ios-share-title]');
     const count=host.querySelector('[data-ios-share-count]');
     const copyBtn=host.querySelector('[data-ios-share-copy]');
+    const saveBtn=host.querySelector('[data-ios-share-save]');
+    const instruction=host.querySelector('[data-ios-share-instruction]');
+    const hint=host.querySelector('[data-ios-share-hint]');
+    const saveMode=options.mode==='save';
 
     revokeUrls();
     owner.innerHTML='';
     if(title)title.textContent=String(options.title||'Ảnh chia sẻ');
-    if(count)count.textContent=list.length>1 ? `${list.length} ảnh · nhấn giữ ảnh cần gửi` : '1 ảnh · nhấn giữ để chia sẻ';
+    if(count)count.textContent=saveMode
+      ? '1 ảnh · nhấn giữ để lưu vào Ảnh'
+      : list.length>1 ? `${list.length} ảnh · nhấn giữ ảnh cần gửi` : '1 ảnh · nhấn giữ để chia sẻ';
+    if(instruction)instruction.textContent=saveMode
+      ? 'Nhấn giữ ảnh → chọn Lưu vào Ảnh'
+      : 'Nhấn giữ trực tiếp lên ảnh → Chia sẻ';
+    if(hint)hint.textContent=saveMode
+      ? 'Safari/PWA không thể tự ghi vào Ảnh; thao tác lưu do iOS thực hiện.'
+      : 'PWA iPhone dùng ảnh thật để tránh lỗi Share Sheet của WebKit.';
+    // Never offer the obsolete blob: download inside the Save preview.
+    // It was reopening the browser with “Mở trong…” and “Thêm…”.
+    host.dataset.saveMode=saveMode?'true':'false';
+    if(saveBtn)saveBtn.style.display=saveMode?'none':'block';
 
     list.forEach((file,index)=>{
       const url=URL.createObjectURL(file);
@@ -103,7 +119,7 @@
     host.__shareFiles=list;
     if(copyBtn){
       const canCopy=typeof ClipboardItem!=='undefined' && !!navigator.clipboard?.write && list.length===1;
-      copyBtn.style.display=canCopy?'block':'none';
+      copyBtn.style.display=saveMode?'none':canCopy?'block':'none';
     }
 
     previousBodyOverflow=document.body.style.overflow;
@@ -139,7 +155,7 @@
   function saveFiles(){
     const host=document.getElementById('iosPwaSharePreview');
     const files=Array.from(host?.__shareFiles||[]);
-    if(!files.length)return;
+    if(!files.length || host?.dataset?.saveMode==='true')return;
     files.forEach((file,index)=>{
       const url=URL.createObjectURL(file);
       const a=document.createElement('a');
