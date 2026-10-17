@@ -690,6 +690,145 @@
   window.addEventListener('resize',hideDetailShareMenu);
   document.addEventListener('scroll',hideDetailShareMenu,true);
 
+  // The edit-cart icon uses the same three actions as the saved-order detail.
+  // Never call the OS text-share payload: macOS interprets its title + body as
+  // multiple share items. Export a single PNG, and only send committed orders.
+  const cartActionMenu=document.createElement('div');
+  cartActionMenu.id='cartOrderShareActionMenu';
+  cartActionMenu.setAttribute('role','menu');
+  cartActionMenu.setAttribute('aria-label','Chia sẻ giỏ hàng');
+  cartActionMenu.hidden=true;
+  cartActionMenu.style.cssText=detailShareMenu.style.cssText;
+  cartActionMenu.innerHTML=[
+    '<button type="button" role="menuitem" data-cart-share-action="send" style="display:flex;align-items:center;width:100%;gap:10px;padding:11px 12px;border:0;background:transparent;border-radius:9px;cursor:pointer;text-align:left;color:#0f172a;font:600 14px system-ui"><i class="ph-bold ph-paper-plane-tilt" aria-hidden="true"></i>Gửi đơn</button>',
+    '<button type="button" role="menuitem" data-cart-share-action="save" style="display:flex;align-items:center;width:100%;gap:10px;padding:11px 12px;border:0;background:transparent;border-radius:9px;cursor:pointer;text-align:left;color:#0f172a;font:600 14px system-ui"><i class="ph-bold ph-download-simple" aria-hidden="true"></i>Lưu</button>',
+    '<button type="button" role="menuitem" data-cart-share-action="copy" style="display:flex;align-items:center;width:100%;gap:10px;padding:11px 12px;border:0;background:transparent;border-radius:9px;cursor:pointer;text-align:left;color:#0f172a;font:600 14px system-ui"><i class="ph-bold ph-copy" aria-hidden="true"></i>Sao chép</button>'
+  ].join('');
+  document.body.appendChild(cartActionMenu);
+  const cartActionButton=document.getElementById('cartShareOrderBtn');
+  let cartSendBusy=false;
+  function closeCartShareMenu(){
+    cartActionMenu.hidden=true;
+    cartActionButton?.setAttribute('aria-expanded','false');
+  }
+  function openCartShareMenu(){
+    if(!cartActionButton)return;
+    hideDetailShareMenu();
+    const rect=cartActionButton.getBoundingClientRect();
+    cartActionMenu.style.top=Math.max(8,Math.min(window.innerHeight-160,rect.bottom+8))+'px';
+    cartActionMenu.style.left=Math.max(8,Math.min(window.innerWidth-196,rect.right-188))+'px';
+    cartActionMenu.hidden=false;
+    cartActionButton.setAttribute('aria-expanded','true');
+    cartActionMenu.querySelector('button')?.focus();
+  }
+  async function cartPngArtifact(){
+    const result=await prepareCartShareCache();
+    if(!result?.blob)throw Error('Không tạo được một ảnh giỏ hàng.');
+    return result;
+  }
+  async function saveCartPng(){
+    const artifact=await cartPngArtifact();
+    const fallback=window.TAPHOA_IOS_SHARE_FALLBACK;
+    if(fallback?.shouldUse?.()){
+      fallback.open([new File([artifact.blob],artifact.fileName,{type:'image/png'})],{title:'Lưu ảnh đơn hàng'});
+      return;
+    }
+    const url=URL.createObjectURL(artifact.blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=artifact.fileName;
+    document.body.appendChild(a);
+    try{a.click();}finally{a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
+    if(typeof showToast==='function')showToast('Đã yêu cầu lưu một ảnh đơn hàng.','success');
+  }
+  async function copyCartPng(){
+    if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')
+      throw Error('Thiết bị chưa cho phép sao chép ảnh. Hãy dùng Lưu.');
+    const png=cartPngArtifact().then(result=>result.blob);
+    await navigator.clipboard.write([new ClipboardItem({'image/png':png})]);
+    if(typeof showToast==='function')showToast('Đã sao chép một ảnh đơn hàng.','success');
+  }
+  function cartBackendOrderId(){
+    const display=String(typeof editingOrderId!=='undefined'?editingOrderId||'':'').trim();
+    const sheet=String(typeof editingOrderSheet!=='undefined'?editingOrderSheet||'':'').trim();
+    if(!display||!['dontam','dongiao'].includes(sheet)||typeof appData==='undefined')return '';
+    const ids=(appData[sheet]||[]).slice(1)
+      .filter(row=>String(row?.[0]||'').trim()===display)
+      .map(row=>String(row?.[7]||'').trim()).filter(id=>UUID_PATTERN.test(id));
+    return new Set(ids).size===1?ids[0]:'';
+  }
+  function comparableLines(items){
+    return items.map(row=>[
+      String(row.product_id||row.maSP||row.code||'').trim(),
+      Number(row.qty??row.sl)||0,
+      Number(row.unit_price??row.gia)||0,
+      String(row.note??row.ghiChu||'').trim()
+    ]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  }
+  async function sendCartSavedOrder(){
+    if(cartSendBusy)return;
+    const prod=window.TAPHOA_PRODUCTION;
+    const orderId=cartBackendOrderId();
+    if(prod?.getIdentity?.()?.role!=='admin'||prod?.getAccessMode?.()!=='account'){
+      if(typeof showToast==='function')showToast('Chỉ quản trị viên được gửi đơn trực tiếp.','info');
+      return;
+    }
+    if(!orderId){
+      if(typeof showToast==='function')showToast('Hãy lưu đơn trước khi gửi.','info');
+      return;
+    }
+    cartSendBusy=true;
+    const btn=cartActionMenu.querySelector('[data-cart-share-action="send"]');
+    if(btn)btn.disabled=true;
+    try{
+      const detail=await prod.orderDetail(orderId);
+      const saved=detail?.order||detail||{};
+      const cartRows=currentCartEntries().map(([productId,row])=>({
+        product_id:productId,qty:row?.qty,unit_price:row?.price,note:row?.note
+      }));
+      if(JSON.stringify(comparableLines(cartRows))!==JSON.stringify(comparableLines(saved.items||[]))){
+        if(typeof showToast==='function')showToast('Đơn đang sửa chưa lưu. Hãy cập nhật đơn trước khi gửi.','info');
+        return;
+      }
+      const customerId=cartChatCustomerId();
+      if(!customerId||customerId!==String(saved.customer_id||'').toLowerCase()){
+        if(typeof showToast==='function')showToast('Khách của đơn không trùng khách đang chọn. Mở lại đơn trước khi gửi.','info');
+        return;
+      }
+      const result=await prod.manualShareOrder(orderId,crypto.randomUUID());
+      if(typeof showToast==='function'){
+        const message=!result?.ok
+          ?(result?.reason==='recently_sent'?'Đơn vừa được gửi, vui lòng đợi.':'Không gửi được đơn.')
+          :(result.image_attached?'Đã gửi một ảnh đơn vào Chat.':'Đã gửi đơn nhưng ảnh chưa đính kèm.');
+        showToast(message,result?.ok&&result.image_attached?'success':'info');
+      }
+    }catch(error){
+      if(typeof showAlertPopup==='function')showAlertPopup('Gửi đơn không thành công',String(error?.message||error));
+    }finally{
+      cartSendBusy=false;
+      if(btn)btn.disabled=false;
+    }
+  }
+  cartActionMenu.addEventListener('click',event=>{
+    const button=event.target.closest('[data-cart-share-action]');
+    if(!button||button.disabled)return;
+    const action=button.dataset.cartShareAction;
+    closeCartShareMenu();
+    const operation=action==='send'?sendCartSavedOrder()
+      :action==='save'?saveCartPng():action==='copy'?copyCartPng():null;
+    if(operation)void operation.catch(error=>{
+      if(typeof showAlertPopup==='function')showAlertPopup('Không thể chia sẻ',String(error?.message||error));
+    });
+  });
+  document.addEventListener('pointerdown',event=>{
+    if(!cartActionMenu.hidden&&!cartActionMenu.contains(event.target)
+      &&!cartActionButton?.contains(event.target))closeCartShareMenu();
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&!cartActionMenu.hidden)closeCartShareMenu();
+  });
+  window.addEventListener('resize',closeCartShareMenu);
+  document.addEventListener('scroll',closeCartShareMenu,true);
+
   window.shareCartOrderImage=shareCartOrderImageV3;
 
   window.shareOrderImage=function(...args){
@@ -699,8 +838,15 @@
 
   const cartShareBtn=document.getElementById('cartShareOrderBtn');
   if(cartShareBtn){
-    cartShareBtn.onclick=shareCartOrderImageV3;
-    cartShareBtn.setAttribute('data-cart-share-version','5-system-share');
+    cartShareBtn.removeAttribute('onclick');
+    cartShareBtn.setAttribute('aria-haspopup','menu');
+    cartShareBtn.setAttribute('aria-controls','cartOrderShareActionMenu');
+    cartShareBtn.setAttribute('aria-expanded','false');
+    cartShareBtn.onclick=()=>{
+      if(cartActionMenu.hidden)openCartShareMenu();
+      else closeCartShareMenu();
+    };
+    cartShareBtn.setAttribute('data-cart-share-version','6-single-image-menu');
   }
 
   const detailShareBtn=document.getElementById('orderDetailShareButton');
