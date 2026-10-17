@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION public.chat_admin_outbound_settings_get()
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'v21_private'
-AS $function$
+AS $$
 declare v_ctx jsonb;v_options v21_private.chat_outbound_options;v_master boolean;
 begin
  v_ctx:=public.platform_account_context();
@@ -37,7 +37,7 @@ begin
    ),'[]'::jsonb)
  );
 end;
-$function$
+$$
 ;
 
 CREATE OR REPLACE FUNCTION public.chat_admin_outbound_settings_set(p_key text, p_enabled boolean, p_customer_id uuid DEFAULT NULL::uuid)
@@ -45,7 +45,7 @@ CREATE OR REPLACE FUNCTION public.chat_admin_outbound_settings_set(p_key text, p
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'v21_private'
-AS $function$
+AS $$
 declare v_ctx jsonb;v_admin_id uuid;
 begin
  v_ctx:=public.platform_account_context();
@@ -84,7 +84,7 @@ begin
  end if;
  return public.chat_admin_outbound_settings_get();
 end;
-$function$
+$$
 ;
 
 CREATE OR REPLACE FUNCTION v21_private.chat_outbound_allowed(p_customer_id uuid, p_client_id text)
@@ -92,7 +92,7 @@ CREATE OR REPLACE FUNCTION v21_private.chat_outbound_allowed(p_customer_id uuid,
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'v21_private'
-AS $function$
+AS $$
 declare
  v_flags v21_private.chat_outbound_options;
  v_kind text;
@@ -139,7 +139,7 @@ begin
  into v_linked;
  return case when v_linked then v_flags.audience_linked else v_flags.audience_unlinked end;
 end;
-$function$
+$$
 ;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_notify_customer(p_customer_id uuid, p_sender_account_id uuid, p_client_id text, p_body text)
@@ -147,7 +147,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_chat_notify_customer(p_customer_id uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $function$
+AS $$
 declare
   v_member_a uuid;
   v_member_b uuid;
@@ -278,7 +278,7 @@ begin
 
   return v_message_id;
 end;
-$function$
+$$
 ;
 
 CREATE OR REPLACE FUNCTION public.taphoa_debt_transaction(p_customer_id uuid, p_type text, p_amount numeric, p_note text, p_command_id uuid)
@@ -286,7 +286,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_debt_transaction(p_customer_id uuid, p_
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $function$
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -410,7 +410,7 @@ Xem công nợ: ' || v_url;
 
   return v_result;
 end;
-$function$
+$$
 ;
 
 CREATE OR REPLACE FUNCTION public.taphoa_order_notice_image_ticket(p_order_id uuid)
@@ -418,7 +418,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_order_notice_image_ticket(p_order_id uu
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'v21_private', 'auth', 'pg_temp'
-AS $function$
+AS $$
 declare
  v_ctx jsonb := public.taphoa_access_context();
  v_sender uuid := nullif(v_ctx->>'account_id','')::uuid;
@@ -474,7 +474,7 @@ begin
  return jsonb_build_object('ok',true,'order_id',v_ticket.order_id,'message_id',v_ticket.message_id,
   'asset_id',v_ticket.asset_id,'storage_key',v_ticket.storage_key);
 end;
-$function$
+$$
 ;
 
 CREATE OR REPLACE FUNCTION public.taphoa_save_order(p_order jsonb, p_command_id uuid)
@@ -482,7 +482,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_save_order(p_order jsonb, p_command_id 
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'auth'
-AS $function$
+AS $$
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -704,7 +704,7 @@ begin
   insert into public.taphoa_command_log(command_id,operation,result) values(p_command_id,'save_order',v_result);
   return v_result;
 end;
-$function$
+$$
 ;
 
 -- Existing function privileges are preserved when functions are replaced.

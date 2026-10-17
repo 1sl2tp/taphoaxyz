@@ -48,14 +48,16 @@ test('edit notification is normalized to the single word Cập nhật and skips 
   assert.match(fn,/Không có thay đổi nội dung\.[\s\S]*?return null/i);
 });
 
-test('cash collection is one compact line plus weekday time and app debt link',()=>{
-  const fn=latestFunction('taphoa_chat_notify_customer');
-  assert.match(fn,/like 'taphoa:%:collection'/);
-  assert.match(fn,/'Đã thu ' \|\| v_amount_text/);
-  assert.match(fn,/taphoa_chat_balance_label\(v_balance,false\)/);
-  assert.match(fn,/taphoa_chat_when\(now\(\)\)/);
-  assert.match(fn,/taphoa_customer_mini_link\(p_customer_id,'no',null,null,null\)/);
-  assert.doesNotMatch(fn,/Nợ trước:/);
+test('cash collection preserves before and after balances, note and customer debt link',()=>{
+  const receipt=latestFunction('taphoa_debt_transaction');
+  const send=latestFunction('taphoa_chat_notify_customer');
+  assert.match(receipt,/taphoa_chat_money\(v_amount_vnd\)/);
+  assert.match(receipt,/taphoa_chat_balance_label\(v_balance_before,true\)/);
+  assert.match(receipt,/taphoa_chat_balance_label\(v_balance_after,false\)/);
+  assert.match(receipt,/taphoa_customer_mini_link\(p_customer_id,'no',null,null,null\)/);
+  assert.match(receipt,/Xem công nợ:/);
+  assert.match(receipt,/taphoa:%:collection/);
+  assert.doesNotMatch(send,/if v_client_id like 'taphoa:%:collection' then/);
 });
 
 test('customer links use one mini app shell and deep-link the active function',()=>{
