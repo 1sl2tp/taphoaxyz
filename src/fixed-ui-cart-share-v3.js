@@ -639,18 +639,10 @@
   async function saveDetailOrderImage(){
     const artifact=await prepareDetailShareCache();
     if(!artifact?.blob)throw Error('Không tạo được ảnh đơn hàng.');
-    const fallback=window.TAPHOA_IOS_SHARE_FALLBACK;
-    if(fallback?.shouldUse?.()){
-      fallback.open([new File([artifact.blob],artifact.fileName,{type:'image/png'})],{title:'Lưu ảnh đơn hàng'});
-      return;
-    }
-    const url=URL.createObjectURL(artifact.blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=artifact.fileName;
-    document.body.appendChild(a);
-    try{a.click();}finally{a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
-    if(typeof showToast==='function')showToast('Đã yêu cầu lưu ảnh đơn hàng.','success');
+    const saver=window.TAPHOA_IMAGE_SAVE?.savePng;
+    if(!saver)throw Error('Chưa tải bộ lưu ảnh. Vui lòng làm mới trang.');
+    saver(artifact.blob,artifact.fileName);
+    if(typeof showToast==='function')showToast('Đã yêu cầu tải ảnh xuống thiết bị.','info');
   }
   async function copyDetailOrderImage(){
     const clip=navigator.clipboard;
@@ -728,17 +720,10 @@
   }
   async function saveCartPng(){
     const artifact=await cartPngArtifact();
-    const fallback=window.TAPHOA_IOS_SHARE_FALLBACK;
-    if(fallback?.shouldUse?.()){
-      fallback.open([new File([artifact.blob],artifact.fileName,{type:'image/png'})],{title:'Lưu ảnh đơn hàng'});
-      return;
-    }
-    const url=URL.createObjectURL(artifact.blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=artifact.fileName;
-    document.body.appendChild(a);
-    try{a.click();}finally{a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
-    if(typeof showToast==='function')showToast('Đã yêu cầu lưu một ảnh đơn hàng.','success');
+    const saver=window.TAPHOA_IMAGE_SAVE?.savePng;
+    if(!saver)throw Error('Chưa tải bộ lưu ảnh. Vui lòng làm mới trang.');
+    saver(artifact.blob,artifact.fileName);
+    if(typeof showToast==='function')showToast('Đã yêu cầu tải ảnh xuống thiết bị.','info');
   }
   async function copyCartPng(){
     if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')
