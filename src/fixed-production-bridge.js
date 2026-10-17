@@ -496,7 +496,9 @@ const orderImageUploadsInFlight=new Set();
 async function attachOrderNoticePortrait(order){
   const id=String(order?.order_id||order?.id||'').trim();
   const state=String(order?.status||order?.trangThai||'').toLowerCase();
-  if(!id||!['done','delivered'].includes(state)
+  // Saved drafts (DT) are real order-create/edit events; render their same
+  // canonical image alongside delivered (DG) notices.
+  if(!id||!['pending','done','delivered'].includes(state)
     ||!order?.customer_id||publicAccess||employeeAccess)return;
   const eventKey=id+'|'+String(order?.updated_at||order?.delivered_at||'');
   if(orderImageUploadsInFlight.has(eventKey))return;
