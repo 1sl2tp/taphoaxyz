@@ -516,6 +516,34 @@
     }finally{nativeShareInFlight=false;}
   }
 
+  async function shareDetailOrderImageV3(){
+    const source=document.getElementById('orderDetailContentToShare');
+    if(!source){
+      if(typeof showAlertPopup==='function')showAlertPopup('Chưa mở chi tiết đơn','Hãy mở một đơn đã lưu trước khi chia sẻ ảnh.');
+      return;
+    }
+    // Same real saved-order portrait used by public-order image viewer.
+    // Source is the persisted order's detail rows, not an editable cart snapshot.
+    // Never create an unrelated cart demo or replace its PNG with plain text.
+    const artifact=await prepareDetailShareCache();
+    if(!artifact?.blob){
+      if(typeof showAlertPopup==='function')showAlertPopup('Không tạo được ảnh đơn','Vui lòng mở lại đơn đã lưu rồi thử chia sẻ ảnh.');
+      return;
+    }
+    await shareOrDownloadPng(artifact.blob,artifact.fileName,artifact.title,artifact.text);
+  }
+
+  async function shareCartOrderImageV3(){
+    const entries=currentCartEntries();
+    if(!entries.length){
+      if(typeof showAlertPopup==='function')showAlertPopup('Giỏ hàng trống','Không có sản phẩm để chia sẻ.');
+      return;
+    }
+    const meta=getOrderMeta();
+    const title=meta.isCreatingSaleDraft?'Đơn đang tạo':'Đơn hàng';
+    await shareNativeOrderText(title,cartNativeShareText(entries));
+  }
+
   // The order-detail share button is one compact action menu. Saved orders
   // are sent to their own canonical customer; the menu never edits the cart.
   const detailShareMenu=document.createElement('div');
@@ -657,34 +685,6 @@
   });
   window.addEventListener('resize',hideDetailShareMenu);
   document.addEventListener('scroll',hideDetailShareMenu,true);
-
-  async function shareDetailOrderImageV3(){
-    const source=document.getElementById('orderDetailContentToShare');
-    if(!source){
-      if(typeof showAlertPopup==='function')showAlertPopup('Chưa mở chi tiết đơn','Hãy mở một đơn đã lưu trước khi chia sẻ ảnh.');
-      return;
-    }
-    // Same real saved-order portrait used by public-order image viewer.
-    // Source is the persisted order's detail rows, not an editable cart snapshot.
-    // Never create an unrelated cart demo or replace its PNG with plain text.
-    const artifact=await prepareDetailShareCache();
-    if(!artifact?.blob){
-      if(typeof showAlertPopup==='function')showAlertPopup('Không tạo được ảnh đơn','Vui lòng mở lại đơn đã lưu rồi thử chia sẻ ảnh.');
-      return;
-    }
-    await shareOrDownloadPng(artifact.blob,artifact.fileName,artifact.title,artifact.text);
-  }
-
-  async function shareCartOrderImageV3(){
-    const entries=currentCartEntries();
-    if(!entries.length){
-      if(typeof showAlertPopup==='function')showAlertPopup('Giỏ hàng trống','Không có sản phẩm để chia sẻ.');
-      return;
-    }
-    const meta=getOrderMeta();
-    const title=meta.isCreatingSaleDraft?'Đơn đang tạo':'Đơn hàng';
-    await shareNativeOrderText(title,cartNativeShareText(entries));
-  }
 
   // UI-113: Expensive PNG rendering is ON-DEMAND only. Never render the
   // receipt, fetch the capture library or consume a background task on
