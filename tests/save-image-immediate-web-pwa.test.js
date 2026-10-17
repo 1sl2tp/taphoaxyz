@@ -56,7 +56,7 @@ test('both detail and cart Lưu trigger exactly one download in iPhone PWA',asyn
     const context={
       window:{
         TAPHOA_IMAGE_SAVE:{savePng:(blob,name)=>{
-          assert.equal(blob,png);assert.equal(name,'hoa-don.png');actions.push('download');
+          assert.equal(blob,png);assert.equal(name,'hoa-don.png');actions.push('download');return true;
         }},
         TAPHOA_IOS_SHARE_FALLBACK:{shouldUse:()=>true,open:()=>{throw Error('preview')}}
       },
@@ -67,6 +67,43 @@ test('both detail and cart Lưu trigger exactly one download in iPhone PWA',asyn
     await save();
     assert.deepEqual(actions,['download','toast']);
   }
+});
+
+test('iOS installed PWA Save never navigates to blob URL or opens another website',()=>{
+  const operations=[];
+  const ctx={
+    Blob,
+    File:class{
+      constructor(chunks,name,opts){this.chunks=chunks;this.name=name;this.type=opts.type;}
+    },
+    navigator:{userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15',platform:'iPhone'},
+    window:{
+      TAPHOA_IOS_SHARE_FALLBACK:{open:(files,opts)=>{
+        assert.equal(files.length,1);
+        assert.equal(files[0].type,'image/png');
+        assert.equal(files[0].name,'congno.png');
+        assert.equal(opts.mode,'save');
+        operations.push('in-app-preview');
+        return true;
+      }}
+    },
+    document:{createElement:()=>{throw Error('must never create download link on iOS');}},
+    URL:{createObjectURL:()=>{throw Error('must never navigate to blob: on iOS');}}
+  };
+  vm.runInNewContext(helper,ctx);
+  const result=ctx.window.TAPHOA_IMAGE_SAVE.savePng(new Blob(['png'],{type:'image/png'}),'congno.png');
+  assert.equal(result,'preview');
+  assert.deepEqual(operations,['in-app-preview']);
+});
+
+test('iOS share preview Save mode blocks second blob download and shows honest Photos steps',()=>{
+  const fallback=fs.readFileSync('src/fixed-ui-ios-share-fallback.js','utf8');
+  assert.match(fallback,/options\.mode==='save'/);
+  assert.match(fallback,/Nhấn giữ ảnh → chọn Lưu vào Ảnh/);
+  assert.match(fallback,/saveBtn\.style\.display=saveMode\?'none':'block'/);
+  assert.match(fallback,/host\?\.dataset\?\.saveMode==='true'/);
+  assert.match(cart,/mode!=='preview'/);
+  assert.match(debt,/mode!=='preview'/);
 });
 
 test('debt Save and order Save never label downloads as already saved',()=>{
