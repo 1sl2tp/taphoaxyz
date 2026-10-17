@@ -37,7 +37,7 @@ begin
    ),'[]'::jsonb)
  );
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.chat_admin_outbound_settings_set(p_key text, p_enabled boolean, p_customer_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
@@ -83,7 +83,7 @@ begin
  end if;
  return public.chat_admin_outbound_settings_get();
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION v21_private.chat_outbound_allowed(p_customer_id uuid, p_client_id text)
  RETURNS boolean
@@ -137,7 +137,7 @@ begin
  into v_linked;
  return case when v_linked then v_flags.audience_linked else v_flags.audience_unlinked end;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_chat_notify_customer(p_customer_id uuid, p_sender_account_id uuid, p_client_id text, p_body text)
  RETURNS uuid
@@ -275,7 +275,7 @@ begin
 
   return v_message_id;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_debt_transaction(p_customer_id uuid, p_type text, p_amount numeric, p_note text, p_command_id uuid)
  RETURNS jsonb
@@ -406,7 +406,7 @@ Xem công nợ: ' || v_url;
 
   return v_result;
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_order_notice_image_ticket(p_order_id uuid)
  RETURNS jsonb
@@ -469,7 +469,7 @@ begin
  return jsonb_build_object('ok',true,'order_id',v_ticket.order_id,'message_id',v_ticket.message_id,
   'asset_id',v_ticket.asset_id,'storage_key',v_ticket.storage_key);
 end;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_save_order(p_order jsonb, p_command_id uuid)
  RETURNS jsonb
@@ -698,6 +698,6 @@ begin
   insert into public.taphoa_command_log(command_id,operation,result) values(p_command_id,'save_order',v_result);
   return v_result;
 end;
-$;
+$$;
 
 -- Existing function privileges are preserved when functions are replaced.
