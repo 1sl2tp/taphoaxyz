@@ -157,21 +157,8 @@
     wrap.classList.add('flex');
   }
 
-  function bind(){
-    const detail=document.getElementById('orderDetailShareButton');
-    if(detail){detail.onclick=openSheet;detail.setAttribute('data-share-sheet','stock-check');}
-    const cart=document.getElementById('cartShareOrderBtn');
-    if(cart){cart.onclick=openSheet;cart.setAttribute('data-share-sheet','stock-check');}
-  }
-
+  // Stock-check links are a separate tool. Never capture the ordinary
+  // order/cart share icon: it belongs to Send / Save / Copy.
   window.openTaphoaShareSheet=openSheet;
   window.closeTaphoaShareSheet=closeSheet;
-  setTimeout(bind,0);
-  document.addEventListener('click',event=>{
-    const target=event.target instanceof Element?event.target.closest('#orderDetailShareButton,#cartShareOrderBtn'):null;
-    if(!target)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    openSheet();
-  },true);
 })();
