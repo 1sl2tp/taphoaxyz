@@ -1,7 +1,7 @@
 'use strict';
 
 const CACHE_PREFIX='taphoa-runtime-';
-const CACHE_NAME='taphoa-runtime-v36';
+const CACHE_NAME='taphoa-runtime-v37';
 
 self.addEventListener('install',event=>{
   event.waitUntil(self.skipWaiting());
@@ -78,7 +78,8 @@ self.addEventListener('fetch',event=>{
   }
 
   if(request.mode==='navigate'||request.destination==='document'){
-    if(url.searchParams.has('__taphoa_build')){
+    // Explicit browser reload must use the current shell instead of old cached HTML.
+    if(url.searchParams.has('__taphoa_build')||request.cache==='reload'||request.cache==='no-cache'){
       event.respondWith(networkFirst(new Request(request,{cache:'no-cache'})));
     }else{
       event.respondWith(navigationCachedFirst(request,event));
