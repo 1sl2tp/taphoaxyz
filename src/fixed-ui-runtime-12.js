@@ -63,21 +63,11 @@
             }, 300);
         }
 
-        function debtIosShareContext() {
-            const ua = String(navigator.userAgent || '');
-            return /iPad|iPhone|iPod/.test(ua)
-                || (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1);
-        }
-
-        function debtNativeSharePayload(file) {
-            const files = [file];
-            if (debtIosShareContext()) return { files };
-            return { files, title: 'Công nợ', text: 'Bảng đối soát công nợ' };
-        }
-
-        async function shareCustomerDebtImage() {
+        // Generate ONE debt PNG for all three actions. No title/text is handed
+        // to native file share: macOS treats those as additional share items.
+        async function createCustomerDebtPngBlob() {
             const source = document.getElementById('customerDebtContentToShare');
-            if (!source) return;
+            if (!source) throw new Error('Chưa mở công nợ khách hàng.');
 
             let captureHost = null;
             try {
@@ -168,37 +158,76 @@
                     canvas.toBlob(result => result ? resolve(result) : reject(new Error("Không tạo được ảnh công nợ.")), 'image/png');
                 });
 
-                const file = new File([blob], 'congno.png', { type: 'image/png' });
-                const iosPwaFallback = window.TAPHOA_IOS_SHARE_FALLBACK;
-                if (iosPwaFallback?.shouldUse?.()) {
-                    iosPwaFallback.open([file], { title:'Công nợ' });
-                } else if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share(debtNativeSharePayload(file));
-                    } catch (error) {
-                        const shareCancel = /abort|cancel|canceled|cancelled/i.test(String(error?.name || '') + ' ' + String(error?.message || error || ''));
-                        if (shareCancel && debtIosShareContext()) {
-                            window.TAPHOA_IOS_SHARE_FALLBACK?.open?.([file], { title:'Công nợ' });
-                        } else {
-                            throw error;
-                        }
-                    }
-                } else if (iosPwaFallback) {
-                    iosPwaFallback.open([file], { title:'Công nợ' });
-                } else {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'congno.png';
-                    a.click();
-                    setTimeout(() => URL.revokeObjectURL(url), 1000);
-                }
-            } catch (e) {
-                const shareCancel = /abort|cancel|canceled|cancelled/i.test(String(e?.name || '') + ' ' + String(e?.message || e || ''));
-                if (!shareCancel) showAlertPopup("Lỗi tạo ảnh", e.message);
+                return blob;
             } finally {
                 captureHost?.remove();
                 hideLoading();
+            }
+        }
+
+        async function shareCustomerDebtImage(action = 'send') {
+            const pendingBlob = createCustomerDebtPngBlob();
+            // ClipboardItem accepts a Promise so Safari/Chrome can retain the
+            // direct gesture while the canvas is still being captured.
+            if (action === 'copy') {
+                if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+                    pendingBlob.catch(() => {});
+                    showAlertPopup('Chưa hỗ trợ sao chép ảnh','Hãy chọn Lưu để lấy một ảnh công nợ.');
+                    return;
+                }
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({'image/png': pendingBlob})
+                    ]);
+                    showToast('Đã sao chép một ảnh công nợ.', 'success');
+                } catch (error) {
+                    showAlertPopup('Không sao chép được ảnh',String(error?.message||error));
+                }
+                return;
+            }
+            try {
+                const blob = await pendingBlob;
+                const file = new File([blob], 'congno.png', { type:'image/png' });
+                const fallback = window.TAPHOA_IOS_SHARE_FALLBACK;
+                if (action === 'save') {
+                    if (fallback?.shouldUse?.()) {
+                        fallback.open([file], {title:'Lưu ảnh công nợ'});
+                    } else {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href=url;link.download='congno.png';
+                        document.body.appendChild(link);
+                        try {link.click();} finally {
+                            link.remove();
+                            setTimeout(()=>URL.revokeObjectURL(url),1200);
+                        }
+                        showToast('Đã yêu cầu lưu một ảnh công nợ.','success');
+                    }
+                    return;
+                }
+                if (fallback?.shouldUse?.()) {
+                    fallback.open([file], {title:'Công nợ'});
+                } else if (navigator.share && navigator.canShare?.({files:[file]})) {
+                    try {
+                        await navigator.share({files:[file]});
+                    } catch (error) {
+                        const cancelled=/abort|cancel|canceled|cancelled/i.test(String(error?.name||error));
+                        if (!cancelled) throw error;
+                    }
+                } else if (fallback?.open) {
+                    fallback.open([file], {title:'Công nợ'});
+                } else {
+                    const url=URL.createObjectURL(blob);
+                    const link=document.createElement('a');
+                    link.href=url;link.download='congno.png';
+                    document.body.appendChild(link);
+                    try {link.click();} finally {
+                        link.remove();
+                        setTimeout(()=>URL.revokeObjectURL(url),1200);
+                    }
+                }
+            } catch (error) {
+                showAlertPopup('Lỗi tạo ảnh công nợ',String(error?.message||error));
             }
         }
 
