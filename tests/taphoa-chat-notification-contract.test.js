@@ -27,15 +27,19 @@ test('TAPHOA chat helper writes canonical idempotent V21 messages only for admin
   assert.match(fn,/on\s+conflict\s+on\s+constraint\s+v21_messages_sender_account_id_client_id_key\s+do\s+nothing/i);
 });
 
-test('admin order save notifies customers only when the resulting order is delivered',()=>{
+test('admin save honors distinct draft creation, meaningful edit, and delivery opt-ins',()=>{
   const fn=latestFunction('taphoa_save_order');
-  assert.match(fn,/v_role='admin'\s+and\s+v_customer\s+is\s+not\s+null\s+and\s+v_status='delivered'/i);
-  assert.doesNotMatch(fn,/đã được tạo/i);
+  assert.match(fn,/if v_role='admin' and v_customer is not null then/i);
+  assert.match(fn,/taphoa_chat_order_receipt\([\s\S]*?'Tạo đơn'/i);
   assert.match(fn,/v_notice\s*:=\s*'Đơn '\s*\|\|\s*v_display_code\s*\|\|\s*' đã được sửa'/);
   assert.match(fn,/taphoa_chat_order_receipt\([\s\S]*?'Đơn '\s*\|\|\s*v_display_code\s*\|\|\s*' đã giao'/);
   assert.equal((fn.match(/taphoa_chat_notify_customer/g)||[]).length,1);
-  assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|/);
-  assert.match(fn,/then ':order-edit' else ':order' end/);
+  assert.match(fn,/then ':deliver'/);
+  assert.match(fn,/then ':order-edit'/);
+  assert.match(fn,/else ':order'/);
+  const imageTicket=latestFunction('taphoa_order_notice_image_ticket');
+  assert.match(imageTicket,/status not in \('pending','delivered'\)/);
+  assert.match(imageTicket,/\^\(DG\|DT\)\[0-9\]\+\$/);
 });
 
 test('dedicated delivery mutation emits exactly one detailed delivered receipt',()=>{
