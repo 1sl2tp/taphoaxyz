@@ -40,9 +40,15 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
     deletePending:id=>gateway.rpc('taphoa_delete_pending_order',{p_order_id:String(id||''),p_command_id:commandId()}),
     batchOrders:(action,ids)=>gateway.rpc('taphoa_batch_orders',{p_action:String(action||''),p_ids:(ids||[]).map(String),p_command_id:commandId()}),
     stockCheckLinks:customerId=>gateway.rpc('taphoa_stock_check_links_for_customer',{p_customer_id:String(customerId||'')}),
-    debtTransaction:(maKH,type,amount,note='')=>gateway.rpc('taphoa_debt_transaction',{
-      p_customer_id:String(maKH||''),p_type:String(type)==='thu_tien'?'collection':'payment',p_amount:num(amount),p_note:String(note||''),p_command_id:commandId()
-    }),
+    debtTransaction:async(maKH,type,amount,note='')=>{
+      const id=commandId();
+      const result=await gateway.rpc('taphoa_debt_transaction',{
+        p_customer_id:String(maKH||''),p_type:String(type)==='thu_tien'?'collection':'payment',
+        p_amount:num(amount),p_note:String(note||''),p_command_id:id
+      });
+      // The same id links the committed debt transaction to its optional Chat PNG.
+      return {...result,notice_command_id:id};
+    },
     createCustomer:name=>gateway.rpc('taphoa_admin_create_customer',{
       p_display_name:String(name||'').trim()
     }),
