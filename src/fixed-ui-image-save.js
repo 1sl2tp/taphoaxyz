@@ -4,9 +4,10 @@
 // fake "direct save" on iPhone/iPad where Safari has no Photos-write API.
 (function(){
   function isIosWebkit(){
-    const ua=String(navigator?.userAgent||'');
+    const nav=typeof navigator==='undefined'?{}:navigator;
+    const ua=String(nav.userAgent||'');
     return /iPad|iPhone|iPod/i.test(ua)
-      || (navigator?.platform==='MacIntel'&&Number(navigator?.maxTouchPoints)>1);
+      || (nav.platform==='MacIntel'&&Number(nav.maxTouchPoints)>1);
   }
   function savePng(blob,fileName){
     if(!(blob instanceof Blob)||!blob.size||blob.type!=='image/png'){
