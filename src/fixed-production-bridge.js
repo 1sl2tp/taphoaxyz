@@ -539,6 +539,7 @@ async function attachOrderNoticePortrait(order){
     const canvas=await capture.captureElement(built.page,{
       width,height,scale:1.2,renderTimeout:12000,libraryTimeout:6000
     });
+    // Canonical saved-order PNG for create/edit/deliver notices; capture actual dimensions first.
     // canvasToPngBlob() releases canvas memory by resetting dimensions to 1×1.
     // Preserve the REAL PNG dimensions first, or the Chat media will be
     // incorrectly registered as a tiny 1×1 image on web / mobile PWA.
