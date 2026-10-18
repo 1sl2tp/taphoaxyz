@@ -683,7 +683,7 @@ function createDebtNoticeCanvas(result){
   ctx.fillText(customerName.length>42?customerName.slice(0,41)+'…':customerName,28,171);
   ctx.fillStyle='#eef4f8';ctx.fillRect(28,192,width-56,92);
   ctx.fillStyle='#526477';ctx.font='600 14px system-ui,sans-serif';
-  ctx.fillText(kind==='collection'?'SỐ TIỀN ĐÃ THU (NGHÌN ĐỒNG)':'SỐ TIỀN GHI NỢ (NGHÌN ĐỒNG)',44,224);
+  ctx.fillText(kind==='collection'?'SỐ TIỀN ĐÃ THU':'SỐ TIỀN GHI NỢ',44,224);
   ctx.fillStyle=kind==='collection'?'#047857':'#9a5a0b';
   ctx.font='700 32px system-ui,sans-serif';
   ctx.fillText(money(amount),44,265);
