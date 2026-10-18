@@ -31,3 +31,9 @@ test('debt popup shows small bank transaction reference independently of label',
   assert.match(debtUI,/h\.soTien\.toLocaleString\('vi-VN'\)/);
   assert.doesNotMatch(debtUI,/Math\.abs\(runningDebt\)\s*\/\s*1000/);
 });
+
+test('manual collection and debt PNG labels do not display units',()=>{
+  assert.match(bridge,/kind==='collection'\?'SỐ TIỀN ĐÃ THU':'SỐ TIỀN GHI NỢ'/);
+  assert.doesNotMatch(bridge,/SỐ TIỀN ĐÃ THU \(NGHÌN ĐỒNG\)/);
+  assert.doesNotMatch(bridge,/SỐ TIỀN GHI NỢ \(NGHÌN ĐỒNG\)/);
+});
