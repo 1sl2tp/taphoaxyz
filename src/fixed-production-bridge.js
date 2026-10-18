@@ -235,10 +235,21 @@ function mapDebtSummaryRows(state=appState.get()){
   return rows;
 }
 
+// Translate technical receipt audit notes to a compact ledger label.
+ // Keep the bank reference as a separate display-only field; never mutate SQL audit data.
+function bankBillDisplayFromNote(note){
+  const match=String(note||'').match(/^Tự động nhận bill chuyển khoản\s*·\s*([^·]+)(?:\s*·\s*([A-Z0-9_-]{5,80}))?/i);
+  if(!match)return null;
+  const code=String(match[1]||'').trim().toUpperCase();
+  const known={TECHCOMBANK:'Techcombank',VIETINBANK:'VietinBank',AGRIBANK:'Agribank',VIETCOMBANK:'Vietcombank',BIDV:'BIDV',VPBANK:'VPBank'};
+  const bank=known[code]||'Ngân hàng';
+  return {label:'Thu chuyển khoản · '+bank,reference:String(match[2]||'').trim()};
+}
+
 function ledgerLabel({entryType,movement,displayCode,note}){
   if(entryType==='sale')return displayCode?`Giao đơn ${displayCode}`:'Giao đơn';
   if(entryType==='reversal')return displayCode?`Hoàn đơn ${displayCode}`:'Hoàn đơn';
-  if(entryType==='collection')return note||'Thu tiền';
+  if(entryType==='collection')return bankBillDisplayFromNote(note)?.label||note||'Thu tiền';
   if(entryType==='payment')return note||'Ghi nợ';
   return note||(movement<0?'Thu tiền':'Ghi nợ phát sinh');
 }
@@ -254,6 +265,7 @@ function ledgerToRows(detail={}){
     const balanceAfter=first(tx,['balanceAfter','balance_after'],'');
     const rawNote=text(first(tx,['ghiChu','note'],''));
     const note=ledgerLabel({entryType,movement,displayCode,note:rawNote});
+    const billRef=entryType==='collection'?bankBillDisplayFromNote(rawNote)?.reference||'':'';
     return [
       text(first(tx,['id','maGD','transaction_id'],`TX${index+1}`)),
       customerId,
@@ -263,7 +275,8 @@ function ledgerToRows(detail={}){
       balanceAfter===''?'':String(num(balanceAfter)),
       entryType,
       displayCode,
-      backendId
+      backendId,
+      billRef
     ];
   });
 }
