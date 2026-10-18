@@ -188,7 +188,8 @@ function __enrichDebtHistoryFromLedger() {
       currentDebt: Number(row?.[5]) || 0,
       entryType: String(row?.[6] || ''),
       orderId: String(row?.[7] || ''),
-      backendOrderId: String(row?.[8] || '')
+      backendOrderId: String(row?.[8] || ''),
+      billReference: String(row?.[9] || '')
     }));
     const latest = histories[customerId][histories[customerId].length - 1];
     if (latest) balances[customerId] = latest.currentDebt;
@@ -262,11 +263,13 @@ openCustomerDebtModal = function(maKh) {
     const orderId = String(h.orderId || (String(h.loaiGd || '').match(/DG\d+|DT\d+/)?.[0] || ''));
     const clickAttr = orderId ? `onclick="clickOrderFromDebt('${orderId}')"` : '';
     const cursorStyle = orderId ? 'cursor-pointer hover:bg-gray-50' : '';
+    const billRef = String(h.billReference || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
 
     html += `
     <div ${clickAttr} class="flex justify-between items-center py-2.5 px-2 rounded-xl transition ${cursorStyle} border-b border-gray-100 text-xs">
       <div>
         <p class="font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> ${h.loaiGd} ${orderId ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
+        ${billRef ? `<p class="text-[10px] text-gray-500 mt-0.5 break-all">Mã GD: ${billRef}</p>` : ''}
         <p class="text-[10px] text-gray-400 mt-0.5">${h.time}</p>
       </div>
       <div class="text-right">
