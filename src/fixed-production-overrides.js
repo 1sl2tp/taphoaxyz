@@ -67,7 +67,9 @@
   }
 
   async function refreshFixedSheets(names=sheetNames){
-    for(const name of names)await SheetDB.read(name);
+    // All sheets are projections of the same already-fetched appState.
+    // Dispatch each unique sheet once without waiting on serial microtasks.
+    await Promise.all([...new Set(names)].map(name=>SheetDB.read(name)));
   }
 
   async function refreshOrderUiAfterMutation(){
@@ -252,6 +254,7 @@
       })).filter(item=>item.sl>0);
 
     orderMutationInFlight=true;
+    let committed=false;
     showLoading(isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
     try{
       if(editingOrderId&&!backendEditOrderId){
@@ -269,17 +272,23 @@
         if(result?.ok!==true)throw new Error('Không thể lưu đơn hàng.');
       }
 
+      committed=true;
       showToast(isPromotingDraft?'Đã duyệt đơn sang Đã giao!':editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
       window.__TAPHOA_REPRICE_DRAFT_ID = null;
       resetSaleSession();
       closeCartMobile();
-      await refreshOrderUiAfterMutation();
     }catch(error){
       console.error(isPromotingDraft?'deliver pending order':'save order',error);
       showAlertPopup('Lỗi',error?.message||'Không thể lưu đơn hàng.');
     }finally{
       orderMutationInFlight=false;
       hideLoading();
+    }
+    if(committed){
+      // The backend already awaited canonical orders/debt data.
+      // Repainting hidden lists is not part of the financial transaction.
+      setTimeout(()=>refreshOrderUiAfterMutation()
+        .catch(error=>console.warn('refresh committed order UI',error)),16);
     }
   };
 
@@ -292,16 +301,21 @@
       : Number(String(amountStr).replace(/\D/g,''))||0;
     if(!maKh){showAlertPopup('Chưa chọn khách','Vui lòng chọn khách hàng!');return;}
     if(amount<=0){showAlertPopup('Số tiền không hợp lệ','Vui lòng nhập số tiền lớn hơn 0!');return;}
+    let committed=false;
     showLoading('Đang lập phiếu...');
     try{
       await backend().debtTransaction(maKh,type==='thu'?'thu_tien':'ghi_no',amount,type==='thu'?'Thu tiền mặt':'Ghi nợ phát sinh');
+      committed=true;
       showToast('Lập phiếu thành công!','success');
       if(targetAmount===null){const input=document.getElementById('quickDebtAmount');if(input)input.value='';}
-      await SheetDB.read('thuchi');
-      if(activeDebtCustomerId)await openCustomerDebtModal(activeDebtCustomerId);
     }catch(error){
       showAlertPopup('Lỗi','Không thể lưu phiếu: '+(error?.message||error));
     }finally{hideLoading();}
+    if(committed){
+      // SheetDB debt listener refreshes the open customer ledger once.
+      setTimeout(()=>SheetDB.read('thuchi')
+        .catch(error=>console.warn('refresh committed debt UI',error)),16);
+    }
   };
 
   requestClearSheet=function(sheetName){
