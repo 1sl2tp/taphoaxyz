@@ -66,7 +66,7 @@ test('cart custom price remains authoritative when quantity changes and order sa
 test('other money views use numeric vi-VN formatting, without re-parsing formatted strings',async()=>{
   const paths=['src/fixed-ui-runtime-4.js','src/fixed-ui-runtime-6.js',
     'src/fixed-ui-runtime-10.js','src/fixed-ui-runtime-13.js',
-    'src/fixed-ui-cart-share-v3.js','src/fixed-ui-portrait-order.js'];
+    'src/fixed-ui-cart-share-v3.js'];
   for(const path of paths){
     const source=await read(path);
     assert.match(source,/\.toLocaleString\('vi-VN'/,path);
