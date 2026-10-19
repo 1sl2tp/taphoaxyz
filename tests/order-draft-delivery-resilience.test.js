@@ -19,7 +19,11 @@ test('successful order mutation is not reported as failed when UI refresh fails'
   assert.match(source,/catch\(refreshError\)\{\s*console\.warn\('refresh order UI after successful mutation'/);
   const block=source.match(/dayToanBoGioHang=async function\(tab\)\{[\s\S]*?\n  \};/)?.[0]||'';
   assert.match(block,/showToast\(/);
-  assert.match(block,/await refreshOrderUiAfterMutation\(\)/);
+  // The committed write has already waited for Supabase canonical data.
+  // A delayed local list repaint must never keep the transaction overlay
+  // visible or turn a successful financial write into a failure.
+  assert.match(block,/if\(committed\)\{[\s\S]*refreshOrderUiAfterMutation\(\)/);
+  assert.ok(block.indexOf('hideLoading();') < block.indexOf('if(committed){'));
 });
 
 test('order mutation prevents accidental concurrent double submit',()=>{
