@@ -138,12 +138,43 @@
             if (SheetDB.API_URL) loadData();
         };
         
+        // F-181: cache all five sheets, render just the currently visible tab.
+        // switchTab already renders the selected order/debt tab on demand.
         SheetDB.onChange(function(sheetName, data) {
-            if (sheetName === 'sanpham') { appData.sanpham = data || []; buildProductSearchIndex(); renderSourceTags(); renderProductList(); renderDonTam(); renderDaGiao(); }
-            if (sheetName === 'khachhang') { appData.khachhang = data || []; if (currentAuthRole === 'user') syncUserSelfCustomer(); renderCustomerList(); renderDonTam(); renderDaGiao(); renderCongNo(); renderCartFooterActions(); }
-            if (sheetName === 'dontam') { appData.dontam = data || []; renderDonTam(); }
-            if (sheetName === 'dongiao') { appData.dongiao = data || []; renderDaGiao(); }
-            if (sheetName === 'thuchi') { appData.thuchi = data || []; renderCongNo(); if(activeDebtCustomerId) openCustomerDebtModal(activeDebtCustomerId); }
+            const activeTab = document.querySelector('.tab-content.active')?.id || '';
+            const sales = !activeTab || activeTab === 'tab-ban-hang';
+            const draft = activeTab === 'tab-don-tam';
+            const delivered = activeTab === 'tab-da-giao';
+            const debt = activeTab === 'tab-cong-no';
+            if (sheetName === 'sanpham') {
+                appData.sanpham = data || [];
+                buildProductSearchIndex();
+                if (sales) { renderSourceTags(); renderProductList(); }
+                if (draft) renderDonTam();
+                if (delivered) renderDaGiao();
+            }
+            if (sheetName === 'khachhang') {
+                appData.khachhang = data || [];
+                if (currentAuthRole === 'user') syncUserSelfCustomer();
+                renderCustomerList();
+                if (draft) renderDonTam();
+                if (delivered) renderDaGiao();
+                if (debt) renderCongNo();
+                renderCartFooterActions();
+            }
+            if (sheetName === 'dontam') {
+                appData.dontam = data || [];
+                if (draft) renderDonTam();
+            }
+            if (sheetName === 'dongiao') {
+                appData.dongiao = data || [];
+                if (delivered) renderDaGiao();
+            }
+            if (sheetName === 'thuchi') {
+                appData.thuchi = data || [];
+                if (debt) renderCongNo();
+                if (activeDebtCustomerId) openCustomerDebtModal(activeDebtCustomerId);
+            }
         });
 
         function normalizeSearchText(value) {
