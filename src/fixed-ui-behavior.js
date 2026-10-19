@@ -18,13 +18,21 @@ updateCart = function(maSp, tenSp, giaBan, change) {
   renderCartUI();
 };
 
+// Money values use literal business units: 129.5 = "129,5", not "1.295".
+// In editable text '.' groups thousands and ',' separates fractions.
+// Do not strip punctuation; it silently multiplied fractional prices by ten.
 function parseCartPriceInputValue(value) {
-  const digits = String(value ?? '').replace(/\D/g, '');
-  return digits ? Number(digits) : 0;
+  if (typeof value === 'number') return Number.isFinite(value) && value >= 0 ? value : NaN;
+  const text = String(value ?? '').trim().replace(/\s/g, '');
+  if (!text) return 0;
+  if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d*)?$/.test(text)) return NaN;
+  const price = Number(text.replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(price) && price >= 0 ? price : NaN;
 }
 
 function formatCartPriceInputValue(value) {
-  return parseCartPriceInputValue(value).toLocaleString('vi-VN');
+  const price = parseCartPriceInputValue(value);
+  return Number.isFinite(price) ? price.toLocaleString('vi-VN') : '';
 }
 
 function selectCartPriceInputValue(input) {
@@ -49,8 +57,12 @@ function previewCartPriceInput(input) {
   const raw = String(input.value || '').trim();
   if (raw === '') return;
   const price = parseCartPriceInputValue(raw);
+  // Invalid/incomplete text must never overwrite a numeric order price.
+  if (!Number.isFinite(price)) return;
   item.price = price;
-  input.value = formatCartPriceInputValue(price);
+  const formatted = formatCartPriceInputValue(price);
+  // Allow typing "129," followed by "5" without losing the decimal comma.
+  input.value = raw.endsWith(',') ? formatted + ',' : formatted;
   syncCartPriceToQtyEditors(maSp, price);
   const row = input.closest('.cart-compact-grid');
   const totalValue = row?.querySelector('.cart-total .cart-money-value');
@@ -67,7 +79,13 @@ function commitCartPriceEditor(input) {
     input.value = formatCartPriceInputValue(item.price);
     return;
   }
+  if (!Number.isFinite(parseCartPriceInputValue(input.value))) {
+    input.value = formatCartPriceInputValue(item.price);
+    if (typeof showToast === 'function') showToast('Đơn giá không hợp lệ. Dùng dấu phẩy cho phần thập phân, ví dụ 129,5.', 'warning');
+    return;
+  }
   previewCartPriceInput(input);
+  input.value = formatCartPriceInputValue(item.price);
 }
 
 const __fixedGetQtyMeta = getQtyMeta;
@@ -95,7 +113,7 @@ renderCartUI = function() {
     // Only the editable shopping-cart row needs an input in place of the price.
     if (row.dataset.cartReadonly === '1') return;
     if (!maSp || !item || !priceCell) return;
-    priceCell.innerHTML = `<span class="cart-field-caption">Đơn giá</span><input type="text" inputmode="numeric" value="${formatCartPriceInputValue(item.price)}" data-price-editor="cart" data-price-id="${maSp}" onfocus="selectCartPriceInputValue(this)" onmouseup="event.preventDefault(); selectCartPriceInputValue(this)" oninput="previewCartPriceInput(this)" onblur="commitCartPriceEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="cart-money-value cart-price-input w-full min-w-0 text-right font-semibold text-gray-700 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 p-0 m-0 tabular-nums">`;
+    priceCell.innerHTML = `<span class="cart-field-caption">Đơn giá</span><input type="text" inputmode="decimal" value="${formatCartPriceInputValue(item.price)}" data-price-editor="cart" data-price-id="${maSp}" onfocus="selectCartPriceInputValue(this)" onmouseup="event.preventDefault(); selectCartPriceInputValue(this)" oninput="previewCartPriceInput(this)" onblur="commitCartPriceEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="cart-money-value cart-price-input w-full min-w-0 text-right font-semibold text-gray-700 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 p-0 m-0 tabular-nums">`;
   });
 };
 
