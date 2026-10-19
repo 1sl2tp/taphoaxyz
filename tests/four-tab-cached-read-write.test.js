@@ -32,6 +32,8 @@ test('Bán hàng, Đơn tạm, Đã giao, Công nợ share one cached read owner
 test('Save and collection wait for Supabase commit, but not for hidden tab rendering',async()=>{
   const bridge=await load('src/fixed-production-bridge.js');
   const overrides=await load('src/fixed-production-overrides.js');
+  assert.ok(bridge.includes("const isConfirmedDraft=String(result?.order?.status||'').toLowerCase()==='pending'"));
+  assert.ok(bridge.includes("await refresh(isConfirmedDraft?['orders']:['orders','debt']);"));
   assert.ok(bridge.includes("await refresh(['orders','debt']);"));
   assert.ok(bridge.includes("await refresh(['debt']);"));
   const save=overrides.slice(overrides.indexOf('dayToanBoGioHang=async'),overrides.indexOf('submitQuickDebt=async'));
