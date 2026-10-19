@@ -603,7 +603,12 @@ async function saveOrder(payload){
     ?await publicRpc('taphoa_public_save_pending_access',{p_order:orderRpcPayload({...payload,status:'pending'}),p_command_id:crypto.randomUUID()})
     :await business.saveOrder(payload);
   if(!publicAccess&&!employeeAccess)void attachOrderNoticePortrait(result?.order);
-  await refresh(['orders','debt']);
+  // F-181: A confirmed pending draft (new or edited) never changes the
+  // sale ledger. The DB prevents delivered → pending downgrades. Avoid
+  // rebuilding debtSummary for each draft edit. Delivered sales still
+  // synchronously refresh both orders and debt before returning success.
+  const isConfirmedDraft=String(result?.order?.status||'').toLowerCase()==='pending';
+  await refresh(isConfirmedDraft?['orders']:['orders','debt']);
   return result;
 }
 async function deliverOrder(id){
