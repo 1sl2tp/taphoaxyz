@@ -28,30 +28,79 @@
         }
         function closeAlertModal() { document.getElementById('alertModal').classList.add('opacity-0', 'pointer-events-none'); document.getElementById('alertBox').classList.add('scale-95'); }
 
+        // UI-185: The single bottom bar owns BOTH the idle policy link and
+        // transient notices. Later notices supersede earlier reset timers.
+        let statusNoticeResetTimer = null;
+        let statusLoading = false;
+        function restoreStatusBarIdle() {
+            const bar = document.getElementById('statusBar');
+            const msg = document.getElementById('statusMessage');
+            const icon = document.getElementById('statusIcon');
+            if (!bar || bar.dataset.publicUserTools === 'true') return;
+            if (statusLoading || statusNoticeResetTimer !== null) return;
+            bar.classList.add('bg-dark');
+            bar.classList.remove('bg-primary', 'bg-warning');
+            if (icon) {
+                icon.classList.add('text-success', 'ph-check-circle');
+                icon.classList.remove('text-white', 'ph-warning-circle', 'ph-spinner');
+            }
+            if (msg) {
+                msg.innerText = 'Hệ thống sẵn sàng';
+                msg.classList.remove('text-white');
+            }
+            bar.dataset.statusView = bar.dataset.policyInline === 'true' ? 'policy' : 'status';
+        }
         function showToast(msg, type = "success") {
-            const statusBar = document.getElementById('statusBar'); const statusMsg = document.getElementById('statusMessage'); const statusIcon = document.getElementById('statusIcon');
-            if (statusBar && statusMsg) {
-                statusMsg.innerText = msg;
-                if(type === "success") {
-                    statusBar.classList.remove('bg-dark', 'bg-warning'); statusBar.classList.add('bg-primary');
-                    statusIcon.classList.remove('text-success', 'ph-warning-circle'); statusIcon.classList.add('text-white', 'ph-check-circle');
-                    statusMsg.classList.add('text-white');
-                } else {
-                    statusBar.classList.remove('bg-dark', 'bg-primary'); statusBar.classList.add('bg-warning');
-                    statusIcon.classList.remove('text-success', 'ph-check-circle'); statusIcon.classList.add('text-white', 'ph-warning-circle');
-                    statusMsg.classList.add('text-white');
+            const bar = document.getElementById('statusBar');
+            const label = document.getElementById('statusMessage');
+            const icon = document.getElementById('statusIcon');
+            if (!bar || !label || bar.dataset.publicUserTools === 'true') return;
+            if (statusNoticeResetTimer !== null) {
+                clearTimeout(statusNoticeResetTimer);
+                statusNoticeResetTimer = null;
+            }
+            label.innerText = msg;
+            bar.dataset.statusView = 'notice';
+            bar.classList.remove('bg-dark', 'bg-primary', 'bg-warning');
+            bar.classList.add(type === 'success' ? 'bg-primary' : 'bg-warning');
+            if (icon) {
+                icon.classList.remove('text-success', 'ph-check-circle', 'ph-warning-circle', 'ph-spinner');
+                icon.classList.add('text-white', type === 'success' ? 'ph-check-circle' : 'ph-warning-circle');
+            }
+            label.classList.add('text-white');
+            // Error/warning feedback must remain visible longer than success.
+            statusNoticeResetTimer = setTimeout(() => {
+                statusNoticeResetTimer = null;
+                restoreStatusBarIdle();
+            }, type === 'success' ? 3000 : 6000);
+        }
+        function showLoading(msg = "Đang xử lý...") {
+            statusLoading = true;
+            const overlay = document.getElementById('loadingOverlay');
+            const text = document.getElementById('loadingText');
+            if (text) text.innerText = msg;
+            if (overlay) overlay.classList.remove('hidden', 'opacity-0');
+            const bar = document.getElementById('statusBar');
+            if (bar && bar.dataset.policyInline === 'true' && statusNoticeResetTimer === null
+                  && bar.dataset.publicUserTools !== 'true') {
+                bar.dataset.statusView = 'loading';
+                document.getElementById('statusMessage').innerText = msg;
+                const icon = document.getElementById('statusIcon');
+                if (icon) {
+                    icon.classList.remove('ph-check-circle', 'ph-warning-circle');
+                    icon.classList.add('ph-spinner');
                 }
-                setTimeout(() => {
-                    statusMsg.innerText = "Hệ thống sẵn sàng";
-                    statusBar.classList.add('bg-dark'); statusBar.classList.remove('bg-primary', 'bg-warning');
-                    statusIcon.classList.add('text-success', 'ph-check-circle'); statusIcon.classList.remove('text-white', 'ph-warning-circle');
-                    statusMsg.classList.remove('text-white');
-                }, 3000);
             }
         }
-
-        function showLoading(msg = "Đang xử lý...") { const overlay = document.getElementById('loadingOverlay'); const text = document.getElementById('loadingText'); if (text) text.innerText = msg; if (overlay) overlay.classList.remove('hidden', 'opacity-0'); }
-        function hideLoading() { const overlay = document.getElementById('loadingOverlay'); if (overlay) { overlay.classList.add('opacity-0'); setTimeout(() => overlay.classList.add('hidden'), 300); } }
+        function hideLoading() {
+            statusLoading = false;
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+            restoreStatusBarIdle();
+        }
 
         const SheetDB = {
             API_URL: "taphoa://production",
