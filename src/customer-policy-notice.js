@@ -34,7 +34,21 @@
       if (host) host.appendChild(reopen);
       else document.body.appendChild(reopen);
     } else {
-      document.body.appendChild(reopen);
+      // UI-185: one bottom bar. Keep the policy button clickable in the idle
+      // status row instead of rendering a second, floating button on mobile.
+      // Public/employee link mode owns this row for its three action buttons.
+      var statusBar = document.getElementById('statusBar');
+      if (statusBar && statusBar.dataset.publicUserTools !== 'true') {
+        reopen.classList.remove('tp-policy-reopen--home');
+        reopen.classList.add('tp-policy-reopen--bar');
+        statusBar.appendChild(reopen);
+        statusBar.dataset.policyInline = 'true';
+        statusBar.dataset.statusView =
+          statusBar.dataset.statusView === 'notice' || statusBar.dataset.statusView === 'loading'
+            ? statusBar.dataset.statusView : 'policy';
+      } else {
+        document.body.appendChild(reopen);
+      }
     }
     var lastFocus = null;
     var formerOverflow = null;
