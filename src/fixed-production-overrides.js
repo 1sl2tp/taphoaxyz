@@ -703,6 +703,16 @@
     const bar=document.getElementById('statusBar');
     const mode=backend()?.getAccessMode?.();
     if(!bar||(mode!=='public-link'&&mode!=='employee-link'))return;
+    // UI-185: in public/employee link mode the footer contains action tools,
+    // not our ordinary policy rail. Keep its existing policy opener accessible.
+    const inlinePolicy=bar.querySelector('.tp-policy-reopen--bar');
+    if(inlinePolicy){
+      inlinePolicy.classList.remove('tp-policy-reopen--bar');
+      inlinePolicy.classList.add('tp-policy-reopen--home');
+      document.body.appendChild(inlinePolicy);
+    }
+    delete bar.dataset.policyInline;
+    delete bar.dataset.statusView;
     const onHang=publicTabId==='tab-ban-hang';
     const employeeLink=mode==='employee-link';
     bar.dataset.publicUserTools='true';
