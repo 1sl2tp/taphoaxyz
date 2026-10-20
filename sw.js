@@ -1,7 +1,7 @@
 'use strict';
 
 const CACHE_PREFIX='taphoa-runtime-';
-const CACHE_NAME='taphoa-runtime-v38';
+const CACHE_NAME='taphoa-runtime-v39';
 
 self.addEventListener('install',event=>{
   event.waitUntil(self.skipWaiting());
@@ -49,17 +49,6 @@ async function staleWhileRevalidate(request,event){
   return networkPromise;
 }
 
-// Use the last-good public shell immediately on returning PWA launches.
-// Revalidate once in background; no business RPC or session state is cached here.
-// Explicit version-updater navigation bypasses this shortcut to fetch the new build.
-async function navigationCachedFirst(request,event){
-  const cache=await caches.open(CACHE_NAME);
-  const cached=await cache.match(request)||await cache.match('./');
-  if(!cached)return networkFirst(new Request(request,{cache:'no-cache'}));
-  event.waitUntil(networkFirst(new Request(request,{cache:'no-cache'})).catch(()=>null));
-  return cached;
-}
-
 function isFastCachedAsset(request,url){
   if(url.searchParams.has('v'))return true;
   return request.destination==='image'||request.destination==='font';
@@ -78,12 +67,18 @@ self.addEventListener('fetch',event=>{
   }
 
   if(request.mode==='navigate'||request.destination==='document'){
-    // Explicit browser reload must use the current shell instead of old cached HTML.
-    if(url.searchParams.has('__taphoa_build')||request.cache==='reload'||request.cache==='no-cache'){
-      event.respondWith(networkFirst(new Request(request,{cache:'no-cache'})));
-    }else{
-      event.respondWith(navigationCachedFirst(request,event));
-    }
+    // Online PWA launches must receive the latest app shell; using the old
+    // cached shell with an old JS URL keeps checkout fixes invisible.
+    // Offline still receives the last good shell from networkFirst fallback.
+    event.respondWith(networkFirst(new Request(request,{cache:'no-cache'})));
+    return;
+  }
+
+  // Script files implement order writes, debt and active cart state.
+  // Do NOT stale-while-revalidate executable JS with a permanent ?v= URL:
+  // doing so runs the previous handler for the entire current session.
+  if(request.destination==='script'||/\.(?:js|mjs)$/.test(url.pathname)){
+    event.respondWith(networkFirst(new Request(request,{cache:'no-cache'})));
     return;
   }
 
