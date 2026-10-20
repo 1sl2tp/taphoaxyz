@@ -236,6 +236,9 @@
 
     const sourceSheet=editingOrderId?(editingOrderSheet||(String(editingOrderId).startsWith('DG')?'dongiao':'dontam')):tab;
     const isPromotingDraft=Boolean(editingOrderId)&&sourceSheet==='dontam'&&tab==='dongiao';
+    // F-182: editing an existing order is not a new checkout.
+    // Keep the current customer, order ID and cart in the edit workspace after save.
+    const isUpdatingExistingOrder=Boolean(editingOrderId)&&!isPromotingDraft;
     const targetSheet=isPromotingDraft?'dongiao':sourceSheet;
     const status=targetSheet==='dongiao'?'done':'pending';
     let backendEditOrderId=editingOrderId?backendOrderIdFor(sourceSheet,editingOrderId):'';
@@ -273,10 +276,8 @@
       }
 
       committed=true;
-      showToast(isPromotingDraft?'Đã duyệt đơn sang Đã giao!':editingOrderId?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
+      showToast(isPromotingDraft?'Đã duyệt đơn sang Đã giao!':isUpdatingExistingOrder?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
       window.__TAPHOA_REPRICE_DRAFT_ID = null;
-      resetSaleSession();
-      closeCartMobile();
     }catch(error){
       console.error(isPromotingDraft?'deliver pending order':'save order',error);
       showAlertPopup('Lỗi',error?.message||'Không thể lưu đơn hàng.');
@@ -285,6 +286,24 @@
       hideLoading();
     }
     if(committed){
+      if(isUpdatingExistingOrder){
+        // Do NOT resetSaleSession() or closeCartMobile(): both erase the
+        // very order the Admin just updated. Stay on "Cập nhật đơn" with
+        // the same existing backend ID; further saves must update, not create.
+        editingOrderInSaleMode=true;
+        try{
+          renderCartUI();
+          renderCartFooterActions();
+        }catch(uiError){
+          // The canonical Supabase mutation has already committed; a local
+          // repaint failure must never be reported as a failed financial write.
+          console.warn('render updated order workspace',uiError);
+        }
+      }else{
+        // New orders and draft-to-delivered promotions really end checkout.
+        resetSaleSession();
+        closeCartMobile();
+      }
       // The backend already awaited canonical orders/debt data.
       // Repainting hidden lists is not part of the financial transaction.
       setTimeout(()=>refreshOrderUiAfterMutation()
