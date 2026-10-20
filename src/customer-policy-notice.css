@@ -46,3 +46,68 @@
 @media(max-height:590px){.tp-policy-header{padding-top:10px;padding-bottom:11px}.tp-policy-label{margin-top:5px}.tp-policy-tags{display:none}.tp-policy-footer{padding-top:8px;padding-bottom:max(8px,env(safe-area-inset-bottom))}}
 @media(prefers-reduced-motion:reduce){.tp-policy-continue:active{transform:none}}
 @media print{.tp-policy-overlay,.tp-policy-reopen{display:none!important}}
+
+/* UI-185: One compact bottom rail in the sales PWA.
+   Idle = tappable policy, notice/loading = system text. No floating pill. */
+#statusBar[data-policy-inline="true"]:not([data-public-user-tools="true"]){
+  box-sizing:border-box;
+  height:40px;
+  min-height:40px;
+  max-height:40px;
+  padding:0 10px !important;
+  gap:7px;
+  overflow:hidden;
+}
+#statusBar[data-status-view="policy"] > #statusIcon,
+#statusBar[data-status-view="policy"] > #statusMessage{
+  display:none !important;
+}
+#statusBar[data-status-view="notice"] > .tp-policy-reopen--bar,
+#statusBar[data-status-view="loading"] > .tp-policy-reopen--bar{
+  display:none !important;
+}
+#statusBar .tp-policy-reopen--bar{
+  appearance:none;
+  position:static;
+  inset:auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:40px;
+  min-height:40px;
+  margin:0;
+  padding:0 8px;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.25;
+  white-space:nowrap;
+}
+#statusBar .tp-policy-reopen--bar .tp-policy-icon{
+  width:16px;
+  height:16px;
+  color:#b7e4ca;
+}
+#statusBar .tp-policy-reopen--bar:hover,
+#statusBar .tp-policy-reopen--bar:focus-visible{
+  background:rgba(255,255,255,.09);
+  color:#fff;
+}
+#statusBar[data-policy-inline="true"] > #statusMessage{
+  line-height:1.3;
+  text-align:center;
+  min-width:0;
+  max-height:36px;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+#statusBar[data-policy-inline="true"] > #statusIcon{
+  flex:none;
+}
