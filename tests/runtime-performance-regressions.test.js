@@ -93,12 +93,15 @@ test('verified cached account opens before expensive business bootstrap',async()
   assert.doesNotMatch(section,/setInterval|taphoa_app_bootstrap.*taphoa_app_bootstrap/);
 });
 
-test('PWA returns its last-good public shell without waiting on the network',async()=>{
+test('PWA loads current executable code online, retaining last-good shell offline',async()=>{
   const [sw,html]=await Promise.all([read('sw.js'),read('index.html')]);
-  assert.match(sw,/async function navigationCachedFirst\(request,event\)/);
-  assert.match(sw,/const cached=await cache\.match\(request\)\|\|await cache\.match\('\.\/'\)/);
-  assert.match(sw,/event\.waitUntil\(networkFirst\(/);
-  assert.match(sw,/url\.searchParams\.has\('__taphoa_build'\)/,'explicit build refresh bypasses cached shell');
+  assert.match(sw,/if\(request\.mode==='navigate'\|\|request\.destination==='document'\)/);
+  assert.match(sw,/event\.respondWith\(networkFirst\(new Request\(request,\{cache:'no-cache'\}\)\)\)/);
+  assert.match(sw,/request\.destination==='script'/,
+    'do not reuse stale JS from the preceding installed order-edit version');
+  assert.doesNotMatch(sw,/navigationCachedFirst\(/);
+  assert.match(sw,/const cached=await cache\.match\(request\)/,
+    'last-good source remains available offline');
   assert.match(sw,/version\.json[\s\S]*cache:'no-store'/);
   assert.match(html,/<script async src="https:\/\/unpkg\.com\/@phosphor-icons\/web"><\/script>/,
     'decorative CDN must not block DOMContentLoaded');
