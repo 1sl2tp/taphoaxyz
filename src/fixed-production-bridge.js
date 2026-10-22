@@ -496,6 +496,10 @@ async function logout(){
   }
 }
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
+async function debtCycles(){
+  if(employeeAccess||publicAccess||identity?.role!=='admin')throw new Error('admin_only');
+  return business.debtCycles();
+}
 async function debtLedger(customerId){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)return publicRpc('taphoa_public_debt_ledger_access',{p_before_at:null,p_before_id:null,p_limit:50});
@@ -850,7 +854,7 @@ window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('tapho
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
-  login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,ledgerToRows,
+  login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,ledgerToRows,
   saveOrder,deliverOrder,manualShareOrder,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
