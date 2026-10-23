@@ -158,11 +158,11 @@
   if(typeof oldRender==='function')window.renderCongNo=function(...args){
     const result=oldRender.apply(this,args);
     decorateList();
-    if(document.querySelector('.tab-content.active')?.id==='tab-cong-no'){
-      const sig=currentSignature();
-      if(sig!==previousBalanceSignature){previousBalanceSignature=sig;stale=true;}
-      void load({force:stale});
-    }
+    // switchTab renders the target BEFORE marking it .active. Trigger
+    // loading on the actual debt render, otherwise first-open never loads.
+    const sig=currentSignature();
+    if(sig!==previousBalanceSignature){previousBalanceSignature=sig;stale=true;}
+    void load({force:stale});
     return result;
   };
   const oldOpen=window.openCustomerDebtModal;
