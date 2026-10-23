@@ -10,6 +10,7 @@ const bridge=fs.readFileSync(new URL('../src/fixed-production-bridge.js',import.
 const api=fs.readFileSync(new URL('../src/core/business.js',import.meta.url),'utf8');
 const render=fs.readFileSync(new URL('../src/fixed-ui-runtime-11.js',import.meta.url),'utf8');
 const sql=fs.readFileSync(new URL('../supabase/migrations/20261023073000_debt_cycles_readonly_full_history.sql',import.meta.url),'utf8');
+const deliverySql=fs.readFileSync(new URL('../supabase/migrations/20261023075500_debt_cycle_true_delivery_time.sql',import.meta.url),'utf8');
 
 test('readonly cycle boundary and policy semantics protect financial ledger',()=>{
   assert.match(sql,/balance_after>0 and r\.balance_after-r\.amount_vnd<=0 then 1 else 0 end as started/);
@@ -21,6 +22,8 @@ test('readonly cycle boundary and policy semantics protect financial ledger',()=
   assert.match(sql,/entry_type='reversal'/);
   assert.match(sql,/threeDayStop/);
   assert.match(sql,/daysOverSeven/);
+  assert.match(deliverySql,/left join public\.taphoa_orders o on o\.id=l\.order_id/);
+  assert.match(deliverySql,/max\(coalesce\(n\.delivered_at_for_purchase,n\.created_at\)\)/);
   assert.match(sql,/ctx->>'taphoa_role',''\) <> 'admin'/);
   assert.match(sql,/revoke all on function public\.taphoa_debt_cycles\(\) from public,anon/);
   assert.match(sql,/grant execute on function public\.taphoa_debt_cycles\(\) to authenticated/);
