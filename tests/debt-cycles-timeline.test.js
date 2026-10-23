@@ -17,7 +17,7 @@ test('readonly cycle boundary and policy semantics protect financial ledger',()=
   assert.match(sql,/sum\(t\.started\) over \(/);
   assert.match(sql,/where n\.cycle_no>0/);
   assert.match(sql,/rows between unbounded preceding and current row/);
-  assert.match(sql,/r\.entry_type='sale'/);
+  assert.match(sql,/l\.entry_type='sale'/);
   assert.match(sql,/entry_type='reversal'/);
   assert.match(sql,/threeDayStop/);
   assert.match(sql,/daysOverSeven/);
