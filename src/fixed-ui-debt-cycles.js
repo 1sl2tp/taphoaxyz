@@ -36,7 +36,7 @@
   function currentSignature(){
     // Readonly summary signatures. A paid/adjusted balance triggers a fresh
     // cycle calculation without waiting for TTL or storing a second ledger.
-    const rows=Array.isArray(window.appData?.thuchi)?window.appData.thuchi:[];
+    const rows=(typeof appData!=='undefined'&&Array.isArray(appData.thuchi))?appData.thuchi:[];
     return rows.filter(x=>x&&x[6]==='summary')
       .map(x=>String(x[1])+':'+String(x[3])+':'+String(x[4]))
       .sort().join('|');
@@ -56,7 +56,7 @@
       }
       byCustomer=map;loadedAt=Date.now();stale=false;
       decorateList();
-      const selected=String(window.activeDebtCustomerId||'');
+      const selected=String(typeof activeDebtCustomerId==='undefined'?'':activeDebtCustomerId||'');
       if(selected&&document.getElementById('customerDebtModalWrapper')?.classList.contains('pointer-events-none')===false)
         decorateDetail(selected);
       return map;
@@ -170,10 +170,9 @@
     const result=await oldOpen.call(this,customerId,...args);
     // The canonical modal already loaded its first ledger page; cycle history
     // always arrives independently from the complete server-side ledger.
-    window.activeDebtCustomerId=customerId;
     decorateDetail(customerId);
     void load().then(()=>{
-      if(String(window.activeDebtCustomerId||'')===String(customerId))decorateDetail(customerId);
+      if(String(typeof activeDebtCustomerId==='undefined'?'':activeDebtCustomerId||'')===String(customerId))decorateDetail(customerId);
     });
     return result;
   };
