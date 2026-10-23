@@ -208,7 +208,7 @@
                 }
 
                 listHtml += `
-                    <div onclick="openCustomerDebtModal('${c.maKh}')" class="debt-customer-card allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition">
+                    <div data-debt-customer-id="${c.maKh}" onclick="openCustomerDebtModal('${c.maKh}')" class="debt-customer-card allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition">
                         <div class="debt-customer-avatar pointer-events-none">${c.avatarHtml}</div>
                         <div class="debt-customer-body pointer-events-none min-w-0">
                             <p class="debt-customer-name font-bold text-[14px] text-gray-900">${c.name}</p>
