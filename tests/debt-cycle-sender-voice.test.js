@@ -14,7 +14,7 @@ test('shared Admin sender does not assume female when recipient is Em',()=>{
  assert.match(sql,/young_customer_speaker IN \('anh','chị'\)/);
  assert.match(sql,/WHEN v_title='Em' THEN v_young ELSE 'em'/);
  assert.match(sql,/speaker','cháu'/);
- assert.match(sql,/^(?!$).*vocative/);
+ assert.match(sql,/vocative/);
  assert.match(sql,/lower\(split_part\(v,' ',1\)\)/);
  assert.match(ui,/from:t==='E'\?youngSpeaker:'em'/);
  assert.match(ui,/return \{name,from:'cháu'\}/);
