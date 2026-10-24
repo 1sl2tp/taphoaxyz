@@ -32,7 +32,8 @@
       const late=hasPolicy?numeric(cycle.policyDaysOverdue):
         Math.max(0,Math.max(elapsed-7,idle-3));
       const cause=cycle.policyReason==='seven_days'?'Đã đến mốc 7 ngày':
-        'Đã ngừng mua đến mốc 3 ngày';
+        cycle.policyFirstGapDay&&idle<3?'Đã từng ngừng mua đủ 3 ngày trong chu kỳ':
+        'Đã ngừng mua '+idle+' ngày (mốc 3 ngày)';
       return cause+' · Hết thời gian hỗ trợ · Cần thanh toán'+
         (late>0?' · Quá hạn '+late+' ngày':' ngay hôm nay');
     }
