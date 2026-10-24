@@ -34,7 +34,7 @@ test('new delivered order receipt carries cycle start or continuing-cycle policy
   assert.match(snapshot,/BẮT ĐẦU CHU KỲ NỢ/);
   assert.match(snapshot,/Đơn mua tiếp không gia hạn mốc 7 ngày/);
   assert.match(snapshot,/Mua thêm không xóa hạn thanh toán cũ/);
-  assert.match(order,/v_edit_id is null or \(v_old_status='pending' and v_status='delivered'\)/);
+  assert.match(order,/v_edit_id is null or \(v_old_status=''pending'' and v_status=''delivered''\)/);
   assert.match(order,/v21_private\.taphoa_order_cycle_policy_note\(v_customer,v_order\.id\)/);
 });
 
@@ -46,7 +46,7 @@ test('day-four and day-seven notifications honor preferences and never spam hist
   assert.match(due,/pg_advisory_xact_lock/);
   assert.match(due,/IF v_message IS NOT NULL THEN/);
   assert.match(due,/taphoa_chat_notify_customer/);
-  assert.match(preference,/\|\|':debt'/);
+  assert.match(preference,/\|\|'':debt''/);
   assert.match(timing,/0 1 \* \* \*/);
   assert.match(timing,/taphoa_cycle_send_due_notices/);
 });
