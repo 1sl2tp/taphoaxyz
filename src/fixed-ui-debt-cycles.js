@@ -26,12 +26,23 @@
   function alertText(cycle){
     if(!cycle)return 'Chưa phát sinh nợ mới';
     const elapsed=numeric(cycle.durationDays),idle=numeric(cycle.daysWithoutPurchase);
-    const warnings=[];
-    if(elapsed>=7)warnings.push(elapsed===7?'Đến hạn ngày 7':'Quá hạn '+(elapsed-7)+' ngày');
-    else warnings.push('Còn '+(7-elapsed)+' ngày đến mốc 7');
-    if(idle>=3)warnings.push('Đã ngừng mua '+idle+' ngày');
-    else warnings.push('Cách lần mua '+idle+' ngày');
-    return warnings.join(' · ');
+    const hasPolicy=Boolean(cycle.policyDueDay);
+    const isDue=hasPolicy?cycle.policyIsDue===true:(elapsed>=7||idle>=3);
+    if(isDue){
+      const late=hasPolicy?numeric(cycle.policyDaysOverdue):
+        Math.max(0,Math.max(elapsed-7,idle-3));
+      const cause=cycle.policyReason==='seven_days'?'Đã đến mốc 7 ngày':
+        'Đã ngừng mua đến mốc 3 ngày';
+      return cause+' · Hết thời gian hỗ trợ · Cần thanh toán'+
+        (late>0?' · Quá hạn '+late+' ngày':' ngay hôm nay');
+    }
+    if(hasPolicy){
+      const last=numeric(cycle.daysWithoutPurchase);
+      const remainingToStop=Math.max(0,3-last);
+      return 'Cách lần mua '+last+' ngày · Còn '+remainingToStop+
+        ' ngày đến mốc ngừng mua · Chậm nhất ngày 7 phải tất toán';
+    }
+    return 'Cách lần mua '+idle+' ngày · Chậm nhất ngày 7 phải tất toán';
   }
   function currentSignature(){
     // Readonly summary signatures. A paid/adjusted balance triggers a fresh
@@ -99,7 +110,8 @@
         panel.dataset.warning='';
       }else{
         panel.textContent='Chu kỳ '+cycle.number+' · Ngày '+cycle.durationDays+' · '+cycle.purchaseCount+' lượt mua · '+alertText(cycle);
-        panel.dataset.warning=(numeric(cycle.durationDays)>=7||numeric(cycle.daysWithoutPurchase)>=3)?'true':'';
+        panel.dataset.warning=cycle.policyDueDay?(cycle.policyIsDue===true?'true':''):
+  (numeric(cycle.durationDays)>=7||numeric(cycle.daysWithoutPurchase)>=3?'true':'');
       }
     }
   }
@@ -132,7 +144,13 @@
         'Từ '+dayLabel(current.startDay)+' · Ngày '+current.durationDays+
         ' · '+current.purchaseCount+' lượt mua');
       const warning=makeText('p','debt-cycle-detail-warning',alertText(current));
-      warning.dataset.warning=(numeric(current.durationDays)>=7||numeric(current.daysWithoutPurchase)>=3)?'true':'';
+      if(current.policyDueDay){
+        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
+          'Hạn thanh toán hiện tại: '+dayLabel(current.policyDueDay)+
+          ' · Theo '+(current.policyReason==='seven_days'?'mốc 7 ngày':'mốc ngừng mua 3 ngày')));
+      }
+      warning.dataset.warning=current.policyDueDay?(current.policyIsDue===true?'true':''):
+        (numeric(current.durationDays)>=7||numeric(current.daysWithoutPurchase)>=3?'true':'');
       panel.append(metrics,warning);
     }else{
       panel.appendChild(makeText('p','debt-cycle-detail-metrics',
