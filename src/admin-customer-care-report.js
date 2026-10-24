@@ -6,13 +6,15 @@ export function createCustomerCareReport({rpc,getIdentity}){
   const percent=v=>v===null||v===undefined?'—':number(v)+'%';
   const day=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
   let rows=[],loaded=false,loading=false,selected='',generation=0,reloadQueued=false;
+  // "Hỗ trợ" is a shared Admin account: choose voice explicitly.
+  let youngSpeaker='anh',savingVoice=false;
   function address(row){
     const name=String(row.name||'').trim();
-    if(/^(Cô|Bác|Chú)\s/i.test(name))return {name,from:'em'};
+    if(/^(Cô|Bác|Chú)(\s|$)/i.test(name))return {name,from:'cháu'};
     const m=name.match(/^([ECA])\s+(.+)$/i);
     if(!m)return {name:name||'anh/chị',from:'em'};
     const t=m[1].toUpperCase();
-    return {name:(t==='E'?'Em':t==='C'?'Chị':'Anh')+' '+m[2],from:t==='E'?'chị':'em'};
+    return {name:(t==='E'?'Em':t==='C'?'Chị':'Anh')+' '+m[2],from:t==='E'?youngSpeaker:'em'};
   }
   const elapsed=()=>Number($('careInactiveDays').value)||7;
   function vietnamBusinessDate(){
@@ -111,6 +113,18 @@ export function createCustomerCareReport({rpc,getIdentity}){
       ? 'Đơn tạm '+String(r.pending_codes||'')+': chưa có lý do xác nhận chưa giao. Không tự suy đoán ít hàng, không đủ chuyến hoặc nợ lâu.'
       : 'Đánh giá theo dữ liệu đã ghi nhận; không kết luận trả đúng/sai hẹn nếu thiếu kỳ hạn.';
     add('p',caution,'care-note');
+    const voiceLabel=add('label','Người xưng hô trong tin nhắn','care-voice-label');
+    voiceLabel.htmlFor='careSenderVoice';
+    const voiceSelect=add('select','','care-voice-select');
+    voiceSelect.id='careSenderVoice';voiceSelect.disabled=savingVoice;
+    for(const [value,title] of [
+      ['anh','Nam: anh với Em · em với Anh/Chị · cháu với Cô/Chú/Bác'],
+      ['chị','Nữ: chị với Em · em với Anh/Chị · cháu với Cô/Chú/Bác']
+    ]){
+      const item=add('option',title,'',voiceSelect);item.value=value;
+    }
+    voiceSelect.value=youngSpeaker;
+    add('p','Lựa chọn áp dụng cho lời nhắn gợi ý và các tin nhắc nợ tự động sắp gửi.','care-note');
     add('p','Gợi ý hỏi thăm (chỉ Admin xem; chưa gửi):');
     const area=add('textarea',message(r));area.id='careSuggestedMessage';area.readOnly=true;
     const button=add('button','Sao chép lời nhắn','btn primary');button.type='button';button.id='careCopySuggestion';
@@ -152,9 +166,14 @@ export function createCustomerCareReport({rpc,getIdentity}){
     catch(error){$('careStatus').textContent=error.message;return;}
     loading=true;const requestGeneration=++generation;$('careStatus').textContent='Đang tải báo cáo…';
     try{
-      const data=await rpc('taphoa_admin_customer_care_report',{
-        p_inactive_days:elapsed(),p_start_date:period.p_start_date,p_end_date:period.p_end_date
-      });
+      const [data,voiceSetting]=await Promise.all([
+        rpc('taphoa_admin_customer_care_report',{
+          p_inactive_days:elapsed(),p_start_date:period.p_start_date,p_end_date:period.p_end_date
+        }),
+        rpc('taphoa_cycle_sender_voice_setting',{p_voice:null}).catch(()=>null)
+      ]);
+      if(voiceSetting?.young_speaker==='anh'||voiceSetting?.young_speaker==='chị')
+        youngSpeaker=voiceSetting.young_speaker;
       if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
       rows=Array.isArray(data?.customers)?data.customers:[];
       for(const [id,key] of [
@@ -215,6 +234,26 @@ export function createCustomerCareReport({rpc,getIdentity}){
   $('careBody').addEventListener('click',e=>{
     const btn=e.target.closest('button[data-customer-id]');if(!btn)return;
     selected=btn.dataset.customerId;render();
+  });
+  $('careDetail').addEventListener('change',async e=>{
+    if(e.target.id!=='careSenderVoice'||savingVoice)return;
+    const next=e.target.value;
+    if(next!=='anh'&&next!=='chị')return;
+    savingVoice=true;e.target.disabled=true;
+    try{
+      const setting=await rpc('taphoa_cycle_sender_voice_setting',{p_voice:next});
+      if(setting?.young_speaker!==next)throw new Error('Chưa lưu được giọng xưng hô');
+      youngSpeaker=next;
+      render();
+      $('careStatus').textContent='Đã đổi người xưng hô: '+(next==='anh'?'nam (anh/em/cháu)':'nữ (chị/em/cháu)')
+        +' · áp dụng cho tin nhắc nợ tự động tiếp theo.';
+    }catch(error){
+      $('careStatus').textContent='Không lưu được người xưng hô: '+String(error?.message||error);
+      e.target.value=youngSpeaker;
+    }finally{
+      savingVoice=false;
+      const control=$('careSenderVoice');if(control)control.disabled=false;
+    }
   });
   $('careDetail').addEventListener('click',async e=>{
     if(e.target.id!=='careCopySuggestion')return;
