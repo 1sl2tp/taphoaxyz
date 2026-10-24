@@ -34,8 +34,13 @@
       const cause=cycle.policyReason==='seven_days'?'Đã đến mốc 7 ngày':
         cycle.policyFirstGapDay&&idle<3?'Đã từng ngừng mua đủ 3 ngày trong chu kỳ':
         'Đã ngừng mua '+idle+' ngày (mốc 3 ngày)';
+      if(cycle.policyPendingEvidence===true){
+        return cause+' · Có bill chờ đối soát · Admin kiểm tra trước khi nhắc thanh toán'+
+          (late>0?' · Quá hạn '+late+' ngày':'');
+      }
       return cause+' · Hết thời gian hỗ trợ · Cần thanh toán'+
-        (late>0?' · Quá hạn '+late+' ngày':' ngay hôm nay');
+        (late>0?' · Quá hạn '+late+' ngày':' ngay hôm nay')+
+        (late>=2?' · Admin ưu tiên liên hệ trực tiếp':'');
     }
     if(hasPolicy){
       const last=numeric(cycle.daysWithoutPurchase);
