@@ -19,5 +19,8 @@ test('opening debt reads server ledger page instead of treating report status as
   assert.match(overrides,/const detail=await backend\(\)\.debtLedger\(maKh\)/);
   assert.match(overrides,/backend\(\)\.ledgerToRows\(detail\)/);
   assert.match(overrides,/renderCongNo\(\)/);
+  assert.match(overrides,/Chưa tải được sổ nợ mới/);
+  assert.match(overrides,/Không dùng dữ liệu cũ để xác nhận thu/);
+  assert.match(overrides,/return false;/);
   assert.doesNotMatch(debt,/\*\s*1000/);
 });
