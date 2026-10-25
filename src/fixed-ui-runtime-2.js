@@ -29,6 +29,43 @@
             renderCartUI();
         }
 
+        // AI-57: explicit URL tab wins over any remembered/default tab on F5.
+        // Only route state is written: never serialize unsaved cart/debt data.
+        const appTabRoutes = new Set(['tab-ban-hang','tab-da-giao','tab-don-tam','tab-cong-no']);
+        let replayingAppTabRoute = false;
+        function appTabRouteFromUrl() {
+            const match = String(location.hash || '').match(/^#\/tab\/(tab-ban-hang|tab-da-giao|tab-don-tam|tab-cong-no)$/);
+            return match ? match[1] : '';
+        }
+        function syncAppTabRoute(tabId) {
+            if(replayingAppTabRoute || !appTabRoutes.has(tabId)) return;
+            // Preserve unrelated hashes (public links, share/quote routes).
+            if(location.hash && !String(location.hash).startsWith('#/tab/')) return;
+            const wanted = '#/tab/' + tabId;
+            if(location.hash !== wanted) history.pushState(history.state,'',location.pathname+location.search+wanted);
+        }
+        function restoreAppTabRoute() {
+            const target = appTabRouteFromUrl();
+            if(!target) return false;
+            const current = document.querySelector('.tab-content.active')?.id || '';
+            if(current === target) return true;
+            const button = [...document.querySelectorAll('.tab-btn')].find(
+                node=>String(node.getAttribute('onclick')||'').includes("'"+target+"'")
+            );
+            if(!button) return false;
+            replayingAppTabRoute = true;
+            try { switchTab(target,button); }
+            finally { replayingAppTabRoute = false; }
+            return document.querySelector('.tab-content.active')?.id === target;
+        }
+        window.addEventListener('popstate',restoreAppTabRoute);
+        window.addEventListener('hashchange',restoreAppTabRoute);
+        if(document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded',restoreAppTabRoute,{once:true});
+        } else {
+            queueMicrotask(restoreAppTabRoute);
+        }
+
         function switchTab(tabId, element) {
             if (tabId === 'tab-da-giao' && !hasPermission('canViewDelivered')) {
                 return denyPermission('User không được xem Đã giao.');
@@ -48,6 +85,7 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             renderCartFooterActions();
+            syncAppTabRoute(tabId);
         }
 
         function resolveAutoMode() {
