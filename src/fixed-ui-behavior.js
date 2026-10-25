@@ -225,7 +225,7 @@ renderCongNo = function() {
 };
 
 /* Đơn đã hoàn vẫn giữ trong data/audit nhưng ẩn cả dòng giao và dòng hoàn khỏi lịch sử nhìn thấy. */
-openCustomerDebtModal = function(maKh) {
+openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
   if (!hasPermission('canViewDebt')) return denyPermission('Tài khoản này không được xem Công nợ.');
   activeDebtCustomerId = maKh;
   const kh = appData.khachhang.slice(1).find(r => String(r[0]) === String(maKh));
@@ -300,7 +300,13 @@ openCustomerDebtModal = function(maKh) {
     </div>`;
   });
   if (displayHistory.length === 0) html = '<p class="text-center text-gray-400 py-6 text-xs">Chưa có lịch sử giao dịch</p>';
-  document.getElementById('cDebtModalHistoryList').innerHTML = html;
+  const historyList=document.getElementById('cDebtModalHistoryList');
+  const previousScroll=preserveScroll?historyList.scrollTop:0;
+  historyList.innerHTML=html;
+  // Older records append BELOW the current viewport (newest first).
+  // Keep the anchor stable; never force a jump to top or newest.
+  if(preserveScroll){historyList.scrollTop=previousScroll;return true;}
+  historyList.scrollTop=0;
 
   document.getElementById('customerDebtModalWrapper').classList.remove('hidden');
   setTimeout(() => {
@@ -308,6 +314,10 @@ openCustomerDebtModal = function(maKh) {
     document.getElementById('customerDebtBottomSheet').classList.remove('translate-y-full');
   }, 10);
 };
+
+// Page loader renders cached server data without another fetch or modal animation.
+window.TAPHOA_RENDER_DEBT_HISTORY_PAGE=(customerId)=>
+  openCustomerDebtModal(customerId,{preserveScroll:true});
 
 clickOrderFromDebt = function(orderId) {
   const sheetName = String(orderId).startsWith('DG') ? 'dongiao' : 'dontam';
