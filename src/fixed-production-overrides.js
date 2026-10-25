@@ -372,25 +372,40 @@
     });
   };
 
+  // DEBT-223: cursor belongs to server's raw timestamp + ledger ID.
+  // Never infer a cursor from a rendered HH:mm date or cache.
+  let debtModalOpenSeq=0;
   const fixedOpenCustomerDebtModal=openCustomerDebtModal;
   openCustomerDebtModal=async function(maKh){
     if(!hasPermission('canViewDebt'))return denyPermission('Tài khoản này không được xem Công nợ.');
+    const requestedCustomer=String(maKh||'');
+    const requestSeq=++debtModalOpenSeq;
+    window.TAPHOA_DEBT_PAGE_STATE=null;
     try{
-      const detail=await backend().debtLedger(maKh);
+      const detail=await backend().debtLedger(maKh,{limit:50});
+      if(requestSeq!==debtModalOpenSeq)return false;
+      const raw=Array.isArray(detail?.transactions)?detail.transactions:[];
+      window.TAPHOA_DEBT_PAGE_STATE={
+        customerId:requestedCustomer,requestSeq,
+        customer:detail.customer||{},balance:detail.balance??detail.soDu,
+        transactions:raw.slice(),hasMore:raw.length===50,
+        loading:false,failed:false
+      };
       const header=(appData.thuchi&&appData.thuchi[0])||['Mã GD','Mã KH','Loại GD','Số tiền','Thời gian','Dư nợ sau GD','Loại nội bộ','Mã đơn','Mã đơn DB'];
-      const other=(appData.thuchi||[]).slice(1).filter(r=>String(r?.[1]||'')!==String(maKh));
+      const other=(appData.thuchi||[]).slice(1).filter(r=>String(r?.[1]||'')!==requestedCustomer);
       appData.thuchi=[header,...other,...backend().ledgerToRows(detail)];
       renderCongNo();
     }catch(error){
+      if(requestSeq!==debtModalOpenSeq)return false;
       console.warn('debt ledger',error);
-      // DEBT-220: never present a stale cached ledger as freshly synchronized.
+      window.TAPHOA_DEBT_PAGE_STATE=null;
       showAlertPopup('Chưa tải được sổ nợ mới',
         'Lịch sử công nợ chưa được đồng bộ từ sổ chính. Vui lòng thử mở lại. Không dùng dữ liệu cũ để xác nhận thu.');
       return false;
     }
+    if(requestSeq!==debtModalOpenSeq)return false;
     const opened=fixedOpenCustomerDebtModal(maKh);
-    // One-time, test-only repair of an existing Chat PNG after explicit ledger open.
-    // Runs after the modal opens and NEVER mutates the customer's balance.
+    // Existing non-money image repair remains a separate optional workflow.
     void Promise.resolve(opened)
       .then(()=>backend()?.repairRecentFinanceImages?.(maKh))
       .catch(error=>console.warn('debt notice repair',error));
