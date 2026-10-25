@@ -11,7 +11,6 @@
  const backend=()=>window.TAPHOA_PRODUCTION;
  const page=()=>window.TAPHOA_DEBT_PAGE_STATE;
  let openSeq=0;
- let activeFetch=null;
  let attachedList=null;
 
  function isVisible(){
@@ -97,7 +96,7 @@
  }
  async function loadOlder(){
    const state=page();
-   if(!samePage(state)||state.loading||!state.hasMore||activeFetch)return false;
+   if(!samePage(state)||state.loading||!state.hasMore)return false;
    const last=cursor(oldest(state.transactions));
    if(!last){state.failed=true;updateFooter();return false;}
    state.loading=true;state.failed=false;updateFooter();
@@ -130,8 +129,7 @@
        if(page()===state)updateFooter();
      }
    })();
-   activeFetch=promise;
-   try{return await promise;}finally{if(activeFetch===promise)activeFetch=null;}
+   return await promise;
  }
  function scheduleFirstCheck(state,serial){
    setTimeout(()=>{
