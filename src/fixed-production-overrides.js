@@ -381,7 +381,13 @@
       const other=(appData.thuchi||[]).slice(1).filter(r=>String(r?.[1]||'')!==String(maKh));
       appData.thuchi=[header,...other,...backend().ledgerToRows(detail)];
       renderCongNo();
-    }catch(error){console.warn('debt ledger',error);}
+    }catch(error){
+      console.warn('debt ledger',error);
+      // DEBT-220: never present a stale cached ledger as freshly synchronized.
+      showAlertPopup('Chưa tải được sổ nợ mới',
+        'Lịch sử công nợ chưa được đồng bộ từ sổ chính. Vui lòng thử mở lại. Không dùng dữ liệu cũ để xác nhận thu.');
+      return false;
+    }
     const opened=fixedOpenCustomerDebtModal(maKh);
     // One-time, test-only repair of an existing Chat PNG after explicit ledger open.
     // Runs after the modal opens and NEVER mutates the customer's balance.
