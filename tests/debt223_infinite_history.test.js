@@ -18,6 +18,7 @@ function setup(){
       tagName:tag.toUpperCase(),children:[],dataset:{},hidden:false,disabled:false,
       id:'',className:'',textContent:'',scrollTop:1730,
       scrollHeight:2600,clientHeight:600,
+      setAttribute(name,value){this[name]=String(value);},
       append(...elements){this.children.push(...elements);},
       appendChild(child){this.children.push(child);return child;},
       addEventListener(event,cb){handlers.set(this===list?event:'click:'+this.id,cb);},
