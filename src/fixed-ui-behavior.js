@@ -201,6 +201,7 @@ function __enrichDebtHistoryFromLedger() {
     rows.sort((a, b) => __debtTimeMs(a?.[4]) - __debtTimeMs(b?.[4]));
     histories[customerId] = rows.map(row => ({
       loaiGd: String(row?.[2] || 'Giao dịch'),
+      ledgerId: /^\d+$/.test(String(row?.[0]||'')) ? String(row[0]) : '',
       soTien: Number(row?.[3]) || 0,
       time: String(row?.[4] || ''),
       currentDebt: Number(row?.[5]) || 0,
@@ -282,13 +283,15 @@ openCustomerDebtModal = function(maKh) {
     const clickAttr = orderId ? `onclick="clickOrderFromDebt('${orderId}')"` : '';
     const cursorStyle = orderId ? 'cursor-pointer hover:bg-gray-50' : '';
     const billRef = String(h.billReference || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+    const ledgerId = /^\d+$/.test(String(h.ledgerId || '')) ? String(h.ledgerId) : '';
 
     html += `
     <div ${clickAttr} class="flex justify-between items-center py-2.5 px-2 rounded-xl transition ${cursorStyle} border-b border-gray-100 text-xs">
       <div>
         <p class="font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> ${h.loaiGd} ${orderId ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
         ${billRef ? `<p class="text-[10px] text-gray-500 mt-0.5 break-all">Mã GD: ${billRef}</p>` : ''}
-        <p class="text-[10px] text-gray-400 mt-0.5">${h.time}</p>
+        ${ledgerId ? `<p class="text-[10px] text-gray-500 mt-0.5">Sổ #${ledgerId}</p>` : ''}
+        <p class="text-[10px] text-gray-400 mt-0.5">Ghi sổ: ${h.time}</p>
       </div>
       <div class="text-right">
         <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${h.soTien.toLocaleString('vi-VN')}</p>
