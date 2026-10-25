@@ -129,3 +129,33 @@ body[data-force-pc="1"] #customerDebtContentToShare{
 @media (hover:none) and (pointer:coarse){
   #tab-cong-no #debtSortSelect{font-size:16px !important;}
 }
+
+/* DEBT-223: pagination footer belongs to the existing ledger scroll owner.
+   It is appended after the oldest loaded row; modal header/buttons stay pinned. */
+#cDebtModalHistoryList .debt-history-more{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:14px 8px 18px;
+  font-size:11px;
+  line-height:1.4;
+  color:#64748b;
+  text-align:center;
+}
+#cDebtModalHistoryList .debt-history-more[hidden],
+#cDebtModalHistoryList .debt-history-more-button[hidden]{display:none!important}
+#cDebtModalHistoryList .debt-history-more-button{
+  min-height:40px;
+  border:1px solid #bbd4c2;
+  border-radius:999px;
+  color:#166534;
+  background:#f0fdf4;
+  font-size:12px;
+  font-weight:600;
+  padding:9px 18px;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+#cDebtModalHistoryList .debt-history-more-button:disabled{opacity:.6;cursor:wait}
