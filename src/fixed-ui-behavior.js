@@ -181,7 +181,12 @@ function __normalizeDebtLedgerRows() {
   });
   const ledgerRows = [];
   groups.forEach(rows => {
-    rows.sort((a, b) => __debtTimeMs(a?.[4]) - __debtTimeMs(b?.[4]));
+    rows.sort((a,b)=>{
+      const timeDiff=__debtTimeMs(a?.[4])-__debtTimeMs(b?.[4]);
+      // Two ledger entries can share a second. Use the canonical numeric
+      // ledger ID as a stable tie-breaker so older pages never reshuffle.
+      return timeDiff || (Number(a?.[0])||0)-(Number(b?.[0])||0);
+    });
     ledgerRows.push(...rows);
   });
   appData.thuchi = [header, ...summaryRows, ...ledgerRows];
@@ -198,7 +203,12 @@ function __enrichDebtHistoryFromLedger() {
     groups.get(customerId).push(row);
   });
   groups.forEach((rows, customerId) => {
-    rows.sort((a, b) => __debtTimeMs(a?.[4]) - __debtTimeMs(b?.[4]));
+    rows.sort((a,b)=>{
+      const timeDiff=__debtTimeMs(a?.[4])-__debtTimeMs(b?.[4]);
+      // Two ledger entries can share a second. Use the canonical numeric
+      // ledger ID as a stable tie-breaker so older pages never reshuffle.
+      return timeDiff || (Number(a?.[0])||0)-(Number(b?.[0])||0);
+    });
     histories[customerId] = rows.map(row => ({
       loaiGd: String(row?.[2] || 'Giao dịch'),
       ledgerId: /^\d+$/.test(String(row?.[0]||'')) ? String(row[0]) : '',
