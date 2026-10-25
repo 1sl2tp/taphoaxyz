@@ -500,10 +500,13 @@ async function debtCycles(){
   if(employeeAccess||publicAccess||identity?.role!=='admin')throw new Error('admin_only');
   return business.debtCycles();
 }
-async function debtLedger(customerId){
+async function debtLedger(customerId,{beforeAt=null,beforeId=null,limit=50}={}){
   if(employeeAccess)throw new Error('employee_read_only');
-  if(publicAccess)return publicRpc('taphoa_public_debt_ledger_access',{p_before_at:null,p_before_id:null,p_limit:50});
-  return business.debtLedger(customerId);
+  const pageLimit=Math.max(1,Math.min(100,Number(limit)||50));
+  if(publicAccess)return publicRpc('taphoa_public_debt_ledger_access',{
+    p_before_at:beforeAt||null,p_before_id:beforeId??null,p_limit:pageLimit
+  });
+  return business.debtLedger(customerId,{beforeAt,beforeId,limit:pageLimit});
 }
 
 /* Order message is created by the server (text + deep link).
