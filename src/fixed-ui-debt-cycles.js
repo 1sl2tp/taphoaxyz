@@ -23,6 +23,20 @@
     const cycles=Array.isArray(row?.cycles)?row.cycles:[];
     return cycles.findLast?.(c=>!c.closedAt)||[...cycles].reverse().find(c=>!c.closedAt)||null;
   }
+  function currentMonthStats(row){
+    return Array.isArray(row?.monthly)&&row.monthly.length?row.monthly[0]:null;
+  }
+  function monthLabel(month){
+    const m=String(month||"");
+    if(!/^\d{4}-\d{2}$/.test(m))return "Tháng hiện tại";
+    const [year,number]=m.split("-");
+    return "Tháng "+Number(number)+"/"+year;
+  }
+  function monthCountText(month){
+    if(!month)return "Chưa có thống kê mua hàng tháng";
+    return monthLabel(month.month)+" · "+numeric(month.purchaseDays)+
+      " ngày mua ("+numeric(month.orderCount)+" đơn)";
+  }
   function alertText(cycle){
     if(!cycle)return 'Chưa phát sinh nợ mới';
     const elapsed=numeric(cycle.durationDays),idle=numeric(cycle.daysWithoutPurchase);
@@ -31,24 +45,23 @@
     if(isDue){
       const late=hasPolicy?numeric(cycle.policyDaysOverdue):
         Math.max(0,Math.max(elapsed-7,idle-3));
-      const cause=cycle.policyReason==='seven_days'?'Đã đến mốc 7 ngày':
-        cycle.policyFirstGapDay&&idle<3?'Đã từng ngừng mua đủ 3 ngày trong chu kỳ':
-        'Đã ngừng mua '+idle+' ngày (mốc 3 ngày)';
+      const cause=cycle.policyReason==='seven_days'?'Đã tới mốc hỗ trợ 7 ngày':
+        cycle.policyFirstGapDay&&idle<3?'Đã có quãng nghỉ mua 3 ngày trong chu kỳ':
+        'Cách lần mua gần nhất '+idle+' ngày';
       if(cycle.policyPendingEvidence===true){
-        return cause+' · Có bill chờ đối soát · Admin kiểm tra trước khi nhắc thanh toán'+
-          (late>0?' · Quá hạn '+late+' ngày':'');
+        return cause+' · Có bill chờ đối soát · Ưu tiên kiểm tra chứng từ trước khi liên hệ';
       }
-      return cause+' · Hết thời gian hỗ trợ · Cần thanh toán'+
-        (late>0?' · Quá hạn '+late+' ngày':' ngay hôm nay')+
-        (late>=2?' · Admin ưu tiên liên hệ trực tiếp':'');
+      return cause+' · Đến hạn đối chiếu'+
+        (late>0?' · Trễ '+late+' ngày':'')+
+        (late>=2?' · Có thể trao đổi trực tiếp, tránh nhắc liên tục':'');
     }
     if(hasPolicy){
       const last=numeric(cycle.daysWithoutPurchase);
       const remainingToStop=Math.max(0,3-last);
       return 'Cách lần mua '+last+' ngày · Còn '+remainingToStop+
-        ' ngày đến mốc ngừng mua · Chậm nhất ngày 7 phải tất toán';
+        ' ngày tới mốc 3 ngày · Hạn hỗ trợ tối đa 7 ngày';
     }
-    return 'Cách lần mua '+idle+' ngày · Chậm nhất ngày 7 phải tất toán';
+    return 'Cách lần mua '+idle+' ngày · Theo dõi mốc hỗ trợ 7 ngày';
   }
   function currentSignature(){
     // Readonly summary signatures. A paid/adjusted balance triggers a fresh
@@ -104,6 +117,7 @@
       const id=String(card.dataset.debtCustomerId||'');
       const row=byCustomer.get(id);
       const cycle=activeCycle(row);
+      const month=currentMonthStats(row);
       const cycles=row?.cycles||[];
       const body=card.querySelector('.debt-customer-body');
       if(!body)continue;
@@ -112,10 +126,13 @@
       if(!row){panel.textContent='';continue;}
       const last=cycles.length?cycles[cycles.length-1]:null;
       if(!cycle){
-        panel.textContent=last?'Đã tất toán chu kỳ '+last.number+' · '+last.purchaseCount+' lượt mua · '+compactDays(last):'Chưa phát sinh chu kỳ nợ';
+        panel.textContent=monthCountText(month)+(last?
+          ' · Đã tất toán chu kỳ nợ '+last.number+' ('+last.purchaseCount+' đơn)':
+          ' · Chưa có chu kỳ nợ');
         panel.dataset.warning='';
       }else{
-        panel.textContent='Chu kỳ '+cycle.number+' · Ngày '+cycle.durationDays+' · '+cycle.purchaseCount+' lượt mua · '+alertText(cycle);
+        panel.textContent=monthCountText(month)+' · Nợ chu kỳ '+cycle.number+
+          ' ('+cycle.purchaseCount+' đơn) · '+alertText(cycle);
         panel.dataset.warning=cycle.policyDueDay?(cycle.policyIsDue===true?'true':''):
   (numeric(cycle.durationDays)>=7||numeric(cycle.daysWithoutPurchase)>=3?'true':'');
       }
@@ -142,13 +159,20 @@
     }
     const cycles=Array.isArray(row.cycles)?row.cycles:[];
     const current=activeCycle(row);
+    const month=currentMonthStats(row);
+    if(month)panel.appendChild(makeText('strong','debt-cycle-detail-title',
+      'Kỳ mua '+monthLabel(month.month)+' · '+numeric(month.purchaseDays)+
+      ' ngày mua / '+numeric(month.orderCount)+' đơn'));
+    if(Number(month?.carryOver)>0)panel.appendChild(makeText('p',
+      'debt-cycle-detail-metrics',
+      'Có công nợ từ tháng trước chuyển sang, không tính là đơn mua mới.'));
     const heading=makeText('strong','debt-cycle-detail-title',
       current?'Chu kỳ '+current.number+' · Đang nợ':'Đã tất toán · Chờ chu kỳ mới');
     panel.appendChild(heading);
     if(current){
       const metrics=makeText('div','debt-cycle-detail-metrics',
         'Từ '+dayLabel(current.startDay)+' · Ngày '+current.durationDays+
-        ' · '+current.purchaseCount+' lượt mua');
+        ' · '+current.purchaseCount+' đơn (chu kỳ nợ)');
       const warning=makeText('p','debt-cycle-detail-warning',alertText(current));
       if(current.policyDueDay){
         panel.appendChild(makeText('p','debt-cycle-detail-metrics',
@@ -163,6 +187,23 @@
         cycles.length?'Đã đóng '+cycles.length+' chu kỳ · Lần mua nợ sau sẽ mở chu kỳ '+(cycles.length+1):
           'Chưa phát sinh chu kỳ nợ trên App'));
     }
+    const months=Array.isArray(row.monthly)?row.monthly:[];
+    if(months.length){
+      const monthHistory=document.createElement('details');
+      monthHistory.className='debt-cycle-history';
+      monthHistory.appendChild(makeText('summary','debt-cycle-history-title',
+        'Xem các kỳ tháng (6 tháng gần nhất)'));
+      const monthlyList=document.createElement('ol');
+      for(const item of months){
+        const li=document.createElement('li');
+        li.className='debt-cycle-history-item';
+        li.appendChild(makeText('span','',monthCountText(item)+
+          (Number(item.carryOver)>0?' · Có công nợ chuyển kỳ':'')));
+        monthlyList.appendChild(li);
+      }
+      monthHistory.appendChild(monthlyList);
+      panel.appendChild(monthHistory);
+    }
     if(!cycles.length)return;
     const details=document.createElement('details');details.className='debt-cycle-history';
     details.appendChild(makeText('summary','debt-cycle-history-title','Xem tất cả '+cycles.length+' chu kỳ (từ đầu App)'));
@@ -172,7 +213,7 @@
       const period=dayLabel(c.startDay)+' → '+(c.closedAt?dayLabel(c.endDay):'hôm nay');
       li.append(
         makeText('strong','', 'Chu kỳ '+c.number+(c.closedAt?' · Đã tất toán':' · Chưa tất toán')),
-        makeText('span','',period+' · '+compactDays(c)+' · '+numeric(c.purchaseCount)+' lượt mua')
+        makeText('span','',period+' · '+compactDays(c)+' · '+numeric(c.purchaseCount)+' đơn')
       );
       list.appendChild(li);
     }

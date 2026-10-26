@@ -58,11 +58,47 @@ test('admin debt warnings highlight 2+ overdue and distinguish pending bill',()=
  const base={durationDays:7,daysWithoutPurchase:3,policyDueDay:'2026-10-24',
   policyIsDue:true,policyReason:'stopped_buying',policyDaysOverdue:2};
  const admin=alert(base);
- assert.match(admin,/Quá hạn 2 ngày/);
- assert.match(admin,/Admin ưu tiên liên hệ trực tiếp/);
+ assert.match(admin,/Trễ 2 ngày/);
+ assert.match(admin,/Có thể trao đổi trực tiếp, tránh nhắc liên tục/);
  assert.doesNotMatch(admin,/ngày đến mốc 7/);
  const pending=alert({...base,policyPendingEvidence:true});
  assert.match(pending,/bill chờ đối soát/);
- assert.match(pending,/Admin kiểm tra trước khi nhắc/);
+ assert.match(pending,/Ưu tiên kiểm tra chứng từ trước khi liên hệ/);
  assert.doesNotMatch(pending,/ưu tiên liên hệ trực tiếp/);
+});
+
+test('monthly period shows distinct purchase days separately from orders, without resetting debt cycles',()=>{
+ assert.match(ui,/function currentMonthStats\(row\)/);
+ assert.match(ui,/numeric\(month.purchaseDays\)/);
+ assert.match(ui,/numeric\(month.orderCount\)/);
+ assert.match(ui,/Kỳ mua /);
+ assert.match(ui,/Có công nợ từ tháng trước chuyển sang/);
+ assert.match(ui,/Xem các kỳ tháng \(6 tháng gần nhất\)/);
+ assert.doesNotMatch(ui,/purchaseCount\+' lượt mua'/);
+ const source=ui.slice(ui.indexOf('  function currentMonthStats('),ui.indexOf('  function alertText('));
+ const vmCtx={numeric:v=>Math.max(0,Number(v)||0),String,Number};
+ const obj=vm.runInNewContext(source+'\n({currentMonthStats,monthCountText})',vmCtx);
+ const stats=obj.currentMonthStats({monthly:[{month:'2026-10',purchaseDays:1,orderCount:3,carryOver:9}]});
+ assert.equal(stats.orderCount,3);
+ assert.equal(obj.monthCountText(stats),'Tháng 10/2026 · 1 ngày mua (3 đơn)');
+});
+
+test('month-close reminder runs only at month end, never re-sends during F5 or day-7',()=>{
+ const sql=load('supabase/migrations/20261026113000_cycle_monthly_reporting_gentle_close.sql');
+ assert.match(sql,/count\(distinct \(coalesce\(o.delivered_at,l.created_at\)/);
+ assert.match(sql,/count\(distinct l.order_id\)/);
+ assert.match(sql,/monthly_json/);
+ assert.match(sql,/'monthly',coalesce\(mj.months/);
+ assert.match(sql,/IF v_today < v_end-2 OR v_today>v_end THEN RETURN 0/);
+ assert.match(sql,/month_start date NOT NULL/);
+ assert.match(sql,/PRIMARY KEY\(customer_account_id,month_start\)/);
+ assert.match(sql,/msg.client_id LIKE 'taphoa:cycle-%'/);
+ assert.match(sql,/msg.created_at >= now\(\)-interval '7 days'/);
+ assert.match(sql,/taphoa_cycle_payment_pending\(c.id\)/);
+ assert.match(sql,/v_balance<10/);
+ assert.match(sql,/Không|không bị xóa hoặc tính là đã thanh toán/);
+ assert.match(sql,/v_client_id:='taphoa:month-close:'/);
+ assert.match(sql,/v_close:=v21_private.taphoa_send_monthly_close_notices\(\)/);
+ assert.doesNotMatch(sql,/v_pre:=v21_private.taphoa_cycle_send_pre_due_notices\(\)/);
+ assert.doesNotMatch(sql,/INSERT INTO public.taphoa_debt_ledger/i);
 });
