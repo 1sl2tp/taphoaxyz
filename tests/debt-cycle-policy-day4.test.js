@@ -59,18 +59,18 @@ test('customer debt cards prioritize missed-purchase due over unused seven-day a
   const format=vm.runInNewContext(ui.slice(a,b)+'\nalertText',context);
   const dueNow=format({durationDays:4,daysWithoutPurchase:3,policyDueDay:'2026-10-24',
     policyReason:'stopped_buying',policyDaysOverdue:0,policyIsDue:true});
-  assert.match(dueNow,/Đã ngừng mua 3 ngày/);
-  assert.match(dueNow,/Hết thời gian hỗ trợ/);
-  assert.match(dueNow,/ngay hôm nay/);
+  assert.match(dueNow,/Cách lần mua gần nhất 3 ngày/);
+  assert.match(dueNow,/Đến hạn đối chiếu/);
+  assert.doesNotMatch(dueNow,/phải thanh toán ngay/);
   assert.doesNotMatch(dueNow,/Còn 3 ngày đến mốc 7/);
   const late=format({durationDays:5,daysWithoutPurchase:4,policyDueDay:'2026-10-24',
     policyReason:'stopped_buying',policyDaysOverdue:1,policyIsDue:true});
-  assert.match(late,/Quá hạn 1 ngày/);
+  assert.match(late,/Trễ 1 ngày/);
   const resumed=format({durationDays:6,daysWithoutPurchase:1,policyDueDay:'2026-10-24',
     policyFirstGapDay:'2026-10-24',policyReason:'stopped_buying',policyDaysOverdue:2,policyIsDue:true});
-  assert.match(resumed,/Đã từng ngừng mua đủ 3 ngày/);
-  assert.match(resumed,/Quá hạn 2 ngày/);
+  assert.match(resumed,/Đã có quãng nghỉ mua 3 ngày/);
+  assert.match(resumed,/Trễ 2 ngày/);
   const active=format({durationDays:2,daysWithoutPurchase:1,policyDueDay:'2026-10-25',
     policyIsDue:false});
-  assert.match(active,/Còn 2 ngày đến mốc ngừng mua/);
+  assert.match(active,/Còn 2 ngày tới mốc 3 ngày/);
 });

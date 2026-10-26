@@ -77,13 +77,13 @@ test('on opening Công nợ, renders cycle number, buy count, days idle, and com
   const elements={debtCustomerListContainer:list,customerDebtContentToShare:modal,
     cDebtModalHistoryList:history,customerDebtModalWrapper:wrapper};
   const records=[
-    {customerId:'a',cycles:[
+    {customerId:'a',monthly:[{month:'2026-10',purchaseDays:1,orderCount:3,carryOver:12}],cycles:[
       {number:1,startDay:'2026-10-01',endDay:'2026-10-09',closedAt:'2026-10-09',
         durationDays:9,purchaseCount:4,daysWithoutPurchase:2},
       {number:2,startDay:'2026-10-12',closedAt:null,durationDays:12,purchaseCount:5,
         daysWithoutPurchase:4}
     ]},
-    {customerId:'b',cycles:[{number:1,startDay:'2026-10-22',closedAt:null,durationDays:2,
+    {customerId:'b',monthly:[{month:'2026-10',purchaseDays:2,orderCount:2,carryOver:0}],cycles:[{number:1,startDay:'2026-10-22',closedAt:null,durationDays:2,
       purchaseCount:2,daysWithoutPurchase:1}]}
   ];
   let reads=0;
@@ -102,17 +102,19 @@ test('on opening Công nợ, renders cycle number, buy count, days idle, and com
   window.renderCongNo();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(reads,1,'one full-history RPC for the entire debt tab');
-  assert.match(body1.children[0].textContent,/Chu kỳ 2 · Ngày 12 · 5 lượt mua/);
-  assert.match(body1.children[0].textContent,/Quá hạn 5 ngày/);
-  assert.match(body1.children[0].textContent,/Đã ngừng mua 4 ngày/);
-  assert.match(body2.children[0].textContent,/Chu kỳ 1 · Ngày 2 · 2 lượt mua/);
+  assert.match(body1.children[0].textContent,/Tháng 10\/2026 · 1 ngày mua \(3 đơn\)/);
+  assert.match(body1.children[0].textContent,/Nợ chu kỳ 2 \(5 đơn\)/);
+  assert.match(body1.children[0].textContent,/Trễ 5 ngày/);
+  assert.match(body1.children[0].textContent,/Cách lần mua gần nhất 4 ngày/);
+  assert.match(body2.children[0].textContent,/Nợ chu kỳ 1 \(2 đơn\)/);
   window.renderCongNo();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(reads,1,'cached RPC is not repeated by every render');
   await window.openCustomerDebtModal('a');
   const panel=modal.children.find(n=>n.id==='debtCyclePanel');
   assert(panel);
-  const details=panel.children.find(n=>n.tag==='details');
+  assert.match(panel.children[0].textContent,/1 ngày mua \/ 3 đơn/);
+  const details=panel.children.find(n=>n.tag==='details'&&n.children[0]?.textContent?.includes('chu kỳ'));
   assert(details);
   assert.equal(details.children.at(-1).children.length,2);
   assert.match(details.children.at(-1).children[0].children[0].textContent,/Chu kỳ 1 · Đã tất toán/);
