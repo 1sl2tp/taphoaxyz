@@ -127,7 +127,9 @@ test('existing scroll owners retain non-debt lists; index loads pager after cycl
   assert.match(css,/#tab-ban-hang\s*>\s*main,[\s\S]*?#cDebtModalHistoryList\s*\{[\s\S]*?overflow-y:auto\s*!important/);
   assert.match(html,/fixed-ui-debt-cycles\.js[^\n]*\n\s*<script src="\.\/src\/fixed-ui-debt-pagination\.js/);
   assert.match(overrides,/window\.TAPHOA_DEBT_PAGE_STATE=/);
-  assert.match(overrides,/requestSeq!==debtModalOpenSeq/);
+  assert.match(overrides,/requestSeq===debtModalOpenSeq/);
+  assert.match(overrides,/String\(prod\?\.getIdentity\?\.\(\)\?\.uid\|\|''\)===ownerUid/,
+    'old debt pages must not render under another account');
   assert.match(bridge,/async function debtLedger\(customerId,\{beforeAt=null,beforeId=null,limit=50\}=\{\}\)/);
   assert.match(bridge,/business\.debtLedger\(customerId,\{beforeAt,beforeId,limit:pageLimit\}\)/);
   assert.match(renderer,/window\.TAPHOA_RENDER_DEBT_HISTORY_PAGE/);
