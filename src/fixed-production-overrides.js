@@ -160,10 +160,12 @@
     // account may replace the visible cache or notify its subscribers.
     const token=(sheetReadTokens.get(sheetName)||0)+1;
     sheetReadTokens.set(sheetName,token);
-    const uid=String(prod.getIdentity?.()?.uid||'');
+    const sessionIdentity=prod.getIdentity?.();
+    const uid=String(sessionIdentity?.uid||'');
     const mode=String(prod.getAccessMode?.()||'');
     const rows=await prod.readSheet(sheetName);
     if(sheetReadTokens.get(sheetName)!==token||
+       prod.getIdentity?.()!==sessionIdentity||
        String(prod.getIdentity?.()?.uid||'')!==uid||
        String(prod.getAccessMode?.()||'')!==mode){
       return this.cache[sheetName]||[];
@@ -428,9 +430,11 @@
     const requestedCustomer=String(maKh||'');
     const requestSeq=++debtModalOpenSeq;
     const prod=backend();
-    const ownerUid=String(prod?.getIdentity?.()?.uid||'');
+    const ownerIdentity=prod?.getIdentity?.();
+    const ownerUid=String(ownerIdentity?.uid||'');
     const ownerMode=String(prod?.getAccessMode?.()||'');
     const ownerCurrent=()=>requestSeq===debtModalOpenSeq
+      &&prod?.getIdentity?.()===ownerIdentity
       &&String(prod?.getIdentity?.()?.uid||'')===ownerUid
       &&String(prod?.getAccessMode?.()||'')===ownerMode;
     window.TAPHOA_DEBT_PAGE_STATE=null;
