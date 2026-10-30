@@ -8,6 +8,8 @@
   const backend=()=>window.TAPHOA_PRODUCTION;
   const sheetNames=['sanpham','khachhang','dontam','dongiao','thuchi'];
   let orderMutationInFlight=false;
+  // A second tap must not create a second financial command while the first is pending.
+  let debtMutationInFlight=false;
   const sheetNamesByDomain=Object.freeze({
     products:['sanpham'],
     customers:['khachhang'],
@@ -312,6 +314,7 @@
   };
 
   submitQuickDebt=async function(type,targetMaKh=null,targetAmount=null){
+    if(debtMutationInFlight)return;
     if(!hasPermission('canMutateDebt'))return denyPermission('Tài khoản này chỉ được xem Công nợ, không được Thu tiền/Ghi nợ.');
     const maKh=targetMaKh||document.getElementById('quickDebtCustomer')?.value||'';
     const amountStr=targetAmount!==null?String(targetAmount):String(document.getElementById('quickDebtAmount')?.value||'').trim();
@@ -320,6 +323,7 @@
       : Number(String(amountStr).replace(/\D/g,''))||0;
     if(!maKh){showAlertPopup('Chưa chọn khách','Vui lòng chọn khách hàng!');return;}
     if(amount<=0){showAlertPopup('Số tiền không hợp lệ','Vui lòng nhập số tiền lớn hơn 0!');return;}
+    debtMutationInFlight=true;
     let committed=false;
     showLoading('Đang lập phiếu...');
     try{
@@ -329,7 +333,10 @@
       if(targetAmount===null){const input=document.getElementById('quickDebtAmount');if(input)input.value='';}
     }catch(error){
       showAlertPopup('Lỗi','Không thể lưu phiếu: '+(error?.message||error));
-    }finally{hideLoading();}
+    }finally{
+      debtMutationInFlight=false;
+      hideLoading();
+    }
     if(committed){
       // SheetDB debt listener refreshes the open customer ledger once.
       setTimeout(()=>SheetDB.read('thuchi')
