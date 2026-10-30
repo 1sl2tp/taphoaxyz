@@ -21,7 +21,7 @@ function deferred(){
  return {promise,resolve,reject};
 }
 async function tick(){for(let i=0;i<35;i++)await Promise.resolve();}
-function fixture(){
+function fixture(storage=new Map()){
  const timers=[],intervals=[],requests=[],reads=[],warns=[],renders=[];
  let identity={uid:'A'},mode='employee-link',token='A',slug='';
  const pendingWrites=new Map(),pendingReads=[];
@@ -45,6 +45,11 @@ function fixture(){
    }
   }),
   document:{hidden:false},navigator:{onLine:true},
+  sessionStorage:{
+   getItem:key=>storage.has(key)?storage.get(key):null,
+   setItem:(key,value)=>storage.set(key,String(value)),
+   removeItem:key=>storage.delete(key)
+  },
   renderProductList:()=>renders.push('products'),
   renderCartUI:()=>renders.push('cart'),
   console:{warn:(...args)=>warns.push(args)},
@@ -66,13 +71,15 @@ function fixture(){
  let sharedCartRetryTimer=0;
  let sharedCartRetryCount=0;
  let sharedCartRetryReady=false;
+ const SHARED_CART_DRAFT_KEY='taphoa.shared-cart.pending.v1.';
+ const SHARED_CART_DRAFT_MAX_AGE=30*60*1000;
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount]};',
+  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount]};',
   ctx,{timeout:1000});
  return {
-  ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,
+  ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,storage,
   schedule:()=>ctx.api.scheduleSharedCartSave(),
   start:()=>ctx.api.startSharedCartSync(),
   flush:async()=>{for(const timer of timers.splice(0))if(timer)timer();await tick();},
@@ -341,4 +348,106 @@ test('same public quantity snapshot refreshes a revised product name and price',
  assert.equal(f.ctx.cart.P1.note,'Khách nhắn giao sáng');
  assert.equal(f.ctx.cart.P1.__lastTouched,41);
  assert.equal(f.renders.length,rendersBefore+2);
+});
+
+
+// SPEC-SHARED-CART-RELOAD-20261030: tab-local backup contains only quantities,
+// belongs to a verified link, and is cleared only on server acknowledgement.
+test('unconfirmed shared cart quantity is restored after reload for the same employee link',async()=>{
+ const storage=new Map(),before=fixture(storage);
+ const stalled=before.delayWrite('A');
+ before.ctx.cart.P1.qty=8;
+ before.schedule();
+ assert.equal(storage.size,1,'persist immediately, before debounce or network');
+ const value=JSON.parse(Array.from(storage.values())[0]);
+ assert.deepEqual(value.items,[{product_code:'P1',qty:8}]);
+ assert.equal(value.token,undefined);
+ assert.equal(value.pin,undefined);
+ assert.equal(value.price,undefined);
+ const reloaded=fixture(storage);
+ assert.equal(reloaded.ctx.api.restorePendingSharedCartDraft(),true);
+ assert.equal(reloaded.ctx.cart.P1.qty,8);
+ assert.equal(reloaded.ctx.api.edits().join(','),'1,0');
+ await reloaded.flush();
+ assert.equal(reloaded.requests.length,1);
+ assert.equal(reloaded.requests[0].items[0].qty,8);
+ assert.equal(storage.size,0,'clear draft after confirmed same snapshot');
+ // Resolve obsolete work: it must not recreate a saved draft or alter B.
+ await before.flush();stalled.resolve({ok:true});await tick();
+ assert.equal(storage.size,0);
+});
+
+test('reloaded different customer link never imports prior customer pending quantities',()=>{
+ const storage=new Map(),a=fixture(storage);
+ a.ctx.cart.P1.qty=5;a.schedule();
+ const b=fixture(storage);
+ b.switchTo('B');
+ assert.equal(b.ctx.api.restorePendingSharedCartDraft(),false);
+ assert.equal(b.ctx.cart.P2.qty,7);
+ assert.equal(b.requests.length,0);
+ assert.equal(storage.size,1,'original customer draft is left intact');
+ const c=fixture(storage);
+ assert.equal(c.ctx.api.restorePendingSharedCartDraft(),true);
+ assert.equal(c.ctx.cart.P1.qty,5);
+});
+
+test('reloaded different link type for the same UID cannot take another link draft',()=>{
+ const storage=new Map(),employee=fixture(storage);
+ employee.ctx.cart.P1.qty=9;employee.schedule();
+ const pub=fixture(storage);
+ pub.switchTo('A','public-link');
+ assert.equal(pub.ctx.api.restorePendingSharedCartDraft(),false);
+ assert.equal(pub.ctx.cart.P2.qty,7);
+});
+
+test('expired shared cart draft is rejected and removed instead of overwriting live data',()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart.P1.qty=99;first.schedule();
+ const [key,raw]=Array.from(storage.entries())[0];
+ const value=JSON.parse(raw);
+ value.savedAt=Date.now()-31*60*1000;
+ storage.set(key,JSON.stringify(value));
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),false);
+ assert.equal(next.ctx.cart.P1.qty,1);
+ assert.equal(storage.size,0);
+});
+
+test('missing catalog row never turns recovered full cart into destructive partial write',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart.P3={qty:9,price:0};
+ first.schedule();
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),false);
+ await next.flush();
+ assert.equal(next.requests.length,0);
+ assert.equal(storage.size,1);
+});
+
+test('zero quantity / clear cart backup survives reload and syncs empty snapshot',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart={};
+ first.schedule();
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),true);
+ assert.deepEqual(Object.keys(next.ctx.cart),[]);
+ await next.flush();
+ assert.equal(next.requests.length,1);
+ assert.deepEqual(Array.from(next.requests[0].items),[]);
+ assert.equal(storage.size,0);
+});
+
+test('older acknowledged quantity cannot erase a newer saved draft in same session',async()=>{
+ const f=fixture();
+ const held=f.delayWrite('A');
+ f.ctx.cart.P1.qty=2;f.schedule();await f.flush();
+ f.ctx.cart.P1.qty=7;f.schedule();
+ held.resolve({ok:true});await tick();
+ assert.equal(f.storage.size,1);
+ assert.equal(JSON.parse(Array.from(f.storage.values())[0]).items[0].qty,7);
+ // Confirm the final edit once queued.
+ f.pendingWrites.delete('A');
+ await f.flush();
+ assert.equal(f.ctx.api.edits().join(','),'2,2');
+ assert.equal(f.storage.size,0);
 });
