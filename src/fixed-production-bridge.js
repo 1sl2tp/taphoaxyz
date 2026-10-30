@@ -345,6 +345,13 @@ async function refresh(domains=[]){
   return appState.get();
 }
 
+// A committed write is not undone by a failed follow-up read. Preserve the
+// success result; the existing revision signal will reconcile the cached UI.
+function noteCommittedRefreshFailure(error){
+  console.warn('[taphoa] refresh after committed mutation:',String(error?.message||error));
+  scheduleRevisionWake();
+}
+
 async function syncOnce(){
   if(!identity||navigator.onLine===false||document.hidden)return appState.get();
   if(employeeAccess)return appState.get();
@@ -708,7 +715,8 @@ async function saveOrder(payload){
   // rebuilding debtSummary for each draft edit. Delivered sales still
   // synchronously refresh both orders and debt before returning success.
   const isConfirmedDraft=String(result?.order?.status||'').toLowerCase()==='pending';
-  await refresh(isConfirmedDraft?['orders']:['orders','debt']);
+  try{await refresh(isConfirmedDraft?['orders']:['orders','debt']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function deliverOrder(id){
@@ -716,25 +724,34 @@ async function deliverOrder(id){
   if(publicAccess)throw new Error('public_pending_only');
   const result=await business.deliverOrder(id);
   void attachOrderNoticePortrait(result?.order);
-  await refresh(['orders','debt']);
+  try{await refresh(['orders','debt']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function reverseOrder(id,reason='Hoàn đơn'){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
-  const result=await business.reverseOrder(id,reason);await refresh(['orders','debt']);return result;
+  const result=await business.reverseOrder(id,reason);
+  try{await refresh(['orders','debt']);}
+  catch(error){noteCommittedRefreshFailure(error);}
+  return result;
 }
 async function deletePending(id){
   if(employeeAccess)throw new Error('employee_read_only');
   const result=publicAccess
     ?await publicRpc('taphoa_public_delete_pending_access',{p_order_id:String(id||''),p_command_id:crypto.randomUUID()})
     :await business.deletePending(id);
-  await refresh(['orders']);return result;
+  try{await refresh(['orders']);}
+  catch(error){noteCommittedRefreshFailure(error);}
+  return result;
 }
 async function batchOrders(action,ids){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
-  const result=await business.batchOrders(action,ids);await refresh(['orders','debt']);return result;
+  const result=await business.batchOrders(action,ids);
+  try{await refresh(['orders','debt']);}
+  catch(error){noteCommittedRefreshFailure(error);}
+  return result;
 }
 /* One compact debt/collection PNG, attached to the exact committed Chat notice.
    The transaction returned its before/after balances inside the DB transaction;
@@ -883,7 +900,8 @@ async function debtTransaction(customerId,type,amount,note=''){
   if(publicAccess)throw new Error('public_read_only');
   const result=await business.debtTransaction(customerId,type,amount,note);
   void attachDebtNoticeImage(result);
-  await refresh(['debt']);
+  try{await refresh(['debt']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function createCustomer(name){
