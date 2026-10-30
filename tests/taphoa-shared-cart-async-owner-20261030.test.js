@@ -66,7 +66,7 @@ function fixture(){
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq]};',
+  'globalThis.api={scheduleSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq]};',
   ctx,{timeout:1000});
  return {
   ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,
@@ -187,4 +187,27 @@ test('server ok:false does not mark a cart edit as synced or permit stale pollin
  assert.equal(f.pendingReads.length,0);
  assert.equal(f.ctx.cart.P1.qty,12);
  assert.equal(f.warns.length,1);
+});
+
+test('invalid or absent shared-cart snapshots cannot erase the current quantities',()=>{
+ const f=fixture();
+ const original=f.ctx.cart.P1;
+ f.ctx.api.applySharedCartSnapshot(null,{force:true});
+ f.ctx.api.applySharedCartSnapshot({ok:false,items:[]},{force:true});
+ f.ctx.api.applySharedCartSnapshot({message:'temporary error'},{force:true});
+ assert.equal(f.ctx.cart.P1,original);
+ assert.equal(f.ctx.cart.P1.qty,1);
+ assert.equal(f.renders.length,0);
+});
+
+test('a quantity row appears once its product catalog arrives, even if server signature is identical',()=>{
+ const f=fixture();
+ const snapshot=items('P3',11);
+ f.ctx.api.applySharedCartSnapshot(snapshot,{force:true});
+ assert.equal(f.ctx.cart.P3,undefined,'cannot render unknown product before catalog read');
+ f.ctx.appData.sanpham.push(['P3','Prod 3']);
+ f.ctx.api.applySharedCartSnapshot(snapshot);
+ assert.equal(f.ctx.cart.P3.qty,11);
+ assert.equal(f.ctx.cart.P3.name,'Prod 3');
+ assert.equal(f.renders.length,4);
 });
