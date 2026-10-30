@@ -19,6 +19,7 @@ function fixture(){
   window:{addEventListener:(kind,fn)=>{listeners[kind]=fn;}},
   document:{hidden:false,addEventListener:(kind,fn)=>{listeners[kind]=fn;}},
   retryPendingSharedCartSave:()=>events.push('reconnect'),
+  isSharedCartMode:()=>mode==='employee-link'||mode==='public-link',
   backend:()=>({getAccessMode:()=>mode}),
   updateCart:function(){events.push('original-update');},
   previewQtyInput:function(){events.push('original-preview');},
