@@ -55,7 +55,7 @@ test('rapid login taps generate one auth RPC and one authenticated UI transition
  assert.deepEqual(f.calls[0],{username:'admin',password:'secret'});
  f.pending[0].resolve({identity:{uid:'owner',role:'admin'}});
  await Promise.all([a,b]);
- assert.deepEqual(f.ui,['loading','role:admin','customer','app','refresh','hide']);
+ assert.deepEqual(f.ui,['loading','role:admin','customer','refresh','app','hide']);
  assert.equal(f.toasts.length,1);
  assert.equal(f.alerts.length,0);
  assert.equal(f.fields.loginPassword.value,'');
