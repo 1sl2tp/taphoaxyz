@@ -16,7 +16,7 @@ const employee=section('  async function enterEmployeeLink(info){','  async func
 const customer=section('  async function enterPublicUser(info){','  async function openPublicUserFromSession(){');
 function deferred(){let release;const promise=new Promise(resolve=>{release=resolve;});return {promise,release};}
 async function tick(){for(let i=0;i<25;i++)await Promise.resolve();}
-function fixture(kind,{holdSnapshot=false}={}){
+function fixture(kind,{holdSnapshot=false,recoverDraft=false}={}){
  const events=[],wait=deferred(),snapshotWait=deferred();
  let mode=kind==='employee'?'employee-link':'public-link';
  let identity={uid:'A'};
@@ -38,6 +38,7 @@ function fixture(kind,{holdSnapshot=false}={}){
    querySelector:()=>({id:'sales-button'})
   },
   resetSharedCartSyncOwner:()=>events.push('reset-cart'),
+  restorePendingSharedCartDraft:()=>{events.push('restore-draft');return recoverDraft;},
   setAuthRole:role=>events.push('role:'+role),
   syncSelfCustomer:()=>events.push('self'),
   refreshFixedSheets:async()=>{events.push('refresh-start');await wait.promise;events.push('refresh-finish');},
@@ -151,5 +152,28 @@ for(const kind of ['employee','public']){
   assert.equal(f.ctx.renderKey(),'');
   f.releaseSnapshot();
   await pending;
+ });
+}
+
+
+for(const kind of ['employee','public']){
+ test(kind+' restores tab draft before exposing new link UI and ignores the stale initial snapshot',async()=>{
+  const f=fixture(kind,{recoverDraft:true,holdSnapshot:true});
+  const pending=f.enter(f.info());
+  await tick();
+  assert.equal(f.events.includes('restore-draft'),false);
+  f.release();await tick();
+  assert.ok(f.events.indexOf('restore-draft')<f.events.indexOf('show-app'));
+  f.releaseSnapshot();await pending;
+  assert.equal(f.events.includes('apply-cart'),false,
+    'a stale first server snapshot must not replace a restored unsent edit');
+  assert.equal(f.events.includes('start-poll'),true);
+ });
+ test(kind+' still imports first server snapshot when there is no pending local draft',async()=>{
+  const f=fixture(kind);
+  const pending=f.enter(f.info());
+  f.release();
+  await pending;
+  assert.equal(f.events.includes('apply-cart'),true);
  });
 }
