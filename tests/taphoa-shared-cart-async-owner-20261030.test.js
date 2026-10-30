@@ -443,12 +443,13 @@ test('expired shared cart draft is rejected and removed instead of overwriting l
  assert.equal(storage.size,0);
 });
 
-test('missing catalog row never turns recovered full cart into destructive partial write',async()=>{
+test('missing catalog row keeps the full cart pending rather than sending a destructive partial write',async()=>{
  const storage=new Map(),first=fixture(storage);
  first.ctx.cart.P3={qty:9,price:0};
  first.schedule();
  const next=fixture(storage);
- assert.equal(next.ctx.api.restorePendingSharedCartDraft(),false);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),'pending');
+ assert.equal(next.ctx.api.sharedCartRestoreBlocked(),true);
  await next.flush();
  assert.equal(next.requests.length,0);
  assert.equal(storage.size,1);
@@ -782,7 +783,8 @@ test('reset owner releases blocked pending draft without posting it to the next 
  assert.equal(next.requests.length,1);
  assert.equal(next.requests[0].token,'B');
  assert.deepEqual(next.requests[0].items.map(x=>x.product_code),['P2']);
- assert.equal(storage.size,2,'original A draft is never deleted or transferred');
+ assert.equal(storage.size,1,'B confirmation removes only B draft, leaving original A pending');
+ assert.equal(JSON.parse(Array.from(storage.values())[0]).items[0].product_code,'P3');
 });
 
 test('pending draft whose validity expires unblocks polls without replaying stale quantities',async()=>{
