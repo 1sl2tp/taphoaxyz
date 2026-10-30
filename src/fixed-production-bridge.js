@@ -312,11 +312,11 @@ function sheetRows(sheet){
   return [];
 }
 
-async function bootstrap({force=false}={}){
+async function bootstrap({force=false,skipCache=false}={}){
   if(bootstrapped&&!force)return appState.get();
   const context=captureProductionOwner();
   const uid=currentUid();
-  const cached=!publicAccess&&!employeeAccess&&uid?snapshot.load(uid):null;
+  const cached=!skipCache&&!publicAccess&&!employeeAccess&&uid?snapshot.load(uid):null;
   if(cached?.data&&!bootstrapped){appState.setBootstrap(cached.data);bootstrapped=true;}
   if(navigator.onLine===false){
     if(bootstrapped)return appState.get();
@@ -423,6 +423,9 @@ async function attachSession(info){
   sessionGeneration+=1;
   stopSync();
   identity=info?.identity||null;bootstrapped=false;
+  // SPEC-SESSION-BOUNDARY: a verified session cannot retain the prior user's
+  // in-memory cart edit, customer records or finance state.
+  appState.reset();
   const context=captureProductionOwner();
   // auth.restore/login has ALREADY verified taphoa_access_context online.
   // Display only this account's matching-role snapshot immediately, and let
@@ -440,8 +443,9 @@ async function attachSession(info){
       .catch(error=>console.warn('taphoa cached session sync',error));
     return {identity,state:appState.get()};
   }
-  // First-ever login or changed privileges: load canonical data before UI.
-  await bootstrap();
+  // A snapshot for an old role must not flash privileged data, even offline.
+  // Load canonical data only when the verified role no longer matches.
+  await bootstrap({skipCache:Boolean(cached?.data&&cachedRole!==verifiedRole)});
   if(!productionOwnerCurrent(context))return null;
   await startSync();
   if(!productionOwnerCurrent(context))return null;
@@ -454,6 +458,9 @@ async function login(username,password){
   publicAccess=null;
   employeeAccess=null;
   employeeSnapshotData=null;
+  // Invalidate visible account data immediately, including if credentials fail
+  // or a second login supersedes this authentication request.
+  identity=null;bootstrapped=false;appState.reset();
   const info=await auth.login(username,password);
   if(sessionGeneration!==loginGeneration)return null;
   return attachSession(info);
