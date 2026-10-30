@@ -693,3 +693,36 @@ test('zero quantity for an unknown product cannot block a valid known-item delet
   'an absent zero-quantity product cannot hide a genuine server clear');
  assert.equal(f.renders.length,2);
 });
+
+
+test('offline shared-cart polling sends no GET and resumes on the next online interval',async()=>{
+ const f=fixture();f.start();
+ f.ctx.navigator.onLine=false;
+ f.firePoll();await tick();
+ f.advance(30000);
+ f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,0,'offline tab should not repeatedly request snapshots');
+ assert.equal(f.warns.length,0);
+ f.ctx.navigator.onLine=true;
+ const next=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,1);
+ f.pendingReads[0].resolve(items('P1',7));await next;
+ assert.equal(f.ctx.cart.P1.qty,7);
+});
+
+test('offline state does not abandon in-flight read or unlock it until it settles',async()=>{
+ const f=fixture();f.start();
+ const pending=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,1);
+ f.ctx.navigator.onLine=false;
+ f.advance(20000);
+ f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,1,'offline interval may not replace a hung read');
+ f.pendingReads[0].resolve(items('P1',6));await pending;
+ assert.equal(f.ctx.api.pollState()[0],false);
+ f.ctx.navigator.onLine=true;
+ const next=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,2);
+ f.pendingReads[1].resolve(items('P1',8));await next;
+ assert.equal(f.ctx.cart.P1.qty,8);
+});
