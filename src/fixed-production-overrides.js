@@ -1108,11 +1108,15 @@
     for(const [code,qty] of normalized){
       const product=productMap.get(code);
       if(!product)continue;
+      const existing=cart?.[code]||{};
       nextCart[code]={
         name:String(product?.[1]||code),
         price:employeeMode?0:(Number(product?.[3])||0),
         qty,
-        note:''
+        // Shared stock checks synchronize quantities only. Preserve the
+        // customer's local notes and cart insertion order on remote updates.
+        note:String(existing.note||''),
+        __lastTouched:Number(existing.__lastTouched)||0
       };
     }
 
