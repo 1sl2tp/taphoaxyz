@@ -511,6 +511,8 @@
   let sharedCartRetryTimer=0;
   let sharedCartRetryCount=0;
   let sharedCartRetryReady=false;
+  const SHARED_CART_DRAFT_KEY='taphoa.shared-cart.pending.v1.';
+  const SHARED_CART_DRAFT_MAX_AGE=30*60*1000;
   let publicTabId='tab-ban-hang';
 
   function employeeQuery(){
@@ -919,6 +921,79 @@
       &&owner.slug===now.slug&&owner.token===now.token;
   }
 
+  // SPEC-SHARED-CART-RELOAD-20261030: keep only quantities in this tab until
+  // confirmed by the server. Never persist a PIN, bearer token, order or price.
+  function sharedCartDraftKey(owner=sharedCartOwner()){
+    const uid=String(owner?.identity?.uid||'').trim();
+    const link=owner?.mode==='public-link'?owner.slug
+      :owner?.mode==='employee-link'?owner.token:'';
+    if(!uid||!link)return '';
+    const value=owner.mode+'|'+uid+'|'+link;
+    let hash=2166136261;
+    for(let i=0;i<value.length;i++){
+      hash=Math.imul(hash^value.charCodeAt(i),16777619)>>>0;
+    }
+    return SHARED_CART_DRAFT_KEY+hash.toString(36);
+  }
+
+  function savePendingSharedCartDraft(owner,items){
+    const key=sharedCartDraftKey(owner);
+    if(!key)return;
+    try{
+      sessionStorage.setItem(key,JSON.stringify({
+        savedAt:Date.now(),
+        items:items.map(item=>({product_code:item.product_code,qty:item.qty}))
+      }));
+    }catch(error){console.warn('shared cart draft unavailable',error);}
+  }
+
+  function clearPendingSharedCartDraft(owner,items){
+    const key=sharedCartDraftKey(owner);
+    if(!key)return;
+    try{
+      const saved=JSON.parse(sessionStorage.getItem(key)||'null');
+      if(!saved||JSON.stringify(saved.items)!==JSON.stringify(items))return;
+      sessionStorage.removeItem(key);
+    }catch(error){console.warn('shared cart draft cleanup',error);}
+  }
+
+  function restorePendingSharedCartDraft(){
+    if(!isSharedCartMode())return false;
+    const owner=sharedCartOwner(),key=sharedCartDraftKey(owner);
+    if(!key)return false;
+    let saved;
+    try{saved=JSON.parse(sessionStorage.getItem(key)||'null');}
+    catch{return false;}
+    if(!saved)return false;
+    if(!Number.isFinite(saved.savedAt)
+       ||saved.savedAt>Date.now()
+       ||Date.now()-saved.savedAt>SHARED_CART_DRAFT_MAX_AGE
+       ||!Array.isArray(saved.items)){
+      try{sessionStorage.removeItem(key);}catch{}
+      return false;
+    }
+    const entries=saved.items;
+    if(entries.some(item=>typeof item?.product_code!=='string'
+       ||!item.product_code||!Number.isSafeInteger(item.qty)||item.qty<=0))return false;
+    const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
+    // Incomplete product data must never turn a pending full-cart write into
+    // a destructive partial-cart overwrite.
+    if(entries.some(item=>!productMap.has(item.product_code)))return false;
+    const employee=owner.mode==='employee-link',restored={};
+    for(const item of entries){
+      const row=productMap.get(item.product_code);
+      restored[item.product_code]={
+        name:String(row?.[1]||item.product_code),
+        price:employee?0:(Number(row?.[3])||0),
+        qty:item.qty,note:''
+      };
+    }
+    cart=restored;
+    scheduleSharedCartSave();
+    renderCartUI();
+    return true;
+  }
+
   function resetSharedCartSyncOwner(){
     clearTimeout(sharedCartSaveTimer);
     sharedCartSaveTimer=0;
@@ -949,7 +1024,10 @@
     if(!isSharedCartMode())return;
     const owner=sharedCartOwner();
     const editSeq=retry?sharedCartLocalEditSeq:++sharedCartLocalEditSeq;
-    if(!retry)sharedCartRetryCount=0;
+    if(!retry){
+      sharedCartRetryCount=0;
+      savePendingSharedCartDraft(owner,sharedCartItems());
+    }
     sharedCartRetryReady=false;
     clearTimeout(sharedCartRetryTimer);
     sharedCartRetryTimer=0;
@@ -970,6 +1048,7 @@
           sharedCartSignature=JSON.stringify(items.map(row=>[row.product_code,row.qty]).sort());
           sharedCartCommittedEditSeq=editSeq;
           sharedCartRetryReady=false;
+          clearPendingSharedCartDraft(owner,items);
         })
         .catch(error=>{
           console.warn('shared cart sync',error);
@@ -990,6 +1069,13 @@
     if(window.__taphoaSharedCartQuantitySync)return;
     window.__taphoaSharedCartQuantitySync=true;
     window.addEventListener?.('online',retryPendingSharedCartSave);
+    window.addEventListener?.('beforeunload',event=>{
+      if(!isSharedCartMode()||sharedCartCommittedEditSeq===sharedCartLocalEditSeq)return;
+      // Desktop browsers may warn about leaving with unconfirmed edits;
+      // iOS can ignore beforeunload, so tab-scoped draft storage is primary.
+      event.preventDefault?.();
+      event.returnValue='';
+    });
     document.addEventListener?.('visibilitychange',()=>{
       if(!document.hidden)retryPendingSharedCartSave();
     });
@@ -1193,6 +1279,7 @@
     // A replaced link may finish its sheet read after a newer session starts.
     if(backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='employee-link')return;
+    restorePendingSharedCartDraft();
     showAppScreen();
     ownProductRenderKey='';
     window.TAPHOA_PRODUCT_SEGMENT='all';
@@ -1274,6 +1361,7 @@
     await refreshFixedSheets();
     if(backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='public-link')return;
+    restorePendingSharedCartDraft();
     showAppScreen();
     // A previous customer's cached product render key cannot be reused when
     // the new public link initially opens on Orders or Debt instead of Sales.
