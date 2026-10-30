@@ -16,8 +16,8 @@ const employee=section('  async function enterEmployeeLink(info){','  async func
 const customer=section('  async function enterPublicUser(info){','  async function openPublicUserFromSession(){');
 function deferred(){let release;const promise=new Promise(resolve=>{release=resolve;});return {promise,release};}
 async function tick(){for(let i=0;i<25;i++)await Promise.resolve();}
-function fixture(kind){
- const events=[],wait=deferred();
+function fixture(kind,{holdSnapshot=false}={}){
+ const events=[],wait=deferred(),snapshotWait=deferred();
  let mode=kind==='employee'?'employee-link':'public-link';
  let identity={uid:'A'};
  const backendService={
@@ -25,8 +25,8 @@ function fixture(kind){
   getAccessMode:()=>mode,
   getEmployeeAccess:()=>({token:'A'}),
   getPublicAccess:()=>({slug:'A'}),
-  getEmployeeSnapshot:async()=>({items:[]}),
-  employeeSnapshot:async()=>({items:[]})
+  getEmployeeSnapshot:async()=>{if(holdSnapshot)await snapshotWait.promise;return {items:[]};},
+  employeeSnapshot:async()=>{if(holdSnapshot)await snapshotWait.promise;return {items:[]};}
  };
  const ctx={
   backend:()=>backendService,window:{},document:{
@@ -56,13 +56,15 @@ function fixture(kind){
  vm.createContext(ctx);
  const code=(kind==='employee'?employee:customer)+
   '\nlet sharedCartSignature="",sharedCartLocalEditSeq=0,sharedCartCommittedEditSeq=0,sharedCartPollRequestSeq=0,ownProductRenderKey="",publicTabId="";'+
-  '\nglobalThis.enter='+(kind==='employee'?'enterEmployeeLink':'enterPublicUser')+';';
+  '\nglobalThis.enter='+(kind==='employee'?'enterEmployeeLink':'enterPublicUser')+';globalThis.markLocalEdit=()=>{sharedCartLocalEditSeq++};';
  vm.runInContext(code,ctx,{timeout:1000});
  return {
   info:()=>({identity}),
   enter:ctx.enter,
   events,
+  markLocalEdit:()=>ctx.markLocalEdit(),
   release:()=>wait.release(),
+  releaseSnapshot:()=>snapshotWait.release(),
   switchTo:(uid,nextMode=mode)=>{identity={uid};mode=nextMode;}
  };
 }
@@ -89,5 +91,21 @@ for(const kind of ['employee','public']){
   assert.ok(f.events.indexOf('refresh-finish')<f.events.indexOf('show-app'));
   assert.equal(f.events.filter(x=>x==='show-app').length,1);
   assert.equal(f.events.filter(x=>x==='start-poll').length,1);
+ });
+}
+
+for(const kind of ['employee','public']){
+ test(kind+' initial server snapshot must not overwrite a quantity edited while snapshot was loading',async()=>{
+  const f=fixture(kind,{holdSnapshot:true});
+  const pending=f.enter(f.info());
+  await tick();
+  f.release();await tick();
+  assert.equal(f.events.includes('show-app'),true);
+  f.markLocalEdit();
+  f.releaseSnapshot();
+  await pending;
+  assert.equal(f.events.includes('apply-cart'),false);
+  assert.equal(f.events.includes('start-poll'),true,
+    'normal polling remains available for the edited cart after its save');
  });
 }
