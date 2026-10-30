@@ -54,17 +54,21 @@ function saveSnapshot(){const uid=currentUid();if(uid&&!publicAccess&&!employeeA
 const EMPLOYEE_API=`${CONFIG.supabaseUrl}/functions/v1/taphoa-stock-check`;
 
 async function employeeRequest({method='GET',items=null}={}){
-  if(!employeeAccess?.token||!employeeAccess?.pin)throw new Error('employee_access_required');
-  const headers={'x-employee-pin':employeeAccess.pin};
+  const access=employeeAccess;
+  const context=captureProductionOwner();
+  if(!access?.token||!access?.pin)throw new Error('employee_access_required');
+  const headers={'x-employee-pin':access.pin};
   const init={method,headers,cache:'no-store'};
-  let url=`${EMPLOYEE_API}?t=${encodeURIComponent(employeeAccess.token)}`;
+  let url=`${EMPLOYEE_API}?t=${encodeURIComponent(access.token)}`;
   if(method!=='GET'){
     headers['content-type']='application/json';
-    init.body=JSON.stringify({token:employeeAccess.token,action:'save',items:Array.isArray(items)?items:[]});
+    init.body=JSON.stringify({token:access.token,action:'save',items:Array.isArray(items)?items:[]});
     url=EMPLOYEE_API;
   }
   const response=await fetch(url,init);
   const data=await response.json().catch(()=>({}));
+  // A late response must never be returned or cached under another employee link.
+  if(!productionOwnerCurrent(context))throw new Error('employee_access_changed');
   if(!response.ok||data?.ok!==true){
     const err=Object.assign(new Error(String(data?.error||'employee_request_failed')),{code:String(data?.error||response.status)});
     throw err;
@@ -493,6 +497,10 @@ async function openEmployeeLink(token,pin){
   stopSync();
   identity=null;
   employeeAccess={token:String(token||'').trim(),pin:String(pin||'').trim()};
+  // Invalidate the previous employee's cached data before verifying this link.
+  employeeSnapshotData=null;
+  bootstrapped=false;
+  appState.reset();
   if(!employeeAccess.token||!employeeAccess.pin)throw new Error('employee_access_required');
   const context=captureProductionOwner();
   const result=await employeeRequest();
