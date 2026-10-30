@@ -514,6 +514,7 @@
   let sharedCartRetryCount=0;
   let sharedCartRetryReady=false;
   let sharedCartRestorePendingOwner=null;
+  let sharedCartRestoreNoticeAt=0;
   const SHARED_CART_DRAFT_KEY='taphoa.shared-cart.pending.v1.';
   const SHARED_CART_DRAFT_MAX_AGE=30*60*1000;
   let publicTabId='tab-ban-hang';
@@ -950,6 +951,13 @@
     return true;
   }
 
+  function notifyPendingSharedCartRestore(){
+    const now=Date.now();
+    if(now-sharedCartRestoreNoticeAt<5000)return;
+    sharedCartRestoreNoticeAt=now;
+    showToast('Giỏ hàng đang chờ tải đủ sản phẩm để khôi phục. Chưa gửi thay đổi lên máy chủ.','warning');
+  }
+
   function savePendingSharedCartDraft(owner,items){
     const key=sharedCartDraftKey(owner);
     if(!key)return;
@@ -1054,6 +1062,7 @@
     sharedCartRetryCount=0;
     sharedCartRetryReady=false;
     sharedCartRestorePendingOwner=null;
+    sharedCartRestoreNoticeAt=0;
     sharedCartPollInFlight=false;
     sharedCartPollStartedAt=0;
     ++sharedCartPollRequestSeq;
@@ -1133,7 +1142,10 @@
 
     const baseUpdateCart=updateCart;
     updateCart=function(maSp,tenSp,giaBan,change){
-      if(isSharedCartMode()&&sharedCartRestoreBlocked())return;
+      if(isSharedCartMode()&&sharedCartRestoreBlocked()){
+        notifyPendingSharedCartRestore();
+        return;
+      }
       const previousQty=Number(cart?.[maSp]?.qty)||0;
       const result=baseUpdateCart.apply(this,arguments);
       // An unchanged +/- action must not resend the full shared snapshot.
@@ -1147,6 +1159,7 @@
       const mode=backend()?.getAccessMode?.();
       if(isSharedCartMode()&&sharedCartRestoreBlocked()){
         if(input)input.value=String(Number(cart?.[input.dataset?.qtyId]?.qty)||0);
+        notifyPendingSharedCartRestore();
         return;
       }
       if(mode!=='employee-link'){
@@ -1190,6 +1203,7 @@
       const mode=backend()?.getAccessMode?.();
       if(isSharedCartMode()&&sharedCartRestoreBlocked()){
         if(input)input.value=String(Number(cart?.[input.dataset?.qtyId]?.qty)||0);
+        notifyPendingSharedCartRestore();
         return;
       }
       if(mode!=='employee-link'){
@@ -1231,7 +1245,10 @@
 
     const baseClearCart=clearCart;
     clearCart=function(){
-      if(isSharedCartMode()&&sharedCartRestoreBlocked())return;
+      if(isSharedCartMode()&&sharedCartRestoreBlocked()){
+        notifyPendingSharedCartRestore();
+        return;
+      }
       const hadRows=sharedCartItems().length>0;
       const result=baseClearCart.apply(this,arguments);
       // An already-empty cart is not a new clearing command. Otherwise a
@@ -1391,8 +1408,7 @@
        ||backend()?.getAccessMode?.()!=='employee-link')return;
     const recoveredSharedCart=restorePendingSharedCartDraft();
     showAppScreen();
-    if(recoveredSharedCart==='pending')
-      showToast('Giỏ hàng đang chờ tải đủ sản phẩm để khôi phục. Chưa gửi thay đổi lên máy chủ.','warning');
+    if(recoveredSharedCart==='pending')notifyPendingSharedCartRestore();
     ownProductRenderKey='';
     window.TAPHOA_PRODUCT_SEGMENT='all';
     window.TAPHOA_EMPLOYEE_MODE=true;
@@ -1475,8 +1491,7 @@
        ||backend()?.getAccessMode?.()!=='public-link')return;
     const recoveredSharedCart=restorePendingSharedCartDraft();
     showAppScreen();
-    if(recoveredSharedCart==='pending')
-      showToast('Giỏ hàng đang chờ tải đủ sản phẩm để khôi phục. Chưa gửi thay đổi lên máy chủ.','warning');
+    if(recoveredSharedCart==='pending')notifyPendingSharedCartRestore();
     // A previous customer's cached product render key cannot be reused when
     // the new public link initially opens on Orders or Debt instead of Sales.
     ownProductRenderKey='';
