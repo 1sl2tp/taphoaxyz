@@ -7,6 +7,7 @@
 
   const backend=()=>window.TAPHOA_PRODUCTION;
   const sheetNames=['sanpham','khachhang','dontam','dongiao','thuchi'];
+  const sheetReadTokens=new Map();
   let orderMutationInFlight=false;
   let loginInFlight=false;
   // A second tap must not create a second financial command while the first is pending.
@@ -142,7 +143,18 @@
   SheetDB.read=async function(sheetName){
     const prod=backend();
     if(!prod)throw new Error('Production bridge chưa sẵn sàng');
+    // SPEC-SHEET-READ-OWNER: only the latest read for this sheet and
+    // account may replace the visible cache or notify its subscribers.
+    const token=(sheetReadTokens.get(sheetName)||0)+1;
+    sheetReadTokens.set(sheetName,token);
+    const uid=String(prod.getIdentity?.()?.uid||'');
+    const mode=String(prod.getAccessMode?.()||'');
     const rows=await prod.readSheet(sheetName);
+    if(sheetReadTokens.get(sheetName)!==token||
+       String(prod.getIdentity?.()?.uid||'')!==uid||
+       String(prod.getAccessMode?.()||'')!==mode){
+      return this.cache[sheetName]||[];
+    }
     this.cache[sheetName]=Array.isArray(rows)?rows:[];
     this.notifyListeners(sheetName);
     return this.cache[sheetName];
@@ -177,8 +189,9 @@
       setAuthRole(productionRole(info));
       syncSelfCustomer(info);
       document.getElementById('loginPassword').value='';
-      showAppScreen();
+      // Do not expose the preceding account's SheetDB rows while B loads.
       await refreshFixedSheets();
+      showAppScreen();
       showToast('Đăng nhập thành công.','success');
     }catch(error){
       console.error('login',error);
@@ -1113,8 +1126,8 @@
       if(!info){showLoginScreen();return;}
       setAuthRole(productionRole(info));
       syncSelfCustomer(info);
-      showAppScreen();
       await refreshFixedSheets();
+      showAppScreen();
     }catch(error){
       console.error('restore',error);
       showLoginScreen();
