@@ -88,7 +88,7 @@ test('verified cached account opens before expensive business bootstrap',async()
   assert.match(section,/cachedRole===verifiedRole/,'account role must match before restoring the cache');
   assert.ok(section.indexOf('appState.setBootstrap(cached.data)')<section.indexOf('await bootstrap();await startSync();'),
     'cached data must be mounted ahead of the first network bootstrap');
-  assert.match(section,/void startSync\(\)[\s\S]*\.then\(\(\)=>syncOnce\(\)\)/,
+  assert.match(section,/void startSync\(\)[\s\S]*\.then\(\(\)=>\{if\(productionOwnerCurrent\(context\)\)return syncOnce\(\);\}\)/,
     'background refresh must use the existing revision sync owner');
   assert.doesNotMatch(section,/setInterval|taphoa_app_bootstrap.*taphoa_app_bootstrap/);
 });
