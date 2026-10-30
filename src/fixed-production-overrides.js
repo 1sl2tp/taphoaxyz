@@ -890,7 +890,9 @@
   }
 
   function sharedCartItems(){
-    return Object.entries(cart||{}).map(([product_code,item])=>{
+    return Object.entries(cart||{})
+      .sort(([,a],[,b])=>(Number(b?.__lastTouched)||0)-(Number(a?.__lastTouched)||0))
+      .map(([product_code,item])=>{
       const value=Number(item?.qty);
       return {
         product_code:String(product_code),
@@ -963,7 +965,10 @@
     if(!key)return false;
     let saved;
     try{saved=JSON.parse(sessionStorage.getItem(key)||'null');}
-    catch{return false;}
+    catch{
+      try{sessionStorage.removeItem(key);}catch{}
+      return false;
+    }
     if(!saved)return false;
     if(!Number.isFinite(saved.savedAt)
        ||saved.savedAt>Date.now()
@@ -973,21 +978,37 @@
       return false;
     }
     const entries=saved.items;
-    if(entries.some(item=>typeof item?.product_code!=='string'
-       ||!item.product_code||!Number.isSafeInteger(item.qty)||item.qty<=0))return false;
+    const seen=new Set();
+    // A corrupt/duplicate full-cart draft is never safe to replay: the
+    // shared-cart endpoint replaces the entire stock-count snapshot.
+    const valid=entries.every(item=>{
+      const code=item?.product_code;
+      if(typeof code!=='string'||!code||seen.has(code)
+         ||!Number.isSafeInteger(item.qty)||item.qty<=0)return false;
+      seen.add(code);
+      return true;
+    });
+    if(!valid){
+      try{sessionStorage.removeItem(key);}catch{}
+      return false;
+    }
     const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
     // Incomplete product data must never turn a pending full-cart write into
     // a destructive partial-cart overwrite.
     if(entries.some(item=>!productMap.has(item.product_code)))return false;
     const employee=owner.mode==='employee-link',restored={};
-    for(const item of entries){
+    for(const [index,item] of entries.entries()){
       const row=productMap.get(item.product_code);
       restored[item.product_code]={
         name:String(row?.[1]||item.product_code),
         price:employee?0:(Number(row?.[3])||0),
-        qty:item.qty,note:''
+        qty:item.qty,note:'',
+        // The draft is ordered newest first. Restore row order before any
+        // new +/- or product input obtains the next insertion stamp.
+        __lastTouched:entries.length-index
       };
     }
+    __cartTouchSeq=Math.max(__cartTouchSeq,entries.length);
     cart=restored;
     scheduleSharedCartSave();
     renderCartUI();
