@@ -44,7 +44,7 @@ function fixture(){
     return pending.promise;
    }
   }),
-  document:{hidden:false},
+  document:{hidden:false},navigator:{onLine:true},
   renderProductList:()=>renders.push('products'),
   renderCartUI:()=>renders.push('cart'),
   console:{warn:(...args)=>warns.push(args)},
@@ -63,10 +63,13 @@ function fixture(){
  let sharedCartLocalEditSeq=0;
  let sharedCartCommittedEditSeq=0;
  let sharedCartPollRequestSeq=0;
+ let sharedCartRetryTimer=0;
+ let sharedCartRetryCount=0;
+ let sharedCartRetryReady=false;
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq]};',
+  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount]};',
   ctx,{timeout:1000});
  return {
   ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,
@@ -224,4 +227,69 @@ test('nonfinite server quantity cannot appear as an infinite cart row',()=>{
  const f=fixture();
  f.ctx.api.applySharedCartSnapshot({items:[{product_code:'P1',employee_qty:Infinity}]},{force:true});
  assert.equal(Object.hasOwn(f.ctx.cart,'P1'),false);
+});
+
+
+test('offline failed save is retried on reconnection without losing the local quantity',async()=>{
+ const f=fixture();
+ const broken=f.delayWrite('A');
+ f.ctx.navigator.onLine=false;
+ f.ctx.cart.P1.qty=7;
+ f.schedule();await f.flush();
+ broken.reject(Error('offline'));await tick();
+ assert.equal(f.ctx.api.retryState()[0],true);
+ assert.equal(f.ctx.api.retryState()[1],0,'no retry timer while offline');
+ f.ctx.api.retryPendingSharedCartSave();
+ await f.flush();
+ assert.equal(f.requests.length,1);
+ f.pendingWrites.delete('A');
+ f.ctx.navigator.onLine=true;
+ f.ctx.api.retryPendingSharedCartSave();
+ await f.flush();
+ assert.equal(f.requests.length,2);
+ assert.equal(f.requests[1].items[0].qty,7);
+ assert.equal(f.ctx.api.edits().join(','),'1,1');
+ assert.equal(f.ctx.api.retryState()[0],false);
+});
+
+test('transient shared-cart write errors get at most two timed retries',async()=>{
+ const f=fixture();
+ const failed=f.delayWrite('A');
+ f.ctx.cart.P1.qty=3;
+ f.schedule();await f.flush();
+ failed.reject(Error('network unreachable'));await tick();
+ for(let i=0;i<4;i++)await f.flush();
+ assert.equal(f.requests.length,3,'one initial attempt and two bounded retries');
+ assert.equal(f.ctx.api.edits().join(','),'1,0');
+ assert.equal(f.ctx.api.retryState()[1],2);
+ assert.equal(f.ctx.api.retryState()[0],true);
+ assert.equal(f.timers.filter(Boolean).length,0);
+});
+
+test('abandoned old-link failure cannot schedule retry or overwrite the new cart',async()=>{
+ const f=fixture(),old=f.delayWrite('A');
+ f.schedule();await f.flush();
+ f.switchTo('B');
+ f.ctx.api.resetSharedCartSyncOwner();
+ f.schedule();await f.flush();
+ assert.equal(f.ctx.api.edits().join(','),'1,1');
+ old.reject(Error('old session lost connection'));await tick();
+ assert.equal(f.ctx.api.retryState()[0],false);
+ assert.equal(f.ctx.api.signature(),JSON.stringify([['P2',7]]));
+ await f.flush();
+ assert.equal(f.requests.length,2);
+});
+
+test('an unconfirmed backend response is treated as failed save until a valid retry',async()=>{
+ const f=fixture(),reply=f.delayWrite('A');
+ f.ctx.cart.P1.qty=13;
+ f.schedule();await f.flush();
+ reply.resolve({message:'temporarily unavailable'});await tick();
+ assert.equal(f.ctx.api.edits().join(','),'1,0');
+ assert.equal(f.ctx.api.retryState()[0],true);
+ f.pendingWrites.delete('A');
+ await f.flush();
+ await f.flush();
+ assert.equal(f.ctx.api.edits().join(','),'1,1');
+ assert.equal(f.requests.length,2);
 });
