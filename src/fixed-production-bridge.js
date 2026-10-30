@@ -123,13 +123,17 @@ function employeeStateFromSnapshot(data={}){
 }
 
 async function publicRpc(name,args={}){
-  if(!publicAccess?.slug)throw new Error('public_access_required');
+  const access=publicAccess;
+  const context=captureProductionOwner();
+  if(!access?.slug)throw new Error('public_access_required');
   const client=await auth.getClient();
+  if(!productionOwnerCurrent(context))throw new Error('public_access_changed');
   const {data,error}=await client.rpc(name,{
-    p_public_slug:publicAccess.slug,
-    p_pin:publicAccess.pin||null,
-    ...args
+    ...args,
+    p_public_slug:access.slug,
+    p_pin:access.pin||null
   });
+  if(!productionOwnerCurrent(context))throw new Error('public_access_changed');
   if(error){
     const err=Object.assign(new Error(error.message||String(error.code||'PUBLIC_RPC_ERROR')),{code:String(error.code||'PUBLIC_RPC_ERROR')});
     throw err;
@@ -861,18 +865,25 @@ async function stockCheckLinks(customerId){
   return business.stockCheckLinks(customerId);
 }
 async function publicPinState(){
-  if(!publicAccess?.slug)throw new Error('public_access_required');
+  const access=publicAccess;
+  const context=captureProductionOwner();
+  if(!access?.slug)throw new Error('public_access_required');
   const client=await auth.getClient();
-  const {data,error}=await client.rpc('taphoa_public_gate_state',{p_public_slug:publicAccess.slug});
+  if(!productionOwnerCurrent(context))throw new Error('public_access_changed');
+  const {data,error}=await client.rpc('taphoa_public_gate_state',{p_public_slug:access.slug});
+  if(!productionOwnerCurrent(context))throw new Error('public_access_changed');
   if(error)throw Object.assign(new Error(error.message||'PIN_STATE_ERROR'),{code:String(error.code||'PIN_STATE_ERROR')});
   return data||{};
 }
 async function setPublicPin(newPin){
-  if(!publicAccess?.slug)throw new Error('public_access_required');
+  const access=publicAccess;
+  const context=captureProductionOwner();
+  if(!access?.slug)throw new Error('public_access_required');
   const pin=String(newPin||'').trim();
   const data=await publicRpc('taphoa_public_pin_manage_access',{p_new_pin:pin});
+  if(!productionOwnerCurrent(context))throw new Error('public_access_changed');
   if(data?.ok!==true)throw new Error(String(data?.error||'pin_update_failed'));
-  publicAccess={...publicAccess,pin};
+  publicAccess={...access,pin};
   return data;
 }
 async function employeeSnapshot(){
