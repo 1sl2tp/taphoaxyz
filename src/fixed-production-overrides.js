@@ -1040,10 +1040,13 @@
       };
     }
     __cartTouchSeq=Math.max(__cartTouchSeq,entries.length);
+    const recoveredAfterWaiting=sharedCartRestoreBlocked();
     sharedCartRestorePendingOwner=null;
     cart=restored;
     scheduleSharedCartSave();
     renderCartUI();
+    if(recoveredAfterWaiting)
+      showToast('Đã khôi phục số lượng giỏ hàng. Đang đồng bộ lên máy chủ.','success');
     return true;
   }
 
