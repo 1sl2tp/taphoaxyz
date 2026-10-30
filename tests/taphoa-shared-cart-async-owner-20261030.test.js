@@ -784,7 +784,8 @@ test('reset owner releases blocked pending draft without posting it to the next 
  assert.equal(next.requests[0].token,'B');
  assert.deepEqual(next.requests[0].items.map(x=>x.product_code),['P2']);
  assert.equal(storage.size,1,'B confirmation removes only B draft, leaving original A pending');
- assert.equal(JSON.parse(Array.from(storage.values())[0]).items[0].product_code,'P3');
+ assert.ok(JSON.parse(Array.from(storage.values())[0]).items.some(item=>
+  item.product_code==='P3'&&item.qty===11),'A still retains its unsent row');
 });
 
 test('pending draft whose validity expires unblocks polls without replaying stale quantities',async()=>{
