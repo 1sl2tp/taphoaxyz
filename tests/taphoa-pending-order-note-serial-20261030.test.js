@@ -19,7 +19,8 @@ function deferred(){
  return {promise,resolve,reject};
 }
 async function tick(){for(let i=0;i<24;i++)await Promise.resolve();}
-function fixture({refreshFails=false}={}){
+function fixture({refreshFails=false,holdRead=false}={}){
+ let session={uid:'A'},readHold=holdRead?deferred():null;
  let order={
   customer_id:'CUSTOMER-1',status:'pending',note:'order header',
   items:[
@@ -29,7 +30,13 @@ function fixture({refreshFails=false}={}){
  };
  const reads=[],writes=[],refreshes=[],warnings=[];
  const service={
-  async orderDetail(id){reads.push(id);return JSON.parse(JSON.stringify(order));},
+  getIdentity:()=>session,
+  getAccessMode:()=> 'account',
+  async orderDetail(id){
+   reads.push(id);
+   if(readHold)await readHold.promise;
+   return JSON.parse(JSON.stringify(order));
+  },
   saveOrder(payload){
    const d=deferred();
    writes.push({payload,...d});
@@ -53,7 +60,11 @@ function fixture({refreshFails=false}={}){
   console:{warn:(...parts)=>warnings.push(parts)}
  };
  vm.createContext(ctx);vm.runInContext(source,ctx,{timeout:1000});
- return {run:win.savePendingOrderItemNoteDirect,reads,writes,refreshes,warnings,current:()=>order};
+ return {
+  run:win.savePendingOrderItemNoteDirect,reads,writes,refreshes,warnings,current:()=>order,
+  switchSession:()=>{session={uid:'B'};},
+  releaseRead:()=>{readHold?.resolve();readHold=null;}
+ };
 }
 
 test('two overlapping note edits on different lines preserve both notes and all order values',async()=>{
@@ -124,4 +135,42 @@ test('server rejected update must not be presented as saved',async()=>{
  await assert.rejects(promise,/Không thể lưu ghi chú/);
  assert.equal(f.current().items[0].note,'old 1');
  assert.equal(f.refreshes.length,0);
+});
+
+
+test('old account note read resolving after account change must never write into the new session',async()=>{
+ const f=fixture({holdRead:true});
+ const pending=f.run('ORDER-1','P1','A-only note');
+ await tick();
+ assert.equal(f.reads.length,1);
+ f.switchSession();
+ f.releaseRead();
+ await assert.rejects(pending,/Phiên tài khoản đã thay đổi/);
+ assert.equal(f.writes.length,0);
+ assert.equal(f.current().items[0].note,'old 1');
+});
+
+test('queued note captured in the old session is rejected before it can read after session change',async()=>{
+ const f=fixture();
+ const first=f.run('ORDER-1','P1','first');
+ const queued=f.run('ORDER-1','P2','never');
+ await tick();
+ assert.equal(f.reads.length,1);
+ f.switchSession();
+ f.writes[0].resolve({ok:true});
+ assert.equal(await first,true,'committed first update still succeeds');
+ await assert.rejects(queued,/Phiên tài khoản đã thay đổi/);
+ assert.equal(f.reads.length,1);
+ assert.equal(f.writes.length,1);
+ assert.equal(f.refreshes.length,0,'old session should not repaint the new account');
+});
+
+test('relogin with same UID but new identity object invalidates delayed note edit',async()=>{
+ const f=fixture({holdRead:true});
+ const pending=f.run('ORDER-1','P2','should not apply');
+ await tick();
+ f.switchSession();
+ f.releaseRead();
+ await assert.rejects(pending,/Phiên tài khoản đã thay đổi/);
+ assert.equal(f.writes.length,0);
 });
