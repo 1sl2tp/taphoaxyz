@@ -1100,7 +1100,13 @@
     // signature has not changed.
     const knownRows=normalized.filter(([code])=>productMap.has(code));
     const cartMatches=Object.keys(cart||{}).length===knownRows.length
-      &&knownRows.every(([code,qty])=>Number(cart?.[code]?.qty)===qty);
+      &&knownRows.every(([code,qty])=>{
+        const product=productMap.get(code);
+        return Number(cart?.[code]?.qty)===qty
+          &&String(cart?.[code]?.name||'')===String(product?.[1]||code)
+          &&Number(cart?.[code]?.price)===
+            (employeeMode?0:(Number(product?.[3])||0));
+      });
     if(!force&&signature===sharedCartSignature&&cartMatches)return;
     sharedCartSignature=signature;
     const nextCart={};
