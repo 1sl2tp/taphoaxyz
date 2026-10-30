@@ -43,7 +43,7 @@ function fixture(kind,{holdSnapshot=false,recoverDraft=false}={}){
   syncSelfCustomer:()=>events.push('self'),
   refreshFixedSheets:async()=>{events.push('refresh-start');await wait.promise;events.push('refresh-finish');},
   showAppScreen:()=>events.push('show-app'),
-  showToast:(message,kind)=>events.push('toast:'+kind),
+  notifyPendingSharedCartRestore:()=>events.push('notice:pending'),
   renderCartUI:()=>events.push('render-cart'),
   switchTab:()=>events.push('switch-tab'),
   installSharedCartQuantitySync:()=>events.push('install-quantities'),
@@ -185,7 +185,7 @@ for(const kind of ['employee','public']){
   const f=fixture(kind,{recoverDraft:'pending',holdSnapshot:true});
   const loading=f.enter(f.info());
   f.release();await tick();
-  assert.ok(f.events.includes('toast:warning'));
+  assert.ok(f.events.includes('notice:pending'));
   assert.ok(f.events.indexOf('restore-draft')<f.events.indexOf('show-app'));
   f.releaseSnapshot();await loading;
   assert.equal(f.events.includes('apply-cart'),false);
