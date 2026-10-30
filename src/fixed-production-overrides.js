@@ -1199,8 +1199,11 @@
 
     const baseClearCart=clearCart;
     clearCart=function(){
+      const hadRows=sharedCartItems().length>0;
       const result=baseClearCart.apply(this,arguments);
-      if(isSharedCartMode())scheduleSharedCartSave();
+      // An already-empty cart is not a new clearing command. Otherwise a
+      // stale empty tab can erase fresh counts saved on another device.
+      if(isSharedCartMode()&&hadRows)scheduleSharedCartSave();
       return result;
     };
   }
