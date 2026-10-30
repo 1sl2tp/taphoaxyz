@@ -473,6 +473,8 @@ async function openPublicLink(slug,pin){
   employeeSnapshotData=null;
   publicAccess={slug:String(slug||'').trim().toLowerCase(),pin:String(pin||'').trim()};
   bootstrapped=false;
+  // A new public customer link must not inherit the previous customer's UI or edit draft.
+  appState.reset();
   const context=captureProductionOwner();
   const data=await publicRpc('taphoa_public_bootstrap_access');
   if(!productionOwnerCurrent(context))return null;
