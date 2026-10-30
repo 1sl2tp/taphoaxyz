@@ -1279,7 +1279,7 @@
     // A replaced link may finish its sheet read after a newer session starts.
     if(backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='employee-link')return;
-    restorePendingSharedCartDraft();
+    const recoveredSharedCart=restorePendingSharedCartDraft();
     showAppScreen();
     ownProductRenderKey='';
     window.TAPHOA_PRODUCT_SEGMENT='all';
@@ -1297,7 +1297,7 @@
     const initialEditSeq=sharedCartLocalEditSeq;
     const firstSnapshot=info?.employeeSnapshot||await backend().getEmployeeSnapshot();
     if(!sharedCartOwnerCurrent(cartOwner))return;
-    if(initialEditSeq===sharedCartLocalEditSeq)
+    if(!recoveredSharedCart&&initialEditSeq===sharedCartLocalEditSeq)
       applySharedCartSnapshot(firstSnapshot,{force:true});
     ownProductRenderKey='';
     renderProductList();
@@ -1361,7 +1361,7 @@
     await refreshFixedSheets();
     if(backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='public-link')return;
-    restorePendingSharedCartDraft();
+    const recoveredSharedCart=restorePendingSharedCartDraft();
     showAppScreen();
     // A previous customer's cached product render key cannot be reused when
     // the new public link initially opens on Orders or Debt instead of Sales.
@@ -1375,7 +1375,7 @@
     try{
       const firstSnapshot=await backend().employeeSnapshot();
       if(!sharedCartOwnerCurrent(cartOwner))return;
-      if(initialEditSeq===sharedCartLocalEditSeq)
+      if(!recoveredSharedCart&&initialEditSeq===sharedCartLocalEditSeq)
         applySharedCartSnapshot(firstSnapshot,{force:true});
     }catch(error){
       if(!sharedCartOwnerCurrent(cartOwner))return;
