@@ -29,6 +29,10 @@ function fixture(kind,{holdSnapshot=false}={}){
   employeeSnapshot:async()=>{if(holdSnapshot)await snapshotWait.promise;return {items:[]};}
  };
  const ctx={
+  cart:{OLD:{qty:4,note:'Ghi chú phiên trước'}},
+  editingOrderId:'DT-OLD',
+  editingOrderSheet:'dontam',
+  editingOrderInSaleMode:true,
   backend:()=>backendService,window:{},document:{
    body:{dataset:{}},
    querySelector:()=>({id:'sales-button'})
@@ -38,6 +42,7 @@ function fixture(kind,{holdSnapshot=false}={}){
   syncSelfCustomer:()=>events.push('self'),
   refreshFixedSheets:async()=>{events.push('refresh-start');await wait.promise;events.push('refresh-finish');},
   showAppScreen:()=>events.push('show-app'),
+  renderCartUI:()=>events.push('render-cart'),
   switchTab:()=>events.push('switch-tab'),
   installSharedCartQuantitySync:()=>events.push('install-quantities'),
   installEmployeeOrderActionGuard:()=>events.push('install-action'),
@@ -61,7 +66,7 @@ function fixture(kind,{holdSnapshot=false}={}){
  return {
   info:()=>({identity}),
   enter:ctx.enter,
-  events,
+  events,ctx,
   markLocalEdit:()=>ctx.markLocalEdit(),
   release:()=>wait.release(),
   releaseSnapshot:()=>snapshotWait.release(),
@@ -107,5 +112,29 @@ for(const kind of ['employee','public']){
   assert.equal(f.events.includes('apply-cart'),false);
   assert.equal(f.events.includes('start-poll'),true,
     'normal polling remains available for the edited cart after its save');
+ });
+}
+
+
+for(const kind of ['employee','public']){
+ test(kind+' entry clears the previous customer cart and draft before async sheet loading',async()=>{
+  const f=fixture(kind,{holdSnapshot:true});
+  assert.equal(f.ctx.cart.OLD.qty,4);
+  const loading=f.enter(f.info());
+  await tick();
+  assert.deepEqual(Object.keys(f.ctx.cart),[]);
+  assert.equal(f.ctx.editingOrderId,null);
+  assert.equal(f.ctx.editingOrderSheet,null);
+  assert.equal(f.ctx.editingOrderInSaleMode,false);
+  assert.ok(f.events.indexOf('render-cart')>=0);
+  assert.ok(f.events.indexOf('render-cart')<f.events.indexOf('refresh-start'),
+    'old lines should disappear before the new link network read');
+  f.release();
+  await tick();
+  assert.ok(f.events.indexOf('render-cart')<f.events.indexOf('show-app'),
+    'app cannot open on the old cart before fresh stock snapshot');
+  f.releaseSnapshot();
+  await loading;
+  assert.equal(f.events.filter(e=>e==='render-cart').length,1);
  });
 }
