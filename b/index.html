@@ -1,1 +1,12 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TAPHOA</title></head><body><script>(()=>{const p=new URLSearchParams(location.search);p.set('tab','hang');location.replace('/kh/?'+p.toString());})();</script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chuyển đến Hàng hóa · TAPHOA</title>
+  <script>(()=>{const p=new URLSearchParams(location.search);p.set('tab','hang');location.replace('/kh/?'+p.toString()+location.hash);})();</script>
+</head>
+<body>
+  <p>Đang mở Hàng hóa. Nếu không tự chuyển, <a href="/kh/?tab=hang">mở Hàng hóa</a>.</p>
+</body>
+</html>
