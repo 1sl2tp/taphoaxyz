@@ -19,11 +19,11 @@ function deferred(){
 }
 async function tick(){for(let i=0;i<20;i++)await Promise.resolve();}
 function fixture({holdOpened=false}={}){
- let uid='A',mode='account',renders=0;
+ let uid='A',mode='account',renders=0,identity={uid:'A'};
  const pending=[],openings=[],alerts=[],repairs=[],warnings=[],modalGate=deferred();
  const appData={thuchi:[['header'],['A-DEBT', 'customer-a','private']]};
  const prod={
-  getIdentity:()=>({uid}),
+  getIdentity:()=>identity,
   getAccessMode:()=>mode,
   debtLedger:async(customer,opts)=>{
    const gate=deferred();pending.push({customer,opts,...gate});return gate.promise;
@@ -51,7 +51,7 @@ function fixture({holdOpened=false}={}){
  return {
   open:ctx.openCustomerDebtModal,appData,ctx,pending,openings,alerts,repairs,warnings,modalGate,
   get renders(){return renders;},
-  switchTo(nextUid,nextMode='account'){uid=nextUid;mode=nextMode;}
+  switchTo(nextUid,nextMode='account'){uid=nextUid;mode=nextMode;identity={uid};}
  };
 }
 function result(customer,id='ENTRY'){
@@ -111,4 +111,15 @@ test('successful same-owner ledger still displays and repairs only after modal i
  assert.equal(await operation,true);
  await tick();
  assert.equal(f.repairs.length,0,'deferred repair must not run after account switch');
+});
+
+test('same UID but new session cannot open old debt ledger modal',async()=>{
+ const f=fixture();
+ const old=f.open('customer-a');
+ await tick();
+ f.switchTo('A','account');
+ f.pending[0].resolve(result('customer-a','STALE'));
+ assert.equal(await old,false);
+ assert.equal(f.renders,0);
+ assert.equal(f.openings.length,0);
 });
