@@ -53,6 +53,7 @@ function fixture(){
  const ctx={
   console,window:win,document,navigator:{onLine:true},
   createAuthService:()=>auth,createApi:()=>business,createAppState:()=>appState,
+  changedDomains:(before,after)=>Number(before?.orders||0)===Number(after?.orders||0)?[]:['orders'],
   createSnapshotStore:()=>snapshot,CONFIG:{supabaseUrl:'https://example.invalid'},
   CustomEvent:class CustomEvent{constructor(type,{detail}={}){this.type=type;this.detail=detail;}},
   setTimeout(){return 123;},clearTimeout(){},fetch(){throw Error('unexpected network fetch')},
@@ -128,7 +129,8 @@ test('old logout completion does not reset newly logged-in B UI',async()=>{
  const g=f.hold('logout','A'),old=f.runtime.logout();await tick();
  await f.login('B');
  const before=f.writes.length;g.release();await old;
- assert.equal(f.writes.length,before);
+ assert.deepEqual(f.writes.slice(before).map(w=>({kind:w.kind,uid:w.uid})),[{kind:'clear',uid:'A'}],
+   'finishing old logout may clear only A snapshot, never reset B');
  assert.equal(f.runtime.getIdentity().uid,'B');
 });
 test('queued A login response cannot replace B when credentials request overlaps',async()=>{
