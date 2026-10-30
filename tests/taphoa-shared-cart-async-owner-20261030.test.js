@@ -583,6 +583,10 @@ test('malformed partial server snapshots never clear or partially replace valid 
   {items:[{product_code:'P1',employee_qty:7},{product_code:'P2',employee_qty:-3}]},
   {items:[{product_code:'P1',employee_qty:7},{employee_qty:2}]},
   {items:[{product_code:'P1',employee_qty:7},{product_code:'P2',employee_qty:'   '}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:'P2',employee_qty:true}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:'P2',employee_qty:[3]}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:['P2'],employee_qty:2}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:99,employee_qty:2}]},
   {ok:'error',items:[]}
  ];
  for(const snapshot of bad){
