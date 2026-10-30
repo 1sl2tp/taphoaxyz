@@ -60,8 +60,8 @@ function fixture(kind,{holdSnapshot=false}={}){
  };
  vm.createContext(ctx);
  const code=(kind==='employee'?employee:customer)+
-  '\nlet sharedCartSignature="",sharedCartLocalEditSeq=0,sharedCartCommittedEditSeq=0,sharedCartPollRequestSeq=0,ownProductRenderKey="",publicTabId="";'+
-  '\nglobalThis.enter='+(kind==='employee'?'enterEmployeeLink':'enterPublicUser')+';globalThis.markLocalEdit=()=>{sharedCartLocalEditSeq++};';
+  '\nlet sharedCartSignature="",sharedCartLocalEditSeq=0,sharedCartCommittedEditSeq=0,sharedCartPollRequestSeq=0,ownProductRenderKey="OLD-PRODUCTS",publicTabId="";'+
+  '\nglobalThis.enter='+(kind==='employee'?'enterEmployeeLink':'enterPublicUser')+';globalThis.markLocalEdit=()=>{sharedCartLocalEditSeq++};globalThis.renderKey=()=>ownProductRenderKey;';
  vm.runInContext(code,ctx,{timeout:1000});
  return {
   info:()=>({identity}),
@@ -136,5 +136,20 @@ for(const kind of ['employee','public']){
   f.releaseSnapshot();
   await loading;
   assert.equal(f.events.filter(e=>e==='render-cart').length,1);
+ });
+}
+
+for(const kind of ['employee','public']){
+ test(kind+' invalidates the previous product render cache before showing the new link tabs',async()=>{
+  const f=fixture(kind,{holdSnapshot:true});
+  assert.equal(f.ctx.renderKey(),'OLD-PRODUCTS');
+  const pending=f.enter(f.info());
+  await tick();
+  f.release();
+  await tick();
+  assert.ok(f.events.includes('show-app'));
+  assert.equal(f.ctx.renderKey(),'');
+  f.releaseSnapshot();
+  await pending;
  });
 }
