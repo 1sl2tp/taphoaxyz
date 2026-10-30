@@ -485,6 +485,9 @@
   let sharedCartLocalEditSeq=0;
   let sharedCartCommittedEditSeq=0;
   let sharedCartPollRequestSeq=0;
+  let sharedCartRetryTimer=0;
+  let sharedCartRetryCount=0;
+  let sharedCartRetryReady=false;
   let publicTabId='tab-ban-hang';
 
   function employeeQuery(){
@@ -903,13 +906,30 @@
     sharedCartLocalWriteAt=0;
     sharedCartLocalEditSeq=0;
     sharedCartCommittedEditSeq=0;
+    clearTimeout(sharedCartRetryTimer);
+    sharedCartRetryTimer=0;
+    sharedCartRetryCount=0;
+    sharedCartRetryReady=false;
     ++sharedCartPollRequestSeq;
   }
 
-  function scheduleSharedCartSave(){
+  // SPEC-SHARED-CART-RECOVERY-20261030: a failed full-snapshot save
+  // must not strand the local cart forever. Retry only this same edit/session.
+  function retryPendingSharedCartSave(){
+    if(!sharedCartRetryReady||!isSharedCartMode()||
+       sharedCartCommittedEditSeq===sharedCartLocalEditSeq||
+       (typeof navigator!=='undefined'&&navigator.onLine===false))return;
+    scheduleSharedCartSave({retry:true});
+  }
+
+  function scheduleSharedCartSave({retry=false}={}){
     if(!isSharedCartMode())return;
     const owner=sharedCartOwner();
-    const editSeq=++sharedCartLocalEditSeq;
+    const editSeq=retry?sharedCartLocalEditSeq:++sharedCartLocalEditSeq;
+    if(!retry)sharedCartRetryCount=0;
+    sharedCartRetryReady=false;
+    clearTimeout(sharedCartRetryTimer);
+    sharedCartRetryTimer=0;
     sharedCartLocalWriteAt=Date.now();
     clearTimeout(sharedCartSaveTimer);
     sharedCartSaveTimer=setTimeout(()=>{
@@ -923,17 +943,33 @@
         })
         .then(result=>{
           if(result===null||!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq)return;
-          if(result?.ok===false)throw new Error(String(result.error||'shared_cart_save_failed'));
+          if(result?.ok!==true)throw new Error(String(result?.error||'shared_cart_save_unconfirmed'));
           sharedCartSignature=JSON.stringify(items.map(row=>[row.product_code,row.qty]).sort());
           sharedCartCommittedEditSeq=editSeq;
+          sharedCartRetryReady=false;
         })
-        .catch(error=>console.warn('shared cart sync',error));
+        .catch(error=>{
+          console.warn('shared cart sync',error);
+          if(!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq)return;
+          sharedCartRetryReady=true;
+          // At most two timed retries for an edit. Offline waits for 'online';
+          // a later visible/online event can recover without permanent polling.
+          if((typeof navigator==='undefined'||navigator.onLine!==false)
+             &&sharedCartRetryCount<2){
+            sharedCartRetryCount++;
+            sharedCartRetryTimer=setTimeout(retryPendingSharedCartSave,1500*sharedCartRetryCount);
+          }
+        });
     },100);
   }
 
   function installSharedCartQuantitySync(){
     if(window.__taphoaSharedCartQuantitySync)return;
     window.__taphoaSharedCartQuantitySync=true;
+    window.addEventListener?.('online',retryPendingSharedCartSave);
+    document.addEventListener?.('visibilitychange',()=>{
+      if(!document.hidden)retryPendingSharedCartSave();
+    });
 
     const baseUpdateCart=updateCart;
     updateCart=function(maSp,tenSp,giaBan,change){
