@@ -360,13 +360,23 @@ async function syncOnce(){
     const changed=changedDomains(before.revisions,meta?.revisions||{});
     const nextPermissions=meta?.permissions||before.permissions;
     const permissionsChanged=JSON.stringify(before.permissions||{})!==JSON.stringify(nextPermissions||{});
-    if(changed.length)await refresh(changed);
-    else if(productionOwnerCurrent(context))appState.mergeDomains({
-      version:meta?.version||before.version,
-      syncSeconds:Number(meta?.syncSeconds)||before.syncSeconds,
-      permissions:nextPermissions,
-      revisions:meta?.revisions||before.revisions
-    });
+    if(changed.length){
+      await refresh(changed);
+      // taphoa_app_domains returns data/revisions but not permissions.
+      // Apply the separately verified meta permissions after refreshing domains.
+      if(productionOwnerCurrent(context)&&permissionsChanged){
+        appState.mergeDomains({permissions:nextPermissions});
+        saveSnapshot();
+      }
+    }else if(productionOwnerCurrent(context)){
+      appState.mergeDomains({
+        version:meta?.version||before.version,
+        syncSeconds:Number(meta?.syncSeconds)||before.syncSeconds,
+        permissions:nextPermissions,
+        revisions:meta?.revisions||before.revisions
+      });
+      if(permissionsChanged)saveSnapshot();
+    }
     if(!productionOwnerCurrent(context))return appState.get();
     if(changed.length||permissionsChanged){
       window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed,permissionsChanged}}));
