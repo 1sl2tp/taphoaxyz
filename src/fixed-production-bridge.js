@@ -372,8 +372,10 @@ async function syncOnce(){
 function scheduleRevisionWake(){
   if(document.hidden||navigator.onLine===false||employeeAccess)return;
   if(syncWakeTimer)return;
+  const context=captureProductionOwner();
   syncWakeTimer=setTimeout(()=>{
     syncWakeTimer=0;
+    if(!productionOwnerCurrent(context))return;
     syncOnce().catch(error=>console.warn('taphoa sync',error));
   },180);
 }
@@ -439,10 +441,14 @@ async function attachSession(info){
 }
 
 async function login(username,password){
+  const loginGeneration=++sessionGeneration;
+  stopSync();
   publicAccess=null;
   employeeAccess=null;
   employeeSnapshotData=null;
-  return attachSession(await auth.login(username,password));
+  const info=await auth.login(username,password);
+  if(sessionGeneration!==loginGeneration)return null;
+  return attachSession(info);
 }
 async function restore(){
   if(publicAccess||employeeAccess)return {identity,state:appState.get()};
@@ -527,7 +533,7 @@ async function getEmployeeSnapshot(){
 
 async function logout(){
   const uid=currentUid();
-  sessionGeneration+=1;
+  const logoutGeneration=++sessionGeneration;
   stopSync();
   if(publicAccess||employeeAccess){
     publicAccess=null;
@@ -539,7 +545,9 @@ async function logout(){
   try{await auth.logout();}
   finally{
     if(uid)snapshot.clear(uid);
-    identity=null;bootstrapped=false;appState.reset();
+    if(sessionGeneration===logoutGeneration){
+      identity=null;bootstrapped=false;appState.reset();
+    }
   }
 }
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
