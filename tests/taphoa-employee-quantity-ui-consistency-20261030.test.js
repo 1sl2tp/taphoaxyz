@@ -44,7 +44,13 @@ function fixture({simulatePublicEdit=false}={}){
     if(code&&Number(input.value)>0)ctx.handle.cart()[code]={qty:Number(input.value)};
    }
   },
-  clearCart:function(){events.push('original-clear');},
+  clearCart:function(){
+   events.push('original-clear');
+   vm.runInContext('cart={}',ctx);
+  },
+  sharedCartItems:()=>Object.entries(ctx.handle.cart())
+   .filter(([,item])=>(Number(item?.qty)||0)>0)
+   .map(([product_code,item])=>({product_code,qty:Number(item.qty)})),
   getQtyMeta:code=>({name:code,price:0}),
   syncQtyEditors:()=>events.push('sync-editor'),
   refreshCartTotalsOnly:()=>events.push('totals'),
@@ -54,7 +60,7 @@ function fixture({simulatePublicEdit=false}={}){
  };
  vm.createContext(ctx);
  vm.runInContext('let cart={};let __cartTouchSeq=0;let sharedCartLocalEditSeq=0;let sharedCartCommittedEditSeq=0;\n'+method+
-  '\ninstallSharedCartQuantitySync();globalThis.handle={preview:previewQtyInput,commit:commitQtyEditor,update:updateCart,cart:()=>cart};',
+  '\ninstallSharedCartQuantitySync();globalThis.handle={preview:previewQtyInput,commit:commitQtyEditor,update:updateCart,clear:clearCart,cart:()=>cart};',
   ctx,{timeout:1000});
  return {
   events,listeners,ctx,
@@ -64,6 +70,7 @@ function fixture({simulatePublicEdit=false}={}){
   commit:(code,value,qtyEditor='product')=>
    ctx.handle.commit({dataset:{qtyId:code,qtyEditor},value:String(value)}),
   update:(code,change)=>ctx.handle.update(code,code,0,change),
+  clear:()=>ctx.handle.clear(),
   switchMode:value=>{mode=value;}
  };
 }
@@ -249,4 +256,28 @@ test('employee direct quantity preview and commit both retain existing cart note
  f.commit('P1',5,'cart');
  assert.equal(f.cart().P1.note,'Hàng dễ vỡ, để riêng');
  assert.equal(f.cart().P1.qty,5);
+});
+
+
+test('clearing an already-empty shared cart does not erase a remote device update',()=>{
+ const f=fixture();
+ f.clear();
+ assert.deepEqual(f.events,['original-clear']);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,0);
+ f.preview('P1',4);
+ const before=f.events.filter(x=>x==='schedule-save').length;
+ f.clear();
+ assert.equal(Object.keys(f.cart()).length,0);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,before+1);
+ f.clear();
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,before+1);
+});
+
+test('clearing a regular account cart never posts shared-cart quantities',()=>{
+ const f=fixture();
+ f.preview('P1',4);
+ f.switchMode('account');
+ const before=f.events.filter(x=>x==='schedule-save').length;
+ f.clear();
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,before);
 });
