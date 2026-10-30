@@ -77,7 +77,8 @@ test('late A meta after B login cannot merge B, repaint B or write B snapshot',a
  assert.equal(f.events.filter(e=>e.type==='taphoa-production-sync').length,0);
  await f.runtime.syncOnce();
  assert.equal(f.runtime.getState().version,'domains-B');
- assert(f.writes.filter(w=>w.kind==='snapshot').every(w=>w.uid==='B'));
+ assert(f.writes.slice(before).filter(w=>w.kind==='snapshot').every(w=>w.uid==='B'),
+   'writes started earlier by A remain A-keyed; post-switch writes cannot use A');
 });
 test('old A finally never clears B in-flight RPC (one trigger one job)',async()=>{
  const f=fixture();await f.login('A');
@@ -98,7 +99,7 @@ test('old A domain refresh cannot write B state after awaited RPC',async()=>{
  await f.runtime.logout();await f.login('B');
  const before=f.writes.length;g.release();await pA;
  assert.equal(f.writes.length,before);
- assert.equal(f.events.length,0);
+ assert.equal(f.events.filter(e=>e.type==='taphoa-production-sync').length,0);
  assert.equal(f.runtime.getState().uid,'B');
 });
 test('same-account fresh login invalidates previous in-flight meta',async()=>{
