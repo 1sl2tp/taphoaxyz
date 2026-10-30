@@ -58,6 +58,7 @@ function fixture(){
   ...context,calls,alerts,toasts,ui,pending,fields,
   holdRefresh:()=>{refreshHold=deferred();},
   releaseRefresh:()=>refreshHold?.resolve(),
+  rejectRefresh:()=>refreshHold?.reject(Error('obsolete sheet response')),
   replaceSession:()=>{identity={uid:'different-session',role:'customer'};}
  };
 }
@@ -132,4 +133,21 @@ test('successful fresh account login clears the previous cart once after its she
  assert.ok(f.ui.indexOf('reset-cart')<f.ui.indexOf('app'));
  assert.equal(f.window.__TAPHOA_REPRICE_DRAFT_ID,null);
  assert.equal(f.ui.filter(x=>x==='reset-cart').length,1);
+});
+
+
+test('old login sheet failure after another session opens must not display login/error over B',async()=>{
+ const f=fixture();
+ f.holdRefresh();
+ const stale=f.invoke();
+ f.pending[0].resolve({identity:{uid:'A',role:'admin'}});
+ await microtasks();
+ f.replaceSession();
+ f.rejectRefresh();
+ await stale;
+ assert.equal(f.ui.includes('login'),false);
+ assert.equal(f.ui.includes('app'),false);
+ assert.equal(f.ui.includes('reset-cart'),false);
+ assert.equal(f.alerts.length,0);
+ assert.equal(f.toasts.length,0);
 });
