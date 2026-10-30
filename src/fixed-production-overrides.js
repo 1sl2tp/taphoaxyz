@@ -1259,12 +1259,13 @@
     const signature=JSON.stringify(normalized);
     const employeeMode=backend()?.getAccessMode?.()==='employee-link';
     const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
-    // The same server snapshot may become displayable after the product
-    // catalog loads. Do not keep a missing row hidden just because its qty
-    // signature has not changed.
-    const knownRows=normalized.filter(([code])=>productMap.has(code));
-    const cartMatches=Object.keys(cart||{}).length===knownRows.length
-      &&knownRows.every(([code,qty])=>{
+    // The server response is one complete quantity snapshot. If a product
+    // has not reached this device's catalog yet, applying just the known
+    // subset would silently remove other rows and their local notes.
+    // Keep the old cart/signature until the entire snapshot is displayable.
+    if(normalized.some(([code])=>!productMap.has(code)))return;
+    const cartMatches=Object.keys(cart||{}).length===normalized.length
+      &&normalized.every(([code,qty])=>{
         const product=productMap.get(code);
         return Number(cart?.[code]?.qty)===qty
           &&String(cart?.[code]?.name||'')===String(product?.[1]||code)
