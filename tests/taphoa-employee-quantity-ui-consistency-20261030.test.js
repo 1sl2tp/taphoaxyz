@@ -95,3 +95,22 @@ test('ordinary public link direct-input behavior remains delegated to original h
  assert.deepEqual(f.events,['original-preview','schedule-save','original-commit','schedule-save']);
  assert.equal(Object.keys(f.cart()).length,0);
 });
+
+test('incomplete or nonfinite employee quantity typing does not delete an existing row',()=>{
+ const f=fixture();
+ f.preview('P1',6);
+ const initialStamp=f.cart().P1.__lastTouched;
+ f.preview('P1','1e309');
+ f.preview('P1','invalid');
+ assert.equal(f.cart().P1.qty,6);
+ assert.equal(f.cart().P1.__lastTouched,initialStamp);
+ f.commit('P1','1e309','cart');
+ assert.equal(f.cart().P1.qty,6);
+ assert.equal(f.cart().P1.__lastTouched,initialStamp);
+});
+test('nonfinite employee entry never creates a new product row or a save',()=>{
+ const f=fixture();
+ f.preview('P2','Infinity');
+ assert.equal(f.cart().P2,undefined);
+ assert.equal(f.events.filter(e=>e==='schedule-save').length,0);
+});
