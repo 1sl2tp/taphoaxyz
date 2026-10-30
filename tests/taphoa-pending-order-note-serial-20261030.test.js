@@ -62,7 +62,7 @@ function fixture({refreshFails=false,holdRead=false}={}){
  vm.createContext(ctx);vm.runInContext(source,ctx,{timeout:1000});
  return {
   run:win.savePendingOrderItemNoteDirect,reads,writes,refreshes,warnings,current:()=>order,
-  switchSession:()=>{session={uid:'B'};},
+  switchSession:(uid='B')=>{session={uid};},
   releaseRead:()=>{readHold?.resolve();readHold=null;}
  };
 }
@@ -169,7 +169,7 @@ test('relogin with same UID but new identity object invalidates delayed note edi
  const f=fixture({holdRead:true});
  const pending=f.run('ORDER-1','P2','should not apply');
  await tick();
- f.switchSession();
+ f.switchSession('A');
  f.releaseRead();
  await assert.rejects(pending,/Phiên tài khoản đã thay đổi/);
  assert.equal(f.writes.length,0);
