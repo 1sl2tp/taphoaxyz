@@ -21,9 +21,9 @@ function deferred(){
 }
 function fixture(){
  const pending=[],notifications=[],store={};
- let uid='A',mode='account';
+ let uid='A',mode='account',identity={uid:'A'};
  const service={
-  getIdentity:()=>({uid}),
+  getIdentity:()=>identity,
   getAccessMode:()=>mode,
   readSheet:(sheet)=>{const d=deferred();pending.push({sheet,...d});return d.promise;}
  };
@@ -36,7 +36,7 @@ function fixture(){
  vm.runInContext(tokenDeclaration+'\n'+handler,ctx,{timeout:1000});
  return {
   read:(sheet)=>SheetDB.read(sheet),store,pending,notifications,
-  switchTo(nextUid,nextMode='account'){uid=nextUid;mode=nextMode;}
+  switchTo(nextUid,nextMode='account'){uid=nextUid;mode=nextMode;identity={uid};}
  };
 }
 
@@ -98,4 +98,14 @@ test('failed newest read preserves last committed cache without stale notificati
  await earlier;
  assert.deepEqual(f.store.sanpham,[['old']]);
  assert.equal(f.notifications.length,0);
+});
+
+test('same UID with a newly authenticated session cannot accept prior sheet response',async()=>{
+ const f=fixture();
+ const old=f.read('dontam');
+ f.switchTo('A','account');
+ f.pending[0].resolve([['PRIVATE-OLD-SESSION']]);
+ await old;
+ assert.equal(f.notifications.length,0);
+ assert.equal(Object.hasOwn(f.store,'dontam'),false);
 });
