@@ -69,7 +69,9 @@ test('public customer access reuses the production bridge and existing User scre
     'backend().employeesnapshot()',
     'cart=nextcart',
     "sharedcartsignature=''",
-    'applysharedcartsnapshot(await backend().employeesnapshot(),{force:true})'
+    'const firstsnapshot=await backend().employeesnapshot()',
+    'if(!sharedcartownercurrent(cartowner))return',
+    'applysharedcartsnapshot(firstsnapshot,{force:true})'
   ])assert.ok(overrides.includes(needle),needle);
   assert.equal(overrides.includes('id="publictoolemployee"'),false,'owner toolbar must not render an employee switch button');
 });
