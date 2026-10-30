@@ -682,14 +682,14 @@ test('unknown product in a newer poll cannot remove the last valid synced cart a
  assert.equal(f.renders.length,2);
 });
 
-test('all-zero count with an unknown product stays pending until catalog can validate it',()=>{
+test('zero quantity for an unknown product cannot block a valid known-item deletion',()=>{
  const f=fixture();
- f.ctx.cart.P1.note='Chưa thể xác nhận';
  const snapshot={items:[
   {product_code:'P1',employee_qty:0},
   {product_code:'DELAYED',employee_qty:0}
  ]};
  f.ctx.api.applySharedCartSnapshot(snapshot,{force:true});
- assert.equal(f.ctx.cart.P1.qty,1);
- assert.equal(f.renders.length,0);
+ assert.deepEqual(Object.keys(f.ctx.cart),[],
+  'an absent zero-quantity product cannot hide a genuine server clear');
+ assert.equal(f.renders.length,2);
 });
