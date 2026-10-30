@@ -322,3 +322,23 @@ test('a newly synchronized product has no borrowed note or insertion stamp',()=>
  assert.equal(f.ctx.cart.P2.__lastTouched,0);
  assert.equal(f.ctx.cart.P1,undefined);
 });
+
+test('same public quantity snapshot refreshes a revised product name and price',()=>{
+ const f=fixture();
+ f.switchTo('A','public-link');
+ f.ctx.appData.sanpham[1][3]=100;
+ f.ctx.api.applySharedCartSnapshot(items('P1',2),{force:true});
+ assert.equal(f.ctx.cart.P1.price,100);
+ f.ctx.cart.P1.note='Khách nhắn giao sáng';
+ f.ctx.cart.P1.__lastTouched=41;
+ const rendersBefore=f.renders.length;
+ f.ctx.appData.sanpham[1][1]='Prod 1 mới';
+ f.ctx.appData.sanpham[1][3]=125;
+ f.ctx.api.applySharedCartSnapshot(items('P1',2));
+ assert.equal(f.ctx.cart.P1.qty,2);
+ assert.equal(f.ctx.cart.P1.name,'Prod 1 mới');
+ assert.equal(f.ctx.cart.P1.price,125);
+ assert.equal(f.ctx.cart.P1.note,'Khách nhắn giao sáng');
+ assert.equal(f.ctx.cart.P1.__lastTouched,41);
+ assert.equal(f.renders.length,rendersBefore+2);
+});
