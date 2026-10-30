@@ -18,6 +18,7 @@ let syncInFlight=null;
 let publicAccess=null;
 let employeeAccess=null;
 let employeeSnapshotData=null;
+let sessionGeneration=0;
 
 const num=value=>Number.isFinite(Number(value))?Number(value):0;
 const text=value=>String(value??'');
@@ -34,6 +35,20 @@ function viTime(value){
 }
 
 function currentUid(){return text(identity?.uid);}
+function captureProductionOwner(){
+  return {
+    generation:sessionGeneration,
+    uid:currentUid(),
+    publicSlug:text(publicAccess?.slug),
+    employeeToken:text(employeeAccess?.token)
+  };
+}
+function productionOwnerCurrent(owner){
+  return Boolean(owner&&owner.generation===sessionGeneration
+    &&owner.uid===currentUid()
+    &&owner.publicSlug===text(publicAccess?.slug)
+    &&owner.employeeToken===text(employeeAccess?.token));
+}
 function saveSnapshot(){const uid=currentUid();if(uid&&!publicAccess&&!employeeAccess)snapshot.save(uid,appState.get());}
 
 const EMPLOYEE_API=`${CONFIG.supabaseUrl}/functions/v1/taphoa-stock-check`;
@@ -291,6 +306,7 @@ function sheetRows(sheet){
 
 async function bootstrap({force=false}={}){
   if(bootstrapped&&!force)return appState.get();
+  const context=captureProductionOwner();
   const uid=currentUid();
   const cached=!publicAccess&&!employeeAccess&&uid?snapshot.load(uid):null;
   if(cached?.data&&!bootstrapped){appState.setBootstrap(cached.data);bootstrapped=true;}
@@ -303,17 +319,20 @@ async function bootstrap({force=false}={}){
     :publicAccess
       ?await publicRpc('taphoa_public_bootstrap_access')
       :await business.bootstrap();
+  if(!productionOwnerCurrent(context))return appState.get();
   appState.setBootstrap(data||{});bootstrapped=true;saveSnapshot();
   return appState.get();
 }
 
 async function refresh(domains=[]){
+  const context=captureProductionOwner();
   const list=[...new Set((domains||[]).map(String))];
   if(!list.length)return appState.get();
   if(employeeAccess)return appState.get();
   const data=publicAccess
     ?await publicRpc('taphoa_public_domains_access',{p_domains:list})
     :await business.domains(list);
+  if(!productionOwnerCurrent(context))return appState.get();
   appState.mergeDomains(data||{});bootstrapped=true;saveSnapshot();
   return appState.get();
 }
@@ -322,34 +341,41 @@ async function syncOnce(){
   if(!identity||navigator.onLine===false||document.hidden)return appState.get();
   if(employeeAccess)return appState.get();
   if(syncInFlight)return syncInFlight;
-  syncInFlight=(async()=>{
+  const context=captureProductionOwner();
+  let task;
+  task=(async()=>{
     const before=appState.get();
     const meta=publicAccess
       ?await publicRpc('taphoa_public_domains_access',{p_domains:[]})
       :await business.meta();
+    if(!productionOwnerCurrent(context))return appState.get();
     const changed=changedDomains(before.revisions,meta?.revisions||{});
     const nextPermissions=meta?.permissions||before.permissions;
     const permissionsChanged=JSON.stringify(before.permissions||{})!==JSON.stringify(nextPermissions||{});
     if(changed.length)await refresh(changed);
-    else appState.mergeDomains({
+    else if(productionOwnerCurrent(context))appState.mergeDomains({
       version:meta?.version||before.version,
       syncSeconds:Number(meta?.syncSeconds)||before.syncSeconds,
       permissions:nextPermissions,
       revisions:meta?.revisions||before.revisions
     });
+    if(!productionOwnerCurrent(context))return appState.get();
     if(changed.length||permissionsChanged){
       window.dispatchEvent(new CustomEvent('taphoa-production-sync',{detail:{changed,permissionsChanged}}));
     }
     return appState.get();
-  })().finally(()=>{syncInFlight=null;});
-  return syncInFlight;
+  })().finally(()=>{if(syncInFlight===task)syncInFlight=null;});
+  syncInFlight=task;
+  return task;
 }
 
 function scheduleRevisionWake(){
   if(document.hidden||navigator.onLine===false||employeeAccess)return;
   if(syncWakeTimer)return;
+  const context=captureProductionOwner();
   syncWakeTimer=setTimeout(()=>{
     syncWakeTimer=0;
+    if(!productionOwnerCurrent(context))return;
     syncOnce().catch(error=>console.warn('taphoa sync',error));
   },180);
 }
@@ -369,22 +395,27 @@ function stopSync(){
 async function startSync(){
   stopSync();
   if(employeeAccess)return;
+  const context=captureProductionOwner();
   const client=await auth.getClient();
+  if(!productionOwnerCurrent(context))return;
   const channel=client
     .channel('taphoa-revisions-v1')
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'taphoa_revisions'},
-      ()=>scheduleRevisionWake()
+      ()=>{if(productionOwnerCurrent(context))scheduleRevisionWake();}
     );
   syncChannel=channel;
   channel.subscribe(status=>{
-    if(status==='SUBSCRIBED')scheduleRevisionWake();
+    if(status==='SUBSCRIBED'&&productionOwnerCurrent(context))scheduleRevisionWake();
   });
 }
 
 async function attachSession(info){
+  sessionGeneration+=1;
+  stopSync();
   identity=info?.identity||null;bootstrapped=false;
+  const context=captureProductionOwner();
   // auth.restore/login has ALREADY verified taphoa_access_context online.
   // Display only this account's matching-role snapshot immediately, and let
   // the existing revision sync reconcile the changed domains in background.
@@ -397,31 +428,46 @@ async function attachSession(info){
     appState.setBootstrap(cached.data);
     bootstrapped=true;
     void startSync()
-      .then(()=>syncOnce())
+      .then(()=>{if(productionOwnerCurrent(context))return syncOnce();})
       .catch(error=>console.warn('taphoa cached session sync',error));
     return {identity,state:appState.get()};
   }
   // First-ever login or changed privileges: load canonical data before UI.
-  await bootstrap();await startSync();
+  await bootstrap();
+  if(!productionOwnerCurrent(context))return null;
+  await startSync();
+  if(!productionOwnerCurrent(context))return null;
   return {identity,state:appState.get()};
 }
 
 async function login(username,password){
+  const loginGeneration=++sessionGeneration;
+  stopSync();
   publicAccess=null;
   employeeAccess=null;
   employeeSnapshotData=null;
-  return attachSession(await auth.login(username,password));
+  const info=await auth.login(username,password);
+  if(sessionGeneration!==loginGeneration)return null;
+  return attachSession(info);
 }
 async function restore(){
   if(publicAccess||employeeAccess)return {identity,state:appState.get()};
-  const info=await auth.restore();if(!info)return null;return attachSession(info);
+  const context=captureProductionOwner();
+  const info=await auth.restore();
+  if(!info||!productionOwnerCurrent(context))return null;
+  return attachSession(info);
 }
 async function openPublicLink(slug,pin){
+  sessionGeneration+=1;
+  stopSync();
+  identity=null;
   employeeAccess=null;
   employeeSnapshotData=null;
   publicAccess={slug:String(slug||'').trim().toLowerCase(),pin:String(pin||'').trim()};
   bootstrapped=false;
+  const context=captureProductionOwner();
   const data=await publicRpc('taphoa_public_bootstrap_access');
+  if(!productionOwnerCurrent(context))return null;
   appState.setBootstrap(data||{});
   const user=data?.user||{};
   identity={
@@ -434,15 +480,21 @@ async function openPublicLink(slug,pin){
   };
   bootstrapped=true;
   await startSync();
+  if(!productionOwnerCurrent(context))return null;
   return {identity,state:appState.get()};
 }
 async function openEmployeeLink(token,pin){
+  sessionGeneration+=1;
   publicAccess=null;
   stopSync();
+  identity=null;
   employeeAccess={token:String(token||'').trim(),pin:String(pin||'').trim()};
   if(!employeeAccess.token||!employeeAccess.pin)throw new Error('employee_access_required');
-  employeeSnapshotData=await employeeRequest();
-  if(String(employeeSnapshotData?.role||'')!=='employee')throw new Error('employee_role_required');
+  const context=captureProductionOwner();
+  const result=await employeeRequest();
+  if(!productionOwnerCurrent(context))return null;
+  if(String(result?.role||'')!=='employee')throw new Error('employee_role_required');
+  employeeSnapshotData=result;
   const data=employeeStateFromSnapshot(employeeSnapshotData);
   appState.setBootstrap(data);
   const user=data.user||{};
@@ -481,6 +533,7 @@ async function getEmployeeSnapshot(){
 
 async function logout(){
   const uid=currentUid();
+  const logoutGeneration=++sessionGeneration;
   stopSync();
   if(publicAccess||employeeAccess){
     publicAccess=null;
@@ -492,7 +545,9 @@ async function logout(){
   try{await auth.logout();}
   finally{
     if(uid)snapshot.clear(uid);
-    identity=null;bootstrapped=false;appState.reset();
+    if(sessionGeneration===logoutGeneration){
+      identity=null;bootstrapped=false;appState.reset();
+    }
   }
 }
 async function readSheet(sheet){await bootstrap();return sheetRows(sheet);}
