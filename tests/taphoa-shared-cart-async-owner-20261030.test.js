@@ -75,12 +75,13 @@ function fixture(storage=new Map()){
  let sharedCartRetryTimer=0;
  let sharedCartRetryCount=0;
  let sharedCartRetryReady=false;
+ let sharedCartRestorePendingOwner=null;
  const SHARED_CART_DRAFT_KEY='taphoa.shared-cart.pending.v1.';
  const SHARED_CART_DRAFT_MAX_AGE=30*60*1000;
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,touchSeq:()=>__cartTouchSeq,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount],pollState:()=>[sharedCartPollInFlight,sharedCartPollStartedAt]};',
+  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,sharedCartRestoreBlocked,touchSeq:()=>__cartTouchSeq,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount],pollState:()=>[sharedCartPollInFlight,sharedCartPollStartedAt]};',
   ctx,{timeout:1000});
  return {
   ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,storage,
@@ -725,4 +726,80 @@ test('offline state does not abandon in-flight read or unlock it until it settle
  assert.equal(f.pendingReads.length,2);
  f.pendingReads[1].resolve(items('P1',8));await next;
  assert.equal(f.ctx.cart.P1.qty,8);
+});
+
+
+// SPEC-SHARED-CART-DRAFT-CATALOG-20261030
+test('unrestorable pending draft blocks polls and all full-cart saves until catalog is ready',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart={P3:{qty:7,__lastTouched:10},P1:{qty:2,__lastTouched:5}};
+ first.schedule();
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),'pending');
+ assert.equal(next.ctx.api.sharedCartRestoreBlocked(),true);
+ assert.equal(next.ctx.cart.P1.qty,1);
+ assert.equal(next.ctx.api.edits().join(','),'0,0');
+ next.schedule();await next.flush();
+ assert.equal(next.requests.length,0);
+ next.start();
+ next.firePoll();await tick();
+ assert.equal(next.pendingReads.length,0,
+  'remote GET must not replace an unsent full-cart snapshot');
+ const saved=JSON.parse(Array.from(storage.values())[0]);
+ assert.deepEqual(saved.items.map(x=>x.product_code),['P3','P1']);
+});
+
+test('when missing catalog row arrives, pending draft is replayed once before any server GET',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart={P3:{qty:7,__lastTouched:8},P1:{qty:2,__lastTouched:3}};
+ first.schedule();
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),'pending');
+ next.start();
+ next.ctx.appData.sanpham.push(['P3','Newly loaded product']);
+ next.firePoll();await tick();
+ assert.equal(next.ctx.api.sharedCartRestoreBlocked(),false);
+ assert.equal(next.ctx.cart.P3.qty,7);
+ assert.equal(next.ctx.cart.P1.qty,2);
+ assert.ok(next.ctx.cart.P3.__lastTouched>next.ctx.cart.P1.__lastTouched);
+ assert.equal(next.pendingReads.length,0,'a local replay goes to write, not GET');
+ await next.flush();
+ assert.equal(next.requests.length,1);
+ assert.deepEqual(next.requests[0].items.map(x=>x.product_code),['P3','P1']);
+ assert.equal(next.ctx.api.edits().join(','),'1,1');
+ assert.equal(storage.size,0);
+});
+
+test('reset owner releases blocked pending draft without posting it to the next link',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart.P3={qty:11};first.schedule();
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),'pending');
+ next.switchTo('B');
+ next.ctx.api.resetSharedCartSyncOwner();
+ assert.equal(next.ctx.api.sharedCartRestoreBlocked(),false);
+ next.schedule();await next.flush();
+ assert.equal(next.requests.length,1);
+ assert.equal(next.requests[0].token,'B');
+ assert.deepEqual(next.requests[0].items.map(x=>x.product_code),['P2']);
+ assert.equal(storage.size,2,'original A draft is never deleted or transferred');
+});
+
+test('pending draft whose validity expires unblocks polls without replaying stale quantities',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart.P3={qty:4};first.schedule();
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),'pending');
+ const key=Array.from(storage.keys())[0];
+ const saved=JSON.parse(storage.get(key));
+ saved.savedAt=Date.now()-31*60*1000;
+ storage.set(key,JSON.stringify(saved));
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),false);
+ assert.equal(next.ctx.api.sharedCartRestoreBlocked(),false);
+ assert.equal(storage.size,0);
+ next.start();
+ const pending=next.firePoll();await tick();
+ assert.equal(next.pendingReads.length,1);
+ next.pendingReads[0].resolve(items('P1',5));await pending;
+ assert.equal(next.ctx.cart.P1.qty,5);
 });
