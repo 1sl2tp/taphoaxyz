@@ -489,8 +489,11 @@ async function openPublicLink(slug,pin){
     active:true
   };
   bootstrapped=true;
+  // Identity becomes known only after the public bootstrap. The earlier owner
+  // has an empty uid and cannot validate the final async subscription step.
+  const readyContext=captureProductionOwner();
   await startSync();
-  if(!productionOwnerCurrent(context))return null;
+  if(!productionOwnerCurrent(readyContext))return null;
   return {identity,state:appState.get()};
 }
 async function openEmployeeLink(token,pin){
