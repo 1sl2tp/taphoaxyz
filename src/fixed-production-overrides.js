@@ -8,6 +8,7 @@
   const backend=()=>window.TAPHOA_PRODUCTION;
   const sheetNames=['sanpham','khachhang','dontam','dongiao','thuchi'];
   let orderMutationInFlight=false;
+  let loginInFlight=false;
   // A second tap must not create a second financial command while the first is pending.
   let debtMutationInFlight=false;
   const sheetNamesByDomain=Object.freeze({
@@ -161,15 +162,18 @@
 
   submitPreviewLogin=async function(event){
     event?.preventDefault();
+    if(loginInFlight)return;
     const username=String(document.getElementById('loginUsername')?.value||'').trim();
     const password=String(document.getElementById('loginPassword')?.value||'');
     if(!username||!password){
       showAlertPopup('Chưa đủ thông tin','Vui lòng nhập '+(!username?'tài khoản':'mật khẩu')+'.');
       return;
     }
+    loginInFlight=true;
     showLoading('Đang đăng nhập...');
     try{
       const info=await backend().login(username,password);
+      if(!info?.identity)throw new Error('Phiên đăng nhập đã thay đổi. Vui lòng thử lại.');
       setAuthRole(productionRole(info));
       syncSelfCustomer(info);
       document.getElementById('loginPassword').value='';
@@ -180,7 +184,10 @@
       console.error('login',error);
       showAlertPopup('Đăng nhập thất bại',error?.message||'Sai tài khoản hoặc mật khẩu.');
       showLoginScreen();
-    }finally{hideLoading();}
+    }finally{
+      loginInFlight=false;
+      hideLoading();
+    }
   };
 
   logoutApp=function(){
