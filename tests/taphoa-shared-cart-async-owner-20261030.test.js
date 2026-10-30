@@ -100,7 +100,7 @@ test('queued save from old employee link never posts to the next link',async()=>
  assert.equal(f.requests.length,2);
  assert.equal(f.requests[0].token,'A');
  assert.equal(f.requests[1].token,'B');
- assert.deepEqual(f.requests[1].items,[{product_code:'P2',qty:7}]);
+ assert.deepEqual(Array.from(f.requests[1].items,item=>({...item})),[{product_code:'P2',qty:7}]);
  assert.equal(f.ctx.api.signature(),JSON.stringify([['P2',7]]));
 });
 
