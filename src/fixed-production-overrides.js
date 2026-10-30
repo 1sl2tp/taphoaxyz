@@ -1035,17 +1035,24 @@
 
   function applySharedCartSnapshot(snapshot,{force=false}={}){
     if(!force&&Date.now()-sharedCartLocalWriteAt<500)return;
-    const rows=Array.isArray(snapshot?.items)?snapshot.items:[];
+    // Missing/failed snapshot is not an empty cart. Preserve last good rows.
+    if(snapshot?.ok===false||!Array.isArray(snapshot?.items))return;
+    const rows=snapshot.items;
     const normalized=rows
       .map(row=>[String(row?.product_code||''),Math.max(0,Math.trunc(Number(row?.employee_qty)||0))])
       .filter(([code,qty])=>code&&qty>0)
       .sort((a,b)=>a[0].localeCompare(b[0]));
     const signature=JSON.stringify(normalized);
-    if(!force&&signature===sharedCartSignature)return;
-    sharedCartSignature=signature;
-
     const employeeMode=backend()?.getAccessMode?.()==='employee-link';
     const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
+    // The same server snapshot may become displayable after the product
+    // catalog loads. Do not keep a missing row hidden just because its qty
+    // signature has not changed.
+    const knownRows=normalized.filter(([code])=>productMap.has(code));
+    const cartMatches=Object.keys(cart||{}).length===knownRows.length
+      &&knownRows.every(([code,qty])=>Number(cart?.[code]?.qty)===qty);
+    if(!force&&signature===sharedCartSignature&&cartMatches)return;
+    sharedCartSignature=signature;
     const nextCart={};
 
     for(const [code,qty] of normalized){
@@ -1109,9 +1116,11 @@
     installSharedCartQuantitySync();
     installEmployeeOrderActionGuard();
     const cartOwner=sharedCartOwner();
+    const initialEditSeq=sharedCartLocalEditSeq;
     const firstSnapshot=info?.employeeSnapshot||await backend().getEmployeeSnapshot();
     if(!sharedCartOwnerCurrent(cartOwner))return;
-    applySharedCartSnapshot(firstSnapshot,{force:true});
+    if(initialEditSeq===sharedCartLocalEditSeq)
+      applySharedCartSnapshot(firstSnapshot,{force:true});
     ownProductRenderKey='';
     renderProductList();
     renderPublicTools();
@@ -1173,10 +1182,12 @@
 
     installSharedCartQuantitySync();
     const cartOwner=sharedCartOwner();
+    const initialEditSeq=sharedCartLocalEditSeq;
     try{
       const firstSnapshot=await backend().employeeSnapshot();
       if(!sharedCartOwnerCurrent(cartOwner))return;
-      applySharedCartSnapshot(firstSnapshot,{force:true});
+      if(initialEditSeq===sharedCartLocalEditSeq)
+        applySharedCartSnapshot(firstSnapshot,{force:true});
     }catch(error){
       if(!sharedCartOwnerCurrent(cartOwner))return;
       console.warn('initial shared cart snapshot',error);
