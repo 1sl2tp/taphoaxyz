@@ -13,10 +13,12 @@ const end=source.indexOf('  function installEmployeeOrderActionGuard(){',start);
 assert.ok(start>=0&&end>start);
 const method=source.slice(start,end);
 function fixture(){
- const events=[];
+ const events=[],listeners={};
  let mode='employee-link';
  const ctx={
-  window:{},
+  window:{addEventListener:(kind,fn)=>{listeners[kind]=fn;}},
+  document:{hidden:false,addEventListener:(kind,fn)=>{listeners[kind]=fn;}},
+  retryPendingSharedCartSave:()=>events.push('reconnect'),
   backend:()=>({getAccessMode:()=>mode}),
   updateCart:function(){events.push('original-update');},
   previewQtyInput:function(){events.push('original-preview');},
@@ -34,7 +36,7 @@ function fixture(){
   '\ninstallSharedCartQuantitySync();globalThis.handle={preview:previewQtyInput,commit:commitQtyEditor,cart:()=>cart};',
   ctx,{timeout:1000});
  return {
-  events,
+  events,listeners,ctx,
   cart:()=>ctx.handle.cart(),
   preview:(code,value,qtyEditor='product')=>
    ctx.handle.preview({dataset:{qtyId:code,qtyEditor},value:String(value)}),
@@ -113,4 +115,17 @@ test('nonfinite employee entry never creates a new product row or a save',()=>{
  f.preview('P2','Infinity');
  assert.equal(f.cart().P2,undefined);
  assert.equal(f.events.filter(e=>e==='schedule-save').length,0);
+});
+
+test('shared cart installs one reconnect and visible-tab recovery handler',()=>{
+ const f=fixture();
+ assert.equal(typeof f.listeners.online,'function');
+ assert.equal(typeof f.listeners.visibilitychange,'function');
+ f.listeners.online();
+ f.ctx.document.hidden=true;
+ f.listeners.visibilitychange();
+ f.ctx.document.hidden=false;
+ f.listeners.visibilitychange();
+ assert.equal(f.events.filter(x=>x==='reconnect').length,2,
+   'only online and becoming visible should retry unresolved saves');
 });
