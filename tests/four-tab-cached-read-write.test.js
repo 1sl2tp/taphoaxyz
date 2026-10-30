@@ -11,7 +11,10 @@ test('Bán hàng, Đơn tạm, Đã giao, Công nợ share one cached read owner
   const tabs=await load('src/fixed-ui-runtime-2.js');
   assert.ok(bridge.includes('snapshot.load(uid)'));
   assert.ok(bridge.includes("business.meta()"));
-  assert.ok(bridge.includes("if(changed.length)await refresh(changed)"));
+  assert.match(bridge,/if\(changed\.length\)\{\s*await refresh\(changed\)/,
+    'changed revisions refresh only their affected UI data domains');
+  assert.match(bridge,/appState\.mergeDomains\(\{permissions:nextPermissions\}\)/,
+    'metadata permission changes are retained after the domain-only RPC');
   assert.ok(overrides.includes("await Promise.all([...new Set(names)].map(name=>SheetDB.read(name)))"));
   assert.ok(ui.includes("document.querySelector('.tab-content.active')"));
   for(const name of ['tab-ban-hang','tab-don-tam','tab-da-giao','tab-cong-no'])
