@@ -13,7 +13,7 @@ const routes=[
   {file:'ncc/thuoc-la/index.html',base:'/ncc/',key:'s',fixed:'thuoc-la'}
 ];
 const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
-function openShortcut(html,{search='',hash=''}) {
+function openShortcut(html,{search='',hash=''}={}) {
   const match=html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(match,'shortcut needs same-origin script redirect');
   let destination=null,calls=0;
