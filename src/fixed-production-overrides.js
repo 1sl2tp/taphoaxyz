@@ -1232,16 +1232,26 @@
 
   function applySharedCartSnapshot(snapshot,{force=false}={}){
     if(!force&&Date.now()-sharedCartLocalWriteAt<500)return;
-    // Missing/failed snapshot is not an empty cart. Preserve last good rows.
-    if(snapshot?.ok===false||!Array.isArray(snapshot?.items))return;
+    // Missing, failed or partially malformed snapshots are not an empty
+    // stock count. Reject the entire response rather than clearing good rows.
+    if(!Array.isArray(snapshot?.items)
+       ||(snapshot.ok!==undefined&&snapshot.ok!==true))return;
     const rows=snapshot.items;
-    const normalized=rows
-      .map(row=>{
-        const value=Number(row?.employee_qty);
-        return [String(row?.product_code||''),Number.isFinite(value)?Math.max(0,Math.trunc(value)):0];
-      })
-      .filter(([code,qty])=>code&&qty>0)
-      .sort((a,b)=>a[0].localeCompare(b[0]));
+    const seenCodes=new Set();
+    const normalized=[];
+    for(const row of rows){
+      const code=String(row?.product_code||'').trim();
+      const rawQty=row?.employee_qty;
+      const value=Number(rawQty);
+      // Null is a legitimate empty count; an absent/invalid field is not.
+      if(!code||seenCodes.has(code)||rawQty===undefined
+         ||(typeof rawQty==='string'&&!rawQty.trim())
+         ||!Number.isFinite(value)||value<0||value>Number.MAX_SAFE_INTEGER)return;
+      seenCodes.add(code);
+      const qty=Math.trunc(value);
+      if(qty>0)normalized.push([code,qty]);
+    }
+    normalized.sort((a,b)=>a[0].localeCompare(b[0]));
     const signature=JSON.stringify(normalized);
     const employeeMode=backend()?.getAccessMode?.()==='employee-link';
     const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
