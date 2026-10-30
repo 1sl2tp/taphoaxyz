@@ -482,6 +482,9 @@
   let sharedCartPoll=0;
   let sharedCartSignature='';
   let sharedCartLocalWriteAt=0;
+  let sharedCartLocalEditSeq=0;
+  let sharedCartCommittedEditSeq=0;
+  let sharedCartPollRequestSeq=0;
   let publicTabId='tab-ban-hang';
 
   function employeeQuery(){
@@ -864,16 +867,43 @@
     return mode==='public-link'||mode==='employee-link';
   }
 
+  // SPEC-SHARED-CART-OWNER-20261030: never reuse queued work or a delayed
+  // server snapshot after switching link, even to the same customer again.
+  function sharedCartOwner(){
+    const prod=backend();
+    return {
+      identity:prod?.getIdentity?.(),
+      mode:prod?.getAccessMode?.(),
+      slug:String(prod?.getPublicAccess?.()?.slug||''),
+      token:String(prod?.getEmployeeAccess?.()?.token||'')
+    };
+  }
+  function sharedCartOwnerCurrent(owner){
+    const now=sharedCartOwner();
+    return owner&&owner.identity===now.identity&&owner.mode===now.mode
+      &&owner.slug===now.slug&&owner.token===now.token;
+  }
+
   function scheduleSharedCartSave(){
     if(!isSharedCartMode())return;
+    const owner=sharedCartOwner();
+    const editSeq=++sharedCartLocalEditSeq;
     sharedCartLocalWriteAt=Date.now();
     clearTimeout(sharedCartSaveTimer);
     sharedCartSaveTimer=setTimeout(()=>{
+      if(!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq)return;
       const items=sharedCartItems();
       sharedCartSaveChain=sharedCartSaveChain
         .catch(()=>{})
-        .then(()=>backend().saveSharedQuantities(items))
-        .then(()=>{sharedCartSignature=JSON.stringify(items.map(row=>[row.product_code,row.qty]).sort());})
+        .then(()=>{
+          if(!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq)return null;
+          return backend().saveSharedQuantities(items);
+        })
+        .then(result=>{
+          if(result===null||!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq)return;
+          sharedCartSignature=JSON.stringify(items.map(row=>[row.product_code,row.qty]).sort());
+          sharedCartCommittedEditSeq=editSeq;
+        })
         .catch(error=>console.warn('shared cart sync',error));
     },100);
   }
@@ -1002,12 +1032,21 @@
 
   function startSharedCartSync(){
     if(sharedCartPoll)clearInterval(sharedCartPoll);
+    ++sharedCartPollRequestSeq;
     sharedCartPoll=setInterval(async()=>{
-      if(document.hidden||!isSharedCartMode()||Date.now()-sharedCartLocalWriteAt<500)return;
+      if(document.hidden||!isSharedCartMode()
+         ||sharedCartCommittedEditSeq!==sharedCartLocalEditSeq
+         ||Date.now()-sharedCartLocalWriteAt<500)return;
+      const owner=sharedCartOwner();
+      const editSeq=sharedCartLocalEditSeq;
+      const requestSeq=++sharedCartPollRequestSeq;
       try{
-        applySharedCartSnapshot(await backend().employeeSnapshot());
+        const snapshot=await backend().employeeSnapshot();
+        if(!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq
+           ||requestSeq!==sharedCartPollRequestSeq)return;
+        applySharedCartSnapshot(snapshot);
       }catch(error){
-        console.warn('shared cart poll',error);
+        if(sharedCartOwnerCurrent(owner))console.warn('shared cart poll',error);
       }
     },900);
   }
@@ -1029,7 +1068,13 @@
     installSharedCartQuantitySync();
     installEmployeeOrderActionGuard();
     sharedCartSignature='';
-    applySharedCartSnapshot(info?.employeeSnapshot||await backend().getEmployeeSnapshot(),{force:true});
+    sharedCartLocalEditSeq=0;
+    sharedCartCommittedEditSeq=0;
+    ++sharedCartPollRequestSeq;
+    const cartOwner=sharedCartOwner();
+    const firstSnapshot=info?.employeeSnapshot||await backend().getEmployeeSnapshot();
+    if(!sharedCartOwnerCurrent(cartOwner))return;
+    applySharedCartSnapshot(firstSnapshot,{force:true});
     ownProductRenderKey='';
     renderProductList();
     renderPublicTools();
@@ -1085,9 +1130,16 @@
 
     installSharedCartQuantitySync();
     sharedCartSignature='';
+    sharedCartLocalEditSeq=0;
+    sharedCartCommittedEditSeq=0;
+    ++sharedCartPollRequestSeq;
+    const cartOwner=sharedCartOwner();
     try{
-      applySharedCartSnapshot(await backend().employeeSnapshot(),{force:true});
+      const firstSnapshot=await backend().employeeSnapshot();
+      if(!sharedCartOwnerCurrent(cartOwner))return;
+      applySharedCartSnapshot(firstSnapshot,{force:true});
     }catch(error){
+      if(!sharedCartOwnerCurrent(cartOwner))return;
       console.warn('initial shared cart snapshot',error);
     }
     startSharedCartSync();
