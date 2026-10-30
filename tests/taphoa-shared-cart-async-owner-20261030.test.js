@@ -25,6 +25,7 @@ function fixture(storage=new Map()){
  const timers=[],intervals=[],requests=[],reads=[],warns=[],renders=[];
  let identity={uid:'A'},mode='employee-link',token='A',slug='';
  const pendingWrites=new Map(),pendingReads=[];
+ let clockNow=Date.now();
  const ctx={
   cart:{P1:{qty:1,price:0,name:'Prod 1'}},
   appData:{sanpham:[['id','name'],['P1','Prod 1'],['P2','Prod 2']]},
@@ -53,7 +54,7 @@ function fixture(storage=new Map()){
   renderProductList:()=>renders.push('products'),
   renderCartUI:()=>renders.push('cart'),
   console:{warn:(...args)=>warns.push(args)},
-  Date,Number,String,Boolean,Array,Object,Map,Set,Promise,JSON,Math,
+  Date:{now:()=>clockNow},Number,String,Boolean,Array,Object,Map,Set,Promise,JSON,Math,
   setTimeout:fn=>{timers.push(fn);return timers.length;},
   clearTimeout:id=>{if(id)timers[id-1]=null;},
   setInterval:fn=>{intervals.push(fn);return intervals.length;},
@@ -69,6 +70,8 @@ function fixture(storage=new Map()){
  let sharedCartLocalEditSeq=0;
  let sharedCartCommittedEditSeq=0;
  let sharedCartPollRequestSeq=0;
+ let sharedCartPollInFlight=false;
+ let sharedCartPollStartedAt=0;
  let sharedCartRetryTimer=0;
  let sharedCartRetryCount=0;
  let sharedCartRetryReady=false;
@@ -77,10 +80,11 @@ function fixture(storage=new Map()){
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,touchSeq:()=>__cartTouchSeq,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount]};',
+  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,touchSeq:()=>__cartTouchSeq,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount],pollState:()=>[sharedCartPollInFlight,sharedCartPollStartedAt]};',
   ctx,{timeout:1000});
  return {
   ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,storage,
+  advance:ms=>{clockNow+=ms;},
   schedule:()=>ctx.api.scheduleSharedCartSave(),
   start:()=>ctx.api.startSharedCartSync(),
   flush:async()=>{for(const timer of timers.splice(0))if(timer)timer();await tick();},
@@ -140,14 +144,26 @@ test('poll does not overwrite a quantity while its write acknowledgement is pend
  assert.equal(f.ctx.api.edits().join(','),'1,1');
 });
 
-test('older overlapping poll cannot replace later server snapshot',async()=>{
+test('hung snapshot poll is superseded only after timeout and obsolete response is ignored',async()=>{
  const f=fixture();f.start();
- const a=f.firePoll();await tick();
- const b=f.firePoll();await tick();
+ const old=f.firePoll();await tick();
+ f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,1,'no repeated GET while first read is pending');
+ f.advance(14999);
+ f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,1,'stalled poll must wait its full threshold');
+ f.advance(1);
+ const latest=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,2,'one replacement GET after 15 seconds');
+ f.pendingReads[0].resolve(items('P1',2));await old;
+ assert.equal(f.ctx.cart.P1.qty,1,'late old GET must not overwrite current cart');
+ assert.equal(f.ctx.api.pollState()[0],true,
+  'settling stale GET must not unlock the current in-flight request');
+ f.firePoll();await tick();
  assert.equal(f.pendingReads.length,2);
- f.pendingReads[1].resolve(items('P1',6));await b;
- f.pendingReads[0].resolve(items('P1',2));await a;
+ f.pendingReads[1].resolve(items('P1',6));await latest;
  assert.equal(f.ctx.cart.P1.qty,6);
+ assert.equal(f.ctx.api.pollState()[0],false);
  assert.equal(f.renders.length,2);
 });
 
@@ -515,4 +531,43 @@ test('empty confirmed cart remains valid and leaves insertion counter untouched'
  assert.equal(next.ctx.api.touchSeq(),0);
  await next.flush();
  assert.equal(next.ctx.api.edits().join(','),'1,1');
+});
+
+
+test('one settled snapshot releases poll slot and a new poll can fetch again',async()=>{
+ const f=fixture();f.start();
+ const first=f.firePoll();await tick();
+ f.pendingReads[0].resolve(items('P1',3));await first;
+ assert.equal(f.ctx.api.pollState()[0],false);
+ const second=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,2);
+ f.pendingReads[1].resolve(items('P1',4));await second;
+ assert.equal(f.ctx.cart.P1.qty,4);
+});
+
+test('failed snapshot releases slot for another poll without waiting 15 seconds',async()=>{
+ const f=fixture();f.start();
+ const first=f.firePoll();await tick();
+ f.pendingReads[0].reject(Error('offline'));await first;
+ assert.equal(f.ctx.api.pollState()[0],false);
+ assert.equal(f.warns.length,1);
+ const second=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,2);
+ f.pendingReads[1].resolve(items('P1',8));await second;
+ assert.equal(f.ctx.cart.P1.qty,8);
+});
+
+test('resetting link owner drops pending poll slot and old result cannot affect new session',async()=>{
+ const f=fixture();f.start();
+ const old=f.firePoll();await tick();
+ assert.equal(f.ctx.api.pollState()[0],true);
+ f.switchTo('B');f.ctx.api.resetSharedCartSyncOwner();f.start();
+ const fresh=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,2);
+ f.pendingReads[0].resolve(items('P1',70));await old;
+ assert.equal(f.ctx.api.pollState()[0],true,'old poll cannot release new owner read');
+ assert.equal(f.ctx.cart.P2.qty,7);
+ f.pendingReads[1].resolve(items('P2',8));await fresh;
+ assert.equal(f.ctx.cart.P2.qty,8);
+ assert.equal(f.ctx.api.pollState()[0],false);
 });
