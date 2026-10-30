@@ -1069,6 +1069,9 @@
     if(window.__taphoaSharedCartQuantitySync)return;
     window.__taphoaSharedCartQuantitySync=true;
     window.addEventListener?.('online',retryPendingSharedCartSave);
+    // Back/forward cache can restore a suspended page without a visibility
+    // or online event. Resume only a failed, still-owned pending save.
+    window.addEventListener?.('pageshow',retryPendingSharedCartSave);
     window.addEventListener?.('beforeunload',event=>{
       if(!isSharedCartMode()||sharedCartCommittedEditSeq===sharedCartLocalEditSeq)return;
       // Desktop browsers may warn about leaving with unconfirmed edits;
