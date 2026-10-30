@@ -1024,10 +1024,14 @@
       if(!input)return;
       const code=String(input.dataset.qtyId||'');
       if(!code)return;
-      const numeric=Number(input.value);
-      const fallback=Number(cart[code]?.qty)||0;
-      const parsed=Number.isFinite(numeric)?Math.max(0,Math.trunc(numeric)):fallback;
+      const raw=String(input.value??'').trim();
+      const numeric=raw===''?NaN:Number(raw);
+      const previousQty=Number(cart[code]?.qty)||0;
+      const parsed=Number.isFinite(numeric)?Math.max(0,Math.trunc(numeric)):previousQty;
       input.value=String(parsed);
+      // A mobile blur after clearing text is not an explicit zero. Avoid
+      // deleting a stock-check row or resending an unchanged full snapshot.
+      if(parsed===previousQty)return;
       const meta=getQtyMeta(code,input);
       const isNewCartLine=!cart[code];
       if(parsed>0){
