@@ -1303,6 +1303,7 @@
     sharedCartPollStartedAt=0;
     sharedCartPoll=setInterval(async()=>{
       if(document.hidden||!isSharedCartMode()
+         ||(typeof navigator!=='undefined'&&navigator.onLine===false)
          ||sharedCartCommittedEditSeq!==sharedCartLocalEditSeq
          ||Date.now()-sharedCartLocalWriteAt<500)return;
       // SPEC-SHARED-CART-POLL-HANG-20261030: avoid an unbounded pile of
