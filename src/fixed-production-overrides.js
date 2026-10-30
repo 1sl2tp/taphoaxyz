@@ -1052,10 +1052,16 @@
   }
 
   async function enterEmployeeLink(info){
+    const ownerIdentity=info?.identity;
+    if(!ownerIdentity||backend()?.getIdentity?.()!==ownerIdentity
+       ||backend()?.getAccessMode?.()!=='employee-link')return;
     setAuthRole('user');
     syncSelfCustomer(info);
-    showAppScreen();
     await refreshFixedSheets(['sanpham','khachhang']);
+    // A replaced link may finish its sheet read after a newer session starts.
+    if(backend()?.getIdentity?.()!==ownerIdentity
+       ||backend()?.getAccessMode?.()!=='employee-link')return;
+    showAppScreen();
     window.TAPHOA_PRODUCT_SEGMENT='all';
     window.TAPHOA_EMPLOYEE_MODE=true;
     document.body.dataset.employeeMode='true';
@@ -1120,11 +1126,16 @@
   }
 
   async function enterPublicUser(info){
+    const ownerIdentity=info?.identity;
+    if(!ownerIdentity||backend()?.getIdentity?.()!==ownerIdentity
+       ||backend()?.getAccessMode?.()!=='public-link')return;
     document.body.dataset.employeeLink='false';
     setAuthRole('user');
     syncSelfCustomer(info);
-    showAppScreen();
     await refreshFixedSheets();
+    if(backend()?.getIdentity?.()!==ownerIdentity
+       ||backend()?.getAccessMode?.()!=='public-link')return;
+    showAppScreen();
     installPublicSwitchTracking();
     applyPublicDeepLink();
 
