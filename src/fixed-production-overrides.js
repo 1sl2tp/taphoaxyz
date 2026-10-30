@@ -884,6 +884,19 @@
       &&owner.slug===now.slug&&owner.token===now.token;
   }
 
+  function resetSharedCartSyncOwner(){
+    clearTimeout(sharedCartSaveTimer);
+    sharedCartSaveTimer=0;
+    // A hung write for the previous link must not block this link's queue.
+    sharedCartSaveChain=Promise.resolve();
+    if(sharedCartPoll){clearInterval(sharedCartPoll);sharedCartPoll=0;}
+    sharedCartSignature='';
+    sharedCartLocalWriteAt=0;
+    sharedCartLocalEditSeq=0;
+    sharedCartCommittedEditSeq=0;
+    ++sharedCartPollRequestSeq;
+  }
+
   function scheduleSharedCartSave(){
     if(!isSharedCartMode())return;
     const owner=sharedCartOwner();
@@ -901,6 +914,7 @@
         })
         .then(result=>{
           if(result===null||!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq)return;
+          if(result?.ok===false)throw new Error(String(result.error||'shared_cart_save_failed'));
           sharedCartSignature=JSON.stringify(items.map(row=>[row.product_code,row.qty]).sort());
           sharedCartCommittedEditSeq=editSeq;
         })
@@ -1055,6 +1069,7 @@
     const ownerIdentity=info?.identity;
     if(!ownerIdentity||backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='employee-link')return;
+    resetSharedCartSyncOwner();
     setAuthRole('user');
     syncSelfCustomer(info);
     await refreshFixedSheets(['sanpham','khachhang']);
@@ -1073,10 +1088,6 @@
 
     installSharedCartQuantitySync();
     installEmployeeOrderActionGuard();
-    sharedCartSignature='';
-    sharedCartLocalEditSeq=0;
-    sharedCartCommittedEditSeq=0;
-    ++sharedCartPollRequestSeq;
     const cartOwner=sharedCartOwner();
     const firstSnapshot=info?.employeeSnapshot||await backend().getEmployeeSnapshot();
     if(!sharedCartOwnerCurrent(cartOwner))return;
@@ -1129,6 +1140,7 @@
     const ownerIdentity=info?.identity;
     if(!ownerIdentity||backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='public-link')return;
+    resetSharedCartSyncOwner();
     document.body.dataset.employeeLink='false';
     setAuthRole('user');
     syncSelfCustomer(info);
@@ -1140,10 +1152,6 @@
     applyPublicDeepLink();
 
     installSharedCartQuantitySync();
-    sharedCartSignature='';
-    sharedCartLocalEditSeq=0;
-    sharedCartCommittedEditSeq=0;
-    ++sharedCartPollRequestSeq;
     const cartOwner=sharedCartOwner();
     try{
       const firstSnapshot=await backend().employeeSnapshot();
