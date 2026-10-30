@@ -60,6 +60,7 @@ function fixture(storage=new Map()){
   clearInterval:id=>{if(id)intervals[id-1]=null;}
  };
  const init=String.raw`
+ let __cartTouchSeq=0;
  let sharedCartSaveTimer=0;
  let sharedCartSaveChain=Promise.resolve();
  let sharedCartPoll=0;
@@ -76,7 +77,7 @@ function fixture(storage=new Map()){
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount]};',
+  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,touchSeq:()=>__cartTouchSeq,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount]};',
   ctx,{timeout:1000});
  return {
   ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,storage,
@@ -450,4 +451,68 @@ test('older acknowledged quantity cannot erase a newer saved draft in same sessi
  await f.flush();
  assert.equal(f.ctx.api.edits().join(','),'2,2');
  assert.equal(f.storage.size,0);
+});
+
+
+test('reloaded draft keeps newest-first order and later additions still go to row one',async()=>{
+ const storage=new Map(),before=fixture(storage);
+ before.ctx.cart={
+  P1:{qty:2,price:0,name:'P1',__lastTouched:8},
+  P2:{qty:5,price:0,name:'P2',__lastTouched:24}
+ };
+ before.schedule();
+ const saved=JSON.parse(Array.from(storage.values())[0]);
+ assert.deepEqual(saved.items.map(x=>x.product_code),['P2','P1']);
+ const restored=fixture(storage);
+ assert.equal(restored.ctx.api.restorePendingSharedCartDraft(),true);
+ assert.ok(restored.ctx.cart.P2.__lastTouched>restored.ctx.cart.P1.__lastTouched);
+ assert.equal(restored.ctx.api.touchSeq(),2);
+ const oldStamp=restored.ctx.cart.P1.__lastTouched;
+ restored.ctx.cart.P1.qty=9;
+ assert.equal(restored.ctx.cart.P1.__lastTouched,oldStamp,
+   'editing existing row must keep insertion stamp');
+ vm.runInContext('__cartTouchSeq++;',restored.ctx);
+ restored.ctx.cart.P3={qty:1,__lastTouched:restored.ctx.api.touchSeq()};
+ assert.ok(restored.ctx.cart.P3.__lastTouched>restored.ctx.cart.P2.__lastTouched);
+ // A pending outbound cart must include every item in current insertion order.
+ const rows=Array.from(restored.ctx.api.sharedCartItems()).map(x=>x.product_code);
+ assert.deepEqual(rows,['P3','P2','P1']);
+});
+
+test('duplicate product codes in stored cart are rejected without posting partial quantities',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.schedule();
+ const [key,raw]=Array.from(storage.entries())[0];
+ const saved=JSON.parse(raw);
+ saved.items.push({...saved.items[0],qty:90});
+ storage.set(key,JSON.stringify(saved));
+ const reloaded=fixture(storage);
+ assert.equal(reloaded.ctx.api.restorePendingSharedCartDraft(),false);
+ assert.equal(storage.size,0);
+ await reloaded.flush();
+ assert.equal(reloaded.requests.length,0);
+ assert.equal(reloaded.ctx.cart.P1.qty,1);
+});
+
+test('malformed JSON draft is discarded without changing current cart or queuing a write',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.schedule();
+ const key=Array.from(storage.keys())[0];
+ storage.set(key,'{broken');
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),false);
+ assert.equal(storage.size,0);
+ assert.equal(next.ctx.cart.P1.qty,1);
+ await next.flush();
+ assert.equal(next.requests.length,0);
+});
+
+test('empty confirmed cart remains valid and leaves insertion counter untouched',async()=>{
+ const storage=new Map(),first=fixture(storage);
+ first.ctx.cart={};first.schedule();
+ const next=fixture(storage);
+ assert.equal(next.ctx.api.restorePendingSharedCartDraft(),true);
+ assert.equal(next.ctx.api.touchSeq(),0);
+ await next.flush();
+ assert.equal(next.ctx.api.edits().join(','),'1,1');
 });
