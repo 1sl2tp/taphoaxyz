@@ -762,6 +762,8 @@ test('when missing catalog row arrives, pending draft is replayed once before an
  next.ctx.appData.sanpham.push(['P3','Newly loaded product']);
  next.firePoll();await tick();
  assert.equal(next.ctx.api.sharedCartRestoreBlocked(),false);
+ assert.equal(next.notices.length,1,'recovery announcement is sent once');
+ assert.equal(next.notices[0].kind,'success');
  assert.equal(next.ctx.cart.P3.qty,7);
  assert.equal(next.ctx.cart.P1.qty,2);
  assert.ok(next.ctx.cart.P3.__lastTouched>next.ctx.cart.P1.__lastTouched);
