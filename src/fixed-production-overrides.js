@@ -508,6 +508,8 @@
   let sharedCartLocalEditSeq=0;
   let sharedCartCommittedEditSeq=0;
   let sharedCartPollRequestSeq=0;
+  let sharedCartPollInFlight=false;
+  let sharedCartPollStartedAt=0;
   let sharedCartRetryTimer=0;
   let sharedCartRetryCount=0;
   let sharedCartRetryReady=false;
@@ -1029,6 +1031,8 @@
     sharedCartRetryTimer=0;
     sharedCartRetryCount=0;
     sharedCartRetryReady=false;
+    sharedCartPollInFlight=false;
+    sharedCartPollStartedAt=0;
     ++sharedCartPollRequestSeq;
   }
 
@@ -1277,20 +1281,35 @@
   function startSharedCartSync(){
     if(sharedCartPoll)clearInterval(sharedCartPoll);
     ++sharedCartPollRequestSeq;
+    sharedCartPollInFlight=false;
+    sharedCartPollStartedAt=0;
     sharedCartPoll=setInterval(async()=>{
       if(document.hidden||!isSharedCartMode()
          ||sharedCartCommittedEditSeq!==sharedCartLocalEditSeq
          ||Date.now()-sharedCartLocalWriteAt<500)return;
+      // SPEC-SHARED-CART-POLL-HANG-20261030: avoid an unbounded pile of
+      // network reads. After 15s a hung read may be superseded; its eventual
+      // response is rejected by requestSeq, never applied to the cart.
+      if(sharedCartPollInFlight&&Date.now()-sharedCartPollStartedAt<15000)return;
       const owner=sharedCartOwner();
       const editSeq=sharedCartLocalEditSeq;
       const requestSeq=++sharedCartPollRequestSeq;
+      sharedCartPollInFlight=true;
+      sharedCartPollStartedAt=Date.now();
       try{
         const snapshot=await backend().employeeSnapshot();
         if(!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq
            ||requestSeq!==sharedCartPollRequestSeq)return;
         applySharedCartSnapshot(snapshot);
       }catch(error){
-        if(sharedCartOwnerCurrent(owner))console.warn('shared cart poll',error);
+        if(sharedCartOwnerCurrent(owner)&&requestSeq===sharedCartPollRequestSeq)
+          console.warn('shared cart poll',error);
+      }finally{
+        // A superseded or old-account read cannot unlock the newer read.
+        if(requestSeq===sharedCartPollRequestSeq){
+          sharedCartPollInFlight=false;
+          sharedCartPollStartedAt=0;
+        }
       }
     },900);
   }
