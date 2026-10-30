@@ -17,6 +17,7 @@ function deferred(){
 }
 function fixture(){
  const calls=[],alerts=[],toasts=[],ui=[],pending=[];
+ let identity=null,refreshHold=null;
  const fields={
   loginUsername:{value:'admin'},
   loginPassword:{value:'secret'}
@@ -24,16 +25,27 @@ function fixture(){
  const context={
   submitPreviewLogin:null,
   document:{getElementById:id=>fields[id]??null},
-  backend:()=>({login:(username,password)=>{
-   calls.push({username,password});
-   const hold=deferred();pending.push(hold);return hold.promise;
-  }}),
+  backend:()=>({
+   getIdentity:()=>identity,
+   login:async(username,password)=>{
+    calls.push({username,password});
+    const hold=deferred();pending.push(hold);
+    const result=await hold.promise;
+    identity=result?.identity||null;
+    return result;
+   }
+  }),
   productionRole:info=>info.identity.role,
   setAuthRole:role=>ui.push('role:'+role),
   syncSelfCustomer:()=>ui.push('customer'),
   showAppScreen:()=>ui.push('app'),
   showLoginScreen:()=>ui.push('login'),
-  refreshFixedSheets:async()=>ui.push('refresh'),
+  resetSaleSession:()=>ui.push('reset-cart'),
+  window:{},
+  refreshFixedSheets:async()=>{
+   ui.push('refresh');
+   if(refreshHold)await refreshHold.promise;
+  },
   showLoading:()=>ui.push('loading'),
   hideLoading:()=>ui.push('hide'),
   showToast:(...args)=>toasts.push(args),
@@ -42,7 +54,12 @@ function fixture(){
  };
  vm.createContext(context);
  vm.runInContext('let loginInFlight=false;\n'+handler+'\nglobalThis.invoke=submitPreviewLogin;',context,{timeout:1000});
- return {...context,calls,alerts,toasts,ui,pending,fields};
+ return {
+  ...context,calls,alerts,toasts,ui,pending,fields,
+  holdRefresh:()=>{refreshHold=deferred();},
+  releaseRefresh:()=>refreshHold?.resolve(),
+  replaceSession:()=>{identity={uid:'different-session',role:'customer'};}
+ };
 }
 async function microtasks(){for(let i=0;i<12;i++)await Promise.resolve();}
 
@@ -55,7 +72,7 @@ test('rapid login taps generate one auth RPC and one authenticated UI transition
  assert.deepEqual(f.calls[0],{username:'admin',password:'secret'});
  f.pending[0].resolve({identity:{uid:'owner',role:'admin'}});
  await Promise.all([a,b]);
- assert.deepEqual(f.ui,['loading','role:admin','customer','refresh','app','hide']);
+ assert.deepEqual(f.ui,['loading','role:admin','customer','refresh','reset-cart','app','hide']);
  assert.equal(f.toasts.length,1);
  assert.equal(f.alerts.length,0);
  assert.equal(f.fields.loginPassword.value,'');
@@ -85,4 +102,34 @@ test('rejected login unlocks the control for an intentional retry',async()=>{
  await b;
  assert.equal(f.toasts.length,1);
  assert.equal(f.alerts.length,1);
+});
+
+
+test('a newer session arriving while sheets refresh cancels the old account UI and cart reset',async()=>{
+ const f=fixture();
+ f.holdRefresh();
+ const old=f.invoke();
+ f.pending[0].resolve({identity:{uid:'A',role:'admin'}});
+ await microtasks();
+ assert.equal(f.ui.includes('refresh'),true);
+ assert.equal(f.ui.includes('app'),false);
+ f.replaceSession();
+ f.releaseRefresh();
+ await old;
+ assert.equal(f.ui.includes('app'),false);
+ assert.equal(f.ui.includes('reset-cart'),false,
+  'stale login must not clear the newer session workspace');
+ assert.equal(f.toasts.length,0);
+ assert.equal(f.alerts.length,0);
+});
+
+test('successful fresh account login clears the previous cart once after its sheets load',async()=>{
+ const f=fixture();
+ const login=f.invoke();
+ f.pending[0].resolve({identity:{uid:'B',role:'customer'}});
+ await login;
+ assert.ok(f.ui.indexOf('reset-cart')>f.ui.indexOf('refresh'));
+ assert.ok(f.ui.indexOf('reset-cart')<f.ui.indexOf('app'));
+ assert.equal(f.window.__TAPHOA_REPRICE_DRAFT_ID,null);
+ assert.equal(f.ui.filter(x=>x==='reset-cart').length,1);
 });
