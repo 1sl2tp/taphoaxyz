@@ -16,7 +16,9 @@ test('debt detail retains backend ledger ID as visible proof of bank collection'
 });
 
 test('opening debt reads server ledger page instead of treating report status as payment',()=>{
-  assert.match(overrides,/const detail=await backend\(\)\.debtLedger\(maKh,\{limit:50\}\)/);
+  assert.match(overrides,/const detail=await prod\.debtLedger\(maKh,\{limit:50\}\)/);
+  assert.match(overrides,/if\(!ownerCurrent\(\)\)return false;/,
+    'late ledger responses cannot render after account changes');
   assert.match(overrides,/backend\(\)\.ledgerToRows\(detail\)/);
   assert.match(overrides,/renderCongNo\(\)/);
   assert.match(overrides,/Chưa tải được sổ nợ mới/);
