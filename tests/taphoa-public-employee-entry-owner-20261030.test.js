@@ -33,6 +33,7 @@ function fixture(kind){
    body:{dataset:{}},
    querySelector:()=>({id:'sales-button'})
   },
+  resetSharedCartSyncOwner:()=>events.push('reset-cart'),
   setAuthRole:role=>events.push('role:'+role),
   syncSelfCustomer:()=>events.push('self'),
   refreshFixedSheets:async()=>{events.push('refresh-start');await wait.promise;events.push('refresh-finish');},
