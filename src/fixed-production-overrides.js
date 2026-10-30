@@ -427,10 +427,16 @@
     if(!hasPermission('canViewDebt'))return denyPermission('Tài khoản này không được xem Công nợ.');
     const requestedCustomer=String(maKh||'');
     const requestSeq=++debtModalOpenSeq;
+    const prod=backend();
+    const ownerUid=String(prod?.getIdentity?.()?.uid||'');
+    const ownerMode=String(prod?.getAccessMode?.()||'');
+    const ownerCurrent=()=>requestSeq===debtModalOpenSeq
+      &&String(prod?.getIdentity?.()?.uid||'')===ownerUid
+      &&String(prod?.getAccessMode?.()||'')===ownerMode;
     window.TAPHOA_DEBT_PAGE_STATE=null;
     try{
-      const detail=await backend().debtLedger(maKh,{limit:50});
-      if(requestSeq!==debtModalOpenSeq)return false;
+      const detail=await prod.debtLedger(maKh,{limit:50});
+      if(!ownerCurrent())return false;
       const raw=Array.isArray(detail?.transactions)?detail.transactions:[];
       window.TAPHOA_DEBT_PAGE_STATE={
         customerId:requestedCustomer,requestSeq,
@@ -443,18 +449,18 @@
       appData.thuchi=[header,...other,...backend().ledgerToRows(detail)];
       renderCongNo();
     }catch(error){
-      if(requestSeq!==debtModalOpenSeq)return false;
+      if(!ownerCurrent())return false;
       console.warn('debt ledger',error);
       window.TAPHOA_DEBT_PAGE_STATE=null;
       showAlertPopup('Chưa tải được sổ nợ mới',
         'Lịch sử công nợ chưa được đồng bộ từ sổ chính. Vui lòng thử mở lại. Không dùng dữ liệu cũ để xác nhận thu.');
       return false;
     }
-    if(requestSeq!==debtModalOpenSeq)return false;
+    if(!ownerCurrent())return false;
     const opened=fixedOpenCustomerDebtModal(maKh);
-    // Existing non-money image repair remains a separate optional workflow.
+    // Do not run follow-up image repair for an obsolete ledger/account.
     void Promise.resolve(opened)
-      .then(()=>backend()?.repairRecentFinanceImages?.(maKh))
+      .then(()=>{if(ownerCurrent())return prod?.repairRecentFinanceImages?.(maKh);})
       .catch(error=>console.warn('debt notice repair',error));
     return opened;
   };
