@@ -108,11 +108,19 @@
     const backendId=String(orderId||'').trim();
     const targetCode=String(productCode||'').trim();
     if(!backendId||!targetCode)throw new Error('Thiếu thông tin dòng sản phẩm.');
+    const noteSession=backend()?.getIdentity?.();
+    const noteAccessMode=backend()?.getAccessMode?.();
+    const noteOwnerCurrent=()=>backend()?.getIdentity?.()===noteSession
+      &&backend()?.getAccessMode?.()===noteAccessMode;
+    if(!noteSession)throw new Error('Phiên tài khoản không còn hợp lệ.');
     // SPEC-ORDER-NOTE-SERIAL: each update must read the preceding committed
     // version, or editing two different lines can silently lose the first note.
     const previous=pendingOrderNoteSaves.get(backendId)||Promise.resolve();
     const task=previous.catch(()=>{}).then(async()=>{
+      // A queued edit must not be sent using a newer account's credentials.
+      if(!noteOwnerCurrent())throw new Error('Phiên tài khoản đã thay đổi. Mở lại đơn tạm trước khi lưu.');
       const detail=await backend().orderDetail(backendId);
+      if(!noteOwnerCurrent())throw new Error('Phiên tài khoản đã thay đổi. Mở lại đơn tạm trước khi lưu.');
       const order=detail?.order||detail||{};
       const status=String(order.status||order.trangThai||'').toLowerCase();
       if(status!=='pending')throw new Error('Chỉ sửa ghi chú trực tiếp ở Đơn tạm.');
@@ -130,6 +138,7 @@
         };
       }).filter(item=>item.maSP&&item.sl>0);
       if(!found)throw new Error('Không tìm thấy sản phẩm trong đơn tạm.');
+      if(!noteOwnerCurrent())throw new Error('Phiên tài khoản đã thay đổi. Mở lại đơn tạm trước khi lưu.');
       const result=await backend().saveOrder({
         maKH:String(order.maKH||order.customer_id||''),
         status:'pending',
@@ -138,6 +147,7 @@
         items
       });
       if(result?.ok!==true)throw new Error('Không thể lưu ghi chú đơn tạm.');
+      if(!noteOwnerCurrent())return true;
       // The DB write has committed. A UI-only repaint failure is not a
       // failed order mutation and must not invite a duplicate save.
       try{await refreshFixedSheets(['dontam']);}
