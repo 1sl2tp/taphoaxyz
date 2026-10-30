@@ -513,6 +513,7 @@
   let sharedCartRetryTimer=0;
   let sharedCartRetryCount=0;
   let sharedCartRetryReady=false;
+  let sharedCartRestorePendingOwner=null;
   const SHARED_CART_DRAFT_KEY='taphoa.shared-cart.pending.v1.';
   const SHARED_CART_DRAFT_MAX_AGE=30*60*1000;
   let publicTabId='tab-ban-hang';
@@ -940,6 +941,15 @@
     return SHARED_CART_DRAFT_KEY+hash.toString(36);
   }
 
+  function sharedCartRestoreBlocked(){
+    if(!sharedCartRestorePendingOwner)return false;
+    if(!sharedCartOwnerCurrent(sharedCartRestorePendingOwner)){
+      sharedCartRestorePendingOwner=null;
+      return false;
+    }
+    return true;
+  }
+
   function savePendingSharedCartDraft(owner,items){
     const key=sharedCartDraftKey(owner);
     if(!key)return;
@@ -969,14 +979,19 @@
     try{saved=JSON.parse(sessionStorage.getItem(key)||'null');}
     catch{
       try{sessionStorage.removeItem(key);}catch{}
+      sharedCartRestorePendingOwner=null;
       return false;
     }
-    if(!saved)return false;
+    if(!saved){
+      sharedCartRestorePendingOwner=null;
+      return false;
+    }
     if(!Number.isFinite(saved.savedAt)
        ||saved.savedAt>Date.now()
        ||Date.now()-saved.savedAt>SHARED_CART_DRAFT_MAX_AGE
        ||!Array.isArray(saved.items)){
       try{sessionStorage.removeItem(key);}catch{}
+      sharedCartRestorePendingOwner=null;
       return false;
     }
     const entries=saved.items;
@@ -992,12 +1007,18 @@
     });
     if(!valid){
       try{sessionStorage.removeItem(key);}catch{}
+      sharedCartRestorePendingOwner=null;
       return false;
     }
     const productMap=new Map((appData.sanpham||[]).slice(1).map(row=>[String(row?.[0]||''),row]));
     // Incomplete product data must never turn a pending full-cart write into
     // a destructive partial-cart overwrite.
-    if(entries.some(item=>!productMap.has(item.product_code)))return false;
+    if(entries.some(item=>!productMap.has(item.product_code))){
+      // SPEC-SHARED-CART-DRAFT-CATALOG-20261030: prevent an empty writable
+      // cart from replacing the last unconfirmed complete snapshot.
+      sharedCartRestorePendingOwner=owner;
+      return 'pending';
+    }
     const employee=owner.mode==='employee-link',restored={};
     for(const [index,item] of entries.entries()){
       const row=productMap.get(item.product_code);
@@ -1011,6 +1032,7 @@
       };
     }
     __cartTouchSeq=Math.max(__cartTouchSeq,entries.length);
+    sharedCartRestorePendingOwner=null;
     cart=restored;
     scheduleSharedCartSave();
     renderCartUI();
@@ -1031,6 +1053,7 @@
     sharedCartRetryTimer=0;
     sharedCartRetryCount=0;
     sharedCartRetryReady=false;
+    sharedCartRestorePendingOwner=null;
     sharedCartPollInFlight=false;
     sharedCartPollStartedAt=0;
     ++sharedCartPollRequestSeq;
@@ -1046,7 +1069,7 @@
   }
 
   function scheduleSharedCartSave({retry=false}={}){
-    if(!isSharedCartMode())return;
+    if(!isSharedCartMode()||sharedCartRestoreBlocked())return;
     const owner=sharedCartOwner();
     const editSeq=retry?sharedCartLocalEditSeq:++sharedCartLocalEditSeq;
     if(!retry){
@@ -1110,6 +1133,7 @@
 
     const baseUpdateCart=updateCart;
     updateCart=function(maSp,tenSp,giaBan,change){
+      if(isSharedCartMode()&&sharedCartRestoreBlocked())return;
       const previousQty=Number(cart?.[maSp]?.qty)||0;
       const result=baseUpdateCart.apply(this,arguments);
       // An unchanged +/- action must not resend the full shared snapshot.
@@ -1121,6 +1145,10 @@
     const basePreviewQtyInput=previewQtyInput;
     previewQtyInput=function(input){
       const mode=backend()?.getAccessMode?.();
+      if(isSharedCartMode()&&sharedCartRestoreBlocked()){
+        if(input)input.value=String(Number(cart?.[input.dataset?.qtyId]?.qty)||0);
+        return;
+      }
       if(mode!=='employee-link'){
         const code=String(input?.dataset?.qtyId||'');
         const previousQty=Number(cart?.[code]?.qty)||0;
@@ -1160,6 +1188,10 @@
     const baseCommitQtyEditor=commitQtyEditor;
     commitQtyEditor=function(input){
       const mode=backend()?.getAccessMode?.();
+      if(isSharedCartMode()&&sharedCartRestoreBlocked()){
+        if(input)input.value=String(Number(cart?.[input.dataset?.qtyId]?.qty)||0);
+        return;
+      }
       if(mode!=='employee-link'){
         const code=String(input?.dataset?.qtyId||'');
         const previousQty=Number(cart?.[code]?.qty)||0;
@@ -1199,6 +1231,7 @@
 
     const baseClearCart=clearCart;
     clearCart=function(){
+      if(isSharedCartMode()&&sharedCartRestoreBlocked())return;
       const hadRows=sharedCartItems().length>0;
       const result=baseClearCart.apply(this,arguments);
       // An already-empty cart is not a new clearing command. Otherwise a
@@ -1302,6 +1335,11 @@
     sharedCartPollInFlight=false;
     sharedCartPollStartedAt=0;
     sharedCartPoll=setInterval(async()=>{
+      if(sharedCartRestoreBlocked()){
+        // No GET is safe until all locally pending codes can be rendered.
+        restorePendingSharedCartDraft();
+        return;
+      }
       if(document.hidden||!isSharedCartMode()
          ||(typeof navigator!=='undefined'&&navigator.onLine===false)
          ||sharedCartCommittedEditSeq!==sharedCartLocalEditSeq
@@ -1353,6 +1391,8 @@
        ||backend()?.getAccessMode?.()!=='employee-link')return;
     const recoveredSharedCart=restorePendingSharedCartDraft();
     showAppScreen();
+    if(recoveredSharedCart==='pending')
+      showToast('Giỏ hàng đang chờ tải đủ sản phẩm để khôi phục. Chưa gửi thay đổi lên máy chủ.','warning');
     ownProductRenderKey='';
     window.TAPHOA_PRODUCT_SEGMENT='all';
     window.TAPHOA_EMPLOYEE_MODE=true;
@@ -1435,6 +1475,8 @@
        ||backend()?.getAccessMode?.()!=='public-link')return;
     const recoveredSharedCart=restorePendingSharedCartDraft();
     showAppScreen();
+    if(recoveredSharedCart==='pending')
+      showToast('Giỏ hàng đang chờ tải đủ sản phẩm để khôi phục. Chưa gửi thay đổi lên máy chủ.','warning');
     // A previous customer's cached product render key cannot be reused when
     // the new public link initially opens on Orders or Debt instead of Sales.
     ownProductRenderKey='';
