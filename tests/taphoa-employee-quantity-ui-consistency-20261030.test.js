@@ -238,3 +238,15 @@ test('employee typing the current quantity again does not resend full cart',()=>
  assert.equal(f.events.filter(x=>x==='schedule-save').length,first);
  assert.equal(f.cart().P1.qty,8);
 });
+
+
+test('employee direct quantity preview and commit both retain existing cart note',()=>{
+ const f=fixture();
+ f.preview('P1',3);
+ f.cart().P1.note='Hàng dễ vỡ, để riêng';
+ f.preview('P1',4,'cart');
+ assert.equal(f.cart().P1.note,'Hàng dễ vỡ, để riêng');
+ f.commit('P1',5,'cart');
+ assert.equal(f.cart().P1.note,'Hàng dễ vỡ, để riêng');
+ assert.equal(f.cart().P1.qty,5);
+});
