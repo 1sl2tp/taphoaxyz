@@ -22,7 +22,7 @@ function deferred(){
 }
 async function tick(){for(let i=0;i<35;i++)await Promise.resolve();}
 function fixture(storage=new Map()){
- const timers=[],intervals=[],requests=[],reads=[],warns=[],renders=[];
+ const timers=[],intervals=[],requests=[],reads=[],warns=[],renders=[],notices=[];
  let identity={uid:'A'},mode='employee-link',token='A',slug='';
  const pendingWrites=new Map(),pendingReads=[];
  let clockNow=Date.now();
@@ -54,6 +54,7 @@ function fixture(storage=new Map()){
   renderProductList:()=>renders.push('products'),
   renderCartUI:()=>renders.push('cart'),
   console:{warn:(...args)=>warns.push(args)},
+  showToast:(message,kind)=>notices.push({message,kind}),
   Date:{now:()=>clockNow},Number,String,Boolean,Array,Object,Map,Set,Promise,JSON,Math,
   setTimeout:fn=>{timers.push(fn);return timers.length;},
   clearTimeout:id=>{if(id)timers[id-1]=null;},
@@ -76,15 +77,16 @@ function fixture(storage=new Map()){
  let sharedCartRetryCount=0;
  let sharedCartRetryReady=false;
  let sharedCartRestorePendingOwner=null;
+ let sharedCartRestoreNoticeAt=0;
  const SHARED_CART_DRAFT_KEY='taphoa.shared-cart.pending.v1.';
  const SHARED_CART_DRAFT_MAX_AGE=30*60*1000;
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,sharedCartRestoreBlocked,touchSeq:()=>__cartTouchSeq,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount],pollState:()=>[sharedCartPollInFlight,sharedCartPollStartedAt]};',
+  'globalThis.api={scheduleSharedCartSave,retryPendingSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,restorePendingSharedCartDraft,sharedCartDraftKey,sharedCartRestoreBlocked,notifyPendingSharedCartRestore,touchSeq:()=>__cartTouchSeq,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq],retryState:()=>[sharedCartRetryReady,sharedCartRetryCount],pollState:()=>[sharedCartPollInFlight,sharedCartPollStartedAt]};',
   ctx,{timeout:1000});
  return {
-  ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,storage,
+  ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,notices,storage,
   advance:ms=>{clockNow+=ms;},
   schedule:()=>ctx.api.scheduleSharedCartSave(),
   start:()=>ctx.api.startSharedCartSync(),
@@ -805,4 +807,19 @@ test('pending draft whose validity expires unblocks polls without replaying stal
  assert.equal(next.pendingReads.length,1);
  next.pendingReads[0].resolve(items('P1',5));await pending;
  assert.equal(next.ctx.cart.P1.qty,5);
+});
+
+
+test('pending-draft warning is throttled while user retries a blocked input',()=>{
+ const f=fixture();
+ f.ctx.api.notifyPendingSharedCartRestore();
+ f.ctx.api.notifyPendingSharedCartRestore();
+ assert.equal(f.notices.length,1);
+ assert.equal(f.notices[0].kind,'warning');
+ f.advance(4999);
+ f.ctx.api.notifyPendingSharedCartRestore();
+ assert.equal(f.notices.length,1);
+ f.advance(1);
+ f.ctx.api.notifyPendingSharedCartRestore();
+ assert.equal(f.notices.length,2);
 });
