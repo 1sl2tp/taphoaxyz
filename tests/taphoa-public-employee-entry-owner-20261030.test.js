@@ -43,6 +43,7 @@ function fixture(kind,{holdSnapshot=false,recoverDraft=false}={}){
   syncSelfCustomer:()=>events.push('self'),
   refreshFixedSheets:async()=>{events.push('refresh-start');await wait.promise;events.push('refresh-finish');},
   showAppScreen:()=>events.push('show-app'),
+  showToast:(message,kind)=>events.push('toast:'+kind),
   renderCartUI:()=>events.push('render-cart'),
   switchTab:()=>events.push('switch-tab'),
   installSharedCartQuantitySync:()=>events.push('install-quantities'),
@@ -175,5 +176,20 @@ for(const kind of ['employee','public']){
   f.release();
   await pending;
   assert.equal(f.events.includes('apply-cart'),true);
+ });
+}
+
+
+for(const kind of ['employee','public']){
+ test(kind+' incomplete pending draft displays warning and does not apply first server snapshot',async()=>{
+  const f=fixture(kind,{recoverDraft:'pending',holdSnapshot:true});
+  const loading=f.enter(f.info());
+  f.release();await tick();
+  assert.ok(f.events.includes('toast:warning'));
+  assert.ok(f.events.indexOf('restore-draft')<f.events.indexOf('show-app'));
+  f.releaseSnapshot();await loading;
+  assert.equal(f.events.includes('apply-cart'),false);
+  assert.equal(f.events.includes('start-poll'),true,
+    'poll callback itself must guard draft, not prevent poll setup');
  });
 }
