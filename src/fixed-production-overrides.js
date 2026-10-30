@@ -953,14 +953,22 @@
       if(!code||raw==='')return;
       const parsed=Math.max(0,Math.trunc(Number(raw)||0));
       const meta=getQtyMeta(code,input);
+      const isNewCartLine=!cart[code];
       if(parsed>0){
         const existing=cart[code]||{};
         cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:''};
+        if(isNewCartLine)cart[code].__lastTouched=++__cartTouchSeq;
       }else{
         delete cart[code];
       }
       syncQtyEditors(code,parsed,input);
-      refreshCartTotalsOnly();
+      // Product-card edits must materialize/remove the corresponding cart row;
+      // cart-row edits keep the input mounted to preserve focus on mobile.
+      if(input.dataset.qtyEditor==='cart'&&parsed>0&&!isNewCartLine){
+        refreshCartTotalsOnly();
+      }else{
+        renderCartUI();
+      }
       scheduleSharedCartSave();
     };
 
@@ -978,14 +986,20 @@
       const parsed=Math.max(0,Math.trunc(Number(input.value)||0));
       input.value=String(parsed);
       const meta=getQtyMeta(code,input);
+      const isNewCartLine=!cart[code];
       if(parsed>0){
         const existing=cart[code]||{};
         cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:''};
+        if(isNewCartLine)cart[code].__lastTouched=++__cartTouchSeq;
       }else{
         delete cart[code];
       }
       syncQtyEditors(code,parsed,input);
-      refreshCartTotalsOnly();
+      if(input.dataset.qtyEditor==='cart'&&parsed>0&&!isNewCartLine){
+        refreshCartTotalsOnly();
+      }else{
+        renderCartUI();
+      }
       scheduleSharedCartSave();
     };
 
