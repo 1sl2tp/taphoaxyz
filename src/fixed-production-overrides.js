@@ -207,11 +207,12 @@
       return;
     }
     loginInFlight=true;
+    let loginIdentity=null;
     showLoading('Đang đăng nhập...');
     try{
       const info=await backend().login(username,password);
       if(!info?.identity)throw new Error('Phiên đăng nhập đã thay đổi. Vui lòng thử lại.');
-      const loginIdentity=info.identity;
+      loginIdentity=info.identity;
       // Login can be superseded by another link/session while async reads
       // finish. Only the exact authenticated session may open the account UI.
       if(backend()?.getIdentity?.()!==loginIdentity)return;
@@ -228,6 +229,9 @@
       showAppScreen();
       showToast('Đăng nhập thành công.','success');
     }catch(error){
+      // A failed projection belonging to A must not close B's app or show
+      // misleading "login failed" over the newer authenticated session.
+      if(loginIdentity&&backend()?.getIdentity?.()!==loginIdentity)return;
       console.error('login',error);
       showAlertPopup('Đăng nhập thất bại',error?.message||'Sai tài khoản hoặc mật khẩu.');
       showLoginScreen();
