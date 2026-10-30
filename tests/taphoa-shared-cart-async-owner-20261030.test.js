@@ -227,16 +227,26 @@ test('invalid or absent shared-cart snapshots cannot erase the current quantitie
  assert.equal(f.renders.length,0);
 });
 
-test('a quantity row appears once its product catalog arrives, even if server signature is identical',()=>{
+test('shared snapshot waits for product catalog and then applies the complete set',()=>{
  const f=fixture();
- const snapshot=items('P3',11);
+ f.ctx.cart.P1.note='Ghi chú chưa đồng bộ';
+ const snapshot={items:[
+  {product_code:'P1',employee_qty:4},
+  {product_code:'P3',employee_qty:11}
+ ]};
  f.ctx.api.applySharedCartSnapshot(snapshot,{force:true});
- assert.equal(f.ctx.cart.P3,undefined,'cannot render unknown product before catalog read');
+ assert.equal(f.ctx.cart.P1.qty,1,'do not apply partial rows');
+ assert.equal(f.ctx.cart.P1.note,'Ghi chú chưa đồng bộ');
+ assert.equal(f.ctx.cart.P3,undefined);
+ assert.equal(f.renders.length,0);
+ assert.equal(f.ctx.api.signature(),'','unusable server result must not be acknowledged');
  f.ctx.appData.sanpham.push(['P3','Prod 3']);
  f.ctx.api.applySharedCartSnapshot(snapshot);
+ assert.equal(f.ctx.cart.P1.qty,4);
+ assert.equal(f.ctx.cart.P1.note,'Ghi chú chưa đồng bộ');
  assert.equal(f.ctx.cart.P3.qty,11);
  assert.equal(f.ctx.cart.P3.name,'Prod 3');
- assert.equal(f.renders.length,4);
+ assert.equal(f.renders.length,2);
 });
 
 test('nonfinite local quantity is never serialized into the shared stock-check save',async()=>{
@@ -643,4 +653,43 @@ test('malformed polling response is ignored while next valid poll remains usable
  const b=f.firePoll();await tick();
  f.pendingReads[1].resolve(items('P1',5));await b;
  assert.equal(f.ctx.cart.P1.qty,5);
+});
+
+
+test('unknown product in a newer poll cannot remove the last valid synced cart and is retried when catalog loads',async()=>{
+ const f=fixture();f.start();
+ f.ctx.cart.P1.note='Giữ lại ghi chú';
+ const pending=f.firePoll();await tick();
+ f.pendingReads[0].resolve({items:[
+  {product_code:'P2',employee_qty:6},
+  {product_code:'NOT-LOADED',employee_qty:2}
+ ]});
+ await pending;
+ assert.equal(f.ctx.cart.P1.qty,1);
+ assert.equal(f.ctx.cart.P1.note,'Giữ lại ghi chú');
+ assert.equal(f.ctx.cart.P2,undefined);
+ assert.equal(f.renders.length,0);
+ f.ctx.appData.sanpham.push(['NOT-LOADED','New catalog row']);
+ const next=f.firePoll();await tick();
+ f.pendingReads[1].resolve({items:[
+  {product_code:'P2',employee_qty:6},
+  {product_code:'NOT-LOADED',employee_qty:2}
+ ]});
+ await next;
+ assert.equal(f.ctx.cart.P1,undefined);
+ assert.equal(f.ctx.cart.P2.qty,6);
+ assert.equal(f.ctx.cart['NOT-LOADED'].qty,2);
+ assert.equal(f.renders.length,2);
+});
+
+test('all-zero count with an unknown product stays pending until catalog can validate it',()=>{
+ const f=fixture();
+ f.ctx.cart.P1.note='Chưa thể xác nhận';
+ const snapshot={items:[
+  {product_code:'P1',employee_qty:0},
+  {product_code:'DELAYED',employee_qty:0}
+ ]};
+ f.ctx.api.applySharedCartSnapshot(snapshot,{force:true});
+ assert.equal(f.ctx.cart.P1.qty,1);
+ assert.equal(f.renders.length,0);
 });
