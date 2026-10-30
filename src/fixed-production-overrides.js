@@ -383,14 +383,18 @@
     const ids=uniqueOrderIds(appData[sheetName]);
     if(!ids.length){showToast('Không có đơn để xóa.','warning');return;}
     showConfirmModal('Xóa toàn bộ dữ liệu?',`Hành động này sẽ xóa sạch tất cả ${ids.length} đơn tạm. Bạn chắc chắn chứ?`,'Xóa sạch','bg-danger',async()=>{
+      if(orderMutationInFlight)return;
+      orderMutationInFlight=true;
       showLoading('Đang xóa toàn bộ...');
       try{
         await backend().batchOrders('delete_pending',ids);
-        await refreshFixedSheets(['dontam','thuchi']);
         resetSaleSession();
         showToast('Đã xóa sạch đơn tạm!','success');
+        // The committed delete is not undone by a stale/failed UI projection.
+        try{await refreshFixedSheets(['dontam','thuchi']);}
+        catch(refreshError){console.warn('refresh deleted draft orders',refreshError);}
       }catch(error){showAlertPopup('Lỗi','Không thể xóa: '+(error?.message||error));}
-      finally{hideLoading();}
+      finally{orderMutationInFlight=false;hideLoading();}
     });
   };
 
@@ -400,15 +404,18 @@
     const title='Xóa đơn';
     const desc=`Bạn có chắc chắn muốn xóa đơn ${orderId} không?`;
     showConfirmModal(title,desc,'Xóa đơn','bg-danger',async()=>{
+      if(orderMutationInFlight)return;
+      orderMutationInFlight=true;
       closeOrderMobile();showLoading('Đang xóa đơn...');
       try{
         if(sheetName==='dongiao')await backend().reverseOrder(backendId,'Xóa đơn');
         else await backend().deletePending(backendId);
-        await refreshFixedSheets(['dontam','dongiao','thuchi']);
         if(orderId===editingOrderId||sheetName==='dontam')resetSaleSession();
         showToast('Đã xóa đơn '+orderId,'success');
+        try{await refreshFixedSheets(['dontam','dongiao','thuchi']);}
+        catch(refreshError){console.warn('refresh deleted order UI',refreshError);}
       }catch(error){showAlertPopup('Lỗi',error?.message||'Không thể xử lý đơn.');}
-      finally{hideLoading();}
+      finally{orderMutationInFlight=false;hideLoading();}
     });
   };
 
