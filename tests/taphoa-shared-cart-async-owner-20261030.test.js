@@ -247,10 +247,12 @@ test('nonfinite local quantity is never serialized into the shared stock-check s
  assert.deepEqual(Array.from(f.requests[0].items),[],
   'infinite quantity must be omitted, never serialized as null');
 });
-test('nonfinite server quantity cannot appear as an infinite cart row',()=>{
+test('nonfinite server quantity cannot erase the last valid cart row',()=>{
  const f=fixture();
  f.ctx.api.applySharedCartSnapshot({items:[{product_code:'P1',employee_qty:Infinity}]},{force:true});
- assert.equal(Object.hasOwn(f.ctx.cart,'P1'),false);
+ assert.equal(f.ctx.cart.P1.qty,1);
+ assert.equal(f.renders.length,0);
+ assert.equal(f.ctx.api.signature(),'');
 });
 
 
@@ -570,4 +572,71 @@ test('resetting link owner drops pending poll slot and old result cannot affect 
  f.pendingReads[1].resolve(items('P2',8));await fresh;
  assert.equal(f.ctx.cart.P2.qty,8);
  assert.equal(f.ctx.api.pollState()[0],false);
+});
+
+
+test('malformed partial server snapshots never clear or partially replace valid cart rows',()=>{
+ const bad=[
+  {items:[{product_code:'P1',employee_qty:7},{product_code:'P2'}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:'P1',employee_qty:8}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:'P2',employee_qty:'invalid'}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:'P2',employee_qty:-3}]},
+  {items:[{product_code:'P1',employee_qty:7},{employee_qty:2}]},
+  {items:[{product_code:'P1',employee_qty:7},{product_code:'P2',employee_qty:'   '}]},
+  {ok:'error',items:[]}
+ ];
+ for(const snapshot of bad){
+  const f=fixture();
+  f.ctx.cart.P1.note='Giữ ghi chú trước';
+  f.ctx.api.applySharedCartSnapshot(snapshot,{force:true});
+  assert.equal(f.ctx.cart.P1.qty,1,JSON.stringify(snapshot));
+  assert.equal(f.ctx.cart.P1.note,'Giữ ghi chú trước');
+  assert.equal(f.ctx.cart.P2,undefined);
+  assert.equal(f.ctx.api.signature(),'');
+  assert.equal(f.renders.length,0);
+ }
+});
+
+test('valid zero/null server counts remove only their own rows and valid positive counts survive',()=>{
+ const f=fixture();
+ f.ctx.cart.P2={qty:8,price:0,name:'Prod 2'};
+ f.ctx.api.applySharedCartSnapshot({ok:true,items:[
+  {product_code:'P1',employee_qty:0},
+  {product_code:'P2',employee_qty:'4'}
+ ]},{force:true});
+ assert.equal(f.ctx.cart.P1,undefined);
+ assert.equal(f.ctx.cart.P2.qty,4);
+ f.ctx.api.applySharedCartSnapshot({items:[
+  {product_code:'P2',employee_qty:null}
+ ]},{force:true});
+ assert.deepEqual(Object.keys(f.ctx.cart),[]);
+});
+
+test('invalid snapshot after good sync preserves signature and next valid response still applies',()=>{
+ const f=fixture();
+ f.ctx.api.applySharedCartSnapshot(items('P1',3),{force:true});
+ const signature=f.ctx.api.signature();
+ const before=f.renders.length;
+ f.ctx.api.applySharedCartSnapshot({items:[
+  {product_code:'P1',employee_qty:10},
+  {product_code:'P2',employee_qty:NaN}
+ ]},{force:true});
+ assert.equal(f.ctx.cart.P1.qty,3);
+ assert.equal(f.ctx.api.signature(),signature);
+ assert.equal(f.renders.length,before);
+ f.ctx.api.applySharedCartSnapshot(items('P1',9));
+ assert.equal(f.ctx.cart.P1.qty,9);
+ assert.equal(f.renders.length,before+2);
+});
+
+test('malformed polling response is ignored while next valid poll remains usable',async()=>{
+ const f=fixture();f.start();
+ const a=f.firePoll();await tick();
+ f.pendingReads[0].resolve({items:[{product_code:'P1'}]});
+ await a;
+ assert.equal(f.ctx.cart.P1.qty,1);
+ assert.equal(f.ctx.api.pollState()[0],false);
+ const b=f.firePoll();await tick();
+ f.pendingReads[1].resolve(items('P1',5));await b;
+ assert.equal(f.ctx.cart.P1.qty,5);
 });
