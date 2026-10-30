@@ -1106,8 +1106,11 @@
 
     const baseUpdateCart=updateCart;
     updateCart=function(maSp,tenSp,giaBan,change){
+      const previousQty=Number(cart?.[maSp]?.qty)||0;
       const result=baseUpdateCart.apply(this,arguments);
-      if(isSharedCartMode())scheduleSharedCartSave();
+      // An unchanged +/- action must not resend the full shared snapshot.
+      if(isSharedCartMode()&&(Number(cart?.[maSp]?.qty)||0)!==previousQty)
+        scheduleSharedCartSave();
       return result;
     };
 
@@ -1115,8 +1118,11 @@
     previewQtyInput=function(input){
       const mode=backend()?.getAccessMode?.();
       if(mode!=='employee-link'){
+        const code=String(input?.dataset?.qtyId||'');
+        const previousQty=Number(cart?.[code]?.qty)||0;
         const result=basePreviewQtyInput.apply(this,arguments);
-        if(mode==='public-link')scheduleSharedCartSave();
+        if(mode==='public-link'&&code&&(Number(cart?.[code]?.qty)||0)!==previousQty)
+          scheduleSharedCartSave();
         return result;
       }
       if(!input)return;
@@ -1126,6 +1132,7 @@
       const numeric=Number(raw);
       if(!Number.isFinite(numeric))return;
       const parsed=Math.max(0,Math.trunc(numeric));
+      const previousQty=Number(cart[code]?.qty)||0;
       const meta=getQtyMeta(code,input);
       const isNewCartLine=!cart[code];
       if(parsed>0){
@@ -1143,15 +1150,18 @@
       }else{
         renderCartUI();
       }
-      scheduleSharedCartSave();
+      if(parsed!==previousQty)scheduleSharedCartSave();
     };
 
     const baseCommitQtyEditor=commitQtyEditor;
     commitQtyEditor=function(input){
       const mode=backend()?.getAccessMode?.();
       if(mode!=='employee-link'){
+        const code=String(input?.dataset?.qtyId||'');
+        const previousQty=Number(cart?.[code]?.qty)||0;
         const result=baseCommitQtyEditor.apply(this,arguments);
-        if(mode==='public-link')scheduleSharedCartSave();
+        if(mode==='public-link'&&code&&(Number(cart?.[code]?.qty)||0)!==previousQty)
+          scheduleSharedCartSave();
         return result;
       }
       if(!input)return;
