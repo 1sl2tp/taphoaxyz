@@ -850,7 +850,13 @@
       renderProductList();
     }
     if(q.don&&typeof clickOrder==='function'){
-      setTimeout(()=>clickOrder(q.don,q.don.startsWith('DT')?'dontam':'dongiao'),0);
+      const linkOwner=sharedCartOwner();
+      setTimeout(()=>{
+        // The deep-link timer must not open an order under another link/session.
+        if(sharedCartOwnerCurrent(linkOwner)){
+          clickOrder(q.don,q.don.startsWith('DT')?'dontam':'dongiao');
+        }
+      },0);
     }
     renderPublicTools();
   }
