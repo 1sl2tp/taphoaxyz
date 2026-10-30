@@ -211,11 +211,20 @@
     try{
       const info=await backend().login(username,password);
       if(!info?.identity)throw new Error('Phiên đăng nhập đã thay đổi. Vui lòng thử lại.');
+      const loginIdentity=info.identity;
+      // Login can be superseded by another link/session while async reads
+      // finish. Only the exact authenticated session may open the account UI.
+      if(backend()?.getIdentity?.()!==loginIdentity)return;
       setAuthRole(productionRole(info));
       syncSelfCustomer(info);
       document.getElementById('loginPassword').value='';
       // Do not expose the preceding account's SheetDB rows while B loads.
       await refreshFixedSheets();
+      if(backend()?.getIdentity?.()!==loginIdentity)return;
+      // A fresh account must not inherit a previously edited order/cart.
+      // The sheets are now the new user's, so self-customer selection is safe.
+      resetSaleSession();
+      window.__TAPHOA_REPRICE_DRAFT_ID=null;
       showAppScreen();
       showToast('Đăng nhập thành công.','success');
     }catch(error){
