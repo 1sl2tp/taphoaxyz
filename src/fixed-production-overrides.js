@@ -1137,7 +1137,7 @@
       const isNewCartLine=!cart[code];
       if(parsed>0){
         const existing=cart[code]||{};
-        cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:''};
+        cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:String(existing.note||'')};
         if(isNewCartLine)cart[code].__lastTouched=++__cartTouchSeq;
       }else{
         delete cart[code];
@@ -1179,7 +1179,7 @@
       const isNewCartLine=!cart[code];
       if(parsed>0){
         const existing=cart[code]||{};
-        cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:''};
+        cart[code]={...existing,name:meta.name,price:0,qty:parsed,note:String(existing.note||'')};
         if(isNewCartLine)cart[code].__lastTouched=++__cartTouchSeq;
       }else{
         delete cart[code];
