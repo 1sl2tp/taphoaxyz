@@ -66,7 +66,7 @@ function fixture(){
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,startSharedCartSync,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq]};',
+  'globalThis.api={scheduleSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq]};',
   ctx,{timeout:1000});
  return {
   ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,
@@ -158,5 +158,33 @@ test('failed write retains local values rather than importing an older server ca
  f.firePoll();await tick();
  assert.equal(f.pendingReads.length,0);
  assert.equal(f.ctx.cart.P1.qty,4);
+ assert.equal(f.warns.length,1);
+});
+
+test('new employee link can save without waiting for a hung old-link request',async()=>{
+ const f=fixture(),hung=f.delayWrite('A');
+ f.schedule();await f.flush();
+ assert.equal(f.requests.length,1);
+ f.switchTo('B');
+ f.ctx.api.resetSharedCartSyncOwner();
+ f.schedule();await f.flush();
+ assert.equal(f.requests.length,2,'B write is independent of the old pending request');
+ assert.equal(f.requests[1].token,'B');
+ assert.equal(f.ctx.api.signature(),JSON.stringify([['P2',7]]));
+ hung.resolve({ok:true});
+ await tick();
+ assert.equal(f.ctx.api.signature(),JSON.stringify([['P2',7]]));
+});
+
+test('server ok:false does not mark a cart edit as synced or permit stale polling',async()=>{
+ const f=fixture(),held=f.delayWrite('A');f.start();
+ f.ctx.cart.P1.qty=12;
+ f.schedule();await f.flush();
+ held.resolve({ok:false,error:'permission denied'});
+ await tick();
+ assert.equal(f.ctx.api.edits().join(','),'1,0');
+ f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,0);
+ assert.equal(f.ctx.cart.P1.qty,12);
  assert.equal(f.warns.length,1);
 });
