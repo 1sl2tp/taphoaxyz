@@ -22,6 +22,7 @@ function fixture({simulatePublicEdit=false,blockedInitially=false}={}){
   retryPendingSharedCartSave:()=>events.push('reconnect'),
   isSharedCartMode:()=>mode==='employee-link'||mode==='public-link',
   sharedCartRestoreBlocked:()=>blocked,
+  notifyPendingSharedCartRestore:()=>events.push('notice:pending'),
   backend:()=>({getAccessMode:()=>mode}),
   updateCart:function(code,name,price,change){
    events.push('original-update');
@@ -313,4 +314,15 @@ test('public-link direct input is rejected while draft catalog is incomplete',()
  f.preview('P2',6);
  assert.equal(f.cart().P2.qty,6);
  assert.equal(f.events.filter(x=>x==='schedule-save').length,1);
+});
+
+
+test('blocked shared-cart editors tell the user why input and clear are unavailable',()=>{
+ const f=fixture({blockedInitially:true});
+ f.preview('P1',2);
+ f.commit('P1',2);
+ f.update('P1',1);
+ f.clear();
+ assert.equal(f.events.filter(e=>e==='notice:pending').length,4);
+ assert.equal(f.events.filter(e=>e==='schedule-save').length,0);
 });
