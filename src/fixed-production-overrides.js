@@ -1171,6 +1171,7 @@
     if(backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='employee-link')return;
     showAppScreen();
+    ownProductRenderKey='';
     window.TAPHOA_PRODUCT_SEGMENT='all';
     window.TAPHOA_EMPLOYEE_MODE=true;
     document.body.dataset.employeeMode='true';
