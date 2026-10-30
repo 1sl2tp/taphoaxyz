@@ -12,14 +12,16 @@ const start=source.indexOf('  function installSharedCartQuantitySync(){');
 const end=source.indexOf('  function installEmployeeOrderActionGuard(){',start);
 assert.ok(start>=0&&end>start);
 const method=source.slice(start,end);
-function fixture({simulatePublicEdit=false}={}){
+function fixture({simulatePublicEdit=false,blockedInitially=false}={}){
  const events=[],listeners={};
+ let blocked=blockedInitially;
  let mode='employee-link';
  const ctx={
   window:{addEventListener:(kind,fn)=>{listeners[kind]=fn;}},
   document:{hidden:false,addEventListener:(kind,fn)=>{listeners[kind]=fn;}},
   retryPendingSharedCartSave:()=>events.push('reconnect'),
   isSharedCartMode:()=>mode==='employee-link'||mode==='public-link',
+  sharedCartRestoreBlocked:()=>blocked,
   backend:()=>({getAccessMode:()=>mode}),
   updateCart:function(code,name,price,change){
    events.push('original-update');
@@ -71,7 +73,8 @@ function fixture({simulatePublicEdit=false}={}){
    ctx.handle.commit({dataset:{qtyId:code,qtyEditor},value:String(value)}),
   update:(code,change)=>ctx.handle.update(code,code,0,change),
   clear:()=>ctx.handle.clear(),
-  switchMode:value=>{mode=value;}
+  switchMode:value=>{mode=value;},
+  setRestoreBlocked:value=>{blocked=value;}
  };
 }
 
@@ -280,4 +283,34 @@ test('clearing a regular account cart never posts shared-cart quantities',()=>{
  const before=f.events.filter(x=>x==='schedule-save').length;
  f.clear();
  assert.equal(f.events.filter(x=>x==='schedule-save').length,before);
+});
+
+
+test('pending incomplete-catalog draft blocks quantity changes, clear and full-cart writes',()=>{
+ const f=fixture({simulatePublicEdit:true,blockedInitially:true});
+ f.preview('P1',8);
+ f.commit('P1',8);
+ f.update('P1',1);
+ f.clear();
+ assert.equal(Object.keys(f.cart()).length,0);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,0);
+ assert.equal(f.events.includes('original-update'),false);
+ assert.equal(f.events.includes('original-clear'),false);
+ f.setRestoreBlocked(false);
+ f.update('P1',1);
+ assert.equal(f.cart().P1.qty,1);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,1);
+});
+
+test('public-link direct input is rejected while draft catalog is incomplete',()=>{
+ const f=fixture({simulatePublicEdit:true,blockedInitially:true});
+ f.switchMode('public-link');
+ f.preview('P2',6);
+ f.commit('P2',6);
+ assert.equal(f.cart().P2,undefined);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,0);
+ f.setRestoreBlocked(false);
+ f.preview('P2',6);
+ assert.equal(f.cart().P2.qty,6);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,1);
 });
