@@ -862,10 +862,13 @@
   }
 
   function sharedCartItems(){
-    return Object.entries(cart||{}).map(([product_code,item])=>({
-      product_code:String(product_code),
-      qty:Math.max(0,Math.trunc(Number(item?.qty)||0))
-    })).filter(item=>item.product_code&&item.qty>0);
+    return Object.entries(cart||{}).map(([product_code,item])=>{
+      const value=Number(item?.qty);
+      return {
+        product_code:String(product_code),
+        qty:Number.isFinite(value)?Math.max(0,Math.trunc(value)):0
+      };
+    }).filter(item=>item.product_code&&item.qty>0);
   }
 
   function isSharedCartMode(){
@@ -951,7 +954,9 @@
       const code=String(input.dataset.qtyId||'');
       const raw=String(input.value||'').trim();
       if(!code||raw==='')return;
-      const parsed=Math.max(0,Math.trunc(Number(raw)||0));
+      const numeric=Number(raw);
+      if(!Number.isFinite(numeric))return;
+      const parsed=Math.max(0,Math.trunc(numeric));
       const meta=getQtyMeta(code,input);
       const isNewCartLine=!cart[code];
       if(parsed>0){
@@ -983,7 +988,9 @@
       if(!input)return;
       const code=String(input.dataset.qtyId||'');
       if(!code)return;
-      const parsed=Math.max(0,Math.trunc(Number(input.value)||0));
+      const numeric=Number(input.value);
+      const fallback=Number(cart[code]?.qty)||0;
+      const parsed=Number.isFinite(numeric)?Math.max(0,Math.trunc(numeric)):fallback;
       input.value=String(parsed);
       const meta=getQtyMeta(code,input);
       const isNewCartLine=!cart[code];
@@ -1039,7 +1046,10 @@
     if(snapshot?.ok===false||!Array.isArray(snapshot?.items))return;
     const rows=snapshot.items;
     const normalized=rows
-      .map(row=>[String(row?.product_code||''),Math.max(0,Math.trunc(Number(row?.employee_qty)||0))])
+      .map(row=>{
+        const value=Number(row?.employee_qty);
+        return [String(row?.product_code||''),Number.isFinite(value)?Math.max(0,Math.trunc(value)):0];
+      })
       .filter(([code,qty])=>code&&qty>0)
       .sort((a,b)=>a[0].localeCompare(b[0]));
     const signature=JSON.stringify(normalized);
