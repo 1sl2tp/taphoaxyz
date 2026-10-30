@@ -12,7 +12,7 @@ const start=source.indexOf('  function installSharedCartQuantitySync(){');
 const end=source.indexOf('  function installEmployeeOrderActionGuard(){',start);
 assert.ok(start>=0&&end>start);
 const method=source.slice(start,end);
-function fixture(){
+function fixture({simulatePublicEdit=false}={}){
  const events=[],listeners={};
  let mode='employee-link';
  const ctx={
@@ -21,9 +21,29 @@ function fixture(){
   retryPendingSharedCartSave:()=>events.push('reconnect'),
   isSharedCartMode:()=>mode==='employee-link'||mode==='public-link',
   backend:()=>({getAccessMode:()=>mode}),
-  updateCart:function(){events.push('original-update');},
-  previewQtyInput:function(){events.push('original-preview');},
-  commitQtyEditor:function(){events.push('original-commit');},
+  updateCart:function(code,name,price,change){
+   events.push('original-update');
+   if(simulatePublicEdit){
+    const current=ctx.handle.cart();
+    const next=(Number(current[code]?.qty)||0)+Number(change||0);
+    if(next>0)current[code]={qty:next,name,price};
+    else delete current[code];
+   }
+  },
+  previewQtyInput:function(input){
+   events.push('original-preview');
+   if(simulatePublicEdit){
+    const code=input?.dataset?.qtyId;
+    if(code&&Number(input.value)>0)ctx.handle.cart()[code]={qty:Number(input.value)};
+   }
+  },
+  commitQtyEditor:function(input){
+   events.push('original-commit');
+   if(simulatePublicEdit){
+    const code=input?.dataset?.qtyId;
+    if(code&&Number(input.value)>0)ctx.handle.cart()[code]={qty:Number(input.value)};
+   }
+  },
   clearCart:function(){events.push('original-clear');},
   getQtyMeta:code=>({name:code,price:0}),
   syncQtyEditors:()=>events.push('sync-editor'),
@@ -34,7 +54,7 @@ function fixture(){
  };
  vm.createContext(ctx);
  vm.runInContext('let cart={};let __cartTouchSeq=0;let sharedCartLocalEditSeq=0;let sharedCartCommittedEditSeq=0;\n'+method+
-  '\ninstallSharedCartQuantitySync();globalThis.handle={preview:previewQtyInput,commit:commitQtyEditor,cart:()=>cart};',
+  '\ninstallSharedCartQuantitySync();globalThis.handle={preview:previewQtyInput,commit:commitQtyEditor,update:updateCart,cart:()=>cart};',
   ctx,{timeout:1000});
  return {
   events,listeners,ctx,
@@ -43,6 +63,7 @@ function fixture(){
    ctx.handle.preview({dataset:{qtyId:code,qtyEditor},value:String(value)}),
   commit:(code,value,qtyEditor='product')=>
    ctx.handle.commit({dataset:{qtyId:code,qtyEditor},value:String(value)}),
+  update:(code,change)=>ctx.handle.update(code,code,0,change),
   switchMode:value=>{mode=value;}
  };
 }
@@ -95,7 +116,8 @@ test('employee blur of product card inserts missing cart row without losing quan
 test('ordinary public link direct-input behavior remains delegated to original handler',()=>{
  const f=fixture();f.switchMode('public-link');
  f.preview('P1',4);f.commit('P1',4);
- assert.deepEqual(f.events,['original-preview','schedule-save','original-commit','schedule-save']);
+ assert.deepEqual(f.events,['original-preview','original-commit'],
+   'delegated input that makes no quantity change must not post the full cart');
  assert.equal(Object.keys(f.cart()).length,0);
 });
 
@@ -177,4 +199,42 @@ test('beforeunload warns only for unsynced shared-cart edits and never for norma
  f.switchMode('account');
  f.listeners.beforeunload(pageEvent());
  assert.equal(prevented,1,'normal account mode does not inherit shared cart warning');
+});
+
+
+test('public link saves on a real quantity change but not again on blur with the same quantity',()=>{
+ const f=fixture({simulatePublicEdit:true});
+ f.switchMode('public-link');
+ f.preview('P1',4);
+ f.commit('P1',4);
+ assert.equal(f.cart().P1.qty,4);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,1);
+ f.preview('P1',6);
+ f.commit('P1',6);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,2);
+});
+
+test('blocked or zero-delta cart button does not post an unchanged full shared snapshot',()=>{
+ const f=fixture();
+ f.update('P1',1);
+ f.update('P1',0);
+ assert.equal(f.events.filter(x=>x==='original-update').length,2);
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,0);
+ const actual=fixture({simulatePublicEdit:true});
+ actual.update('P1',1);
+ actual.update('P1',0);
+ actual.update('P1',-1);
+ assert.equal(actual.events.filter(x=>x==='schedule-save').length,2);
+ assert.equal(actual.cart().P1,undefined);
+});
+
+test('employee typing the current quantity again does not resend full cart',()=>{
+ const f=fixture();
+ f.preview('P1',8);
+ const first=f.events.filter(x=>x==='schedule-save').length;
+ f.preview('P1',8,'cart');
+ f.preview('P1',8,'product');
+ f.commit('P1',8,'cart');
+ assert.equal(f.events.filter(x=>x==='schedule-save').length,first);
+ assert.equal(f.cart().P1.qty,8);
 });
