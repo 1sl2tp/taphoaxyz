@@ -293,3 +293,32 @@ test('an unconfirmed backend response is treated as failed save until a valid re
  assert.equal(f.ctx.api.edits().join(','),'1,1');
  assert.equal(f.requests.length,2);
 });
+
+test('remote quantity updates retain product notes and newest-first insertion stamps',()=>{
+ const f=fixture();
+ f.ctx.cart.P1.note='Giao riêng chai thủy tinh';
+ f.ctx.cart.P1.__lastTouched=23;
+ f.ctx.cart.P2={name:'Prod 2',price:0,qty:3,note:'Để riêng',__lastTouched:12};
+ f.ctx.api.applySharedCartSnapshot({items:[
+  {product_code:'P1',employee_qty:4},
+  {product_code:'P2',employee_qty:8}
+ ]},{force:true});
+ assert.equal(f.ctx.cart.P1.qty,4);
+ assert.equal(f.ctx.cart.P1.note,'Giao riêng chai thủy tinh');
+ assert.equal(f.ctx.cart.P1.__lastTouched,23);
+ assert.equal(f.ctx.cart.P2.qty,8);
+ assert.equal(f.ctx.cart.P2.note,'Để riêng');
+ assert.equal(f.ctx.cart.P2.__lastTouched,12);
+ assert.deepEqual(Object.entries(f.ctx.cart)
+  .sort(([,a],[,b])=>b.__lastTouched-a.__lastTouched)
+  .map(([code])=>code),['P1','P2']);
+});
+
+test('a newly synchronized product has no borrowed note or insertion stamp',()=>{
+ const f=fixture();
+ f.ctx.api.applySharedCartSnapshot(items('P2',6),{force:true});
+ assert.equal(f.ctx.cart.P2.qty,6);
+ assert.equal(f.ctx.cart.P2.note,'');
+ assert.equal(f.ctx.cart.P2.__lastTouched,0);
+ assert.equal(f.ctx.cart.P1,undefined);
+});
