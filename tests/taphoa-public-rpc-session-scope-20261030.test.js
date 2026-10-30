@@ -12,6 +12,10 @@ const owner=section('function currentUid(){','function saveSnapshot(){');
 const rpc=section('async function publicRpc(name,args={}){','function sourceDisplayName(');
 const pins=section('async function publicPinState(){','async function employeeSnapshot(){');
 function hold(){let release;const promise=new Promise(r=>release=r);return{promise,release};}
+async function until(condition){
+ for(let i=0;i<48&&!condition();i++)await Promise.resolve();
+ assert(condition(),'pending provider RPC should have started before resolving the gate');
+}
 function fixture(){
  const calls=[];let clientGate=null,rpcGate=null;
  const client={
@@ -63,7 +67,7 @@ test('obsolete A request waiting on getClient never calls RPC as customer B',asy
 });
 test('in-flight A public RPC result rejected after customer B switch',async()=>{
  const f=fixture(),g=f.waitForRpc(),old=f.api.rpc('taphoa_public_debt_ledger_access');
- await Promise.resolve();await Promise.resolve();
+ await until(()=>f.calls.length===1);
  assert.equal(f.calls.length,1);
  assert.equal(f.calls[0].args.p_public_slug,'customer-a');
  f.api.switchAccess('customer-b','2222');g.release();
@@ -78,14 +82,14 @@ test('public PIN state cannot look up new customer after old getClient await',as
 });
 test('public PIN state uses captured slug and rejects old post-RPC result',async()=>{
  const f=fixture(),g=f.waitForRpc(),old=f.api.pinState();
- await Promise.resolve();await Promise.resolve();
+ await until(()=>f.calls.length===1);
  assert.equal(f.calls[0].args.p_public_slug,'customer-a');
  f.api.switchAccess('customer-b','2222');g.release();
  await assert.rejects(old,/public_access_changed/);
 });
 test('old A PIN success never writes its PIN into B local context',async()=>{
  const f=fixture(),g=f.waitForRpc(),old=f.api.setPin('9999');
- await Promise.resolve();await Promise.resolve();
+ await until(()=>f.calls.length===1);
  assert.equal(f.calls.length,1);
  assert.equal(f.calls[0].name,'taphoa_public_pin_manage_access');
  assert.equal(f.calls[0].args.p_new_pin,'9999');
