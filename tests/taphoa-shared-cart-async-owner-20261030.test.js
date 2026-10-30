@@ -66,7 +66,7 @@ function fixture(){
  `;
  vm.createContext(ctx);
  vm.runInContext(init+'\n'+code+'\n'+
-  'globalThis.api={scheduleSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq]};',
+  'globalThis.api={scheduleSharedCartSave,startSharedCartSync,resetSharedCartSyncOwner,applySharedCartSnapshot,sharedCartItems,signature:()=>sharedCartSignature,edits:()=>[sharedCartLocalEditSeq,sharedCartCommittedEditSeq]};',
   ctx,{timeout:1000});
  return {
   ctx,requests,reads,pendingReads,pendingWrites,timers,intervals,renders,warns,
@@ -210,4 +210,18 @@ test('a quantity row appears once its product catalog arrives, even if server si
  assert.equal(f.ctx.cart.P3.qty,11);
  assert.equal(f.ctx.cart.P3.name,'Prod 3');
  assert.equal(f.renders.length,4);
+});
+
+test('nonfinite local quantity is never serialized into the shared stock-check save',async()=>{
+ const f=fixture();
+ f.ctx.cart.P1.qty=Infinity;
+ f.schedule();await f.flush();
+ assert.equal(f.requests.length,1);
+ assert.deepEqual(Array.from(f.requests[0].items),[],
+  'infinite quantity must be omitted, never serialized as null');
+});
+test('nonfinite server quantity cannot appear as an infinite cart row',()=>{
+ const f=fixture();
+ f.ctx.api.applySharedCartSnapshot({items:[{product_code:'P1',employee_qty:Infinity}]},{force:true});
+ assert.equal(Object.hasOwn(f.ctx.cart,'P1'),false);
 });
