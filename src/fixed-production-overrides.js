@@ -103,37 +103,50 @@
   }
 
 
+  const pendingOrderNoteSaves=new Map();
   async function savePendingOrderItemNoteDirect(orderId,productCode,note){
     const backendId=String(orderId||'').trim();
     const targetCode=String(productCode||'').trim();
     if(!backendId||!targetCode)throw new Error('Thiếu thông tin dòng sản phẩm.');
-    const detail=await backend().orderDetail(backendId);
-    const order=detail?.order||detail||{};
-    const status=String(order.status||order.trangThai||'').toLowerCase();
-    if(status!=='pending')throw new Error('Chỉ sửa ghi chú trực tiếp ở Đơn tạm.');
-    let found=false;
-    const items=(Array.isArray(order.items)?order.items:[]).map((item,index)=>{
-      const maSP=String(item?.maSP||item?.product_id||'').trim();
-      const isTarget=maSP===targetCode;
-      if(isTarget)found=true;
-      return {
-        maSP,
-        sl:Number(item?.sl??item?.qty)||0,
-        gia:Number(item?.gia??item?.unit_price)||0,
-        lineNo:Number(item?.lineNo??item?.line_no)||index+1,
-        ghiChu:isTarget?String(note||''):String((item?.ghiChu??item?.note)||'')
-      };
-    }).filter(item=>item.maSP&&item.sl>0);
-    if(!found)throw new Error('Không tìm thấy sản phẩm trong đơn tạm.');
-    await backend().saveOrder({
-      maKH:String(order.maKH||order.customer_id||''),
-      status:'pending',
-      ghiChu:String((order.ghiChu??order.note)||''),
-      editOrderId:backendId,
-      items
+    // SPEC-ORDER-NOTE-SERIAL: each update must read the preceding committed
+    // version, or editing two different lines can silently lose the first note.
+    const previous=pendingOrderNoteSaves.get(backendId)||Promise.resolve();
+    const task=previous.catch(()=>{}).then(async()=>{
+      const detail=await backend().orderDetail(backendId);
+      const order=detail?.order||detail||{};
+      const status=String(order.status||order.trangThai||'').toLowerCase();
+      if(status!=='pending')throw new Error('Chỉ sửa ghi chú trực tiếp ở Đơn tạm.');
+      let found=false;
+      const items=(Array.isArray(order.items)?order.items:[]).map((item,index)=>{
+        const maSP=String(item?.maSP||item?.product_id||'').trim();
+        const isTarget=maSP===targetCode;
+        if(isTarget)found=true;
+        return {
+          maSP,
+          sl:Number(item?.sl??item?.qty)||0,
+          gia:Number(item?.gia??item?.unit_price)||0,
+          lineNo:Number(item?.lineNo??item?.line_no)||index+1,
+          ghiChu:isTarget?String(note||''):String((item?.ghiChu??item?.note)||'')
+        };
+      }).filter(item=>item.maSP&&item.sl>0);
+      if(!found)throw new Error('Không tìm thấy sản phẩm trong đơn tạm.');
+      const result=await backend().saveOrder({
+        maKH:String(order.maKH||order.customer_id||''),
+        status:'pending',
+        ghiChu:String((order.ghiChu??order.note)||''),
+        editOrderId:backendId,
+        items
+      });
+      if(result?.ok!==true)throw new Error('Không thể lưu ghi chú đơn tạm.');
+      // The DB write has committed. A UI-only repaint failure is not a
+      // failed order mutation and must not invite a duplicate save.
+      try{await refreshFixedSheets(['dontam']);}
+      catch(error){console.warn('refresh saved order note UI',error);}
+      return true;
     });
-    await refreshFixedSheets(['dontam']);
-    return true;
+    pendingOrderNoteSaves.set(backendId,task);
+    try{return await task;}
+    finally{if(pendingOrderNoteSaves.get(backendId)===task)pendingOrderNoteSaves.delete(backendId);}
   }
 
   window.savePendingOrderItemNoteDirect=savePendingOrderItemNoteDirect;
