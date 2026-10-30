@@ -1240,8 +1240,12 @@
     const seenCodes=new Set();
     const normalized=[];
     for(const row of rows){
-      const code=String(row?.product_code||'').trim();
-      const rawQty=row?.employee_qty;
+      // Database product_code is text; coercing arrays/objects into a code
+      // or booleans into a quantity could turn a corrupt response into deletes.
+      if(typeof row?.product_code!=='string')return;
+      const code=row.product_code.trim();
+      const rawQty=row.employee_qty;
+      if(rawQty!==null&&typeof rawQty!=='number'&&typeof rawQty!=='string')return;
       const value=Number(rawQty);
       // Null is a legitimate empty count; an absent/invalid field is not.
       if(!code||seenCodes.has(code)||rawQty===undefined
