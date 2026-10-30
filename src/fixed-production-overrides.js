@@ -1157,8 +1157,15 @@
     if(!ownerIdentity||backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='employee-link')return;
     resetSharedCartSyncOwner();
+    // Switching to another employee link must immediately discard any cart
+    // or edit draft from the preceding customer, before network reads finish.
+    cart={};
+    editingOrderId=null;
+    editingOrderSheet=null;
+    editingOrderInSaleMode=false;
     setAuthRole('user');
     syncSelfCustomer(info);
+    renderCartUI();
     await refreshFixedSheets(['sanpham','khachhang']);
     // A replaced link may finish its sheet read after a newer session starts.
     if(backend()?.getIdentity?.()!==ownerIdentity
@@ -1230,9 +1237,16 @@
     if(!ownerIdentity||backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='public-link')return;
     resetSharedCartSyncOwner();
+    // Public-link login is a different cart owner. Never show the old link's
+    // lines/notes while the next link's bootstrap or stock snapshot is pending.
+    cart={};
+    editingOrderId=null;
+    editingOrderSheet=null;
+    editingOrderInSaleMode=false;
     document.body.dataset.employeeLink='false';
     setAuthRole('user');
     syncSelfCustomer(info);
+    renderCartUI();
     await refreshFixedSheets();
     if(backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='public-link')return;
