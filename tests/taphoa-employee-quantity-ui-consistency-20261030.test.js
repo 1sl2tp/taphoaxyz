@@ -129,3 +129,24 @@ test('shared cart installs one reconnect and visible-tab recovery handler',()=>{
  assert.equal(f.events.filter(x=>x==='reconnect').length,2,
    'only online and becoming visible should retry unresolved saves');
 });
+
+test('blank mobile blur retains last valid employee quantity and does not trigger another save',()=>{
+ const f=fixture();
+ f.preview('P1',6);
+ const savesBefore=f.events.filter(e=>e==='schedule-save').length;
+ const rendersBefore=f.events.filter(e=>e==='cart-render').length;
+ f.commit('P1','','cart');
+ assert.equal(f.cart().P1.qty,6);
+ assert.equal(f.events.filter(e=>e==='schedule-save').length,savesBefore);
+ assert.equal(f.events.filter(e=>e==='cart-render').length,rendersBefore);
+});
+test('blurring untouched employee quantity does not send a full-cart overwrite',()=>{
+ const f=fixture();
+ f.commit('P2','','product');
+ assert.equal(f.cart().P2,undefined);
+ assert.equal(f.events.filter(e=>e==='schedule-save').length,0);
+ f.preview('P1',3);
+ f.commit('P1',3,'cart');
+ assert.equal(f.events.filter(e=>e==='schedule-save').length,1,
+   'same value preview then blur is one logical quantity change');
+});
