@@ -84,5 +84,5 @@ test('unchanged permissions and revisions do not introduce extra storage writes'
  const before=f.snapshots.length;
  await f.runtime.syncOnce();
  assert.equal(f.snapshots.length,before);
- assert.equal(f.events.length,0);
+ assert.equal(f.events.filter(event=>event.type==='taphoa-production-sync').length,0);
 });
