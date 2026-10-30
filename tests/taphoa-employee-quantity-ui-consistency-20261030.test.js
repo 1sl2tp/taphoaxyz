@@ -32,7 +32,7 @@ function fixture(){
   String,Number,Object,Math
  };
  vm.createContext(ctx);
- vm.runInContext('let cart={};let __cartTouchSeq=0;\n'+method+
+ vm.runInContext('let cart={};let __cartTouchSeq=0;let sharedCartLocalEditSeq=0;let sharedCartCommittedEditSeq=0;\n'+method+
   '\ninstallSharedCartQuantitySync();globalThis.handle={preview:previewQtyInput,commit:commitQtyEditor,cart:()=>cart};',
   ctx,{timeout:1000});
  return {
@@ -149,4 +149,31 @@ test('blurring untouched employee quantity does not send a full-cart overwrite',
  f.commit('P1',3,'cart');
  assert.equal(f.events.filter(e=>e==='schedule-save').length,1,
    'same value preview then blur is one logical quantity change');
+});
+
+
+test('pageshow after back/forward restore checks if an unresolved cart save can resume',()=>{
+ const f=fixture();
+ assert.equal(typeof f.listeners.pageshow,'function');
+ f.listeners.pageshow();
+ assert.equal(f.events.filter(e=>e==='reconnect').length,1);
+});
+
+test('beforeunload warns only for unsynced shared-cart edits and never for normal accounts',()=>{
+ const f=fixture();
+ let prevented=0;
+ const pageEvent=()=>({preventDefault(){prevented++;},returnValue:'unchanged'});
+ assert.equal(typeof f.listeners.beforeunload,'function');
+ const clean=pageEvent();
+ f.listeners.beforeunload(clean);
+ assert.equal(prevented,0);
+ assert.equal(clean.returnValue,'unchanged');
+ vm.runInContext('sharedCartLocalEditSeq=2;sharedCartCommittedEditSeq=1;',f.ctx);
+ const pending=pageEvent();
+ f.listeners.beforeunload(pending);
+ assert.equal(prevented,1);
+ assert.equal(pending.returnValue,'');
+ f.switchMode('account');
+ f.listeners.beforeunload(pageEvent());
+ assert.equal(prevented,1,'normal account mode does not inherit shared cart warning');
 });
