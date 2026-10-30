@@ -561,8 +561,12 @@ async function saveSharedQuantities(items=[]){
 
 async function getEmployeeSnapshot(){
   if(!employeeAccess)return null;
-  employeeSnapshotData=await employeeRequest();
-  return employeeSnapshotData;
+  const context=captureProductionOwner();
+  const data=await employeeRequest();
+  // A new link may start between a resolved fetch and this caller resuming.
+  if(!productionOwnerCurrent(context))throw new Error('employee_access_changed');
+  employeeSnapshotData=data;
+  return data;
 }
 
 async function logout(){
