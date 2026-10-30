@@ -1251,6 +1251,9 @@
     if(backend()?.getIdentity?.()!==ownerIdentity
        ||backend()?.getAccessMode?.()!=='public-link')return;
     showAppScreen();
+    // A previous customer's cached product render key cannot be reused when
+    // the new public link initially opens on Orders or Debt instead of Sales.
+    ownProductRenderKey='';
     installPublicSwitchTracking();
     applyPublicDeepLink();
 
