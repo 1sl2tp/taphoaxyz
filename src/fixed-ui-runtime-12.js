@@ -165,6 +165,46 @@
         }
 
         async function shareCustomerDebtImage(action = 'send') {
+            // SPEC-DEBT-MANUAL-LINKED-20261101: a deliberate Send click routes
+            // to this exact customer when they have a linked Zalo account.
+            // The server calculates the debt and inserts a Chat message;
+            // never guess recipients or claim delivery just because an OS
+            // share sheet opened. Save/Copy always keep the original PNG path.
+            if (action === 'send') {
+                const bridge = window.TAPHOA_PRODUCTION;
+                const customerId = String(activeDebtCustomerId || '').trim();
+                const eligible = bridge?.getAccessMode?.() === 'account'
+                    && bridge?.getIdentity?.()?.role === 'admin'
+                    && typeof bridge.manualShareDebt === 'function'
+                    && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(customerId)
+                    && typeof crypto?.randomUUID === 'function';
+                if (eligible) {
+                    try {
+                        const response = await bridge.manualShareDebt(customerId, crypto.randomUUID());
+                        if (response?.ok === true) {
+                            showToast(response.already_sent
+                                ? 'Công nợ đã được gửi vào cuộc trò chuyện của khách.'
+                                : 'Đã gửi tóm tắt công nợ và liên kết vào Chat của khách; Zalo nhận theo trạng thái kết nối.', 'success');
+                            return;
+                        }
+                        if (response?.reason === 'recently_sent') {
+                            showToast('Vừa gửi công nợ cho khách này. Không gửi lại để tránh trùng.', 'info');
+                            return;
+                        }
+                        // Customer has no linked Zalo contact: offer the same
+                        // native image share workflow as before, not a guessed
+                        // chat recipient or an unrelated contact.
+                        if (!['zalo_not_linked','customer_not_found'].includes(response?.reason)) {
+                            throw Error(response?.reason || 'manual_debt_send_failed');
+                        }
+                    } catch (error) {
+                        showAlertPopup('Chưa gửi công nợ trực tiếp',
+                            'Không thể xác nhận gửi vào Chat/Zalo. Chưa có tin nhắn được xác nhận. '+
+                            String(error?.message || error));
+                        return;
+                    }
+                }
+            }
             const pendingBlob = createCustomerDebtPngBlob();
             // ClipboardItem accepts a Promise so Safari/Chrome can retain the
             // direct gesture while the canvas is still being captured.
