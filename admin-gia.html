@@ -449,6 +449,74 @@
         white-space:normal;overflow:visible;overflow-wrap:anywhere
       }
     }
+
+    /* SPEC-ADMIN-CARE-ALIGNED-CARDS-20261101: balanced 6-card dashboard,
+       consistent amount baselines and right-aligned tabular money columns. */
+    #customerCarePane .care-overview-cards{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      align-items:stretch;
+    }
+    #customerCarePane .care-overview-cards .analytics-card{
+      display:grid;grid-template-rows:minmax(22px,auto) auto;
+      align-content:start;min-width:0;
+    }
+    #customerCarePane .care-overview-cards .analytics-card strong,
+    #customerCarePane .care-finance-cards strong{
+      font-variant-numeric:tabular-nums lining-nums;
+      font-feature-settings:"tnum" 1;overflow-wrap:anywhere;
+    }
+    #customerCarePane .care-finance-cards{align-items:stretch}
+    #customerCarePane .care-finance-cards>div{
+      display:grid;grid-template-rows:minmax(30px,auto) auto 1fr;
+      align-content:start;min-width:0;
+    }
+    #customerCarePane .care-finance-cards>div>span{line-height:1.35}
+    #customerCarePane .care-finance-cards>div>small{
+      line-height:1.35;min-width:0;white-space:normal;
+      overflow-wrap:anywhere;
+    }
+    #customerCarePane .care-tools{align-items:end}
+    #customerCarePane .care-tool-field{justify-content:end}
+    #customerCarePane .care-tool-field select{min-width:0}
+    #customerCarePane .care-list table{
+      table-layout:fixed;min-width:962px;
+    }
+    #customerCarePane .care-list th:nth-child(1){width:170px}
+    #customerCarePane .care-list th:nth-child(2){width:150px}
+    #customerCarePane .care-list th:nth-child(3){width:72px}
+    #customerCarePane .care-list th:nth-child(4),
+    #customerCarePane .care-list th:nth-child(5){width:112px}
+    #customerCarePane .care-list th:nth-child(6){width:88px}
+    #customerCarePane .care-list th:nth-child(7),
+    #customerCarePane .care-list th:nth-child(8){width:128px}
+    #customerCarePane .care-list th{
+      height:42px;white-space:normal;line-height:1.25;
+      vertical-align:middle;text-align:left;
+    }
+    #customerCarePane .care-list th.num{text-align:right}
+    #customerCarePane .care-list td{
+      height:38px;vertical-align:middle;line-height:1.3;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    #customerCarePane .care-list td.num{
+      text-align:right;font-variant-numeric:tabular-nums lining-nums;
+      font-feature-settings:"tnum" 1;white-space:nowrap;
+    }
+    #customerCarePane .care-stats>div{min-width:0;display:flex;flex-direction:column}
+    #customerCarePane .care-stats strong{
+      font-variant-numeric:tabular-nums lining-nums;
+      font-feature-settings:"tnum" 1;overflow-wrap:anywhere;
+      line-height:1.4;
+    }
+    @media(max-width:760px){
+      #customerCarePane .care-overview-cards{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+      #customerCarePane .care-finance-cards>div{
+        grid-template-rows:minmax(30px,auto) auto 1fr;
+      }
+      #customerCarePane .care-list table{min-width:962px}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -713,7 +781,7 @@
           </div>
         </div>
         <div id="careStatus" class="analytics-status" aria-live="polite">Bấm tab để đọc báo cáo.</div>
-        <div class="analytics-cards">
+        <div class="analytics-cards care-overview-cards">
           <div class="analytics-card"><span>Khách hàng</span><strong id="careTotal">—</strong></div>
           <div class="analytics-card"><span>Đã có đơn giao</span><strong id="careBought">—</strong></div>
           <div class="analytics-card"><span>Chưa có đơn giao</span><strong id="careNever">—</strong></div>
@@ -721,7 +789,7 @@
           <div class="analytics-card"><span>Lâu chưa mua</span><strong id="careLapsed">—</strong></div>
           <div class="analytics-card"><span>Còn nợ</span><strong id="careOwing">—</strong></div>
         </div>
-        <div class="care-finance-cards">
+        <div class="care-finance-cards" title="Tổng tiền hiển thị làm tròn tới đơn vị; số liệu gốc vẫn giữ nguyên.">
           <div><span>Doanh thu bán hàng · kỳ</span><strong id="careSystemRevenue">—</strong><small>Tất cả đơn đã giao, gồm tài khoản thử nếu có</small></div>
           <div><span>Giá vốn hàng bán · kỳ</span><strong id="careSystemCost">—</strong><small>Giá vốn lúc giao</small></div>
           <div><span>Lãi gộp · kỳ</span><strong id="careSystemProfit">—</strong><small>Chưa trừ chi phí khác</small></div>

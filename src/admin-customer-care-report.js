@@ -1,8 +1,17 @@
 // Admin customer care report: single, explicit read-only RPC; no auto-send or background refresh.
 export function createCustomerCareReport({rpc,getIdentity}){
   const $=id=>document.getElementById(id);
+  // SPEC-ADMIN-CARE-ROUND-TOTALS-20261101:
+  // Round display-only totals to whole units. Never round source data,
+  // unit/retail prices or individual line amounts in other views.
   const number=v=>Number(v||0).toLocaleString('vi-VN',{maximumFractionDigits:2});
-  const amount=v=>v===null||v===undefined?'—':number(v);
+  const amount=v=>{
+    if(v===null||v===undefined||v==='')return '—';
+    const n=Number(v);
+    if(!Number.isFinite(n))return '—';
+    const rounded=Math.sign(n)*Math.round(Math.abs(n));
+    return rounded.toLocaleString('vi-VN',{maximumFractionDigits:0});
+  };
   const percent=v=>v===null||v===undefined?'—':number(v)+'%';
   const day=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
   let rows=[],loaded=false,loading=false,selected='',generation=0,reloadQueued=false;
@@ -99,7 +108,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
     const stats=add('div','','care-stats');
     const buyGap=Number(r.purchase_days)>=2?number(r.avg_purchase_gap_days)+' ngày':'Chưa đủ dữ liệu';
     const payGap=Number(r.collection_days)>=2?number(r.avg_collection_gap_days)+' ngày':'Chưa đủ dữ liệu';
-    const balance=Number(r.debt_balance)<0?'Dư '+number(Math.abs(Number(r.debt_balance))):number(r.debt_balance);
+    const balance=Number(r.debt_balance)<0?'Dư '+amount(Math.abs(Number(r.debt_balance))):amount(r.debt_balance);
     const costComplete=Number(r.missing_cost_lines||0)===0;
     const metrics=[
       ['Đơn giao kỳ / toàn thời gian',number(r.period_delivered_count)+' / '+number(r.delivered_count)],
