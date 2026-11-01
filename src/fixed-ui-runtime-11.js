@@ -143,6 +143,12 @@
             }
 
             let customerDebts = {}; let customerHistory = {};
+            // SPEC-DEBT-PAGED-BALANCE-20261101: a ledger page can contain
+            // only 50 of 189 transactions. Never use the partial page sum
+            // as the customer's official outstanding balance.
+            // fixed-ui-behavior normalizes ledger rows chronologically;
+            // each row's server balance_after is authoritative.
+            const serverLedgerBalances = new Map();
             const latestDeliveryDateKeys = latestDeliveredDateKeyByCustomer();
 
             khRows.forEach(kh => {
@@ -166,9 +172,21 @@
                             customerDebts[maKh].lastTime = time;
                         }
                         customerHistory[maKh].push({ loaiGd, soTien, time, currentDebt: customerDebts[maKh].debt });
+                        // Summary BAL rows have an empty balance-after slot.
+                        // Actual ledger rows carry a cumulative server
+                        // balance independent of how many pages are loaded.
+                        const balanceAfter = r[5];
+                        if (balanceAfter !== null && balanceAfter !== undefined
+                            && String(balanceAfter).trim() !== ''
+                            && Number.isFinite(Number(balanceAfter))) {
+                            serverLedgerBalances.set(String(maKh), Number(balanceAfter));
+                        }
                     }
                 });
             }
+            serverLedgerBalances.forEach((balance, customerId) => {
+                if (customerDebts[customerId]) customerDebts[customerId].debt = balance;
+            });
 
             let totalDebt = 0; let debtCount = 0;
             let totalSurplus = 0; let surplusCount = 0;
