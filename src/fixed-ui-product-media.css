@@ -455,6 +455,22 @@ button.product-image-compare-source:hover{
   }
 }
 
+
+/* SPEC-PWA-SALES-TYPE-20261101:
+   Product names use the same compact 14px emphasis as debtor names.
+   Keep 40px increment/decrement targets and the 16px quantity editor. */
+@media (max-width:480px){
+  #tab-ban-hang .product-card .line-clamp-1{
+    font-size:14px !important;
+    line-height:1.35 !important;
+    font-weight:700 !important;
+  }
+  #tab-ban-hang .product-card .sale-product-price-row{
+    margin-top:2px !important;
+  }
+}
+
+
 /* Existing smallest-phone breakpoint: keep names legible beside photos. */
 @media (max-width:340px){
   #tab-ban-hang .product-card > .flex.justify-between.items-center{
