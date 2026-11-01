@@ -794,7 +794,7 @@
     const PAGE_SIZE=100;
     let identity=null,client=null,items=[],comparisonItems=[],sources=[],total=0,offset=0,loading=false,searchTimer=0;
     let selectedSource='';
-    let pageRefreshQueued=false,pageRefreshReset=false;
+    let pageRefreshQueued=false,pageRefreshReset=false,productEditRevision=0;
     let adminView='goods';
     let analyticsLoaded=false,analyticsLoading=false,analyticsReloadQueued=false;
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
@@ -1233,6 +1233,7 @@
             bestBatch=batch;
           }
         }catch(error){
+          if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
           console.error('market auto refine',error);
           break;
         }
@@ -1716,6 +1717,8 @@
       const item=selectedMarketItem();
       $('marketCandidateFilter').classList.toggle('hidden',!item);
       if(!item){
+        ++marketCandidateGeneration;
+        marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;
         $('marketCurrent').innerHTML='<div class="market-current-title">Chọn một sản phẩm bên trái</div><div class="market-current-sub">Hệ thống sẽ gợi ý sản phẩm siêu thị theo tên hiện tại.</div>';
         $('marketCandidateSearch').disabled=true;
         setMarketSearchTags([]);
@@ -1760,12 +1763,18 @@
       marketLoading=true;
       $('marketMapCount').textContent='Đang tải…';
       try{
+        const requestedQuery=$('marketOwnSearch').value.trim();
+        const requestedSource=$('marketOwnSource').value;
         const data=await rpc('taphoa_admin_market_mapping_catalog',{
-          p_query:$('marketOwnSearch').value.trim(),
-          p_source:$('marketOwnSource').value,
+          p_query:requestedQuery,
+          p_source:requestedSource,
           p_limit:MARKET_PAGE_SIZE,
           p_offset:marketOffset
         });
+        if(marketRefreshQueued||requestedQuery!==$('marketOwnSearch').value.trim()||requestedSource!==$('marketOwnSource').value){
+          marketRefreshQueued=true;marketRefreshReset=true;
+          return;
+        }
         marketItems=Array.isArray(data&&data.items)?data.items:[];
         marketSources=Array.isArray(data&&data.sources)?data.sources:[];
         marketTotal=Number(data&&data.total)||0;
@@ -1848,6 +1857,7 @@
         marketCandidateHasMore=batch.length===MARKET_CANDIDATE_PAGE_SIZE;
         renderMarketCandidates();
       }catch(error){
+        if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
         console.error('market search',error);
         $('marketCandidateCount').textContent='';
         if(reset)$('marketCandidateList').innerHTML='<div class="empty">Không tìm được dữ liệu siêu thị.</div>';
@@ -2041,11 +2051,19 @@
         $('statusText').textContent='Đang tải…';
         const query=$('searchInput').value.trim();
         const requestedSource=selectedSource;
+        const requestedEditRevision=productEditRevision;
         const mainPromise=rpc('taphoa_admin_price_catalog',{p_query:query,p_source:selectedSource,p_limit:PAGE_SIZE,p_offset:offset});
         const comparePromise=selectedSource&&query
           ?rpc('taphoa_admin_price_catalog',{p_query:query,p_source:'',p_limit:100,p_offset:0})
           :Promise.resolve(null);
         const [data,compareData]=await Promise.all([mainPromise,comparePromise]);
+        // A user may edit a visible row while the catalog request is underway.
+        // Commit that edit first and refresh again rather than painting stale values.
+        if(productEditRevision!==requestedEditRevision){
+          if(!await flushProductEditsBeforeReload()){blocked=true;return;}
+          pageRefreshQueued=true;pageRefreshReset=pageRefreshReset||reset;
+          return;
+        }
         if(pageRefreshQueued||query!==$('searchInput').value.trim()||requestedSource!==selectedSource){
           pageRefreshQueued=true;pageRefreshReset=true;
           return;
@@ -2594,8 +2612,12 @@
       const item=items.find(x=>x.product_code===row.dataset.code);if(!item)return;
       if(!confirm(`Xóa sản phẩm "${item.product_name}"? Dữ liệu đơn hàng cũ không bị xóa.`))return;
       if(!await flushProductEditsBeforeReload()){alert('Có thay đổi chưa lưu. Hãy sửa ô đỏ trước khi xóa.');return;}
-      try{await rpc('taphoa_delete_product_from_web',{p_product_code:item.product_code});row.remove();total=Math.max(0,total-1);$('countText').textContent=`${total} sản phẩm`;}
-      catch(error){alert(error?.message||'Không xóa được sản phẩm');}
+      try{
+        await rpc('taphoa_delete_product_from_web',{p_product_code:item.product_code});
+        if(items.length===1&&offset>0)offset=Math.max(0,offset-PAGE_SIZE);
+        // Rebuild indices and page count; simply removing TR leaves stale data-index attributes.
+        await loadPage(false);
+      }catch(error){alert(error?.message||'Không xóa được sản phẩm');}
     }
 
     async function loadSupplierFeedback(){
@@ -2852,7 +2874,7 @@
       if(e.target.closest('.auto-price-btn')){
         if(item){
           item.sale_price_mode='auto';
-          row.dataset.dirty='1';
+          row.dataset.dirty='1';productEditRevision++;
           updateDerived(row,item);
           queueSave(row);
         }
@@ -2864,7 +2886,7 @@
         if(item&&choice.dataset.basis){
           item.sale_price_mode='manual';
           item.sale_price_basis=choice.dataset.basis;
-          row.dataset.dirty='1';
+          row.dataset.dirty='1';productEditRevision++;
           updateDerived(row,item);
           queueSave(row);
           return;
@@ -2876,7 +2898,7 @@
     $('productBody').addEventListener('input',e=>{
       const row=e.target.closest('tr');if(!row)return;
       if(e.target.matches('.cell-input')){
-        row.dataset.dirty='1';
+        row.dataset.dirty='1';productEditRevision++;
         if(e.target.dataset.field==='retail_price_override'){
           e.target.dataset.mode=e.target.value.trim()===''?'auto':'manual';
         }
@@ -2901,11 +2923,11 @@
           e.target.innerHTML=retailUnitOptionsHtml(item.source_key,value);
           e.target.value=value;
         }
-        row.dataset.dirty='1';
+        row.dataset.dirty='1';productEditRevision++;
         queueSave(row);
       }
       if(e.target.matches('.state-select')){
-        row.dataset.dirty='1';
+        row.dataset.dirty='1';productEditRevision++;
         queueSave(row);
       }
     });
