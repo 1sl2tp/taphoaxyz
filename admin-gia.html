@@ -2033,6 +2033,7 @@
         const results=await Promise.all(pending.map(task=>Promise.resolve(task).catch(()=>false)));
         if(results.some(ok=>ok===false)){
           $('statusText').textContent='Có ô chưa lưu · kiểm tra ô đỏ';
+          $('statusText').title='Sản phẩm có thay đổi chưa lưu. Vui lòng kiểm tra ô đang có vạch đỏ.';
           return false;
         }
       }
@@ -2445,6 +2446,7 @@
       }catch(error){
         markRow(row,'error');
         $('statusText').textContent=String(error?.message||'Ô chưa hợp lệ').slice(0,80);
+        $('statusText').title=String(error?.message||'Ô chưa hợp lệ');
         return Promise.resolve(false);
       }
       const generation=Number(row.dataset.saveGeneration||0)+1;
@@ -2458,12 +2460,13 @@
         item.product_name=payload.name;item.cost=payload.cost;
         item.sale_price_mode=result?.sale_price_mode??payload.sale_price_mode;
         item.sale_price_basis=result?.sale_price_basis??payload.sale_price_basis;
+        item.supplier_price=payload.supplier_price;
+        item.legacy_profit_vnd=result?.legacy_profit_vnd??payload.legacy_profit;
+        // SPEC-ADMIN-SAVE-REFERENCE-20261101: fallback price must use the newly saved reference profit.
         item.price=result?.price??selectedSalePrice(
           payload.cost,payload.supplier_price,item.sale_price_basis,
           item.source_key,item.legacy_profit_vnd
         );
-        item.supplier_price=payload.supplier_price;
-        item.legacy_profit_vnd=result?.legacy_profit_vnd??payload.legacy_profit;
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;
         item.retail_price_override=result?.retail_price_override??payload.retail_price_override;
@@ -2507,6 +2510,7 @@
           row.dataset.dirty='1';
           markRow(row,'error');
           $('statusText').textContent=String(error?.message||'Lỗi lưu').slice(0,80);
+          $('statusText').title=String(error?.message||'Lỗi lưu');
         }
         return false;
       });
