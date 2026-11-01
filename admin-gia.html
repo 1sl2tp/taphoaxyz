@@ -434,6 +434,7 @@
       #customerCarePane .care-list th,#customerCarePane .care-list td{padding:7px}
       #customerCarePane .care-finance-cards strong{font-variant-numeric:tabular-nums}
     }
+    #goodsPane .source-chips .chip:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -850,7 +851,10 @@
         const valid=new Set(COLUMN_DEFS.map(c=>c.id));
         const order=Array.isArray(raw.order)?raw.order.filter(id=>valid.has(id)):[];
         for(const id of fallback.order)if(!order.includes(id))order.push(id);
-        const hidden=Array.isArray(raw.hidden)?raw.hidden.filter(id=>valid.has(id)):[];
+        // SPEC-ADMIN-COLUMN-SOURCE-USABILITY-20261101: even saved corrupt
+        // preferences must never hide every editable column.
+        const hidden=Array.isArray(raw.hidden)?[...new Set(raw.hidden.filter(id=>valid.has(id)))]:[];
+        if(hidden.length===valid.size)hidden.splice(hidden.indexOf('name'),1);
         const widths={...fallback.widths};
         for(const col of COLUMN_DEFS){
           const w=Number(raw.widths?.[col.id]);
@@ -2179,11 +2183,19 @@
     }
 
     function renderSources(){
-      const chips=[`<button class="chip ${selectedSource===''?'active':''}" data-source="">Tất cả</button>`];
+      const chips=[`<button class="chip ${selectedSource===''?'active':''}" aria-pressed="${selectedSource===''}" data-source="">Tất cả</button>`];
       for(const s of sources){
-        chips.push(`<button class="chip ${selectedSource===s.source_key?'active':''} ${s.active===false?'inactive':''}" data-source="${esc(s.source_key)}">${esc(s.name)}${s.active===false?' · ẩn':''}</button>`);
+        chips.push(`<button class="chip ${selectedSource===s.source_key?'active':''} ${s.active===false?'inactive':''}" aria-pressed="${selectedSource===s.source_key}" data-source="${esc(s.source_key)}">${esc(s.name)}${s.active===false?' · ẩn':''}</button>`);
       }
-      $('sourceChips').innerHTML=chips.join('');
+      const host=$('sourceChips'),priorScroll=host.scrollLeft;
+      host.innerHTML=chips.join('');
+      host.scrollLeft=selectedSource?priorScroll:0;
+      const active=host.querySelector('.chip.active');
+      if(active&&selectedSource){
+        const chosen=active.getBoundingClientRect(),visible=host.getBoundingClientRect();
+        if(chosen.left<visible.left)host.scrollLeft-=visible.left-chosen.left+5;
+        else if(chosen.right>visible.right)host.scrollLeft+=chosen.right-visible.right+5;
+      }
       const s=sources.find(x=>x.source_key===selectedSource);
       $('renameSourceBtn').disabled=!s;$('toggleSourceBtn').disabled=!s;$('deleteSourceBtn').disabled=!s;
       $('toggleSourceBtn').textContent=s?.active===false?'Hiện nguồn':'Ẩn nguồn';
@@ -2892,6 +2904,10 @@
       const item=e.target.closest('.column-item');if(!item)return;
       const id=item.dataset.col;
       if(e.target.matches('.col-visible-toggle')){
+        if(!e.target.checked&&COLUMN_DEFS.filter(col=>!columnPrefs.hidden.includes(col.id)).length<=1){
+          e.target.checked=true;
+          return; // Never let the last visible column disappear.
+        }
         if(e.target.checked)columnPrefs.hidden=columnPrefs.hidden.filter(x=>x!==id);
         else if(!columnPrefs.hidden.includes(id))columnPrefs.hidden.push(id);
         saveColumnPrefs();applyColumnLayout();
