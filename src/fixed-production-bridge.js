@@ -628,6 +628,9 @@ function orderNoticeTotals(order,items){
   };
 }
 async function attachOrderNoticePortrait(order,{manual=false}={}){
+  // SPEC-MEDIA-UPLOAD-SESSION-20261101: an old notice must not start or
+  // continue uploading/attaching images using a new account's credentials.
+  const noticeOwner=captureProductionOwner();
   const id=String(order?.order_id||order?.id||'').trim();
   const state=String(order?.status||order?.trangThai||'').toLowerCase();
   // Automatic images are ONLY for delivered orders (DG).
@@ -641,7 +644,9 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
   let built=null;
   try{
     const client=await auth.getClient();
+    if(!productionOwnerCurrent(noticeOwner))return false;
     const {data:ticket,error:ticketError}=await client.rpc('taphoa_order_notice_image_ticket',{p_order_id:id});
+    if(!productionOwnerCurrent(noticeOwner))return false;
     if(ticketError)throw ticketError;
     // No eligible sent message = no image rendering / upload / extra network.
     if(!ticket?.ok)return false;
@@ -671,6 +676,7 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
       totalPriceText:format(Math.sign(totals.totalPrice)*Math.round(Math.abs(totals.totalPrice)))
     });
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    if(!productionOwnerCurrent(noticeOwner))return false;
     const width=Math.ceil(built.page.scrollWidth);
     const height=Math.ceil(built.page.scrollHeight)+2;
     if(height>19500)throw Error('portrait_exceeds_canvas_limit');
@@ -681,13 +687,16 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
     // canvasToPngBlob() releases canvas memory by resetting dimensions to 1×1.
     // Preserve the REAL PNG dimensions first, or the Chat media will be
     // incorrectly registered as a tiny 1×1 image on web / mobile PWA.
+    if(!productionOwnerCurrent(noticeOwner))return false;
     const pngWidth=canvas.width;
     const pngHeight=canvas.height;
     const blob=await capture.canvasToPngBlob(canvas,'Không tạo được ảnh đơn hàng.');
+    if(!productionOwnerCurrent(noticeOwner))return false;
     if(blob.size<1||blob.size>15728640)throw Error('portrait_exceeds_media_limit');
     const object=await client.storage.from('v21-media').upload(ticket.storage_key,blob,{
       contentType:'image/png',upsert:false,cacheControl:'3600'
     });
+    if(!productionOwnerCurrent(noticeOwner))return false;
     if(object.error)throw object.error;
     const {data:attached,error:attachError}=await client.rpc('taphoa_order_notice_image_attach',{
       p_order_id:id,p_asset_id:ticket.asset_id,p_size_bytes:blob.size,
@@ -869,12 +878,15 @@ function createDebtNoticeCanvas(result){
   return canvas;
 }
 async function attachDebtNoticeImage(result){
+  const noticeOwner=captureProductionOwner();
   const commandId=String(result?.notice_command_id||'');
   if(!result?.notice_sent||!commandId||!result?.customer_id||debtNoticeImagesInFlight.has(commandId))return;
   debtNoticeImagesInFlight.add(commandId);
   try{
     const client=await auth.getClient();
+    if(!productionOwnerCurrent(noticeOwner))return false;
     const {data:ticket,error:ticketError}=await client.rpc('taphoa_debt_notice_image_ticket',{p_command_id:commandId});
+    if(!productionOwnerCurrent(noticeOwner))return false;
     if(ticketError)throw ticketError;
     // No eligible Chat notice means no image creation/storage egress.
     if(!ticket?.ok)return;
@@ -883,10 +895,12 @@ async function attachDebtNoticeImage(result){
     const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>
       value?resolve(value):reject(Error('debt_image_export_failed')),'image/png'));
     canvas.width=1;canvas.height=1;
+    if(!productionOwnerCurrent(noticeOwner))return false;
     if(blob.size<1||blob.size>15728640)throw Error('debt_image_too_large');
     const uploaded=await client.storage.from('v21-media').upload(ticket.storage_key,blob,{
       contentType:'image/png',upsert:false,cacheControl:'3600'
     });
+    if(!productionOwnerCurrent(noticeOwner))return false;
     if(uploaded.error)throw uploaded.error;
     const {data:attached,error:attachError}=await client.rpc('taphoa_debt_notice_image_attach',{
       p_command_id:commandId,p_asset_id:ticket.asset_id,
