@@ -281,3 +281,33 @@ test('last-transaction caption hides clock time in card without modifying the le
  assert.match(popup,/#tab-cong-no \.debt-customer-detail\{[\s\S]*?color:#64748b/);
  assert.match(popup,/#tab-cong-no > main > div:nth-child\(2\)\{/);
 });
+
+
+test('debt card amount occupies rows 1–2 while full cycle summary spans through right edge on row 3',()=>{
+ const layout=fs.readFileSync(new URL('../src/fixed-ui-debt-popup.css',import.meta.url),'utf8');
+ assert.match(layout,/SPEC-DEBT-CARD-THIRD-ROW-20261101/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-card\{\s*\/\*[\s\S]*?grid-template-rows:auto auto;/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-body\{\s*display:contents;/,
+   'name, activity, and optional cycle summary must participate in the parent grid');
+ assert.match(layout,/#tab-cong-no \.debt-customer-avatar\{[\s\S]*?grid-column:1;[\s\S]*?grid-row:1 \/ 3;/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-name\{[\s\S]*?grid-column:2;[\s\S]*?grid-row:1;/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-detail\{[\s\S]*?grid-column:2;[\s\S]*?grid-row:2;/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-money\{[\s\S]*?grid-column:3;[\s\S]*?grid-row:1 \/ 3;[\s\S]*?align-self:center;/);
+ assert.match(layout,/#tab-cong-no \.debt-cycle-card-meta\{[\s\S]*?grid-column:2 \/ 4;[\s\S]*?grid-row:3;/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-card\{[\s\S]*?min-height:64px;/);
+ assert.match(css,/\.debt-cycle-card-meta\{[\s\S]*?-webkit-line-clamp:2/,
+   'long policy descriptions may wrap but stay bounded to two lines');
+ assert.match(render,/class="debt-customer-body pointer-events-none min-w-0"/);
+ assert.match(render,/class="debt-customer-money pointer-events-none/);
+ assert.match(js,/body\.appendChild\(panel\)/,
+   'cycle metadata is the last body child, exposed to grid through display:contents');
+});
+
+test('wide third row is optional: user debt cards without full-history cycle RPC keep only two grid rows',()=>{
+ const layout=fs.readFileSync(new URL('../src/fixed-ui-debt-popup.css',import.meta.url),'utf8');
+ assert.match(layout,/grid-template-rows:auto auto;/);
+ assert.doesNotMatch(layout,/grid-template-rows:auto auto auto;/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-avatar\{[\s\S]*?grid-row:1 \/ 3;/);
+ assert.match(layout,/#tab-cong-no \.debt-customer-money\{[\s\S]*?grid-row:1 \/ 3;/);
+ assert.match(index,/fixed-ui-debt-popup\.css\?v=[^"\\]*density=20261101/);
+});
