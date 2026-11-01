@@ -262,6 +262,8 @@ function displayName(value,source=''){
 }
 
 let session=null;
+// SPEC-NCC-SUPPLIER-SESSION-20261101: late requests from old PIN sessions never repaint this page.
+let supplierSessionGeneration=0,catalogRequestGeneration=0,ordersRequestGeneration=0;
 let items=[];
 let originals=new Map();
 // SPEC-NCC-SEARCH-DRAFT-20261101: edits survive search filters, tab changes
@@ -294,6 +296,12 @@ function showApp(){
   $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');
 }
 function saveSession(value){
+  const priorToken=session?.token||null,nextToken=value?.token||null;
+  if(priorToken!==nextToken){
+    supplierSessionGeneration++;
+    catalogRequestGeneration++;
+    ordersRequestGeneration++;
+  }
   session=value;
   if(value)sessionStorage.setItem(SESSION_KEY,JSON.stringify(value));
   else sessionStorage.removeItem(SESSION_KEY);
@@ -410,18 +418,26 @@ function renderOrders(){
   $('ordersEmpty').classList.toggle('hidden',orderRows.length!==0);
 }
 async function loadOrders(){
+  const token=session?.token,source=session?.source_key,sessionGeneration=supplierSessionGeneration;
+  if(!token)return;
+  const requestGeneration=++ordersRequestGeneration;
   $('ordersSummary').textContent='Đang tải đơn tạm…';
   try{
-    const data=await rpc('taphoa_supplier_pending_orders',{p_token:session.token});
-    if(data?.source_key!==session?.source_key)throw new Error('supplier_order_source_mismatch');
+    const data=await rpc('taphoa_supplier_pending_orders',{p_token:token});
+    if(sessionGeneration!==supplierSessionGeneration||requestGeneration!==ordersRequestGeneration||session?.token!==token)return;
+    if(data?.source_key!==source)throw new Error('supplier_order_source_mismatch');
     orderRows=Array.isArray(data?.rows)?data.rows:[];
     ordersSource=data.source_key||'';
     ordersLoaded=true;
     renderOrders();
   }catch(err){
+    if(sessionGeneration!==supplierSessionGeneration||requestGeneration!==ordersRequestGeneration||session?.token!==token)return;
     console.error(err);
     $('ordersSummary').textContent='Không tải được đơn tạm.';
-    if(String(err.message||'').includes('supplier_session_invalid')){saveSession(null);showLogin('Phiên đã hết hạn. Vui lòng nhập PIN lại.')}
+    if(String(err.message||'').includes('supplier_session_invalid')){
+      clearSupplierSession();
+      showLogin('Phiên đã hết hạn. Vui lòng nhập PIN lại.');
+    }
   }
 }
 function printOrders(){
@@ -506,7 +522,12 @@ function render(resetDraft=false){
 }
 
 async function loadCatalog(){
-  const data=await rpc('taphoa_supplier_catalog',{p_token:session.token});
+  const token=session?.token,sessionGeneration=supplierSessionGeneration;
+  if(!token)return;
+  const requestGeneration=++catalogRequestGeneration;
+  const data=await rpc('taphoa_supplier_catalog',{p_token:token});
+  if(sessionGeneration!==supplierSessionGeneration||requestGeneration!==catalogRequestGeneration||session?.token!==token)return;
+  if(session?.source_key&&data.source_key!==session.source_key)throw new Error('supplier_catalog_source_mismatch');
   session.source_key=data.source_key;session.source_name=data.source_name;saveSession(session);
   items=Array.isArray(data.items)?data.items:[];
   originals=new Map(items.map(x=>[x.product_code,x.cost]));
@@ -514,6 +535,15 @@ async function loadCatalog(){
   orderRows=[];ordersLoaded=false;ordersSource='';
   $('title').textContent='Cập nhật giá vốn · '+(data.source_name||SOURCE_LABELS[data.source_key]||'NCC');
   showApp();render(true);
+}
+function clearSupplierSession(){
+  saveSession(null);
+  items=[];originals.clear();pendingCostEdits.clear();pendingNewRows=[];
+  orderRows=[];ordersLoaded=false;ordersSource='';activeView='cost';orderMode='detail';
+  $('rows').replaceChildren();$('ordersRows').replaceChildren();
+  $('ordersSummary').textContent='';$('summary').textContent='';
+  $('search').value='';$('saveBtn').disabled=true;$('saveBtn').textContent='Lưu thay đổi';
+  clearPin();
 }
 
 $('loginForm').addEventListener('submit',async e=>{
@@ -581,11 +611,11 @@ $('saveBtn').addEventListener('click',async()=>{
   }finally{updateSaveState()}
 });
 
-$('logoutBtn').addEventListener('click',async()=>{
+$('logoutBtn').addEventListener('click',()=>{
   const token=session?.token;
-  saveSession(null);
-  if(token)await rpc('taphoa_supplier_logout',{p_token:token}).catch(()=>{});
-  items=[];originals.clear();orderRows=[];ordersLoaded=false;ordersSource='';activeView='cost';orderMode='detail';clearPin();setMsg('loginMsg','');showLogin();
+  clearSupplierSession();
+  setMsg('loginMsg','');showLogin();
+  if(token)void rpc('taphoa_supplier_logout',{p_token:token}).catch(error=>console.error('supplier logout',error));
 });
 
 const params=new URLSearchParams(location.search);
@@ -605,7 +635,13 @@ if(fixedSource&&session&&session.source_key!==paramSource){
   session=null;
 }
 if(session){
-  loadCatalog().catch(()=>{saveSession(null);showLogin('Phiên đã hết hạn. Vui lòng nhập PIN lại.')});
+  const restoredToken=session.token;
+  loadCatalog().catch(error=>{
+    if(session?.token!==restoredToken)return;
+    console.error('supplier restore',error);
+    clearSupplierSession();
+    showLogin('Không khôi phục được phiên NCC. Vui lòng nhập PIN lại.');
+  });
 }else showLogin();
 </script>
 </body>
