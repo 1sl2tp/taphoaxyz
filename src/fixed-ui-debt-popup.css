@@ -405,6 +405,13 @@ body[data-force-pc="1"] #customerDebtContentToShare{
 #tab-cong-no .debt-sort-control[hidden]{
   display:none !important;
 }
+/* SPEC-DEBT-FILTER-HEADING-DENSITY-20261101:
+   Without a sort control the list heading is still shown, but it no
+   longer reserves an empty 36px input-height row. iOS PWA supports :has.
+   Owing group retains the 44px native select touch target. */
+#tab-cong-no .debt-sort-row:has(.debt-sort-control[hidden]){
+  min-height:24px;
+}
 @media(max-width:350px){
   #tab-cong-no .debt-sort-field{
     width:130px;
