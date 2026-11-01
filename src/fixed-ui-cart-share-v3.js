@@ -493,6 +493,13 @@
     }
     const sum=get('#detailModalTotal');
     if(sum)out.push('Tổng tiền: '+displayRoundedTotal(sum));
+    else if(rows.length){
+      // When a modal footer has not rendered, sum the ORIGINAL line extensions,
+      // then round the grand total once (never round each line before summing).
+      const preciseTotal=rows.reduce((acc,row)=>
+        acc+parseVisibleMoney(row.querySelector('.order-total')?.textContent||''),0);
+      out.push('Tổng tiền: '+displayRoundedTotal(preciseTotal));
+    }
     return out.join('\n');
   }
 
