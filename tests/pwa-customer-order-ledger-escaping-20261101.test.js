@@ -22,6 +22,8 @@ test('debt filters keep the heading visible and suppress only irrelevant sorting
   assert.ok(!source.includes("sortContainer.style.display = 'flex'"));
   assert.ok(debt.includes("debtSortControl.hidden = currentDebtFilter !== 'no'"));
   assert.ok(css.includes('#tab-cong-no .debt-sort-control[hidden]{'));
+  assert.ok(css.includes('#tab-cong-no .debt-sort-row:has(.debt-sort-control[hidden]){'));
+  assert.ok(css.includes('min-height:24px;'));
   const buttons=Object.fromEntries(['btnFilterNo','btnFilterDu','btnFilterHet'].map(id=>[id,{className:''}]));
   const ctx={
     currentDebtFilter:'no',
