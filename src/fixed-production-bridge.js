@@ -613,6 +613,20 @@ async function debtLedger(customerId,{beforeAt=null,beforeId=null,limit=50}={}){
    Attach the portrait PNG to THAT SAME message only when notifications are enabled.
    This never affects order creation or activates any customer-care schedule. */
 const orderImageUploadsInFlight=new Set();
+// SPEC-ORDER-NOTICE-ORIGINAL-NUMBERS-20261101: do not sum preformatted
+// quantity strings (1,5 would become 15). Preserve line precision and
+// round only the portrait's displayed grand total.
+function orderNoticeTotals(order,items){
+  const numeric=value=>Number(value);
+  const present=value=>value!==null&&value!==undefined&&String(value).trim()!==''&&Number.isFinite(numeric(value));
+  const quantity=(items||[]).reduce((total,item)=>total+(numeric(item.qty??item.sl)||0),0);
+  const amount=(items||[]).reduce((total,item)=>
+    total+(numeric(item.qty??item.sl)||0)*(numeric(item.unit_price??item.gia)||0),0);
+  return {
+    totalQty:present(order?.tongSL)?numeric(order.tongSL):quantity,
+    totalPrice:present(order?.tongTien)?numeric(order.tongTien):amount
+  };
+}
 async function attachOrderNoticePortrait(order,{manual=false}={}){
   const id=String(order?.order_id||order?.id||'').trim();
   const state=String(order?.status||order?.trangThai||'').toLowerCase();
@@ -649,11 +663,12 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
         qtyText:format(qty),priceText:format(price),totalText:format(qty*price)
       };
     });
+    const totals=orderNoticeTotals(order,items);
     built=portrait.createPage({
       isDraft:state==='pending',orderId:displayCode,customer:String(order.tenKH||'Khách hàng'),
       time:stampText,items:mapped,lineCount:mapped.length,
-      totalQty:order.tongSL??mapped.reduce((sum,x)=>sum+Number(String(x.qtyText).replace(/[^0-9]/g,'')),0),
-      totalPriceText:format(order.tongTien)
+      totalQty:totals.totalQty,
+      totalPriceText:format(Math.sign(totals.totalPrice)*Math.round(Math.abs(totals.totalPrice)))
     });
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     const width=Math.ceil(built.page.scrollWidth);
