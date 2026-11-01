@@ -199,10 +199,21 @@
                             throw Error(response?.reason || 'manual_debt_send_failed');
                         }
                     } catch (error) {
-                        showAlertPopup('Chưa gửi công nợ trực tiếp',
-                            'Không thể xác nhận gửi vào Chat/Zalo. Chưa có tin nhắn được xác nhận. '+
-                            String(error?.message || error));
-                        return;
+                        const missingRpc = String(error?.code || '') === 'PGRST202'
+                            || String(error?.code || '') === '42883'
+                            || /could not find the function|function .* does not exist/i.test(String(error?.message || ''));
+                        if (missingRpc) {
+                            // Until the guarded database migration is applied,
+                            // keep the original image share usable on web/PWA.
+                            showToast('Chưa kích hoạt gửi trực tiếp; mở chia sẻ ảnh công nợ.', 'info');
+                        } else {
+                            // A timeout could mean the server already sent it;
+                            // never automatically send a second copy elsewhere.
+                            showAlertPopup('Chưa gửi công nợ trực tiếp',
+                                'Không thể xác nhận gửi vào Chat/Zalo. Chưa có tin nhắn được xác nhận. '+
+                                String(error?.message || error));
+                            return;
+                        }
                     }
                 }
             }
