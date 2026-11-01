@@ -213,7 +213,8 @@
                 document.getElementById('debtGroupTitle').innerText = 'Danh sách khách';
             }
 
-            let listHtml = '';
+            // SPEC-DEBT-CARD-ESCAPE-20261101: customer text and ids are
+            // inserted as HTML; encode text and use dataset for click.\n            let listHtml = '';
             filteredList.forEach(c => {
                 // SPEC-DEBT-CARD-READABILITY-20261101: the full timestamp
                 // remains in the ledger; the card needs only the date.
@@ -224,11 +225,11 @@
                 }
 
                 listHtml += `
-                    <div data-debt-customer-id="${c.maKh}" onclick="openCustomerDebtModal('${c.maKh}')" class="debt-customer-card allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition">
+                    <div data-debt-customer-id="${escapeProductEditorValue(c.maKh)}" onclick="openCustomerDebtModal(this.dataset.debtCustomerId)" class="debt-customer-card allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition">
                         <div class="debt-customer-avatar pointer-events-none">${c.avatarHtml}</div>
                         <div class="debt-customer-body pointer-events-none min-w-0">
-                            <p class="debt-customer-name font-bold text-[14px] text-gray-900">${c.name}</p>
-                            <p class="debt-customer-detail text-[11px] text-gray-400 mt-1">${subText}</p>
+                            <p class="debt-customer-name font-bold text-[14px] text-gray-900">${escapeProductEditorValue(c.name)}</p>
+                            <p class="debt-customer-detail text-[11px] text-gray-400 mt-1">${escapeProductEditorValue(subText)}</p>
                         </div>
                         <p class="debt-customer-money pointer-events-none font-extrabold text-[15px] ${c.debt > 0 ? 'text-danger' : c.debt < 0 ? 'text-success' : 'text-gray-700'}">${Math.abs(c.debt).toLocaleString('vi-VN')}</p>
                     </div>`;
@@ -254,11 +255,8 @@
             });
             btnElement.className = "allow-fast-click flex-1 py-1.5 rounded-lg bg-white text-gray-900 shadow-sm transition";
 
-            let sortContainer = document.getElementById('sortContainer');
-            if(filterType === 'no') {
-                sortContainer.style.display = 'flex';
-            } else {
-                sortContainer.style.display = 'none';
-            }
+            // SPEC-DEBT-FILTER-HEADING-20261101: keep "Danh sách khách"
+            // visible on every filter. renderCongNo already hides only
+            // the irrelevant sort control in surplus and zero groups.
             renderCongNo();
         }
