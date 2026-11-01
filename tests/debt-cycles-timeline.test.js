@@ -225,7 +225,7 @@ test('debt overview uses compact spacing without shrinking payment controls',()=
  const markup=fs.readFileSync(new URL('../src/fixed-ui-markup-2.js',import.meta.url),'utf8');
  assert.match(popup,/SPEC-DEBT-WORKSPACE-DENSITY-20261101/);
  assert.match(popup,/#tab-cong-no > header\{[\s\S]*?padding-top:10px;[\s\S]*?padding-bottom:12px;/);
- assert.match(popup,/#tab-cong-no > main\{[\s\S]*?padding:12px 14px 64px;/);
+ assert.match(popup,/#tab-cong-no > main\{[\s\S]*?padding:12px 14px 80px;/);
  assert.match(popup,/#tab-cong-no > main > \[data-permission="canMutateDebt"\]\.hidden \+ div\{[\s\S]*?margin-top:0 !important;/,
   'readonly user must not retain the hidden quick form spacing');
  assert.match(popup,/#tab-cong-no \.debt-customer-card\{[\s\S]*?min-height:72px;[\s\S]*?padding:11px 12px;/);
