@@ -240,6 +240,9 @@ function displayName(value,source=''){
 let session=null;
 let items=[];
 let originals=new Map();
+// SPEC-NCC-SEARCH-DRAFT-20261101: edits survive search filters, tab changes
+// and partial validation errors. Never save only currently rendered rows.
+let pendingCostEdits=new Map(),pendingNewRows=[];
 let orderRows=[];
 let ordersLoaded=false;
 let ordersSource='';
@@ -280,24 +283,26 @@ function restoreSession(){
   }catch{return null}
 }
 
-function changedExisting(){
-  let count=0;
+function captureDraftInputs(){
   document.querySelectorAll('.cost-input[data-code]').forEach(input=>{
-    const original=originals.get(input.dataset.code);
-    const now=parseNum(input.value);
-    const changed=now!==null&&Number(original)!==Number(now);
-    input.classList.toggle('changed',changed);
-    if(changed)count++;
+    const code=input.dataset.code,raw=input.value,now=parseNum(raw);
+    if(now===null||Number(now)!==Number(originals.get(code)))
+      pendingCostEdits.set(code,raw);
+    else pendingCostEdits.delete(code);
   });
-  return count;
-}
-function filledNewRows(){
-  return [...document.querySelectorAll('tr.new-row')].filter(row=>{
-    return row.querySelector('.new-name').value.trim()||row.querySelector('.new-cost').value.trim();
-  }).length;
+  const rows=[...document.querySelectorAll('tr.new-row')];
+  if(rows.length)pendingNewRows=rows.map(row=>({
+    name:row.querySelector('.new-name').value,
+    cost:row.querySelector('.new-cost').value
+  }));
 }
 function updateSaveState(){
-  const count=changedExisting()+filledNewRows();
+  captureDraftInputs();
+  document.querySelectorAll('.cost-input[data-code]').forEach(input=>{
+    input.classList.toggle('changed',pendingCostEdits.has(input.dataset.code));
+  });
+  const count=pendingCostEdits.size+pendingNewRows.filter(row=>
+    row.name.trim()||row.cost.trim()).length;
   $('saveBtn').disabled=count===0;
   $('saveBtn').textContent=count?('Lưu '+count+' thay đổi'):'Lưu thay đổi';
 }
@@ -404,7 +409,8 @@ function printOrders(){
   setTimeout(cleanup,3000);
 }
 
-function render(){
+function render(resetDraft=false){
+  if(!resetDraft)captureDraftInputs();
   const q=$('search').value.trim().toLocaleLowerCase('vi');
   const source=session?.source_key||'';
   // Supplier catalog for Thuốc lá arrives in canonical source_row order.
@@ -419,13 +425,13 @@ function render(){
   const existing=visible.map(p=>`
     <tr>
       <td><div class="name">${esc(displayName(p.name,source))}</div><div class="code">${esc(p.product_code)}</div></td>
-      <td class="cost-cell"><input class="cost-input" data-code="${esc(p.product_code)}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${esc(pretty(p.cost))}" aria-label="Giá vốn ${esc(displayName(p.name,source))}"></td>
+      <td class="cost-cell"><input class="cost-input" data-code="${esc(p.product_code)}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${esc(pendingCostEdits.get(p.product_code)??pretty(p.cost))}" aria-label="Giá vốn ${esc(displayName(p.name,source))}"></td>
     </tr>`).join('');
 
   const blanks=Array.from({length:NEW_ROWS},(_,i)=>`
     <tr class="new-row">
-      <td><input class="new-name" placeholder="Tên sản phẩm mới ${i+1}" autocomplete="off"><span class="new-tag">Mới</span></td>
-      <td class="cost-cell"><input class="new-cost" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Giá vốn"></td>
+      <td><input class="new-name" placeholder="Tên sản phẩm mới ${i+1}" autocomplete="off" value="${esc(pendingNewRows[i]?.name??'')}"><span class="new-tag">Mới</span></td>
+      <td class="cost-cell"><input class="new-cost" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Giá vốn" value="${esc(pendingNewRows[i]?.cost??'')}"></td>
     </tr>`).join('');
 
   $('rows').innerHTML=existing+blanks;
@@ -480,9 +486,10 @@ async function loadCatalog(){
   session.source_key=data.source_key;session.source_name=data.source_name;saveSession(session);
   items=Array.isArray(data.items)?data.items:[];
   originals=new Map(items.map(x=>[x.product_code,x.cost]));
+  pendingCostEdits.clear();pendingNewRows=[];
   orderRows=[];ordersLoaded=false;ordersSource='';
   $('title').textContent='Cập nhật giá vốn · '+(data.source_name||SOURCE_LABELS[data.source_key]||'NCC');
-  showApp();render();
+  showApp();render(true);
 }
 
 $('loginForm').addEventListener('submit',async e=>{
@@ -518,23 +525,23 @@ $('saveBtn').addEventListener('click',async()=>{
   const changes=[];
   let validationError='';
 
-  document.querySelectorAll('.cost-input[data-code]').forEach(input=>{
-    const cost=parseNum(input.value);
-    const original=originals.get(input.dataset.code);
-    if(cost===null){validationError='Giá vốn phải là số.';return}
-    if(cost<0){validationError='Giá vốn không được âm.';return}
-    if(Number(cost)!==Number(original))changes.push({product_code:input.dataset.code,cost});
-  });
-
-  document.querySelectorAll('tr.new-row').forEach(row=>{
-    const name=row.querySelector('.new-name').value.trim();
-    const raw=row.querySelector('.new-cost').value.trim();
-    if(!name&&!raw)return;
+  captureDraftInputs();
+  for(const [code,raw] of pendingCostEdits){
     const cost=parseNum(raw);
-    if(!name||cost===null){validationError='Dòng sản phẩm mới phải có đủ tên và giá vốn.';return}
-    if(cost<0){validationError='Giá vốn không được âm.';return}
+    if(cost===null){validationError='Giá vốn phải là số.';break}
+    if(cost<0){validationError='Giá vốn không được âm.';break}
+    if(!originals.has(code)){validationError='Danh mục đã thay đổi, cần tải lại.';break}
+    if(Number(cost)!==Number(originals.get(code)))changes.push({product_code:code,cost});
+  }
+
+  if(!validationError)for(const row of pendingNewRows){
+    const name=row.name.trim(),raw=row.cost.trim();
+    if(!name&&!raw)continue;
+    const cost=parseNum(raw);
+    if(!name||cost===null){validationError='Dòng sản phẩm mới phải có đủ tên và giá vốn.';break}
+    if(cost<0){validationError='Giá vốn không được âm.';break}
     changes.push({name,cost});
-  });
+  }
 
   if(validationError)return setMsg('appMsg',validationError,'error');
   if(!changes.length)return updateSaveState();
