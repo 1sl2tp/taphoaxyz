@@ -163,7 +163,11 @@ export function createCustomerCareReport({rpc,getIdentity}){
     const buying=customers.filter(r=>Number(r.period_delivered_count)>0).length;
     const roster=customers.length;
     const rosterOrders=customers.reduce((total,r)=>total+(Number(r.period_delivered_count)||0),0);
-    const systemOrders=Number(data?.system?.delivered_orders);
+    // SPEC-CARE-MISSING-SYSTEM-ORDERS-20261101: a missing backend total
+    // is unknown, not zero. Fall back to the roster's delivered-order counts.
+    const systemOrdersRaw=data?.system?.delivered_orders;
+    const systemOrders=systemOrdersRaw===null||systemOrdersRaw===undefined||systemOrdersRaw===''
+      ?NaN:Number(systemOrdersRaw);
     return {
       roster, buying, notBuying:roster-buying,
       orders:Number.isFinite(systemOrders)?systemOrders:rosterOrders,
