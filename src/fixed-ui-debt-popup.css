@@ -274,6 +274,27 @@ body[data-force-pc="1"] #customerDebtContentToShare{
   min-width:0;
 }
 
+
+/* SPEC-PWA-DEBT-TYPE-20261101:
+   Align debtor names, amounts and supporting dates with sales typography.
+   Do not shrink money input/selects below iOS's 16px zoom-safe threshold. */
+@media (max-width:767px){
+  #tab-cong-no .debt-customer-name{
+    font-size:14px !important;
+    line-height:1.3 !important;
+    font-weight:700 !important;
+  }
+  #tab-cong-no .debt-customer-money{
+    font-size:14px !important;
+    line-height:1.3 !important;
+  }
+  #tab-cong-no .debt-customer-detail{
+    font-size:11.5px !important;
+    line-height:1.4 !important;
+  }
+}
+
+
 /* SPEC-DEBT-CARD-THIRD-ROW-20261101
    Given a narrow debt customer card with a long cycle warning, keep the
    amount right-aligned alongside name + last delivery (rows 1 and 2), then
