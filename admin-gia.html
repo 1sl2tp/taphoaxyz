@@ -940,6 +940,20 @@
     const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const plain=value=>value===null||value===undefined?'':String(value);
     const num=value=>{if(value===null||value===undefined||String(value).trim()==='')return null;const v=Number(String(value).trim().replace(',','.'));return Number.isFinite(v)?v:null};
+    // SPEC-ADMIN-VI-MONEY-INPUT-20261101: only EDITOR inputs interpret
+    // vi-VN grouped prices (1.000 = 1000, 1.000,5 = 1000.5).
+    // Keep num() for Supabase numeric values and rate/percent fields.
+    const editableNumber=value=>{
+      if(value===null||value===undefined||String(value).trim()==='')return null;
+      const text=String(value).trim().replace(/\s+/g,'');
+      const grouped=/^[+-]?\d{1,3}(?:\.\d{3})+(?:,\d+)?$/;
+      const decimal=/^[+-]?\d+(?:[.,]\d+)?$/;
+      if(!grouped.test(text)&&!decimal.test(text))return null;
+      const v=grouped.test(text)
+        ?Number(text.replace(/\./g,'').replace(',','.'))
+        :Number(text.replace(',','.'));
+      return Number.isFinite(v)?v:null;
+    };
     const pretty=value=>value===null||value===undefined||value===''?'':Number(value).toLocaleString('vi-VN',{maximumFractionDigits:2});
     const same=(a,b)=>String(a??'')===String(b??'');
 
@@ -2597,9 +2611,9 @@
     }
 
     function updateChoiceState(row,item){
-      const cost=num(row.querySelector('[data-field="cost"]')?.value);
-      const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
-      const legacyProfit=num(row.querySelector('[data-field="legacy_profit"]')?.value);
+      const cost=editableNumber(row.querySelector('[data-field="cost"]')?.value);
+      const supplier=editableNumber(row.querySelector('[data-field="supplier_price"]')?.value);
+      const legacyProfit=editableNumber(row.querySelector('[data-field="legacy_profit"]')?.value);
       const mode=item.sale_price_mode==='manual'?'manual':'auto';
       const basis=mode==='auto'
         ?autoSaleBasis(cost,supplier,item.source_key,legacyProfit)
@@ -2615,9 +2629,9 @@
     }
 
     function updateDerived(row,item){
-      const cost=num(row.querySelector('[data-field="cost"]')?.value);
-      const supplier=num(row.querySelector('[data-field="supplier_price"]')?.value);
-      const legacyProfit=num(row.querySelector('[data-field="legacy_profit"]')?.value);
+      const cost=editableNumber(row.querySelector('[data-field="cost"]')?.value);
+      const supplier=editableNumber(row.querySelector('[data-field="supplier_price"]')?.value);
+      const legacyProfit=editableNumber(row.querySelector('[data-field="legacy_profit"]')?.value);
       const mode=item.sale_price_mode==='manual'?'manual':'auto';
       const basis=mode==='auto'
         ?autoSaleBasis(cost,supplier,item.source_key,legacyProfit)
@@ -2671,7 +2685,7 @@
       row.querySelector('.cost3 .candidate-price').textContent=pretty(cost3);
       setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost,cost3);
 
-      const units=num(row.querySelector('[data-field="units_per_carton"]')?.value);
+      const units=editableNumber(row.querySelector('[data-field="units_per_carton"]')?.value);
       const autoRetail=sale===null||units===null||units<=0?null:Math.round((sale/units)*10)/10;
       const retailInput=row.querySelector('[data-field="retail_price_override"]');
       const override=num(item.retail_price_override);
@@ -2727,10 +2741,10 @@
       if(!name)throw new Error('Tên sản phẩm không được trống');
       const numeric=['cost','supplier_price','legacy_profit','standard_profit_percent','units_per_carton'];
       const item=items.find(x=>x.product_code===row.dataset.code);
-      const supplier=num(read('supplier_price'));
+      const supplier=editableNumber(read('supplier_price'));
       const retailInput=row.querySelector('[data-field="retail_price_override"]');
       const retailRaw=retailInput?.value?.trim()??'';
-      const retailOverride=retailInput?.dataset.mode==='manual'?num(retailRaw):null;
+      const retailOverride=retailInput?.dataset.mode==='manual'?editableNumber(retailRaw):null;
       if(retailInput?.dataset.mode==='manual'&&retailRaw!==''&&retailOverride===null)throw new Error('Giá lẻ không hợp lệ');
       const payload={
         product_code:row.dataset.code,
@@ -2742,7 +2756,8 @@
         sale_price_basis:item?.sale_price_basis??'calculated_profit'
       };
       for(const key of numeric){
-        const raw=read(key);const value=num(raw);
+        const raw=read(key);
+        const value=key==='standard_profit_percent'?num(raw):editableNumber(raw);
         if(raw!==''&&value===null)throw new Error('Giá trị không hợp lệ');
         payload[key]=value;
       }
@@ -2947,7 +2962,12 @@
       const name=$('newName').value.trim();const source=$('newSource').value;if(!name||!source)return;
       const generation=catalogSessionGeneration,adminUid=identity?.uid;
       if(!adminOperationCurrent(generation,adminUid))return;
-      const parse=id=>{const raw=$(id).value.trim();const v=num(raw);if(raw!==''&&v===null)throw new Error('Giá trị không hợp lệ');return v};
+      const parse=id=>{
+        const raw=$(id).value.trim();
+        const v=id==='newStandard'?num(raw):editableNumber(raw);
+        if(raw!==''&&v===null)throw new Error('Giá trị không hợp lệ');
+        return v;
+      };
       $('productSubmitBtn').disabled=true;
       try{
         await rpc('taphoa_admin_create_product',{p_product:{
@@ -3205,9 +3225,9 @@
     function updateNewRetailPreview(){
       const input=$('newRetailPrice');
       if(!input||input.dataset.mode==='manual')return;
-      const cost=num($('newCost').value);
-      const supplier=num($('newSupplier').value);
-      const units=num($('newUnits').value);
+      const cost=editableNumber($('newCost').value);
+      const supplier=editableNumber($('newSupplier').value);
+      const units=editableNumber($('newUnits').value);
       const source=$('newSource').value;
       const basis=autoSaleBasis(cost,supplier,source,null);
       const sale=selectedSalePrice(cost,supplier,basis,source,null);
