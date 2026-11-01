@@ -418,6 +418,22 @@
       #goodsPane .sheet-wrap table.name-sticky td[data-col="name"]{box-shadow:2px 0 0 #cbd5e1}
       #goodsPane .sheet-wrap table.name-sticky thead th[data-col="name"]{box-shadow:2px 0 0 #cbd5e1}
     }
+
+    /* SPEC-ADMIN-FINAL-DENSITY-20261101: calm selected prices; keep customer identity during horizontal report scroll. */
+    #goodsPane .price-choice.selected{background:#eff6ff!important;color:#1e40af;box-shadow:inset 0 0 0 1px #93c5fd}
+    #goodsPane .price-choice.selected .cell-input{color:#1e40af}
+    #customerCarePane .care-list th:first-child{position:sticky;left:0;z-index:5;background:var(--head);box-shadow:1px 0 0 var(--grid)}
+    #customerCarePane .care-list td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:1px 0 0 var(--grid)}
+    #customerCarePane .care-list tr.active td:first-child{background:#eff6ff}
+    @media(max-width:700px){
+      #analyticsPane .analytics-head small,
+      #customerCarePane .analytics-head small{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #customerCarePane .care-list td:first-child{min-width:145px;max-width:175px}
+      #customerCarePane .care-list th:first-child{min-width:145px}
+      #customerCarePane .care-list table{font-size:12px}
+      #customerCarePane .care-list th,#customerCarePane .care-list td{padding:7px}
+      #customerCarePane .care-finance-cards strong{font-variant-numeric:tabular-nums}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
