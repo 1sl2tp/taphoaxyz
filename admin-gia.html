@@ -729,10 +729,10 @@
         </div>
         <div id="analyticsStatus" class="analytics-status">Mở tab để đọc báo cáo.</div>
         <div class="analytics-cards">
-          <div class="analytics-card"><span>Tổng lượt truy cập</span><strong id="analyticsTotal">—</strong></div>
-          <div class="analytics-card"><span>Lượt mở hôm nay</span><strong id="analyticsToday">—</strong></div>
-          <div class="analytics-card"><span>7 ngày gần nhất</span><strong id="analyticsWeek">—</strong></div>
-          <div class="analytics-card"><span>Trình duyệt khác nhau</span><strong id="analyticsUnique">—</strong></div>
+          <div class="analytics-card"><span>Tổng lượt · toàn thời gian</span><strong id="analyticsTotal">—</strong></div>
+          <div class="analytics-card"><span>Lượt mở · hôm nay</span><strong id="analyticsToday">—</strong></div>
+          <div class="analytics-card"><span>Lượt mở · 7 ngày</span><strong id="analyticsWeek">—</strong></div>
+          <div class="analytics-card"><span>Trình duyệt · trong kỳ lọc</span><strong id="analyticsUnique">—</strong></div>
         </div>
         <div class="analytics-grid">
           <div class="analytics-block">
@@ -1176,6 +1176,16 @@
       const d=/^\d{4}-\d{2}-\d{2}$/.test(day)?new Date(day+'T00:00:00'):new Date(NaN);
       return Number.isNaN(d.getTime())?String(value||''):d.toLocaleDateString('vi-VN');
     };
+    // SPEC-ADMIN-ANALYTICS-FILTER-CONSISTENCY-20261101:
+    // Time-range changes must not present old rows as new period data.
+    function invalidateQuoteAnalytics(){
+      analyticsLoaded=false;
+      for(const id of ['analyticsTotal','analyticsToday','analyticsWeek','analyticsUnique'])
+        $(id).textContent='—';
+      $('analyticsDailyBody').replaceChildren();
+      $('analyticsRecentBody').replaceChildren();
+      $('analyticsStatus').textContent='Đang cập nhật kỳ báo cáo…';
+    }
     async function loadQuoteAnalytics(force=false){
       if(analyticsLoading){if(force)analyticsReloadQueued=true;return;}
       if(!force&&analyticsLoaded)return;
@@ -3025,8 +3035,12 @@
       switchAdminView(order[next][0]);
       $(order[next][1]).focus();
     });
-    $('analyticsRefreshBtn').addEventListener('click',()=>loadQuoteAnalytics(true));
-    $('analyticsDays').addEventListener('change',()=>loadQuoteAnalytics(true));
+    $('analyticsRefreshBtn').addEventListener('click',()=>{
+      invalidateQuoteAnalytics();loadQuoteAnalytics(true);
+    });
+    $('analyticsDays').addEventListener('change',()=>{
+      invalidateQuoteAnalytics();loadQuoteAnalytics(true);
+    });
     $('marketOwnSource').addEventListener('change',()=>loadMarketMappings(true));
     $('marketOwnSearch').addEventListener('input',()=>{
       clearTimeout(marketSearchTimer);
