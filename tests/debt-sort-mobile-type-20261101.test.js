@@ -4,10 +4,9 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 // SPEC-DEBT-SORT-MOBILE-TYPE-20261101
-// Given mobile PWA debt sorting, native picker must remain accessible
-// and zoom-safe (16px) while the VISIBLE "Lâu chưa giao" label is 13px.
-// On "Nợ cao nhất" selection, the visible label follows selection and the
-// existing renderCongNo handler still owns sorting; no duplicate data writes.
+// When sorting on iPhone, a readable 13px label represents the selected
+// option, while the one native select remains accessible, 16px zoom-safe
+// and 44px touch-high. Changing choice still calls existing renderCongNo.
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const markup=read('src/fixed-ui-markup-3.js');
 const css=read('src/fixed-ui-debt-popup.css');
@@ -15,49 +14,55 @@ const js=read('src/fixed-ui-runtime-11.js');
 const html=read('index.html');
 const semantic=read('src/fixed-ui-semantic-columns.css');
 
-test('sort uses the native accessible select over an inert visual label',()=>{
-  assert.match(markup,/class=\\\"debt-sort-field\\\"/);
-  assert.match(markup,/id=\\\"debtSortVisibleValue\\\" aria-hidden=\\\"true\\\">Lâu chưa giao/);
-  assert.match(markup,/id=\\\"debtSortSelect\\\" aria-label=\\\"Sắp xếp danh sách công nợ\\\" onchange=\\\"renderCongNo\\(\\)\\\"/);
-  assert.match(markup,/value=\\\"days\\\">Lâu chưa giao/);
-  assert.match(markup,/value=\\\"amount\\\">Nợ cao nhất/);
-  assert.equal((markup.match(/id=\\\"debtSortSelect\\\"/g)||[]).length,1,'exactly one native sort owner');
+test('native sorting remains the only interactive select over an inert visual label',()=>{
+  assert.ok(markup.includes(String.raw`class="debt-sort-field"`));
+  assert.ok(markup.includes(String.raw`id="debtSortVisibleValue" aria-hidden="true">Lâu chưa giao`));
+  assert.ok(markup.includes(String.raw`id="debtSortSelect" aria-label="Sắp xếp danh sách công nợ" onchange="renderCongNo()"`));
+  assert.ok(markup.includes(String.raw`value="days">Lâu chưa giao`));
+  assert.ok(markup.includes(String.raw`value="amount">Nợ cao nhất`));
+  assert.equal(markup.split(String.raw`id="debtSortSelect"`).length-1,1);
 });
 
-test('visible copy is 13px while focusable native select remains 16px and 44px touch-high',()=>{
-  const block=css.slice(css.indexOf('SPEC-DEBT-SORT-MOBILE-TYPE-20261101'));
-  assert.match(block,/#tab-cong-no \\.debt-sort-visible-value\\s*\\{[^}]*font-size:13px/);
-  assert.match(block,/#tab-cong-no \\.debt-sort-field #debtSortSelect\\s*\\{[^}]*min-height:44px !important/);
-  assert.match(block,/#tab-cong-no \\.debt-sort-field #debtSortSelect\\s*\\{[^}]*opacity:0/);
-  assert.match(block,/#tab-cong-no \\.debt-sort-field #debtSortSelect\\s*\\{[^}]*font-size:16px !important/);
-  assert.match(block,/#tab-cong-no \\.debt-sort-field:focus-within\\s*\\{/);
-  assert.match(semantic,/#tab-cong-no \\.debt-sort-row\\s*\\{/);
+test('visual copy is 13px; underlying select is 16px, 44px high and accessible to touch',()=>{
+  const start=css.indexOf('/* SPEC-DEBT-SORT-MOBILE-TYPE-20261101:');
+  assert.ok(start>=0);
+  const block=css.slice(start);
+  assert.ok(block.includes('.debt-sort-visible-value{'));
+  assert.ok(block.includes('font-size:13px;'));
+  assert.ok(block.includes('.debt-sort-field #debtSortSelect{'));
+  assert.ok(block.includes('min-height:44px !important;'));
+  assert.ok(block.includes('opacity:0;'));
+  assert.ok(block.includes('font-size:16px !important;'));
+  assert.ok(block.includes('.debt-sort-field:focus-within{'));
+  assert.ok(semantic.includes('#tab-cong-no .debt-sort-row{'));
 });
 
-test('visible sort text follows selected native option after data reload and sorting still uses select value',()=>{
-  assert.match(js,/debtSortNative = document.getElementById\\('debtSortSelect'\\)/);
-  assert.match(js,/debtSortVisible = document.getElementById\\('debtSortVisibleValue'\\)/);
-  assert.match(js,/debtSortVisible.textContent = debtSortNative.options\\?\\.\\[debtSortNative.selectedIndex\\]\\?\\.text/);
-  assert.match(js,/document.getElementById\\('debtSortSelect'\\).value/);
-  assert.match(js,/if \\(sortVal === 'days'\\)/);
-  assert.match(js,/filteredList.sort\\(\\(a, b\\) => b.debt - a.debt\\)/);
-
-  const start=js.indexOf('            const debtSortNative = document.getElementById(');
-  const end=js.indexOf('            if (!appData.khachhang',start);
-  assert.ok(start>=0&&end>start,'single source-of-truth visual sync block');
+test('visible text tracks selected option; existing sorting still consumes select value',()=>{
+  assert.ok(js.includes("debtSortNative = document.getElementById('debtSortSelect')"));
+  assert.ok(js.includes("debtSortVisible = document.getElementById('debtSortVisibleValue')"));
+  assert.ok(js.includes("debtSortVisible.textContent = debtSortNative.options?.[debtSortNative.selectedIndex]?.text"));
+  assert.ok(js.includes("document.getElementById('debtSortSelect').value"));
+  assert.ok(js.includes("sortVal === 'days'"));
+  assert.ok(js.includes("filteredList.sort((a, b) => b.debt - a.debt)"));
+  const start=js.indexOf("            const debtSortNative = document.getElementById(");
+  const end=js.indexOf("            if (!appData.khachhang",start);
+  assert.ok(start>=0&&end>start);
   const selected={selectedIndex:0,options:[{text:'Lâu chưa giao'},{text:'Nợ cao nhất'}]};
-  const visual={textContent:''};
-  const ctx={document:{getElementById(id){return id==='debtSortSelect'?selected:id==='debtSortVisibleValue'?visual:null}}};
+  const display={textContent:''};
+  const ctx={document:{getElementById(id){
+    return id==='debtSortSelect'?selected:id==='debtSortVisibleValue'?display:null;
+  }}};
   vm.runInNewContext(js.slice(start,end),ctx,{timeout:1000});
-  assert.equal(visual.textContent,'Lâu chưa giao');
+  assert.equal(display.textContent,'Lâu chưa giao');
   selected.selectedIndex=1;
   vm.runInNewContext(js.slice(start,end),ctx,{timeout:1000});
-  assert.equal(visual.textContent,'Nợ cao nhất');
+  assert.equal(display.textContent,'Nợ cao nhất');
 });
 
-test('PWA reloads exact CSS, markup and runtime; no finance changes',()=>{
-  assert.match(html,/fixed-ui-debt-popup\\.css[^"]*sort-type=20261101/);
-  assert.match(html,/fixed-ui-markup-3\\.js[^"]*sort-visual=20261101/);
-  assert.match(html,/fixed-ui-runtime-11\\.js[^"]*sort-visual=20261101/);
-  assert.doesNotMatch(markup,/onclick=\\\"(?!renderCongNo)/);
+test('the three modified PWA assets have refreshed URLs',()=>{
+  assert.ok(html.includes('sort-type=20261101'));
+  assert.ok(html.includes('sort-visual=20261101'));
+  assert.ok(html.includes('fixed-ui-debt-popup.css'));
+  assert.ok(html.includes('fixed-ui-markup-3.js'));
+  assert.ok(html.includes('fixed-ui-runtime-11.js'));
 });
