@@ -22,6 +22,21 @@ h1{font-size:26px;margin:5px 0 8px}.muted{color:#667085;font-size:13px;line-heig
 .pin-area{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.pin-boxes{display:grid;grid-template-columns:repeat(6,44px);gap:6px}.pin-digit{width:44px;height:44px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;text-align:center;font-size:21px;font-weight:850;outline:none}.pin-digit:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(52,64,84,.08)}
 .row-msg{font-size:11px;min-height:16px;margin-top:7px;color:#667085}.row-msg.ok{color:#027a48}.row-msg.error{color:#b42318}
 @media(max-width:650px){.page{padding:8px 6px 24px}.head{padding:14px}.list{padding:0 10px 10px}.note{margin:0 10px 10px}.source-card{padding:12px}.source-top{display:block}.pin-boxes{grid-template-columns:repeat(6,1fr);width:100%}.pin-digit{width:100%;height:auto;aspect-ratio:1/1}.pin-area .btn{flex:1}.link-row{flex-wrap:wrap}.link{flex-basis:100%}}
+
+/* SPEC-NCC-ADMIN-MOBILE-20261101: no crowded buttons or PIN overflow. */
+@media(max-width:650px){
+  .head{flex-direction:column;gap:10px;padding:12px}
+  .head h1{font-size:22px;line-height:1.2}
+  .head-actions{width:100%}
+  .head-actions .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .source-name{font-size:16px}
+  .source-card{padding:11px}
+  .source-top > .btn{min-height:44px;margin-top:7px}
+  .link-row .btn,.pin-area .btn{min-height:44px}
+  .pin-boxes{min-width:0;gap:5px}
+  .pin-digit{font-size:20px;min-height:40px;min-width:0}
+  .link{overflow-wrap:anywhere}
+}
 </style>
 </head>
 <body>
@@ -83,7 +98,16 @@ function bindPinBoxes(container){
   const inputs=[...container.querySelectorAll('.pin-digit')];
   inputs.forEach((input,index)=>{
     input.addEventListener('input',()=>{
-      input.value=input.value.replace(/\D/g,'').slice(-1);
+      // SPEC-NCC-PIN-PASTE-20261101: accept OS OTP/autofill as well as
+      // single-digit typing, including pasting into the focused PIN box.
+      const digits=input.value.replace(/\D/g,'');
+      if(digits.length>1){
+        const start=digits.length===inputs.length?0:index;
+        [...digits].slice(0,inputs.length-start).forEach((digit,i)=>{inputs[start+i].value=digit});
+        inputs[Math.min(inputs.length-1,start+digits.length-1)]?.focus();
+        return;
+      }
+      input.value=digits.slice(-1);
       if(input.value&&index<inputs.length-1)inputs[index+1].focus();
     });
     input.addEventListener('keydown',e=>{
@@ -95,8 +119,9 @@ function bindPinBoxes(container){
       const digits=(e.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,6);
       if(!digits)return;
       e.preventDefault();
-      digits.split('').forEach((d,i)=>{if(inputs[i])inputs[i].value=d});
-      inputs[Math.min(digits.length,6)-1]?.focus();
+      const start=digits.length===inputs.length?0:index;
+      digits.split('').forEach((d,i)=>{if(inputs[start+i])inputs[start+i].value=d});
+      inputs[Math.min(inputs.length-1,start+digits.length-1)]?.focus();
     });
   });
 }
