@@ -193,3 +193,26 @@ test('manual debt send is admin-only, bound to customer ID, and never mutates fi
  assert.match(indexHtml,/fixed-production-bridge\.js\?v=[^"]*manual-debt=20261101/);
  assert.match(indexHtml,/fixed-ui-runtime-12\.js\?v=[^"]*linked-contact=20261101/);
 });
+
+
+test('unmigrated backend falls back to the existing PNG chooser, not a broken Send button',async()=>{
+ const error=Object.assign(Error('Could not find the function'),{code:'PGRST202'});
+ const f=debtSendFixture({throwError:error});
+ await f.fn('send');
+ assert.equal(f.calls.length,1);
+ assert.equal(f.blobs.length,1);
+ assert.equal(f.shares.length,1);
+ assert.equal(f.alerts.length,0);
+ assert.match(f.toasts[0][0],/Chưa kích hoạt gửi trực tiếp/);
+});
+
+test('unknown network failure does not retry or fall back because message delivery may have occurred',async()=>{
+ const error=Object.assign(Error('network timeout'),{code:'TIMEOUT'});
+ const f=debtSendFixture({throwError:error});
+ await f.fn('send');
+ assert.equal(f.calls.length,1);
+ assert.equal(f.blobs.length,0);
+ assert.equal(f.shares.length,0);
+ assert.equal(f.toasts.length,0);
+ assert.equal(f.alerts.length,1);
+});
