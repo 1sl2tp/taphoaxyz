@@ -24,8 +24,10 @@
   const productName=p=>String(p?.ten||p?.product_name||p?.name||'').trim();
   const productImage=p=>String(p?.imageUrl||p?.image_url||p?.image||'').trim();
   const safeMediaUrl=value=>{
-    const raw=String(value||'').trim();
-    if(!/^https?:\/\//i.test(raw)||/[\u0000-\u001f\u007f]/.test(raw))return '';
+    const input=String(value||'');
+    if(/[\u0000-\u001f\u007f]/.test(input))return '';
+    const raw=input.trim();
+    if(!/^https?:\/\//i.test(raw))return '';
     try{
       const url=new URL(raw);
       return (url.protocol==='https:'||url.protocol==='http:')&&url.hostname?url.href:'';
