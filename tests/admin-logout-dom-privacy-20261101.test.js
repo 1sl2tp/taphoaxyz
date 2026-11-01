@@ -5,7 +5,7 @@ const html=readFileSync(new URL('../admin-gia.html',import.meta.url),'utf8');
 test('logout clears hidden product, source and market detail DOM as well as in-memory state',()=>{
  assert.match(html,/SPEC-ADMIN-LOGOUT-DOM-PRIVACY-20261101/);
  for(const id of ['productBody','sourceChips','comparisonBody','marketCurrent','marketCandidateTags','historyBody'])
-   assert.ok(html.includes(`$('\${id}').replaceChildren()`),id+' was not cleared');
+   assert.ok(html.includes(`$('${id}').replaceChildren()`),id+' was not cleared');
  assert.match(html,/\$\('statusText'\)\.classList\.remove\('error'\)/);
  assert.match(html,/\$\('sourceForm'\)\.reset\(\);\$\('productForm'\)\.reset\(\)/);
 });
