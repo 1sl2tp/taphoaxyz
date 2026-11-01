@@ -72,7 +72,7 @@ td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{
         </div>
       </div>
       <button id="loginBtn" class="btn primary" type="submit" style="width:100%;margin-top:14px">Vào bảng giá</button>
-      <div id="loginMsg" class="msg"></div>
+      <div id="loginMsg" class="msg" role="status" aria-live="polite" aria-atomic="true"></div>
     </form>
   </section>
 
@@ -115,7 +115,7 @@ td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{
         <button id="refreshOrdersBtn" class="btn" type="button">Làm mới</button>
         <button id="printOrdersBtn" class="btn" type="button">In / Lưu PDF</button>
       </div>
-      <div id="ordersSummary" class="summary">Đang tải đơn tạm…</div>
+      <div id="ordersSummary" class="summary" role="status" aria-live="polite" aria-atomic="true">Đang tải đơn tạm…</div>
       <div class="table-wrap">
         <table id="ordersTable">
           <thead id="ordersHead"></thead>
@@ -124,7 +124,7 @@ td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{
         <div id="ordersEmpty" class="empty hidden">Hiện không có đơn tạm của nguồn này.</div>
       </div>
     </div>
-    <div id="appMsg" class="msg" style="padding:0 12px"></div>
+    <div id="appMsg" class="msg" role="status" aria-live="polite" aria-atomic="true" style="padding:0 12px"></div>
   </section>
   <div class="foot">Các dòng trống cuối bảng dùng để thêm sản phẩm mới. Điền tên + giá vốn rồi bấm “Lưu thay đổi”.</div>
 </main>
