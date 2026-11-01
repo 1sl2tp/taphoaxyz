@@ -1941,10 +1941,19 @@
       }
     }
 
+    // SPEC-ADMIN-MARKET-MUTATION-OWNER-20261101:
+    // an old response must never repaint a different product or login.
+    function marketMutationCurrent(sessionGeneration,adminUid,productCode){
+      return sessionGeneration===catalogSessionGeneration&&identity?.uid===adminUid
+        &&identity?.role==='admin'&&marketSelectedCode===productCode;
+    }
+
     async function renameMarketProduct(){
       const item=selectedMarketItem();
       const input=$('marketNameInput');
       if(!item||!input)return;
+      const sessionGeneration=catalogSessionGeneration,adminUid=identity?.uid,productCode=item.product_code;
+      if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
       const name=String(input.value||'').replace(/\s+/g,' ').trim();
       if(!name){
         input.focus();
@@ -1957,17 +1966,22 @@
       try{
         const oldName=item.product_name;
         await rpc('taphoa_admin_rename_product',{p_product_code:item.product_code,p_name:name});
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         await loadMarketMappings(false);
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         const refreshed=selectedMarketItem();
         if(refreshed){
           await autoRefineMarketCandidates(refreshed);
+          if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         }
         $('marketUpdateStatus').textContent='Đã đổi tên '+oldName+' → '+name+'.';
       }catch(error){
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         console.error('rename market product',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không đổi được tên sản phẩm.';
         input.focus();
       }finally{
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         const next=$('marketCurrent').querySelector('[data-market-rename]');
         if(next){next.disabled=false;next.textContent='Lưu tên';}
       }
@@ -1976,17 +1990,24 @@
     async function assignMarketCandidate(candidateId){
       const item=selectedMarketItem();
       if(!item||!candidateId)return;
+      const sessionGeneration=catalogSessionGeneration,adminUid=identity?.uid,productCode=item.product_code;
+      if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
       const button=Array.from($('marketCandidateList').querySelectorAll('[data-market-candidate]')).find(function(b){return b.dataset.marketCandidate===candidateId;});
       if(button){button.disabled=true;button.textContent='Đang gán…';}
       try{
         await rpc('taphoa_set_product_market_link',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         await loadMarketMappings(false);
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         await selectMarketProduct(item.product_code);
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         $('marketUpdateStatus').textContent='Đã gán '+item.product_name+' với sản phẩm siêu thị.';
       }catch(error){
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         console.error('assign market',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không gán được sản phẩm.';
       }finally{
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         if(button){button.disabled=false;button.textContent='Gán';}
       }
     }
@@ -1994,12 +2015,17 @@
     async function clearMarketCandidate(candidateId){
       const item=selectedMarketItem();
       if(!item||!candidateId)return;
+      const sessionGeneration=catalogSessionGeneration,adminUid=identity?.uid,productCode=item.product_code;
+      if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
       try{
         await rpc('taphoa_remove_product_market_link',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         await loadMarketMappings(false);
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         renderMarketCandidates();
         $('marketUpdateStatus').textContent='Đã bỏ sản phẩm siêu thị khỏi '+item.product_name+'.';
       }catch(error){
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         console.error('clear market link',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không bỏ gán được sản phẩm.';
       }
@@ -2008,12 +2034,17 @@
     async function setMarketImage(candidateId){
       const item=selectedMarketItem();
       if(!item||!candidateId)return;
+      const sessionGeneration=catalogSessionGeneration,adminUid=identity?.uid,productCode=item.product_code;
+      if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
       try{
         await rpc('taphoa_set_product_market_image',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         await loadMarketMappings(false);
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         renderMarketCandidates();
         $('marketUpdateStatus').textContent='Đã chọn ảnh cho '+item.product_name+'.';
       }catch(error){
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         console.error('set market image',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không chọn được ảnh.';
       }
@@ -2022,15 +2053,20 @@
     async function copyMarketVariant(candidateId){
       const item=selectedMarketItem();
       if(!item||!candidateId)return;
+      const sessionGeneration=catalogSessionGeneration,adminUid=identity?.uid,productCode=item.product_code;
+      if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
       try{
         const result=await rpc('taphoa_copy_market_variant_to_product',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         await loadMarketMappings(false);
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         renderMarketCandidates();
         const bits=[];
         if(result&&result.variant_color)bits.push('màu '+result.variant_color);
         if(result&&result.variant_label)bits.push(result.variant_label);
         $('marketUpdateStatus').textContent='Đã chép '+(bits.join(' · ')||'thuộc tính màu')+' vào '+item.product_name+'.';
       }catch(error){
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         console.error('copy market variant',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không chép được màu/biến thể.';
       }
@@ -2039,9 +2075,13 @@
     async function copyMarketPack(candidateId){
       const item=selectedMarketItem();
       if(!item||!candidateId)return;
+      const sessionGeneration=catalogSessionGeneration,adminUid=identity?.uid,productCode=item.product_code;
+      if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
       try{
         const result=await rpc('taphoa_copy_market_pack_to_product',{p_product_code:item.product_code,p_canonical_product_id:candidateId});
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         await loadMarketMappings(false);
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         renderMarketCandidates();
         const nested=result&&result.units_per_carton&&result.retail_inner_qty&&result.retail_inner_unit&&result.retail_bundle_qty&&result.retail_bundle_unit&&
           String(result.retail_inner_unit).toLowerCase()===String(result.retail_bundle_unit).toLowerCase();
@@ -2056,6 +2096,7 @@
         ].filter(Boolean).join(' · ');
         $('marketUpdateStatus').textContent='Đã chép quy cách'+(qc?' '+qc:'')+' vào '+item.product_name+'.';
       }catch(error){
+        if(!marketMutationCurrent(sessionGeneration,adminUid,productCode))return;
         console.error('copy market pack',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không chép được quy cách.';
       }
