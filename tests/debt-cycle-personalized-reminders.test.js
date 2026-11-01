@@ -73,7 +73,8 @@ test('monthly period shows distinct purchase days separately from orders, withou
  assert.match(ui,/numeric\(month.orderCount\)/);
  assert.match(ui,/Kỳ mua /);
  assert.match(ui,/Có công nợ từ tháng trước chuyển sang/);
- assert.match(ui,/Xem các kỳ tháng \(6 tháng gần nhất\)/);
+ assert.match(ui,/Xem lịch sử kỳ mua và chu kỳ/);
+ assert.match(ui,/Kỳ tháng \(6 tháng gần nhất\)/);
  assert.doesNotMatch(ui,/purchaseCount\+' lượt mua'/);
  const source=ui.slice(ui.indexOf('  function currentMonthStats('),ui.indexOf('  function alertText('));
  const vmCtx={numeric:v=>Math.max(0,Number(v)||0),String,Number};
