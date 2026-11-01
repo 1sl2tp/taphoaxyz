@@ -15,6 +15,20 @@
         .bottom-sheet-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
         #appContainer { transition: max-width 0.2s ease; width: 100%; max-width: 428px; height: 100vh; height: 100dvh; }
+/* SPEC-IOS-PWA-SHELL-TOP-20261101:
+   iOS installed PWA has an independent dynamic visual viewport. A centered
+   100vh body around a 100dvh app can leave a conspicuous gray top gutter.
+   Anchor the app to the TOP of the available viewport instead; keep the
+   horizontal centering/max-width, iOS-owned status-bar inset, desktop mode,
+   internal scrolling and all touch targets unchanged. */
+@media (max-width:767px){
+  body:not([data-force-pc="1"]){
+    height:100dvh !important;
+    align-items:flex-start !important;
+    background-color:var(--app-surface,#fff) !important;
+  }
+}
+
         @media (min-width: 768px) {
             body { background-color: #d1d5db; }
             .pc-mode #appContainer {
