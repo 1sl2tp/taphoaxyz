@@ -654,7 +654,8 @@ $('saveBtn').addEventListener('click',async()=>{
       if(product)product.cost=change.cost;
     }
     pendingCostEdits.clear();pendingNewRows=[];
-    render(true);
+    // Keep old form inputs disabled until either the refresh succeeds or
+    // the fallback render is ready; new edits must not be lost mid-refresh.
     const savedMessage='Đã lưu '+Number(data.changed||0)+' giá và thêm '+Number(data.created||0)+' sản phẩm mới.';
     try{
       await loadCatalog();
@@ -663,6 +664,7 @@ $('saveBtn').addEventListener('click',async()=>{
     }catch(refreshError){
       if(sessionGeneration!==supplierSessionGeneration||session?.token!==token)return;
       console.warn('NCC saved but catalog refresh failed',refreshError);
+      render(true);
       setMsg('appMsg',savedMessage+' Chưa tải lại được danh mục; hãy mở lại trang khi mạng ổn định.','ok');
     }
   }catch(err){

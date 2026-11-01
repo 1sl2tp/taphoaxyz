@@ -13,7 +13,8 @@ test('NCC price save blocks overlapping writes and freezes inputs for the reques
 test('commit acknowledgement clears draft baselines before attempting a best-effort refresh',()=>{
  assert.match(html,/SPEC-NCC-COMMITTED-REFRESH-20261101/);
  assert.match(html,/originals\.set\(change\.product_code,change\.cost\)/);
- assert.match(html,/pendingCostEdits\.clear\(\);pendingNewRows=\[\];\s*render\(true\)/);
+ assert.match(html,/pendingCostEdits\.clear\(\);pendingNewRows=\[\]/);
+ assert.match(html,/catch\(refreshError\)\{[\s\S]*?render\(true\)/);
  assert.match(html,/try\{\s*await loadCatalog\(\)/);
  assert.match(html,/catch\(refreshError\)\{[\s\S]*?Chưa tải lại được danh mục/);
 });
