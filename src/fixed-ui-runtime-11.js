@@ -82,11 +82,11 @@
                             <div style="width: 36px; height: 36px;" class="order-rank-dot order-rank-dot-delivered rounded-full font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
                             <div class="min-w-0 flex-1">
                                 <div class="order-card-title-row">
-                                    <p class="font-bold text-[14px] text-gray-700 truncate min-w-0">${o.tenKh}</p>
+                                    <p class="font-bold text-[14px] text-gray-700 truncate min-w-0">${escapeProductEditorValue(o.tenKh)}</p>
                                     <p class="order-card-total font-extrabold text-[15px] text-gray-900">${o.tongThu.toLocaleString('vi-VN')}</p>
                                 </div>
                                 <div class="order-card-meta-row">
-                                    <p class="text-[11px] text-gray-400 mt-0.5 truncate min-w-0">${shortTime} · ${o.countSp} mã · SL ${o.tongSl}</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5 truncate min-w-0">${escapeProductEditorValue(shortTime)} · ${o.countSp} mã · SL ${o.tongSl}</p>
                                     <p class="profit-only text-[11px] font-bold text-success mt-0.5">+${o.tongLai.toLocaleString('vi-VN')}</p>
                                 </div>
                                 ${productPreview.items.length ? `<div class="order-product-preview"><div class="order-product-text-row">${productPreview.items.map(item => `<span class="order-product-text">${escapeProductEditorValue(item)}</span>`).join('')}${productPreview.remaining ? `<span class="order-product-more">+${productPreview.remaining} mã</span>` : ''}</div></div>` : ''}
