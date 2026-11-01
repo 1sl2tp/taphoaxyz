@@ -119,6 +119,14 @@
 
         function renderCongNo() {
             if (!hasPermission('canViewDebt')) return;
+            // SPEC-DEBT-SORT-MOBILE-TYPE-20261101: the accessible native picker
+            // still owns the sort. Its compact visible label always reflects
+            // the currently selected option, including when data reloads.
+            const debtSortNative = document.getElementById('debtSortSelect');
+            const debtSortVisible = document.getElementById('debtSortVisibleValue');
+            if (debtSortNative && debtSortVisible) {
+                debtSortVisible.textContent = debtSortNative.options?.[debtSortNative.selectedIndex]?.text || 'Lâu chưa giao';
+            }
             if (!appData.khachhang || appData.khachhang.length <= 1) return;
             let khRows = getCustomerRowsVisibleToCurrentRole();
             
