@@ -10,6 +10,13 @@ test('NCC price save blocks overlapping writes and freezes inputs for the reques
  assert.match(html,/document\.querySelectorAll\('#rows input'\)\.forEach\(input=>\{input\.disabled=false;\}\)/);
  assert.match(html,/if\(sessionGeneration!==supplierSessionGeneration\|\|session\?\.token!==token\)return;/);
 });
+test('commit acknowledgement clears draft baselines before attempting a best-effort refresh',()=>{
+ assert.match(html,/SPEC-NCC-COMMITTED-REFRESH-20261101/);
+ assert.match(html,/originals\.set\(change\.product_code,change\.cost\)/);
+ assert.match(html,/pendingCostEdits\.clear\(\);pendingNewRows=\[\];\s*render\(true\)/);
+ assert.match(html,/try\{\s*await loadCatalog\(\)/);
+ assert.match(html,/catch\(refreshError\)\{[\s\S]*?Chưa tải lại được danh mục/);
+});
 test('failed saves keep existing drafts and old sessions cannot paint a new session',()=>{
  assert.match(html,/catch\(err\)\{\s*if\(sessionGeneration!==supplierSessionGeneration\|\|session\?\.token!==token\)return/);
  assert.match(html,/clearSupplierSession\(\);showLogin\('Phiên đã hết hạn/);

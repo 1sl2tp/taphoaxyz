@@ -641,11 +641,30 @@ $('saveBtn').addEventListener('click',async()=>{
   $('saveBtn').disabled=true;$('saveBtn').textContent='Đang lưu…';
   document.querySelectorAll('#rows input').forEach(input=>{input.disabled=true;});
   try{
+    // SPEC-NCC-COMMITTED-REFRESH-20261101: never report a committed price
+    // change as failed merely because its post-save catalog read failed.
     const data=await rpc('taphoa_supplier_apply_changes',{p_token:token,p_changes:changes});
     if(sessionGeneration!==supplierSessionGeneration||session?.token!==token)return;
-    await loadCatalog();
-    if(sessionGeneration!==supplierSessionGeneration||session?.token!==token)return;
-    setMsg('appMsg','Đã lưu '+Number(data.changed||0)+' giá và thêm '+Number(data.created||0)+' sản phẩm mới.','ok');
+    // Refresh may be offline: advance the local baseline first, otherwise
+    // the next Save would resend already-committed new product rows.
+    for(const change of changes){
+      if(!change.product_code)continue;
+      originals.set(change.product_code,change.cost);
+      const product=items.find(row=>row.product_code===change.product_code);
+      if(product)product.cost=change.cost;
+    }
+    pendingCostEdits.clear();pendingNewRows=[];
+    render(true);
+    const savedMessage='Đã lưu '+Number(data.changed||0)+' giá và thêm '+Number(data.created||0)+' sản phẩm mới.';
+    try{
+      await loadCatalog();
+      if(sessionGeneration!==supplierSessionGeneration||session?.token!==token)return;
+      setMsg('appMsg',savedMessage,'ok');
+    }catch(refreshError){
+      if(sessionGeneration!==supplierSessionGeneration||session?.token!==token)return;
+      console.warn('NCC saved but catalog refresh failed',refreshError);
+      setMsg('appMsg',savedMessage+' Chưa tải lại được danh mục; hãy mở lại trang khi mạng ổn định.','ok');
+    }
   }catch(err){
     if(sessionGeneration!==supplierSessionGeneration||session?.token!==token)return;
     setMsg('appMsg',err.message||'Không lưu được.','error');
