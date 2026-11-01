@@ -287,6 +287,49 @@
     @media(min-width:520px) and (max-width:700px){
       .market-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
+
+    /* SPEC-ADMIN-GOODS-COMPACT-20261101: reduce toolbar height; keep frequent actions visible. */
+    #goodsPane .source-row{display:flex;flex-direction:row;align-items:center;gap:8px;overflow:visible;position:relative;z-index:8;padding:6px 10px;min-width:0}
+    #goodsPane .source-chips{display:flex;flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin;padding:2px 0}
+    #goodsPane .source-manage{position:relative;flex:none}
+    #goodsPane .source-manage summary{display:flex;align-items:center;justify-content:center;min-height:34px;padding:5px 9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#334155;font-weight:750;font-size:12px;white-space:nowrap;cursor:pointer;list-style:none}
+    #goodsPane .source-manage summary::-webkit-details-marker{display:none}
+    #goodsPane .source-manage summary::after{content:"⌄";margin-left:6px;color:#64748b}
+    #goodsPane .source-manage[open] summary{background:#eff6ff;border-color:#93c5fd}
+    #goodsPane .source-manage .source-actions{display:flex;position:absolute;top:calc(100% + 6px);right:0;z-index:12;width:min(390px,calc(100vw - 34px));flex-wrap:wrap;gap:6px;padding:9px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.14)}
+    #goodsPane .source-manage .source-actions .btn{min-height:36px;flex:1 0 auto}
+    #goodsPane .summary{display:flex;gap:8px;align-items:center;white-space:nowrap;min-width:0;padding:6px 10px}
+    #goodsPane .summary-hint{color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+    #goodsPane .summary .status{margin-left:auto;min-width:0}
+    #goodsPane .summary .msg{display:block;max-width:min(260px,32vw);min-height:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+    #goodsPane .searchbar input[type=search]{min-width:0}
+    #goodsPane .sheet-wrap table.name-sticky td[data-col="name"]{position:sticky;left:0;z-index:3;background:#fff;box-shadow:1px 0 0 var(--grid)}
+    #goodsPane .sheet-wrap table.name-sticky thead th[data-col="name"]{position:sticky;left:0;z-index:7;background:var(--head);box-shadow:1px 0 0 var(--grid)}
+    #goodsPane .sheet-wrap table.name-sticky tr:hover td[data-col="name"]{background:#fbfdff}
+    @media(max-width:800px){
+      .top{flex-wrap:nowrap;align-items:center;gap:8px;margin-bottom:8px}
+      .top .title{min-width:0}.top .title h1{font-size:18px;white-space:nowrap}
+      .top .title p{display:none}
+      .top-actions{width:auto;flex-wrap:nowrap;margin-left:auto}
+      .top-actions .btn{min-height:38px;padding:6px 9px;font-size:13px}
+      .admin-tabs{margin-bottom:8px;padding:3px;gap:3px}
+      .admin-tab{min-height:40px;padding:6px 9px}
+      #goodsPane .searchbar{grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding:8px}
+      #goodsPane #searchInput{grid-column:auto;min-height:40px;font-size:16px}
+      #goodsPane .searchbar .btn{min-height:40px;padding:7px 10px}
+      #goodsPane .sheet-wrap{max-height:calc(100dvh - 215px)}
+    }
+    @media(max-width:540px){
+      .top{flex-wrap:wrap}
+      .top-actions{width:100%;margin-left:0}
+      #goodsPane .searchbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+      #goodsPane #searchInput{grid-column:1/-1}
+      #goodsPane .searchbar .btn{width:100%}
+      #goodsPane .source-manage summary{font-size:11px;padding:5px 7px}
+      #goodsPane .summary-hint{display:none}
+      #goodsPane .summary .msg{max-width:42vw}
+      #goodsPane .sheet-wrap{max-height:calc(100dvh - 250px)}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -305,7 +348,7 @@
 
     <section id="appView" class="hidden">
       <div class="top">
-        <div class="title"><h1>Quản trị hàng hóa</h1><p>Chỉnh trực tiếp Supabase · tự lưu · kiểu bảng Excel</p></div>
+        <div class="title"><h1>Quản trị hàng hóa</h1><p>Tự lưu khi sửa · quản lý kiểu bảng</p></div>
         <div class="top-actions">
           <a class="btn home" href="./">Bán hàng</a>
           <a class="btn" href="/ncc/admin/">PIN NCC</a>
@@ -323,26 +366,28 @@
       <div id="goodsPane">
       <section class="panel">
         <div class="searchbar">
-          <input id="searchInput" placeholder="Tìm tên sản phẩm…" autocomplete="off">
-          <button id="columnSettingsBtn" class="btn" type="button">Cột</button>
+          <input id="searchInput" type="search" aria-label="Tìm sản phẩm" placeholder="Tìm nhanh sản phẩm…" autocomplete="off">
+          <button id="columnSettingsBtn" class="btn" type="button" title="Chọn cột thường dùng hoặc tùy chỉnh bảng">Cột</button>
           <button id="addProductBtn" class="btn primary" type="button">+ Sản phẩm</button>
-          <div class="status"><span id="statusText" class="msg">Supabase trực tiếp</span></div>
         </div>
 
         <div class="source-row">
-          <div id="sourceChips" class="source-chips"></div>
-          <div class="source-actions">
-            <button id="addSourceBtn" class="btn" type="button">+ Nguồn</button>
-            <button id="renameSourceBtn" class="btn" type="button" disabled>Sửa nguồn</button>
-            <button id="toggleSourceBtn" class="btn" type="button" disabled>Ẩn nguồn</button>
-            <button id="deleteSourceBtn" class="btn danger" type="button" disabled>Xóa nguồn</button>
-          </div>
+          <div id="sourceChips" class="source-chips" aria-label="Lọc nguồn sản phẩm"></div>
+          <details class="source-manage">
+            <summary>Quản lý nguồn</summary>
+            <div class="source-actions">
+              <button id="addSourceBtn" class="btn" type="button">+ Nguồn</button>
+              <button id="renameSourceBtn" class="btn" type="button" disabled>Sửa nguồn</button>
+              <button id="toggleSourceBtn" class="btn" type="button" disabled>Ẩn nguồn</button>
+              <button id="deleteSourceBtn" class="btn danger" type="button" disabled>Xóa nguồn</button>
+            </div>
+          </details>
         </div>
 
         <div class="summary">
           <span id="countText">Đang tải…</span>
-          <span>•</span>
-          <span>Rời ô hoặc Enter = tự lưu · AUTO xanh = tự động · ô xanh = giá bán đang dùng</span>
+          <span class="summary-hint" title="Rời ô hoặc nhấn Enter để lưu; AUTO xanh là giá tự động; ô xanh là giá bán đang dùng">ⓘ Tự lưu · giá AUTO</span>
+          <span class="status"><span id="statusText" class="msg" aria-live="polite">Sẵn sàng</span></span>
         </div>
 
         <div class="sheet-wrap">
@@ -622,6 +667,7 @@
       <div id="columnList" class="column-list"></div>
     </div>
     <div class="dialog-actions">
+      <button id="quickColumnsBtn" class="btn" type="button" title="Tên, giá vốn, giá bán, lãi, số lượng, quy cách, giá lẻ">Thường dùng</button>
       <button id="resetColumnsBtn" class="btn" type="button">Mặc định</button>
       <button class="btn primary dialog-close" type="button" data-dialog="columnDialog">Xong</button>
     </div>
@@ -635,6 +681,7 @@
     const PAGE_SIZE=100;
     let identity=null,client=null,items=[],comparisonItems=[],sources=[],total=0,offset=0,loading=false,searchTimer=0;
     let selectedSource='';
+    let pageRefreshQueued=false,pageRefreshReset=false;
     let adminView='goods';
     let analyticsLoaded=false,analyticsLoading=false;
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
@@ -666,6 +713,7 @@
       {id:'history',label:'Nhật ký',width:70,min:58},
       {id:'delete',label:'Xóa',width:48,min:42}
     ];
+    const QUICK_COLUMN_IDS=['name','cost','price','legacy_profit','units_per_carton','retail_unit','retail_price'];
     const defaultColumnPrefs=()=>({
       order:COLUMN_DEFS.map(c=>c.id),
       hidden:['standard_profit_percent'],
@@ -721,6 +769,8 @@
           }
         });
       }
+      // Only pin the name when it is the first visible column; preserve custom ordering.
+      table.classList.toggle('name-sticky',columnPrefs.order.find(id=>!columnPrefs.hidden.includes(id))==='name');
       installColumnResizers();
     }
     function installColumnResizers(){
@@ -1812,7 +1862,9 @@
     }
 
     async function loadPage(reset=false){
-      if(loading)return;if(reset)offset=0;loading=true;$('statusText').textContent='Đang tải…';
+      // Do not drop quick searches or source switches while a request is in flight.
+      if(loading){pageRefreshQueued=true;pageRefreshReset=pageRefreshReset||reset;return;}
+      if(reset)offset=0;loading=true;$('statusText').textContent='Đang tải…';
       try{
         const query=$('searchInput').value.trim();
         const mainPromise=rpc('taphoa_admin_price_catalog',{p_query:query,p_source:selectedSource,p_limit:PAGE_SIZE,p_offset:offset});
@@ -1830,7 +1882,14 @@
       }catch(error){
         console.error(error);comparisonItems=[];renderComparison();
         $('statusText').textContent='Lỗi tải dữ liệu';$('countText').textContent='Không tải được dữ liệu';
-      }finally{loading=false;updatePager();}
+      }finally{
+        loading=false;updatePager();
+        if(pageRefreshQueued){
+          const queuedReset=pageRefreshReset;
+          pageRefreshQueued=false;pageRefreshReset=false;
+          loadPage(queuedReset);
+        }
+      }
     }
 
     function renderComparison(){
@@ -2498,6 +2557,11 @@
     });
     document.addEventListener('click',e=>{const b=e.target.closest('.dialog-close');if(b){const d=$(b.dataset.dialog);if(d?.open)d.close();}});
     $('historyClose').addEventListener('click',()=>$('historyDialog').close());
+    $('quickColumnsBtn').addEventListener('click',()=>{
+      columnPrefs.order=[...QUICK_COLUMN_IDS,...columnPrefs.order.filter(id=>!QUICK_COLUMN_IDS.includes(id))];
+      columnPrefs.hidden=COLUMN_DEFS.map(col=>col.id).filter(id=>!QUICK_COLUMN_IDS.includes(id));
+      saveColumnPrefs();renderColumnSettings();applyColumnLayout();
+    });
     $('resetColumnsBtn').addEventListener('click',()=>{
       columnPrefs=defaultColumnPrefs();saveColumnPrefs();renderColumnSettings();applyColumnLayout();
     });
