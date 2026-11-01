@@ -39,9 +39,9 @@ test('all customer finance amounts use the rounded formatter; counts and percent
  assert.match(code,/amount\(r\.period_collected\)/);
  assert.match(code,/const percent=v=>/);
 });
-test('six status cards are arranged in balanced rows with responsive layout',()=>{
+test('eight period and lifetime status cards are arranged in balanced rows with responsive layout',()=>{
  assert.match(html,/class="analytics-cards care-overview-cards"/);
- assert.match(html,/#customerCarePane \.care-overview-cards\{\s*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(html,/#customerCarePane \.care-overview-cards\{\s*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.match(html,/@media\(max-width:760px\)\{\s*#customerCarePane \.care-overview-cards\{\s*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(html,/#customerCarePane \.care-list td\.num\{\s*text-align:right/);
  assert.match(html,/#customerCarePane \.care-finance-cards>div\{\s*display:grid;grid-template-rows/);

@@ -26,7 +26,7 @@ test('custom period selection invalidates an older in-flight customer report',()
  assert.match(care,/SPEC-ADMIN-CARE-PERIOD-20261101/);
  assert.match(care,/generation\+\+;loading=false;reloadQueued=false/);
  assert.match(care,/if\(\$\('carePeriodStart'\)\.value&&\$\('carePeriodEnd'\)\.value\)refreshPeriod\(\)/);
- assert.match(care,/số liệu đang hiển thị thuộc kỳ trước/);
+ assert.match(care,/invalidatePeriodFigures\(\);/);
  assert.match(care,/generation!==requestGeneration\|\|getIdentity\(\)\?\.uid!==identity\.uid\|\|reloadQueued/);
 });
 

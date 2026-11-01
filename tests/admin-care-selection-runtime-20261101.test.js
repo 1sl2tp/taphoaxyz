@@ -51,5 +51,5 @@ test('report accepts numeric RPC IDs selected via string DOM data attributes',()
 });
 test('report source rejects late failures from prior account or period',()=>{
   assert.match(source,/if\(generation!==requestGeneration\|\|getIdentity\(\)\?\.uid!==identity\.uid\|\|reloadQueued\)return;\s*\$\('careStatus'\)\.textContent='Không tải/);
-  assert.match(source,/if\(generation!==requestGeneration\|\|getIdentity\(\)\?\.uid!==identity\.uid\|\|reloadQueued\)return;\s*if\(voiceSetting/);
+  assert.match(source,/if\(generation!==requestGeneration\|\|getIdentity\(\)\?\.uid!==identity\.uid\|\|reloadQueued\)return;[\s\S]{0,450}if\(voiceSetting/);
 });

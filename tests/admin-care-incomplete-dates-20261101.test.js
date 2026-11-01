@@ -18,6 +18,7 @@ test('clearing a custom reporting date invalidates the old in-flight report',()=
    for(const id of ['carePeriodStart','carePeriodEnd'])
      state.nodes[id].addEventListener=(type,handler)=>{state.nodes[id].handlers[type]=handler;};
    const refreshPeriod=()=>{state.refreshes++};
+   const invalidatePeriodFigures=()=>{state.clears=(state.clears||0)+1;};
    ${source.slice(start,end)}
    globalThis.api={check:()=>({generation,loading,reloadQueued,loaded})};
  `,ctx);
@@ -28,7 +29,7 @@ test('clearing a custom reporting date invalidates the old in-flight report',()=
  assert.equal(ctx.api.check().reloadQueued,false);
  assert.equal(ctx.api.check().loaded,false);
  assert.equal(state.refreshes,0);
- assert.match(nodes.careStatus.textContent,/số liệu đang hiển thị thuộc kỳ trước/);
+ assert.match(nodes.careStatus.textContent,/Chọn đủ hai ngày/);\n assert.equal(state.clears,1);
  nodes.carePeriodEnd.value='2026-10-30';
  nodes.carePeriodEnd.handlers.change();
  assert.equal(state.refreshes,1);
