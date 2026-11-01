@@ -202,9 +202,12 @@
 
             let listHtml = '';
             filteredList.forEach(c => {
-                let subText = `GD cuối: ${c.lastTime}`;
+                // SPEC-DEBT-CARD-READABILITY-20261101: the full timestamp
+                // remains in the ledger; the card needs only the date.
+                const lastDate = String(c.lastTime || '').match(/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/)?.[0] || String(c.lastTime || '--');
+                let subText = `GD cuối ${lastDate}`;
                 if (currentDebtFilter === 'no' && c.debt > 0 && Number.isFinite(c.daysAgo)) {
-                    subText = `GD cuối: ${c.lastTime} · Giao cách ${c.daysAgo} ngày`;
+                    subText += ` · Giao cách ${c.daysAgo} ngày`;
                 }
 
                 listHtml += `
