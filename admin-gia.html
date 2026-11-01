@@ -242,6 +242,34 @@
     .care-finance-cards small{font-size:10px;color:#64748b}
     .care-tools input[type=date]{max-width:152px}
     @media(max-width:760px){.care-finance-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.care-tools input[type=date]{max-width:100%}}
+
+    /* SPEC-ADMIN-SUBPAGES-COMPACT-20261101: the customer report must not
+       squeeze filters into the title column at 320–428px. No data/rules change. */
+    #customerCarePane .care-tool-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+    #customerCarePane .care-tool-field label{font-size:11px;font-weight:750;color:#475569}
+    #customerCarePane .care-tool-field select{width:100%;min-width:0;min-height:42px}
+    #customerCarePane #careRefreshBtn{min-height:42px}
+    @media(max-width:700px){
+      .admin-tabs{width:100%;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;gap:4px}
+      .admin-tab{white-space:nowrap;flex:1 0 auto;padding:6px 10px;font-size:12px;min-height:44px}
+      #customerCarePane>.analytics-head{flex-direction:column;align-items:stretch;gap:8px;padding:10px}
+      #customerCarePane>.analytics-head>.care-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:end;width:100%}
+      #customerCarePane .care-tools select,#customerCarePane .care-tools input[type=date]{font-size:16px;min-height:44px;min-width:0;max-width:100%}
+      #customerCarePane #careRefreshBtn{grid-column:1/-1;min-height:44px;justify-self:stretch}
+      #customerCarePane .analytics-status{line-height:1.4;overflow-wrap:anywhere}
+      #customerCarePane .analytics-cards{gap:6px;padding:8px}
+      #customerCarePane .analytics-card{min-width:0;padding:8px}
+      #customerCarePane .analytics-card strong{font-size:21px}
+      #customerCarePane .care-finance-cards{gap:6px;padding:8px}
+      #customerCarePane .care-finance-cards>div{min-width:0;padding:8px}
+      #customerCarePane .care-finance-cards strong{font-size:clamp(15px,4vw,19px);overflow-wrap:anywhere}
+      #customerCarePane .care-filter{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px}
+      #customerCarePane #careSearch{grid-column:1/-1;min-width:0;width:100%;min-height:44px;font-size:16px}
+      #customerCarePane #careFilter{min-width:0;max-width:100%;min-height:44px;font-size:16px}
+      #customerCarePane #careCount{font-size:11px;white-space:nowrap}
+      #customerCarePane .care-list{max-height:min(52dvh,440px);-webkit-overflow-scrolling:touch}
+      #customerCarePane .care-detail{padding:10px}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -471,14 +499,18 @@
         <div class="analytics-head">
           <div><strong>Báo cáo & chăm sóc khách hàng</strong><small>Chỉ nhóm KH; chỉ đọc khi mở tab; không gửi tin tự động</small></div>
           <div class="care-tools">
-            <label for="careInactiveDays">Lâu chưa mua</label>
-            <select id="careInactiveDays"><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option></select>
-            <label for="carePeriod">Kỳ doanh thu</label>
-            <select id="carePeriod" aria-label="Chọn kỳ doanh thu và lợi nhuận">
-              <option value="all">Toàn thời gian</option><option value="7">7 ngày</option>
-              <option value="30">30 ngày</option><option value="90">90 ngày</option>
-              <option value="custom">Tùy chọn ngày</option>
-            </select>
+            <div class="care-tool-field">
+              <label for="careInactiveDays">Lâu chưa mua</label>
+              <select id="careInactiveDays"><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option></select>
+            </div>
+            <div class="care-tool-field">
+              <label for="carePeriod">Kỳ doanh thu</label>
+              <select id="carePeriod" aria-label="Chọn kỳ doanh thu và lợi nhuận">
+                <option value="all">Toàn thời gian</option><option value="7">7 ngày</option>
+                <option value="30">30 ngày</option><option value="90">90 ngày</option>
+                <option value="custom">Tùy chọn ngày</option>
+              </select>
+            </div>
             <input id="carePeriodStart" type="date" class="hidden" aria-label="Từ ngày" title="Từ ngày">
             <input id="carePeriodEnd" type="date" class="hidden" aria-label="Đến ngày" title="Đến ngày">
             <button id="careRefreshBtn" class="btn" type="button">Làm mới</button>
