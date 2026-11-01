@@ -68,3 +68,40 @@
 #customerDebtContentToShare .debt-cycle-history-item strong{
   color:#1e293b;font-size:12px;
 }
+
+
+/* SPEC-DEBT-CYCLE-DETAIL-DENSITY-20261101
+   Only the iPhone debt detail sheet is tightened. Policy warning, due
+   date, month/cycle counts and both expandable histories remain visible
+   and fully accessible; no recomputation or truncation of their text. */
+@media (max-width:767px){
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-detail{
+    padding:8px 14px 7px;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-detail-title{
+    font-size:12px;
+    font-weight:700;
+    line-height:1.28;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-detail-title + .debt-cycle-detail-title{
+    margin-top:1px;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-detail-metrics{
+    margin-top:2px;
+    line-height:1.3;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-advice{
+    margin-top:2px;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-advice > summary{
+    min-height:32px;
+    padding:5px 0 4px 2px;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-history{
+    margin-top:1px;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-history-title{
+    min-height:32px;
+    padding:5px 0 2px 2px;
+  }
+}
