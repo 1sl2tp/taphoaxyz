@@ -9,7 +9,7 @@
   let ownQcTimer=null;
   // SPEC-MEDIA-CANDIDATES-SESSION-20261101: stale search replies cannot
   // show options from another product, account or picker session.
-  let candidateRequestGeneration=0,pickerGeneration=0;
+  let candidateRequestGeneration=0,pickerGeneration=0,imageMutationBusy=false;
   const currentMediaUser=()=>String(prod()?.getIdentity?.()?.uid||'');
   const mediaSelectionCurrent=(code,user,generation)=>
     activeProductCode===code&&currentMediaUser()===user&&pickerGeneration===generation&&
@@ -646,13 +646,16 @@
     renderSelectedThumb(product);
   }
 
-  async function persistMarketCompare(kind,qc=null){
-    if(!activeProductCode)return;
+  async function persistMarketCompare(kind,qc=null,code=activeProductCode){
+    if(!code)return;
+    const user=currentMediaUser(),generation=pickerGeneration;
     try{
-      await prod()?.setProductMediaCompare?.(activeProductCode,kind,qc);
-      const fresh=stateProducts().find(row=>productCode(row)===activeProductCode);
+      await prod()?.setProductMediaCompare?.(code,kind,qc);
+      if(!mediaSelectionCurrent(code,user,generation))return;
+      const fresh=stateProducts().find(row=>productCode(row)===code);
       renderSelectedMarketSummary(fresh);
     }catch(error){
+      if(!mediaSelectionCurrent(code,user,generation))return;
       console.error('set market compare',error);
       if(typeof showToast==='function')showToast(error?.message||'Không lưu được quy cách của siêu thị.','warning');
     }
@@ -670,18 +673,22 @@
     const qc=Number(value)||0;
     clearTimeout(compareTimer);
     if(qc<=0)return;
-    const current=stateProducts().find(row=>productCode(row)===activeProductCode);
+    const code=activeProductCode;
+    const current=stateProducts().find(row=>productCode(row)===code);
     const kind=String(current?.marketCompareKind||'').toLowerCase()==='carton'?'carton':'retail';
-    compareTimer=setTimeout(()=>persistMarketCompare(kind,qc),350);
+    compareTimer=setTimeout(()=>persistMarketCompare(kind,qc,code),350);
   }
 
-  async function persistOwnQc(qc){
-    if(!activeProductCode||qc<=0)return;
+  async function persistOwnQc(qc,code=activeProductCode){
+    if(!code||qc<=0)return;
+    const user=currentMediaUser(),generation=pickerGeneration;
     try{
-      await prod()?.setProductMediaOwnQc?.(activeProductCode,qc);
-      const fresh=stateProducts().find(row=>productCode(row)===activeProductCode);
+      await prod()?.setProductMediaOwnQc?.(code,qc);
+      if(!mediaSelectionCurrent(code,user,generation))return;
+      const fresh=stateProducts().find(row=>productCode(row)===code);
       renderOwnPriceSummary(fresh);
     }catch(error){
+      if(!mediaSelectionCurrent(code,user,generation))return;
       console.error('set own compare qc',error);
       if(typeof showToast==='function')showToast(error?.message||'Không lưu được quy cách của mình.','warning');
     }
@@ -691,7 +698,8 @@
     const qc=Number(value)||0;
     clearTimeout(ownQcTimer);
     if(qc<=0)return;
-    ownQcTimer=setTimeout(()=>persistOwnQc(qc),350);
+    const code=activeProductCode;
+    ownQcTimer=setTimeout(()=>persistOwnQc(qc,code),350);
   }
 
   async function selectProduct(code){
@@ -817,40 +825,54 @@
     }
   }
 
+  // SPEC-MEDIA-MUTATION-OWNER-20261101: never paint or refresh a different
+  // product after the original media mutation resolves on a slow connection.
   async function chooseCandidate(id){
-    if(!activeProductCode||!id)return;
+    if(!activeProductCode||!id||imageMutationBusy)return;
+    const code=activeProductCode,user=currentMediaUser(),generation=pickerGeneration;
+    imageMutationBusy=true;
     try{
       if(typeof showLoading==='function')showLoading('Đang lưu ảnh...');
-      await prod()?.setProductMedia?.(activeProductCode,id);
+      await prod()?.setProductMedia?.(code,id);
+      if(!mediaSelectionCurrent(code,user,generation))return;
       if(window.SheetDB?.read)await SheetDB.read('sanpham');
+      if(!mediaSelectionCurrent(code,user,generation))return;
       renderProducts(document.getElementById('productImageProductSearch')?.value||'');
-      const fresh=stateProducts().find(row=>productCode(row)===activeProductCode);
+      const fresh=stateProducts().find(row=>productCode(row)===code);
       renderSelectedMarketSummary(fresh);
       document.getElementById('productImageClearButton')?.classList.toggle('hidden',!productImage(fresh));
       if(typeof showToast==='function')showToast('Đã chọn ảnh sản phẩm.','success');
     }catch(error){
+      if(!mediaSelectionCurrent(code,user,generation))return;
       console.error('set product image',error);
       if(typeof showToast==='function')showToast(error?.message||'Không lưu được ảnh.','warning');
     }finally{
-      if(typeof hideLoading==='function')hideLoading();
+      imageMutationBusy=false;
+      if(currentMediaUser()===user&&typeof hideLoading==='function')hideLoading();
     }
   }
 
   async function clearSelectedImage(){
-    if(!activeProductCode)return;
+    if(!activeProductCode||imageMutationBusy)return;
+    const code=activeProductCode,user=currentMediaUser(),generation=pickerGeneration;
+    imageMutationBusy=true;
     try{
       if(typeof showLoading==='function')showLoading('Đang bỏ ảnh...');
-      await prod()?.clearProductMedia?.(activeProductCode);
+      await prod()?.clearProductMedia?.(code);
+      if(!mediaSelectionCurrent(code,user,generation))return;
       if(window.SheetDB?.read)await SheetDB.read('sanpham');
+      if(!mediaSelectionCurrent(code,user,generation))return;
       document.getElementById('productImageClearButton')?.classList.add('hidden');
       renderSelectedMarketSummary(null);
       renderProducts(document.getElementById('productImageProductSearch')?.value||'');
       if(typeof showToast==='function')showToast('Đã bỏ ảnh sản phẩm.','success');
     }catch(error){
+      if(!mediaSelectionCurrent(code,user,generation))return;
       console.error('clear product image',error);
       if(typeof showToast==='function')showToast(error?.message||'Không bỏ được ảnh.','warning');
     }finally{
-      if(typeof hideLoading==='function')hideLoading();
+      imageMutationBusy=false;
+      if(currentMediaUser()===user&&typeof hideLoading==='function')hideLoading();
     }
   }
 
