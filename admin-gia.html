@@ -1757,10 +1757,13 @@
         marketPriceRefsHtml(item)+marketSourceStatusHtml(item)+cards;
     }
 
+    // SPEC-ADMIN-MARKET-LOAD-RECOVERY-20261101: stale fetch failures must
+    // not overwrite the next search, and errors must never render old rows.
     async function loadMarketMappings(reset=false){
       if(marketLoading){marketRefreshQueued=true;marketRefreshReset=marketRefreshReset||reset;return;}
       if(reset)marketOffset=0;
       marketLoading=true;
+      let ready=false;
       $('marketMapCount').textContent='Đang tải…';
       try{
         const requestedQuery=$('marketOwnSearch').value.trim();
@@ -1780,14 +1783,21 @@
         marketTotal=Number(data&&data.total)||0;
         if(marketSelectedCode&&!marketItems.some(function(x){return x.product_code===marketSelectedCode;}))marketSelectedCode='';
         renderMarketSourceOptions();
-        renderMarketProducts();
         renderMarketCurrent();
+        ready=true;
       }catch(error){
+        if(marketRefreshQueued)return;
         console.error('market mappings',error);
-        $('marketProductList').innerHTML='<div class="empty">Không tải được dữ liệu gán siêu thị.</div>';
+        marketItems=[];marketTotal=0;marketSelectedCode='';
+        renderMarketCurrent();
+        $('marketMapCount').textContent='Không tải được danh sách';
+        $('marketProductList').innerHTML='<div class="empty">Không tải được dữ liệu gán siêu thị. Hãy đổi bộ lọc hoặc mở lại tab để thử lại.</div>';
+        $('marketPageText').textContent='—';
+        $('marketPrevBtn').disabled=true;
+        $('marketNextBtn').disabled=true;
       }finally{
         marketLoading=false;
-        renderMarketProducts();
+        if(ready)renderMarketProducts();
         if(marketRefreshQueued){
           const queuedReset=marketRefreshReset;
           marketRefreshQueued=false;marketRefreshReset=false;
