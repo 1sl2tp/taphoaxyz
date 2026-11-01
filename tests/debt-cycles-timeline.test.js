@@ -158,3 +158,63 @@ test('compact debt warning keeps due, overdue, and pending evidence visually dis
   assert.equal(brief({...base,policyIsDue:false,daysWithoutPurchase:1}),'Cách mua 1 ngày');
   assert.equal(brief({...base,policyDaysOverdue:0}),'Đến hạn đối chiếu');
 });
+
+
+test('readonly user debt view skips admin-only cycle RPC without an error banner',async()=>{
+  const warnings=[];
+  let reads=0,mainRenders=0,mainOpens=0,removed=0;
+  let identity={uid:'u1',role:'user'};
+  const stalePanel={remove:()=>{removed++}};
+  const holder={querySelector:selector=>selector==='#debtCyclePanel'?stalePanel:null};
+  const list={querySelectorAll:()=>[],querySelector:()=>null};
+  const elements={debtCustomerListContainer:list,customerDebtContentToShare:holder,
+    cDebtModalHistoryList:{}};
+  const window={
+    renderCongNo(){mainRenders++;},
+    openCustomerDebtModal(){mainOpens++;},
+    TAPHOA_PRODUCTION:{
+      getIdentity:()=>identity,getAccessMode:()=> 'account',
+      async debtCycles(){reads++;return [];}
+    }
+  };
+  const ctx={window,document:{getElementById:id=>elements[id]||null},hasPermission:()=>true,
+    console:{warn:(...args)=>warnings.push(args)},Date,Map,Set,Intl,Number,Math};
+  vm.createContext(ctx);vm.runInContext(js,ctx);
+  window.renderCongNo();
+  await new Promise(resolve=>setImmediate(resolve));
+  await window.openCustomerDebtModal('u1');
+  assert.equal(mainRenders,1,'canonical debt list remains accessible');
+  assert.equal(mainOpens,1,'canonical readonly debt modal still opens');
+  assert.equal(reads,0,'never invoke admin-only debt cycles for user');
+  assert.equal(warnings.length,0,'no misleading failed-RPC banner');
+  assert.ok(removed>=1,'old admin cycle detail must not remain in user modal');
+  assert.equal(window.TAPHOA_DEBT_CYCLES.current('u1'),null);
+  assert.equal(window.TAPHOA_DEBT_CYCLES.list('u1').length,0);
+});
+
+test('admin cycle fetch completing after switching to user is ignored and not exposed through UI API',async()=>{
+  let resolveRequest,reads=0,mainRenders=0;
+  let identity={uid:'admin-a',role:'admin'};
+  const warnings=[];
+  const window={
+    renderCongNo(){mainRenders++;},
+    TAPHOA_PRODUCTION:{
+      getIdentity:()=>identity,getAccessMode:()=> 'account',
+      debtCycles:()=>{reads++;return new Promise(resolve=>{resolveRequest=resolve})}
+    }
+  };
+  const ctx={window,document:{getElementById:()=>null},hasPermission:()=>true,
+    console:{warn:(...args)=>warnings.push(args)},Date,Map,Set,Intl,Number,Math};
+  vm.createContext(ctx);vm.runInContext(js,ctx);
+  window.renderCongNo();
+  assert.equal(reads,1);
+  identity={uid:'user-b',role:'user'};
+  window.renderCongNo();
+  resolveRequest([{customerId:'c1',cycles:[{number:1,closedAt:null,daysWithoutPurchase:2}]}]);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(mainRenders,2);
+  assert.equal(warnings.length,0);
+  assert.equal(reads,1);
+  assert.equal(window.TAPHOA_DEBT_CYCLES.current('c1'),null);
+  assert.equal(window.TAPHOA_DEBT_CYCLES.list('c1').length,0);
+});
