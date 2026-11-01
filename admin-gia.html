@@ -816,7 +816,7 @@
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
     let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketPollingGeneration=0,marketSearchTags=[];
-    let marketRefreshQueued=false,marketRefreshReset=false,marketCandidateGeneration=0,marketSessionGeneration=0;
+    let marketRefreshQueued=false,marketRefreshReset=false,marketCandidateGeneration=0,marketSessionGeneration=0,marketCandidateLoadingMore=false;
     const MARKET_PAGE_SIZE=100;
     const MARKET_CANDIDATE_PAGE_SIZE=120;
     let sourceDialogMode='create';
@@ -997,7 +997,7 @@
       marketLoading=false;marketRefreshQueued=false;marketRefreshReset=false;
       analyticsLoading=false;analyticsReloadQueued=false;analyticsLoaded=false;
       marketItems=[];marketSources=[];marketTotal=0;marketOffset=0;marketSelectedCode='';
-      marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;marketSearchTags=[];
+      marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;marketCandidateLoadingMore=false;marketSearchTags=[];
       saveQueues.clear(); // New session must not inherit queued product writes.
       selectedSource='';items=[];sources=[];comparisonItems=[];total=0;offset=0;
       $('searchInput').value='';$('marketOwnSearch').value='';$('marketOwnSource').value='';
@@ -1270,6 +1270,7 @@
 
     async function autoRefineMarketCandidates(item){
       const generation=++marketCandidateGeneration;
+      marketCandidateLoadingMore=false;
       const selectedCode=item.product_code;
       const planned=marketAutoSearchTags(item);
       marketSearchTags=[];
@@ -1908,15 +1909,21 @@
       $('marketCandidateList').innerHTML=html;
     }
 
+    // SPEC-ADMIN-MARKET-PAGE-LOCK-20261101: prevent overlapping "more"
+    // requests and never advance an offset from sorted display positions.
     async function loadMarketCandidates(reset=true){
       const item=selectedMarketItem();
-      if(!item)return;
-      const generation=++marketCandidateGeneration;
-      const selectedCode=item.product_code;
+      if(!item||(!reset&&(marketCandidateLoadingMore||!marketCandidateHasMore)))return;
       if(reset){
+        marketCandidateLoadingMore=false;
         marketCandidateOffset=0;
         marketCandidates=[];
+      }else{
+        marketCandidateLoadingMore=true;
       }
+      const generation=++marketCandidateGeneration;
+      const selectedCode=item.product_code;
+      const requestOffset=marketCandidateOffset;
       const query=marketSearchQuery();
       $('marketCandidateCount').textContent=reset?'Đang tìm…':'Đang tải thêm…';
       if(reset)$('marketCandidateList').innerHTML='<div class="empty">Đang tìm sản phẩm siêu thị…</div>';
@@ -1925,19 +1932,21 @@
           p_query:query,
           p_limit:MARKET_CANDIDATE_PAGE_SIZE,
           p_source:$('marketShopSource').value,
-          p_offset:marketCandidateOffset
+          p_offset:requestOffset
         });
         if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
         const batch=Array.isArray(data)?data:[];
         marketCandidates=sortMarketCandidates(reset?batch:marketCandidates.concat(batch),item);
-        marketCandidateOffset=marketCandidates.length;
+        marketCandidateOffset=requestOffset+batch.length;
         marketCandidateHasMore=batch.length===MARKET_CANDIDATE_PAGE_SIZE;
         renderMarketCandidates();
       }catch(error){
         if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
         console.error('market search',error);
-        $('marketCandidateCount').textContent='';
+        $('marketCandidateCount').textContent=reset?'Không tìm được dữ liệu':'Không tải thêm được · thử lại';
         if(reset)$('marketCandidateList').innerHTML='<div class="empty">Không tìm được dữ liệu siêu thị.</div>';
+      }finally{
+        if(generation===marketCandidateGeneration)marketCandidateLoadingMore=false;
       }
     }
 
@@ -2865,6 +2874,10 @@
     });
     $('marketShopSource').addEventListener('change',()=>{const item=selectedMarketItem();if(item)autoRefineMarketCandidates(item);});
     $('marketCandidateSearch').addEventListener('input',()=>{
+      // Invalidate an old search immediately; do not wait for the debounce.
+      marketCandidateGeneration++;
+      marketCandidateLoadingMore=false;
+      $('marketCandidateCount').textContent='Đang nhập từ khóa…';
       clearTimeout(marketCandidateTimer);
       marketCandidateTimer=setTimeout(()=>loadMarketCandidates(true),220);
     });
