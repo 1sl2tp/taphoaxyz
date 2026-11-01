@@ -198,7 +198,7 @@ test('cart share builds image from current cart values instead of stale detail D
   assert.match(runtime,/cloneItems\.innerHTML = rowsHtml/);
   assert.match(runtime,/detailLineCountDisplay[\s\S]{0,300}cartEntries\.length/);
   assert.match(runtime,/detailTotalQtyDisplay[\s\S]{0,300}totalQty/);
-  assert.match(runtime,/detailModalTotal[\s\S]{0,300}totalPrice\.toLocaleString\('vi-VN'\)/);
+  assert.match(runtime,/detailModalTotal[\s\S]{0,300}Math\.round\(totalPrice\)\.toLocaleString\('vi-VN'\)/);
   assert.match(runtime,/codeEl\.textContent = 'Mã đơn: ' \+ \(editingOrderId \|\| '--'\)/);
 });
 

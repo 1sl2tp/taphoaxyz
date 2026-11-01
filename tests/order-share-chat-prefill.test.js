@@ -7,6 +7,10 @@ const code=readFileSync('src/fixed-ui-cart-share-v3.js','utf8');
 const start=code.indexOf('  // Single tap: use the OS share sheet');
 const end=code.indexOf('  // UI-113:',start);
 const segment=code.slice(start,end);
+const helperStart=code.indexOf('  // SPEC-ORDER-SHARE-ROUND-TOTAL-20261101:');
+const helperEnd=code.indexOf('  function stableShareHash(value){',helperStart);
+assert.ok(helperStart>=0&&helperEnd>helperStart);
+const roundTotalHelpers=code.slice(helperStart,helperEnd);
 
 test('saved-order detail shares its portrait PNG, while draft cart can share text',()=>{
   assert.match(segment,/async function shareNativeOrderText/);
@@ -27,7 +31,7 @@ test('native share and clipboard fallback preserve 5 field order with no double 
     currentCartEntries:()=>[['a',{name:'Sữa',qty:2,price:12000,note:'2 thùng'}]],
     document:{getElementById:id=>id==='orderDetailContentToShare'?null:null}
   };
-  const api=vm.runInNewContext('(()=>{'+segment+'; return {cartNativeShareText,shareNativeOrderText,shareCartOrderImageV3};})()',context);
+  const api=vm.runInNewContext('(()=>{'+roundTotalHelpers+segment+'; return {cartNativeShareText,shareNativeOrderText,shareCartOrderImageV3};})()',context);
   const text=api.cartNativeShareText(context.currentCartEntries());
   for(const token of ['Sữa','2','12.000','24.000','Ghi chú','Tổng SL'])assert.ok(text.includes(token),token);
   await api.shareCartOrderImageV3();
