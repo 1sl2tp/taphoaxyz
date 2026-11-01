@@ -268,7 +268,7 @@ let items=[];
 let originals=new Map();
 // SPEC-NCC-SEARCH-DRAFT-20261101: edits survive search filters, tab changes
 // and partial validation errors. Never save only currently rendered rows.
-let pendingCostEdits=new Map(),pendingNewRows=[],savingSupplierChanges=false;
+let pendingCostEdits=new Map(),pendingNewRows=[],savingSupplierChanges=false,supplierLoginPending=false;
 let orderRows=[];
 let ordersLoaded=false;
 let ordersSource='';
@@ -561,24 +561,42 @@ function clearSupplierSession(){
   clearPin();
 }
 
+// SPEC-NCC-SUPPLIER-LOGIN-ATOMIC-20261101: one PIN login at a time,
+// and no stored session if loading its first catalog fails.
 $('loginForm').addEventListener('submit',async e=>{
-  e.preventDefault();setMsg('loginMsg','Đang kiểm tra…');
+  e.preventDefault();
+  if(supplierLoginPending)return;
+  supplierLoginPending=true;
+  setMsg('loginMsg','Đang kiểm tra…');
   $('loginBtn').disabled=true;
+  let loggedToken=null;
+  const startingGeneration=supplierSessionGeneration;
   try{
     const source=$('source').value;
     const pin=getPin();
     const data=await rpc('taphoa_supplier_login',{p_source_key:source,p_pin:pin});
+    if(startingGeneration!==supplierSessionGeneration)return;
     if(!data?.ok){
       const message=data?.error==='pin_locked'?'PIN đang bị khóa tạm 10 phút.':data?.error==='pin_format'?'PIN phải gồm đúng 6 số.':'PIN không đúng.';
       throw new Error(message);
     }
     clearPin();
     saveSession(data);
+    loggedToken=session?.token;
     await loadCatalog();
+    if(session?.token!==loggedToken)return;
     setMsg('appMsg','');
   }catch(err){
+    if(startingGeneration!==supplierSessionGeneration&&session?.token!==loggedToken)return;
+    if(loggedToken&&session?.token===loggedToken){
+      clearSupplierSession();
+      showLogin();
+    }
     setMsg('loginMsg',err.message||'Không đăng nhập được.','error');
-  }finally{$('loginBtn').disabled=false}
+  }finally{
+    supplierLoginPending=false;
+    $('loginBtn').disabled=false;
+  }
 });
 
 $('costTab').addEventListener('click',()=>switchView('cost'));
