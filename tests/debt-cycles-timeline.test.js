@@ -102,22 +102,59 @@ test('on opening Công nợ, renders cycle number, buy count, days idle, and com
   window.renderCongNo();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(reads,1,'one full-history RPC for the entire debt tab');
-  assert.match(body1.children[0].textContent,/Tháng 10\/2026 · 1 ngày mua \(3 đơn\)/);
-  assert.match(body1.children[0].textContent,/Nợ chu kỳ 2 \(5 đơn\)/);
-  assert.match(body1.children[0].textContent,/Trễ 5 ngày/);
-  assert.match(body1.children[0].textContent,/Cách lần mua gần nhất 4 ngày/);
-  assert.match(body2.children[0].textContent,/Nợ chu kỳ 1 \(2 đơn\)/);
+  assert.match(body1.children[0].textContent,/Trễ 5 ngày · CK2 \(5 đơn\)/);
+  assert.match(body1.children[0].textContent,/T10\/2026 · 1 ngày mua\/3 đơn/);
+  assert.doesNotMatch(body1.children[0].textContent,/Cách lần mua gần nhất/);
+  assert.match(body1.children[0].title,/Cách lần mua gần nhất 4 ngày/,
+    'full monitoring explanation remains available outside the compact list');
+  assert.match(body2.children[0].textContent,/Cách mua 1 ngày · CK1 \(2 đơn\)/);
   window.renderCongNo();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(reads,1,'cached RPC is not repeated by every render');
   await window.openCustomerDebtModal('a');
   const panel=modal.children.find(n=>n.id==='debtCyclePanel');
   assert(panel);
-  assert.match(panel.children[0].textContent,/1 ngày mua \/ 3 đơn/);
+  assert.match(panel.children[0].textContent,/1 ngày mua\/3 đơn/);
+  const advice=panel.children.find(n=>n.tag==='details'&&n.className==='debt-cycle-advice');
+  assert(advice,'full policy guidance must remain expandable in customer detail');
+  assert.match(advice.children[0].textContent,/Trễ 5 ngày/);
+  assert.doesNotMatch(advice.children[0].textContent,/Có thể trao đổi trực tiếp/);
+  assert.match(advice.children[1].textContent,/Có thể trao đổi trực tiếp, tránh nhắc liên tục/);
   const details=panel.children.find(n=>n.tag==='details'&&n.children[0]?.textContent?.includes('chu kỳ'));
   assert(details);
   assert.equal(details.children.at(-1).children.length,2);
   assert.match(details.children.at(-1).children[0].children[0].textContent,/Chu kỳ 1 · Đã tất toán/);
   assert.match(details.children.at(-1).children[1].children[0].textContent,/Chu kỳ 2 · Chưa tất toán/);
   assert.equal(window.TAPHOA_DEBT_CYCLES.current('a').number,2);
+});
+
+
+test('compact readonly debt UI limits card status to two lines and retains history, policy, and cash actions',()=>{
+  const source=fs.readFileSync(new URL('../src/fixed-ui-runtime-12.js',import.meta.url),'utf8');
+  assert.match(css,/\.debt-cycle-card-meta\{[\s\S]*?-webkit-line-clamp:2/);
+  assert.match(css,/#customerDebtContentToShare \.debt-cycle-advice > summary\{/);
+  assert.match(js,/panel\.title=monthCountText\(month\)/);
+  assert.match(js,/makeText\('p','debt-cycle-detail-explanation',alertText\(current\)\)/);
+  assert.match(js,/makeText\('summary','debt-cycle-detail-warning'/);
+  assert.match(js,/current\.policyDueDay\?' · Hạn '/);
+  assert.match(js,/Xem tất cả '\+cycles\.length\+' chu kỳ/);
+  assert.match(source,/function openCustomerDebtModal\(/);
+  assert.match(source,/h\.soTien\.toLocaleString\('vi-VN'\)/);
+  assert.match(source,/h\.currentDebt\.toLocaleString\('vi-VN'\)/);
+  assert.match(index,/fixed-ui-debt-cycles\.css\?v=compact-20261101/);
+  assert.match(index,/fixed-ui-debt-cycles\.js\?v=compact-20261101/);
+});
+
+test('compact debt warning keeps due, overdue, and pending evidence visually distinct',()=>{
+  const a=js.indexOf('  function briefCycleStatus(cycle){');
+  const b=js.indexOf('  function alertText(cycle){',a);
+  assert(a>=0&&b>a);
+  const brief=vm.runInNewContext(js.slice(a,b)+'\nbriefCycleStatus',
+    {numeric:v=>Math.max(0,Number(v)||0)});
+  const base={durationDays:12,daysWithoutPurchase:24,
+    policyDueDay:'2026-09-26',policyIsDue:true,policyDaysOverdue:36};
+  assert.equal(brief(base),'Trễ 36 ngày');
+  assert.equal(brief({...base,policyPendingEvidence:true}),'Chờ đối soát bill');
+  assert.equal(brief({...base,policyIsDue:false,daysWithoutPurchase:1}),'Cách mua 1 ngày');
+  assert.equal(brief({...base,policyDaysOverdue:0}),'Đến hạn đối chiếu');
 });
