@@ -20,7 +20,7 @@ function fixture(rpcImpl){
  const state={el,calls:[],rendered:[],rpcImpl};
  const ctx=vm.createContext({state,Number,Array,Promise,console});
  vm.runInContext(`
-   let marketLoading=false,marketRefreshQueued=false,marketRefreshReset=false,marketOffset=0,
+   let marketLoading=false,marketRefreshQueued=false,marketRefreshReset=false,marketSessionGeneration=0,marketOffset=0,
      marketItems=[{product_code:'old'}],marketSources=[],marketTotal=1,marketSelectedCode='old';
    const MARKET_PAGE_SIZE=100;
    const $=id=>state.el[id];

@@ -980,11 +980,10 @@
     }
     async function enter(info){
       customerCare.reset();
-      const nextIdentity=info?.identity||null;
-      if(!nextIdentity||nextIdentity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
-      if(nextIdentity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
+      identity=info?.identity||null;
+      if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
+      if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
       resetAdminSessionDisplays();
-      identity=nextIdentity;
       client=info.client||await auth.getClient();showApp();await loadPage(true);await loadSupplierFeedback();await loadMarketStatus();
     }
 
