@@ -7,7 +7,11 @@
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
   line-clamp:2;overflow:hidden;overflow-wrap:anywhere;
 }
-#tab-cong-no .debt-cycle-card-meta[data-warning="true"]{color:#bd452d;font-weight:650}
+/* Only the actionable warning is red; cycle/month context stays secondary. */
+#tab-cong-no .debt-cycle-card-meta[data-warning="true"]{color:#475569;font-weight:400}
+#tab-cong-no .debt-cycle-card-status{color:#334155;font-weight:700}
+#tab-cong-no .debt-cycle-card-meta[data-warning="true"] .debt-cycle-card-status{color:#b42318}
+#tab-cong-no .debt-cycle-card-context{color:#64748b;font-weight:400}
 #tab-cong-no .debt-customer-body{min-width:0;flex:1 1 auto}
 #tab-cong-no .debt-customer-money{flex:0 0 auto}
 #tab-cong-no .debt-cycle-load-status{
@@ -48,9 +52,12 @@
   cursor:pointer;color:#2563eb;font-size:12px;
   min-height:32px;display:list-item;padding:6px 0 0 2px;
 }
+#customerDebtContentToShare .debt-cycle-history-section{
+  margin:7px 0 3px;color:#64748b;font-size:11px;font-weight:700;
+}
 #customerDebtContentToShare .debt-cycle-history ol{
   max-height:185px;overflow-y:auto;overscroll-behavior:contain;
-  list-style:none;margin:7px 0 0;padding:0;
+  list-style:none;margin:4px 0 0;padding:0;
   display:flex;flex-direction:column;gap:5px;
 }
 #customerDebtContentToShare .debt-cycle-history-item{
