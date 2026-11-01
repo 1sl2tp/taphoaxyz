@@ -273,3 +273,43 @@ body[data-force-pc="1"] #customerDebtContentToShare{
 #customerDebtBottomSheet #cDebtModalHistoryList > div:not(#debtHistoryPageFooter) > div:first-child{
   min-width:0;
 }
+
+/* SPEC-DEBT-CARD-THIRD-ROW-20261101
+   Given a narrow debt customer card with a long cycle warning, keep the
+   amount right-aligned alongside name + last delivery (rows 1 and 2), then
+   let the cycle summary occupy the entire text+amount width on row 3.
+   Use the existing DOM; no data, role, or amount changes. */
+#tab-cong-no .debt-customer-card{
+  grid-template-rows:auto auto auto;
+  row-gap:2px;
+  min-height:64px;
+}
+#tab-cong-no .debt-customer-body{
+  display:contents;
+}
+#tab-cong-no .debt-customer-avatar{
+  grid-column:1;
+  grid-row:1 / 3;
+  align-self:center;
+}
+#tab-cong-no .debt-customer-name{
+  grid-column:2;
+  grid-row:1;
+  align-self:end;
+}
+#tab-cong-no .debt-customer-detail{
+  grid-column:2;
+  grid-row:2;
+  align-self:start;
+}
+#tab-cong-no .debt-customer-money{
+  grid-column:3;
+  grid-row:1 / 3;
+  align-self:center;
+}
+#tab-cong-no .debt-cycle-card-meta{
+  grid-column:2 / 4;
+  grid-row:3;
+  min-width:0;
+  margin-top:1px;
+}
