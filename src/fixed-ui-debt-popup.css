@@ -176,6 +176,13 @@ body[data-force-pc="1"] #customerDebtContentToShare{
   padding:9px 10px;
 }
 #tab-cong-no > header > .grid > div > div:first-child{min-width:0}
+/* Amount badges must fit beside the two-line labels on narrow panels. */
+#tab-cong-no #totalDebtDisplay,
+#tab-cong-no #totalSurplusDisplay{
+  padding:5px 8px;
+  font-size:clamp(12px,3vw,14px);
+  line-height:1.25;
+}
 #tab-cong-no > main{
   /* Keep the original 80px scroll-end clearance for the last customer. */
   padding:12px 14px 80px;
