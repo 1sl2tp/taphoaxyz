@@ -330,6 +330,10 @@
       #goodsPane .summary .msg{max-width:42vw}
       #goodsPane .sheet-wrap{max-height:calc(100dvh - 250px)}
     }
+    /* Preserve comfortable touch targets on small phones despite the denser tablet toolbar. */
+    @media(max-width:700px){
+      .top-actions .btn,.admin-tab,#goodsPane .searchbar .btn,#goodsPane #searchInput,#goodsPane .source-manage summary{min-height:44px}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
