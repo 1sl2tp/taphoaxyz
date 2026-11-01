@@ -797,6 +797,7 @@
     let pageRefreshQueued=false,pageRefreshReset=false,productEditRevision=0,catalogSessionGeneration=0;
     let adminView='goods';
     let analyticsLoaded=false,analyticsLoading=false,analyticsReloadQueued=false,analyticsSessionGeneration=0;
+    let feedbackGeneration=0,historyGeneration=0;
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
     let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketSearchTags=[];
@@ -962,7 +963,9 @@
     function resetAdminSessionDisplays(){
       clearTimeout(marketStatusTimer);marketStatusTimer=0;
       catalogSessionGeneration++;marketSessionGeneration++;analyticsSessionGeneration++;
-      marketCandidateGeneration++;
+      feedbackGeneration++;historyGeneration++;marketCandidateGeneration++;
+      if($('historyDialog').open)$('historyDialog').close();
+      $('supplierFeedbackBody').replaceChildren();$('supplierFeedbackEmpty').classList.add('hidden');
       loading=false;pageRefreshQueued=false;pageRefreshReset=false;
       marketLoading=false;marketRefreshQueued=false;marketRefreshReset=false;
       analyticsLoading=false;analyticsReloadQueued=false;analyticsLoaded=false;
@@ -1003,7 +1006,9 @@
         loadMarketStatus();
         marketStatusTimer=setTimeout(function tick(){
           if(adminView!=='market')return;
-          loadMarketStatus().finally(function(){marketStatusTimer=setTimeout(tick,15000);});
+          loadMarketStatus().finally(function(){
+            if(adminView==='market'&&identity?.role==='admin')marketStatusTimer=setTimeout(tick,15000);
+          });
         },15000);
       }else if(adminView==='analytics'){
         loadQuoteAnalytics(false);
@@ -2673,11 +2678,14 @@
       }catch(error){alert(error?.message||'Không xóa được sản phẩm');}
     }
 
+    // SPEC-ADMIN-SECONDARY-PANEL-RACES-20261101: only latest request can paint.
     async function loadSupplierFeedback(){
+      const generation=++feedbackGeneration,adminUid=identity?.uid;
       $('supplierFeedbackBody').innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center">Đang tải…</td></tr>';
       $('supplierFeedbackEmpty').classList.add('hidden');
       try{
         const data=await rpc('taphoa_admin_supplier_price_feedback');
+        if(generation!==feedbackGeneration||identity?.uid!==adminUid)return;
         const rows=Array.isArray(data)?data:[];
         $('supplierFeedbackBody').innerHTML=rows.map(x=>`<tr data-feedback-id="${esc(x.id)}">
           <td class="feedback-name" title="${esc(x.product_name)}">${esc(x.product_name)}</td>
@@ -2687,17 +2695,21 @@
         </tr>`).join('');
         $('supplierFeedbackEmpty').classList.toggle('hidden',rows.length!==0);
       }catch(error){
+        if(generation!==feedbackGeneration||identity?.uid!==adminUid)return;
         $('supplierFeedbackBody').innerHTML=`<tr><td colspan="4" style="padding:16px;color:#dc2626">${esc(error?.message||'Không tải được')}</td></tr>`;
       }
     }
 
     async function showHistory(row){
-      const item=items[Number(row.dataset.index)];if(!item)return;
+      const item=items.find(x=>x.product_code===row.dataset.code);if(!item)return;
+      const generation=++historyGeneration,adminUid=identity?.uid;
       $('historyTitle').textContent='Nhật ký giá · '+item.product_name;
       $('historyBody').innerHTML='<tr><td colspan="5" style="padding:18px;text-align:center">Đang tải…</td></tr>';
-      $('historyDialog').showModal();
+      $('historyEmpty').classList.add('hidden');
+      if(!$('historyDialog').open)$('historyDialog').showModal();
       try{
         const data=await rpc('taphoa_admin_product_history',{p_product_code:item.product_code,p_limit:50});
+        if(generation!==historyGeneration||identity?.uid!==adminUid||!$('historyDialog').open)return;
         const rows=Array.isArray(data)?data:[];
         $('historyEmpty').classList.toggle('hidden',rows.length!==0);
         $('historyBody').innerHTML=rows.map(h=>`<tr>
@@ -2707,7 +2719,10 @@
           <td>${esc(pretty(h.old_supplier))} → ${esc(pretty(h.new_supplier))}</td>
           <td>${esc(pretty(h.old_standard_profit_percent))} → ${esc(pretty(h.new_standard_profit_percent))}</td>
         </tr>`).join('');
-      }catch(error){$('historyBody').innerHTML=`<tr><td colspan="5" style="padding:18px;color:#dc2626">${esc(error?.message||'Không tải được lịch sử')}</td></tr>`;}
+      }catch(error){
+        if(generation!==historyGeneration||identity?.uid!==adminUid||!$('historyDialog').open)return;
+        $('historyBody').innerHTML=`<tr><td colspan="5" style="padding:18px;color:#dc2626">${esc(error?.message||'Không tải được lịch sử')}</td></tr>`;
+      }
     }
 
     $('goodsTabBtn').addEventListener('click',()=>switchAdminView('goods'));
@@ -2863,7 +2878,8 @@
       if(e.target.dataset.mode==='auto')updateNewRetailPreview();
     });
     document.addEventListener('click',e=>{const b=e.target.closest('.dialog-close');if(b){const d=$(b.dataset.dialog);if(d?.open)d.close();}});
-    $('historyClose').addEventListener('click',()=>$('historyDialog').close());
+    $('historyClose').addEventListener('click',()=>{historyGeneration++;$('historyDialog').close();});
+    $('historyDialog').addEventListener('cancel',()=>{historyGeneration++;});
     $('quickColumnsBtn').addEventListener('click',()=>{
       columnPrefs.order=[...QUICK_COLUMN_IDS,...columnPrefs.order.filter(id=>!QUICK_COLUMN_IDS.includes(id))];
       columnPrefs.hidden=COLUMN_DEFS.map(col=>col.id).filter(id=>!QUICK_COLUMN_IDS.includes(id));
