@@ -399,6 +399,12 @@ body[data-force-pc="1"] #customerDebtContentToShare{
 #tab-cong-no .debt-sort-field:focus-within{
   box-shadow:inset 0 0 0 2px #16a34a;
 }
+/* SPEC-DEBT-SORT-ACTIVE-GROUP-20261101: an inert sort must not
+   occupy space in non-debt groups. The semantic-columns CSS declares
+   display:inline-flex, so [hidden] needs an explicit stronger rule. */
+#tab-cong-no .debt-sort-control[hidden]{
+  display:none !important;
+}
 @media(max-width:350px){
   #tab-cong-no .debt-sort-field{
     width:130px;
