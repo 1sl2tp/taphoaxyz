@@ -32,6 +32,21 @@ export function createCustomerCareReport({rpc,getIdentity}){
       if(start>end)throw new Error('Ngày kết thúc không được trước ngày bắt đầu.');
       return {p_start_date:start,p_end_date:end,label:day(start)+' – '+day(end)};
     }
+    // SPEC-ADMIN-CARE-CALENDAR-MONTH-20261101:
+    // Calendar-month boundaries in Vietnam time, not rolling 30-day windows.
+    // UTC construction avoids local browser timezone and year/leap-month errors.
+    if(/^month_[0-3]$/.test(selector)){
+      const offset=Number(selector.slice(-1));
+      const today=vietnamBusinessDate();
+      const [year,month]=today.split('-').map(Number);
+      const first=new Date(Date.UTC(year,month-1-offset,1));
+      const last=new Date(Date.UTC(year,month-offset,0));
+      const start=first.toISOString().slice(0,10);
+      const end=offset===0?today:last.toISOString().slice(0,10);
+      const monthName=String(first.getUTCMonth()+1).padStart(2,'0')+'/'+first.getUTCFullYear();
+      const description=offset===0?'Tháng này':offset===1?'Tháng trước':offset+' tháng trước';
+      return {p_start_date:start,p_end_date:end,label:description+' · '+monthName+' ('+day(start)+' – '+day(end)+')'};
+    }
     const days=Number(selector);
     const end=vietnamBusinessDate();
     const dt=new Date(end+'T00:00:00Z');
