@@ -460,7 +460,7 @@
       <form id="loginForm">
         <div class="field"><label>Tài khoản</label><input id="username" autocomplete="username" required></div>
         <div class="field"><label>Mật khẩu</label><input id="password" type="password" autocomplete="current-password" required></div>
-        <button class="btn primary" type="submit" style="width:100%">Đăng nhập</button>
+        <button id="adminLoginSubmitBtn" class="btn primary" type="submit" style="width:100%">Đăng nhập</button>
         <div id="loginMsg" class="msg"></div>
       </form>
     </section>
@@ -2988,7 +2988,28 @@
       $('marketProductList').scrollIntoView({behavior:'smooth',block:'start'});
     });
 
-    $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Đang đăng nhập…';try{await enter(await auth.login($('username').value,$('password').value));$('loginMsg').textContent='';}catch(error){showLogin(error?.message||'Không đăng nhập được');}});
+    // SPEC-ADMIN-LOGIN-DENIED-20261101: preserve authorization errors.
+    // A successful auth.login can still be denied by enter() (non-admin account).
+    let adminLoginInProgress=false;
+    $('loginForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      if(adminLoginInProgress)return;
+      adminLoginInProgress=true;
+      $('adminLoginSubmitBtn').disabled=true;
+      $('loginMsg').textContent='Đang đăng nhập…';
+      try{
+        await enter(await auth.login($('username').value,$('password').value));
+        if(!$('appView').classList.contains('hidden')){
+          $('loginMsg').textContent='';
+          $('password').value='';
+        }
+      }catch(error){
+        showLogin(error?.message||'Không đăng nhập được');
+      }finally{
+        adminLoginInProgress=false;
+        $('adminLoginSubmitBtn').disabled=false;
+      }
+    });
     let loggingOutAdmin=false;
     async function logOutAdmin(){
       if(loggingOutAdmin)return;
