@@ -88,6 +88,22 @@
   line-height:1.25;
   white-space:nowrap;
 }
+
+/* SPEC-PWA-RAIL-FOCUS-20261101
+   The full-width policy button could inherit the global green focus
+   outline; iOS clips its top/bottom and shows two neon edge stripes.
+   Keep a visible inset keyboard focus cue, never draw outside the rail.
+   Touch focus must not leave a persistent decorative edge. */
+#appContainer #statusBar .tp-policy-reopen--bar:focus-visible{
+  outline:none !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.72) !important;
+}
+@media (hover:none) and (pointer:coarse){
+  #appContainer #statusBar .tp-policy-reopen--bar:focus-visible{
+    box-shadow:none !important;
+  }
+}
+
 #statusBar .tp-policy-reopen--bar .tp-policy-icon{
   width:16px;
   height:16px;
