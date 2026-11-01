@@ -7,7 +7,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
   const day=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
   let rows=[],loaded=false,loading=false,selected='',generation=0,reloadQueued=false;
   // "Hỗ trợ" is a shared Admin account: choose voice explicitly.
-  let youngSpeaker='anh',savingVoice=false;
+  let youngSpeaker='anh',savingVoice=false,voiceSessionGeneration=0;
   function address(row){
     const name=String(row.name||'').trim();
     if(/^(Cô|Bác|Chú)(\s|$)/i.test(name))return {name,from:'cháu'};
@@ -207,6 +207,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
   }
   function reset(){
     generation++;loading=false;reloadQueued=false;rows=[];loaded=false;selected='';
+    voiceSessionGeneration++;savingVoice=false;
     $('careBody').replaceChildren();
     $('careDetail').textContent='Chọn khách để xem báo cáo.';
     $('careStatus').textContent='Bấm tab để đọc báo cáo.';
@@ -234,10 +235,16 @@ export function createCustomerCareReport({rpc,getIdentity}){
       else $('careStatus').textContent='Chọn từ ngày và đến ngày để tải báo cáo; số liệu đang hiển thị thuộc kỳ trước.';
     }
   });
+  // SPEC-ADMIN-CARE-INCOMPLETE-DATES-20261101: editing away one endpoint
+  // invalidates any in-flight report for the previous complete range.
   for(const id of ['carePeriodStart','carePeriodEnd']){
     $(id).addEventListener('change',()=>{
       loaded=false;
       if($('carePeriodStart').value&&$('carePeriodEnd').value)refreshPeriod();
+      else{
+        generation++;loading=false;reloadQueued=false;
+        $('careStatus').textContent='Chọn đủ hai ngày để tải báo cáo; số liệu đang hiển thị thuộc kỳ trước.';
+      }
     });
   }
   $('careSearch').addEventListener('input',render);
@@ -250,20 +257,26 @@ export function createCustomerCareReport({rpc,getIdentity}){
     if(e.target.id!=='careSenderVoice'||savingVoice)return;
     const next=e.target.value;
     if(next!=='anh'&&next!=='chị')return;
+    const sessionGeneration=voiceSessionGeneration,adminUid=getIdentity()?.uid;
+    if(getIdentity()?.role!=='admin')return;
     savingVoice=true;e.target.disabled=true;
     try{
       const setting=await rpc('taphoa_cycle_sender_voice_setting',{p_voice:next});
+      if(sessionGeneration!==voiceSessionGeneration||getIdentity()?.uid!==adminUid)return;
       if(setting?.young_speaker!==next)throw new Error('Chưa lưu được giọng xưng hô');
       youngSpeaker=next;
       render();
       $('careStatus').textContent='Đã đổi người xưng hô: '+(next==='anh'?'nam (anh/em/cháu)':'nữ (chị/em/cháu)')
         +' · áp dụng cho tin nhắc nợ tự động tiếp theo.';
     }catch(error){
+      if(sessionGeneration!==voiceSessionGeneration||getIdentity()?.uid!==adminUid)return;
       $('careStatus').textContent='Không lưu được người xưng hô: '+String(error?.message||error);
       e.target.value=youngSpeaker;
     }finally{
-      savingVoice=false;
-      const control=$('careSenderVoice');if(control)control.disabled=false;
+      if(sessionGeneration===voiceSessionGeneration&&getIdentity()?.uid===adminUid){
+        savingVoice=false;
+        const control=$('careSenderVoice');if(control)control.disabled=false;
+      }
     }
   });
   $('careDetail').addEventListener('click',async e=>{
