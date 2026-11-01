@@ -207,11 +207,15 @@ export function createCustomerCareReport({rpc,getIdentity}){
       if(String(r.id)===String(selected))row.className='active';
       const first=row.insertCell(),button=document.createElement('button');
       button.type='button';button.dataset.customerId=String(r.id);button.textContent=address(r).name;first.append(button);
+      // Revenue/cost/profit are from delivered orders in the selected period.
+      // Missing cost is not silently treated as zero.
       const values=[group(r),number(r.period_delivered_count),amount(r.total_revenue),
-        amount(r.gross_profit),percent(r.gross_margin_percent),amount(r.period_manual_debt),amount(r.debt_balance)];
+        Number(r.missing_cost_lines)>0?'Thiếu giá vốn':amount(r.total_cost),
+        amount(r.gross_profit),percent(r.gross_margin_percent),
+        amount(r.period_manual_debt),amount(r.debt_balance)];
       values.forEach((v,i)=>{const cell=row.insertCell();cell.textContent=v;if(i>=1)cell.className='num';});
     }
-    if(!list.length){const cell=tbody.insertRow().insertCell();cell.colSpan=8;cell.textContent='Không có khách phù hợp.';cell.className='empty';}
+    if(!list.length){const cell=tbody.insertRow().insertCell();cell.colSpan=9;cell.textContent='Không có khách phù hợp.';cell.className='empty';}
     detail(list.find(x=>String(x.id)===String(selected))||null);
   }
   async function load(force=false){
@@ -259,7 +263,8 @@ export function createCustomerCareReport({rpc,getIdentity}){
         number(periodSummary.roster)+' khách mua · '+number(periodSummary.orders)+' đơn giao · '+
         'dữ liệu '+String(data?.generated_on||'')+
         ' · Công nợ/đơn tạm/lâu chưa mua là trạng thái hiện tại.'+
-        (systemDifference?' · '+number(Math.abs(systemDifference))+' đơn hệ thống không nằm trong bảng khách.':'');
+        (systemDifference>0?' · '+number(systemDifference)+' đơn hệ thống ngoài danh bạ.':
+        systemDifference<0?' · Lệch '+number(-systemDifference)+' đơn giữa bảng khách và tổng hệ thống; cần đối chiếu đơn không có dòng hàng.':'');
     }catch(e){
       if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
       $('careStatus').textContent='Không tải được báo cáo: '+String(e?.message||'Có lỗi');

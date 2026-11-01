@@ -479,16 +479,17 @@
     #customerCarePane .care-tool-field{justify-content:end}
     #customerCarePane .care-tool-field select{min-width:0}
     #customerCarePane .care-list table{
-      table-layout:fixed;min-width:962px;
+      table-layout:fixed;min-width:1080px;
     }
     #customerCarePane .care-list th:nth-child(1){width:170px}
     #customerCarePane .care-list th:nth-child(2){width:150px}
     #customerCarePane .care-list th:nth-child(3){width:72px}
     #customerCarePane .care-list th:nth-child(4),
-    #customerCarePane .care-list th:nth-child(5){width:112px}
-    #customerCarePane .care-list th:nth-child(6){width:88px}
-    #customerCarePane .care-list th:nth-child(7),
-    #customerCarePane .care-list th:nth-child(8){width:128px}
+    #customerCarePane .care-list th:nth-child(5),
+    #customerCarePane .care-list th:nth-child(6){width:112px}
+    #customerCarePane .care-list th:nth-child(7){width:88px}
+    #customerCarePane .care-list th:nth-child(8),
+    #customerCarePane .care-list th:nth-child(9){width:128px}
     #customerCarePane .care-list th{
       height:42px;white-space:normal;line-height:1.25;
       vertical-align:middle;text-align:left;
@@ -515,7 +516,7 @@
       #customerCarePane .care-finance-cards>div{
         grid-template-rows:minmax(30px,auto) auto 1fr;
       }
-      #customerCarePane .care-list table{min-width:962px}
+      #customerCarePane .care-list table{min-width:1080px}
     }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
@@ -762,7 +763,7 @@
               <select id="careInactiveDays"><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option></select>
             </div>
             <div class="care-tool-field">
-              <label for="carePeriod">Kỳ doanh thu</label>
+              <label for="carePeriod">Kỳ báo cáo</label>
               <select id="carePeriod" aria-label="Chọn kỳ doanh thu và lợi nhuận" title="Tháng này: từ ngày 1 đến hôm nay · Tháng trước: đủ tháng">
                 <option value="month_0" selected>Tháng này</option>
                 <option value="month_1">Tháng trước</option>
@@ -814,8 +815,8 @@
         </div>
         <div class="care-columns">
           <div class="care-list">
-            <table><thead><tr><th>Khách</th><th>Nhóm hiện tại</th><th class="num">Đơn kỳ</th><th class="num">Doanh thu kỳ</th><th class="num">Lãi gộp kỳ</th><th class="num">Biên lãi</th><th class="num">Nợ khác kỳ</th><th class="num">Công nợ hiện tại</th></tr></thead>
-              <tbody id="careBody"><tr><td colspan="8" class="empty">Chưa tải báo cáo.</td></tr></tbody>
+            <table><thead><tr><th>Khách</th><th>Nhóm hiện tại</th><th class="num">Đơn kỳ</th><th class="num">Doanh thu kỳ</th><th class="num">Giá vốn kỳ</th><th class="num">Lãi gộp kỳ</th><th class="num">Biên lãi</th><th class="num">Nợ khác kỳ</th><th class="num">Công nợ hiện tại</th></tr></thead>
+              <tbody id="careBody"><tr><td colspan="9" class="empty">Chưa tải báo cáo.</td></tr></tbody>
             </table>
           </div>
           <section id="careDetail" class="care-detail"><p>Chọn khách để xem lịch sử, nhận xét và lời nhắn gợi ý.</p></section>

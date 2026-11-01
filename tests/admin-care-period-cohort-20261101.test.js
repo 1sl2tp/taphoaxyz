@@ -47,3 +47,12 @@ test('KPI numbers are based on true period data; lifetime metrics carry distinct
  assert.match(source,/if\(\(data\?\.period_start\?\?null\)!==\(period\.p_start_date\?\?null\)/);
  assert.match(source,/function invalidatePeriodFigures\(\)/);
 });
+
+test('customer rows display current-period cost next to revenue and gross profit',()=>{
+ assert.match(page,/<th class="num">Doanh thu kỳ<\/th><th class="num">Giá vốn kỳ<\/th><th class="num">Lãi gộp kỳ<\/th>/);
+ assert.match(source,/Number\(r\.missing_cost_lines\)>0\?'Thiếu giá vốn':amount\(r\.total_cost\)/);
+ assert.match(source,/amount\(r\.gross_profit\),percent\(r\.gross_margin_percent\)/);
+ assert.match(page,/id="careBody"><tr><td colspan="9"/);
+ assert.match(source,/cell\.colSpan=9/);
+ assert.match(page,/<label for="carePeriod">Kỳ báo cáo<\/label>/);
+});
