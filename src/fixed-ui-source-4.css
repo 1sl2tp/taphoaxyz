@@ -370,6 +370,33 @@ body[data-force-pc="1"] #orderTimeCustomCard{
 }
 
 
+
+/* SPEC-PWA-TAB-READABILITY-20261101:
+   Existing 9px tab labels and low-contrast inactive gray are difficult
+   to read on iPhone. Preserve all five equal touch targets, active theme,
+   active underline, navigation handlers and 64px navbar height. */
+@media (max-width:767px){
+  #topNav .tab-btn{
+    opacity:1 !important;
+    filter:none !important;
+    -webkit-filter:none !important;
+  }
+  #topNav .tab-btn.text-gray-400{
+    color:#64748b !important;
+  }
+  #topNav .tab-btn > span{
+    font-size:11px !important;
+    font-weight:600 !important;
+    line-height:1.25 !important;
+    letter-spacing:0 !important;
+  }
+  #topNav .tab-btn > i{
+    font-size:18px !important;
+    line-height:1 !important;
+  }
+}
+
+
 /* FIXED STYLE: sales-header-compact-capacity
    Customer gives space first; quick cart reserves xxx | xxx.xxx without wasting gaps. */
 #tab-ban-hang > header{
