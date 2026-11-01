@@ -142,7 +142,7 @@
       if(!body)continue;
       let panel=body.querySelector('.debt-cycle-card-meta');
       if(!panel){panel=document.createElement('div');panel.className='debt-cycle-card-meta';body.appendChild(panel);}
-      if(!row){panel.textContent='';panel.removeAttribute('title');continue;}
+      if(!row){panel.textContent='';panel.title='';continue;}
       const last=cycles.length?cycles[cycles.length-1]:null;
       const monthSummary=briefMonthText(month);
       if(!cycle){
