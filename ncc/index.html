@@ -27,6 +27,20 @@ td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{
 @media print{
   body.print-orders{background:#fff}.print-orders .page{max-width:none;padding:0}.print-orders #loginView,.print-orders .head,.print-orders .main-tabs,.print-orders #costPanel,.print-orders .orders-tools,.print-orders .foot,.print-orders #appMsg{display:none!important}.print-orders #appView{display:block!important;border:0;box-shadow:none}.print-orders #ordersPanel{display:block!important}.print-orders .table-wrap{max-height:none;overflow:visible}.print-orders table{min-width:0}.print-orders th{position:static}.print-orders .summary{background:#fff;border:0;padding:0 0 10px;font-size:12px}.print-orders #ordersPrintTitle{display:block!important;margin:0 0 12px;font-size:20px}.print-orders tr{break-inside:avoid}
 }
+
+/* SPEC-NCC-SUPPLIER-MOBILE-20261101: don't squash four order columns. */
+@media(max-width:680px){
+  .head{flex-wrap:wrap;gap:8px;padding:12px}
+  .head h1{overflow-wrap:anywhere}
+  .btn,.main-tab,.seg button{min-height:44px}
+  .toolbar{padding:8px}
+  .toolbar .btn{min-height:44px}
+  .orders-tools{padding:8px}
+  #ordersTable{min-width:470px}
+  #ordersPanel .table-wrap{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .pin-boxes{gap:6px}
+  .pin-digit{min-width:0;font-size:21px}
+}
 </style>
   <script defer src="../src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -186,7 +200,16 @@ function bindPinBoxes(){
   const inputs=pinInputs();
   inputs.forEach((input,index)=>{
     input.addEventListener('input',()=>{
-      input.value=input.value.replace(/\D/g,'').slice(-1);
+      // SPEC-NCC-PIN-PASTE-20261101: accept OS OTP/autofill as well as
+      // single-digit typing, including pasting into the focused PIN box.
+      const digits=input.value.replace(/\D/g,'');
+      if(digits.length>1){
+        const start=digits.length===inputs.length?0:index;
+        [...digits].slice(0,inputs.length-start).forEach((digit,i)=>{inputs[start+i].value=digit});
+        inputs[Math.min(inputs.length-1,start+digits.length-1)]?.focus();
+        return;
+      }
+      input.value=digits.slice(-1);
       if(input.value&&index<inputs.length-1)inputs[index+1].focus();
     });
     input.addEventListener('keydown',e=>{
@@ -198,8 +221,9 @@ function bindPinBoxes(){
       const digits=(e.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,6);
       if(!digits)return;
       e.preventDefault();
-      digits.split('').forEach((d,i)=>{if(inputs[i])inputs[i].value=d});
-      inputs[Math.min(digits.length,6)-1]?.focus();
+      const start=digits.length===inputs.length?0:index;
+      digits.split('').forEach((d,i)=>{if(inputs[start+i])inputs[start+i].value=d});
+      inputs[Math.min(inputs.length-1,start+digits.length-1)]?.focus();
     });
   });
 }
