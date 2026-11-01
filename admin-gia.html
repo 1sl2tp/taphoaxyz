@@ -986,6 +986,12 @@
       catalogSessionGeneration++;marketSessionGeneration++;analyticsSessionGeneration++;
       feedbackGeneration++;historyGeneration++;marketCandidateGeneration++;
       if($('historyDialog').open)$('historyDialog').close();
+      for(const id of ['sourceDialog','productDialog','columnDialog']){
+        const dialog=$(id);if(dialog?.open)dialog.close();
+      }
+      $('sourceSubmitBtn').disabled=false;
+      $('productSubmitBtn').disabled=false;
+      $('marketRunUpdateBtn').disabled=false;
       $('supplierFeedbackBody').replaceChildren();$('supplierFeedbackEmpty').classList.add('hidden');
       loading=false;pageRefreshQueued=false;pageRefreshReset=false;
       marketLoading=false;marketRefreshQueued=false;marketRefreshReset=false;
@@ -2080,17 +2086,26 @@
       }
     }
 
+    // SPEC-ADMIN-MUTATION-SESSION-20261101: asynchronous admin writes may
+    // finish on the server after logout; they must never affect the new UI.
+    function adminOperationCurrent(generation,adminUid){
+      return generation===catalogSessionGeneration&&identity?.uid===adminUid&&identity?.role==='admin';
+    }
     async function runMarketUpdate(){
+      const generation=catalogSessionGeneration,adminUid=identity?.uid;
+      if(!adminOperationCurrent(generation,adminUid))return;
       $('marketRunUpdateBtn').disabled=true;
       $('marketUpdateStatus').textContent='Đang khởi động cập nhật…';
       try{
         await rpc('taphoa_admin_market_update_run_now');
+        if(!adminOperationCurrent(generation,adminUid))return;
         await loadMarketStatus();
       }catch(error){
+        if(!adminOperationCurrent(generation,adminUid))return;
         console.error('market update run',error);
         $('marketUpdateStatus').textContent=(error&&error.message)||'Không khởi động được cập nhật.';
       }finally{
-        $('marketRunUpdateBtn').disabled=false;
+        if(adminOperationCurrent(generation,adminUid))$('marketRunUpdateBtn').disabled=false;
       }
     }
 
@@ -2674,31 +2689,45 @@
 
     async function submitSource(){
       const name=$('sourceNameInput').value.trim();if(!name)return;
+      const generation=catalogSessionGeneration,adminUid=identity?.uid;
+      const mode=sourceDialogMode,sourceKey=selectedSource;
+      if(!adminOperationCurrent(generation,adminUid))return;
       $('sourceSubmitBtn').disabled=true;
       try{
-        if(sourceDialogMode==='create'){
+        if(mode==='create'){
           const result=await rpc('taphoa_create_source_from_web',{p_name:name});
+          if(!adminOperationCurrent(generation,adminUid))return;
           selectedSource=result?.source_key||'';
         }else{
-          await rpc('taphoa_admin_update_source',{p_source_key:selectedSource,p_name:name,p_action:'rename'});
+          await rpc('taphoa_admin_update_source',{p_source_key:sourceKey,p_name:name,p_action:'rename'});
+          if(!adminOperationCurrent(generation,adminUid))return;
         }
         $('sourceDialog').close();await loadPage(true);
-      }catch(error){$('sourceDialogMsg').textContent=error?.message||'Không lưu được';$('sourceDialogMsg').className='msg error';}
-      finally{$('sourceSubmitBtn').disabled=false;}
+      }catch(error){
+        if(!adminOperationCurrent(generation,adminUid))return;
+        $('sourceDialogMsg').textContent=error?.message||'Không lưu được';$('sourceDialogMsg').className='msg error';
+      }finally{if(adminOperationCurrent(generation,adminUid))$('sourceSubmitBtn').disabled=false;}
     }
 
     async function sourceAction(action){
       const s=sources.find(x=>x.source_key===selectedSource);if(!s)return;
+      const generation=catalogSessionGeneration,adminUid=identity?.uid;
+      if(!adminOperationCurrent(generation,adminUid))return;
       if(action==='delete'&&!confirm(`Xóa nguồn "${s.name}"? Dữ liệu cũ vẫn được giữ trong Supabase.`))return;
       try{
         await rpc('taphoa_admin_update_source',{p_source_key:s.source_key,p_name:null,p_action:action});
+        if(!adminOperationCurrent(generation,adminUid))return;
         if(action==='delete')selectedSource='';
         await loadPage(true);
-      }catch(error){alert(error?.message||'Không cập nhật được nguồn');}
+      }catch(error){
+        if(adminOperationCurrent(generation,adminUid))alert(error?.message||'Không cập nhật được nguồn');
+      }
     }
 
     async function submitProduct(){
       const name=$('newName').value.trim();const source=$('newSource').value;if(!name||!source)return;
+      const generation=catalogSessionGeneration,adminUid=identity?.uid;
+      if(!adminOperationCurrent(generation,adminUid))return;
       const parse=id=>{const raw=$(id).value.trim();const v=num(raw);if(raw!==''&&v===null)throw new Error('Giá trị không hợp lệ');return v};
       $('productSubmitBtn').disabled=true;
       try{
@@ -2709,21 +2738,30 @@
           retail_unit:getNewRetailUnit(),
           retail_price_override:$('newRetailPrice').dataset.mode==='manual'?parse('newRetailPrice'):null
         }});
+        if(!adminOperationCurrent(generation,adminUid))return;
         $('productDialog').close();$('productForm').reset();selectedSource=source;await loadPage(true);
-      }catch(error){$('productDialogMsg').textContent=error?.message||'Không thêm được sản phẩm';$('productDialogMsg').className='msg error';}
-      finally{$('productSubmitBtn').disabled=false;}
+      }catch(error){
+        if(!adminOperationCurrent(generation,adminUid))return;
+        $('productDialogMsg').textContent=error?.message||'Không thêm được sản phẩm';$('productDialogMsg').className='msg error';
+      }finally{if(adminOperationCurrent(generation,adminUid))$('productSubmitBtn').disabled=false;}
     }
 
     async function deleteProduct(row){
       const item=items.find(x=>x.product_code===row.dataset.code);if(!item)return;
+      const generation=catalogSessionGeneration,adminUid=identity?.uid;
+      if(!adminOperationCurrent(generation,adminUid))return;
       if(!confirm(`Xóa sản phẩm "${item.product_name}"? Dữ liệu đơn hàng cũ không bị xóa.`))return;
       if(!await flushProductEditsBeforeReload()){alert('Có thay đổi chưa lưu. Hãy sửa ô đỏ trước khi xóa.');return;}
+      if(!adminOperationCurrent(generation,adminUid))return;
       try{
         await rpc('taphoa_delete_product_from_web',{p_product_code:item.product_code});
+        if(!adminOperationCurrent(generation,adminUid))return;
         if(items.length===1&&offset>0)offset=Math.max(0,offset-PAGE_SIZE);
         // Rebuild indices and page count; simply removing TR leaves stale data-index attributes.
         await loadPage(false);
-      }catch(error){alert(error?.message||'Không xóa được sản phẩm');}
+      }catch(error){
+        if(adminOperationCurrent(generation,adminUid))alert(error?.message||'Không xóa được sản phẩm');
+      }
     }
 
     // SPEC-ADMIN-SECONDARY-PANEL-RACES-20261101: only latest request can paint.
