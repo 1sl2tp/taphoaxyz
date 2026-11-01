@@ -863,7 +863,8 @@
       try{
         const raw=JSON.parse(localStorage.getItem(COLUMN_STORAGE_KEY)||'{}');
         const valid=new Set(COLUMN_DEFS.map(c=>c.id));
-        const order=Array.isArray(raw.order)?raw.order.filter(id=>valid.has(id)):[];
+        // SPEC-ADMIN-COLUMN-DUPLICATE-20261101: corrupted saved orders cannot move the same column twice.
+        const order=Array.isArray(raw.order)?[...new Set(raw.order.filter(id=>valid.has(id)))]:[];
         for(const id of fallback.order)if(!order.includes(id))order.push(id);
         // SPEC-ADMIN-COLUMN-SOURCE-USABILITY-20261101: even saved corrupt
         // preferences must never hide every editable column.
@@ -1802,7 +1803,7 @@
       $('marketCandidateFilter').classList.toggle('hidden',!item);
       if(!item){
         ++marketCandidateGeneration;
-        marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;
+        marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;marketCandidateLoadingMore=false;
         $('marketCurrent').innerHTML='<div class="market-current-title">Chọn một sản phẩm bên trái</div><div class="market-current-sub">Hệ thống sẽ gợi ý sản phẩm siêu thị theo tên hiện tại.</div>';
         $('marketCandidateSearch').disabled=true;
         setMarketSearchTags([]);
