@@ -1115,13 +1115,25 @@
       $('marketUpdateStatus').textContent='Chưa đọc trạng thái nguồn.';
       switchAdminView('goods');
     }
+    // SPEC-ADMIN-AUTH-DENIAL-CLEANUP-20261101: never retain the previous
+    // administrator's data, RPC client or queued requests on a denied login.
     async function enter(info){
       customerCare.reset();
-      identity=info?.identity||null;
-      if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
-      if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
+      identity=null;client=null;
       resetAdminSessionDisplays();
-      client=info.client||await auth.getClient();showApp();await loadPage(true);await loadSupplierFeedback();await loadMarketStatus();
+      const nextIdentity=info?.identity||null;
+      if(!nextIdentity||nextIdentity.active!==true||nextIdentity.role!=='admin'){
+        const message=nextIdentity?.active===true
+          ?'Trang này chỉ dành cho quản trị.'
+          :'Tài khoản không có quyền vào Tạp hóa.';
+        showLogin(message);
+        if(nextIdentity)await auth.logout().catch(error=>console.error('admin access denial',error));
+        return;
+      }
+      identity=nextIdentity;
+      client=info.client||await auth.getClient();
+      showApp();
+      await loadPage(true);await loadSupplierFeedback();await loadMarketStatus();
     }
 
     function switchAdminView(view){
