@@ -196,8 +196,13 @@ export function createCustomerCareReport({rpc,getIdentity}){
     }).sort((a,b)=>Number(b.period_delivered_count||0)-Number(a.period_delivered_count||0)
       ||Number(b.total_revenue||0)-Number(a.total_revenue||0)
       ||String(a.name||'').localeCompare(String(b.name||''),'vi'));
+    // SPEC-CARE-FILTER-COUNTS-20261101: totals beside a filtered table
+    // must refer to the visible customer cohort, not everybody in the period.
+    const listOrders=list.reduce((total,r)=>total+(Number(r.period_delivered_count)||0),0);
     const periodOrders=rows.reduce((total,r)=>total+(Number(r.period_delivered_count)||0),0);
-    $('careCount').textContent=list.length+'/'+rows.length+' khách · '+number(periodOrders)+' đơn trong kỳ';
+    $('careCount').textContent=list.length+'/'+rows.length+' khách · '+
+      number(listOrders)+' đơn của nhóm'+
+      (listOrders!==periodOrders?' · '+number(periodOrders)+' đơn cả kỳ':'');
     // SPEC-ADMIN-CARE-SELECTION-20261101: restore selection before rows render;
     // DOM dataset IDs are strings, while RPC IDs may be numeric.
     if(!list.some(x=>String(x.id)===String(selected)))selected=list[0]?.id??'';

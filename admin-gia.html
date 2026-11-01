@@ -2339,8 +2339,16 @@
         lastRenderedCatalog={offset,source:selectedSource,query};
       }catch(error){
         if(sessionGeneration!==catalogSessionGeneration)return;
-        console.error(error);comparisonItems=[];renderComparison();
-        $('statusText').textContent='Lỗi tải dữ liệu';$('countText').textContent='Không tải được dữ liệu';
+        // SPEC-ADMIN-FAILED-CATALOG-ROLLBACK-20261101: keep the prior
+        // rendered rows and their actual filter labels on network failure.
+        console.error(error);
+        if(!pageRefreshQueued){
+          restoreBlockedCatalogNavigation();
+          renderComparison();
+          $('countText').textContent=total+' sản phẩm · bản trước';
+        }
+        $('statusText').textContent='Không tải được danh sách mới · thử lại';
+        $('statusText').title=String(error?.message||'Lỗi mạng');
       }finally{
         if(sessionGeneration!==catalogSessionGeneration)return;
         loading=false;updatePager();
