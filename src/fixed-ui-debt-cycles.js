@@ -289,7 +289,13 @@
   if(typeof oldRender==='function')window.renderCongNo=function(...args){
     const result=oldRender.apply(this,args);
     syncCycleOwner();
-    if(!canLoadCycles())return result;
+    if(!canLoadCycles()){
+      // The canonical list normally re-renders, but clear any leftover
+      // admin-only decorations if the role changes without rebuilding cards.
+      document.getElementById('debtCustomerListContainer')
+        ?.querySelectorAll('.debt-cycle-card-meta').forEach(node=>node.remove());
+      return result;
+    }
     decorateList();
     // switchTab renders the target BEFORE marking it .active. Trigger
     // loading on the actual debt render, otherwise first-open never loads.
@@ -312,7 +318,13 @@
   };
   window.TAPHOA_DEBT_CYCLES=Object.freeze({
     refresh:()=>load({force:true}),
-    current:customerId=>activeCycle(byCustomer.get(String(customerId))),
-    list:customerId=>[...(byCustomer.get(String(customerId))?.cycles||[])]
+    current:customerId=>{
+      syncCycleOwner();
+      return canLoadCycles()?activeCycle(byCustomer.get(String(customerId))):null;
+    },
+    list:customerId=>{
+      syncCycleOwner();
+      return canLoadCycles()?[...(byCustomer.get(String(customerId))?.cycles||[])]:[];
+    }
   });
 })();
