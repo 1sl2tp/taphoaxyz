@@ -37,6 +37,25 @@
     return monthLabel(month.month)+" · "+numeric(month.purchaseDays)+
       " ngày mua ("+numeric(month.orderCount)+" đơn)";
   }
+  // SPEC-DEBT-READONLY-COMPACT-20261101: short list/modal summaries only.
+  // Policy reasons and the original full advisory remain in expanded detail.
+  function briefMonthText(month){
+    if(!month)return '';
+    return monthLabel(month.month).replace(/^Tháng /,'T')+
+      ' · '+numeric(month.purchaseDays)+' ngày mua/'+numeric(month.orderCount)+' đơn';
+  }
+  function briefCycleStatus(cycle){
+    if(!cycle)return 'Chưa có chu kỳ';
+    if(cycle.policyPendingEvidence===true)return 'Chờ đối soát bill';
+    const elapsed=numeric(cycle.durationDays),idle=numeric(cycle.daysWithoutPurchase);
+    const isDue=cycle.policyDueDay?cycle.policyIsDue===true:(elapsed>=7||idle>=3);
+    if(isDue){
+      const late=cycle.policyDueDay?numeric(cycle.policyDaysOverdue):
+        Math.max(0,Math.max(elapsed-7,idle-3));
+      return late>0?'Trễ '+late+' ngày':'Đến hạn đối chiếu';
+    }
+    return 'Cách mua '+idle+' ngày';
+  }
   function alertText(cycle){
     if(!cycle)return 'Chưa phát sinh nợ mới';
     const elapsed=numeric(cycle.durationDays),idle=numeric(cycle.daysWithoutPurchase);
@@ -123,16 +142,23 @@
       if(!body)continue;
       let panel=body.querySelector('.debt-cycle-card-meta');
       if(!panel){panel=document.createElement('div');panel.className='debt-cycle-card-meta';body.appendChild(panel);}
-      if(!row){panel.textContent='';continue;}
+      if(!row){panel.textContent='';panel.removeAttribute('title');continue;}
       const last=cycles.length?cycles[cycles.length-1]:null;
+      const monthSummary=briefMonthText(month);
       if(!cycle){
-        panel.textContent=monthCountText(month)+(last?
-          ' · Đã tất toán chu kỳ nợ '+last.number+' ('+last.purchaseCount+' đơn)':
-          ' · Chưa có chu kỳ nợ');
+        panel.textContent=(last?'Đã tất toán CK'+last.number:'Chưa có chu kỳ nợ')+
+          (monthSummary?' · '+monthSummary:'');
+        panel.title=monthCountText(month)+(last?
+          ' · Đã tất toán chu kỳ nợ '+last.number+' ('+last.purchaseCount+' đơn)':'');
         panel.dataset.warning='';
       }else{
-        panel.textContent=monthCountText(month)+' · Nợ chu kỳ '+cycle.number+
-          ' ('+cycle.purchaseCount+' đơn) · '+alertText(cycle);
+        // Put the actionable status FIRST so even a narrow card with two
+        // visible lines never hides it behind monthly and cycle metadata.
+        panel.textContent=briefCycleStatus(cycle)+' · CK'+cycle.number+
+          ' ('+numeric(cycle.purchaseCount)+' đơn)'+
+          (monthSummary?' · '+monthSummary:'');
+        panel.title=monthCountText(month)+' · Chu kỳ '+cycle.number+
+          ' ('+numeric(cycle.purchaseCount)+' đơn) · '+alertText(cycle);
         panel.dataset.warning=cycle.policyDueDay?(cycle.policyIsDue===true?'true':''):
   (numeric(cycle.durationDays)>=7||numeric(cycle.daysWithoutPurchase)>=3?'true':'');
       }
@@ -161,27 +187,32 @@
     const current=activeCycle(row);
     const month=currentMonthStats(row);
     if(month)panel.appendChild(makeText('strong','debt-cycle-detail-title',
-      'Kỳ mua '+monthLabel(month.month)+' · '+numeric(month.purchaseDays)+
-      ' ngày mua / '+numeric(month.orderCount)+' đơn'));
-    if(Number(month?.carryOver)>0)panel.appendChild(makeText('p',
-      'debt-cycle-detail-metrics',
-      'Có công nợ từ tháng trước chuyển sang, không tính là đơn mua mới.'));
+      'Kỳ mua '+briefMonthText(month)+
+      (Number(month.carryOver)>0?' · Nợ chuyển kỳ':'')));
     const heading=makeText('strong','debt-cycle-detail-title',
-      current?'Chu kỳ '+current.number+' · Đang nợ':'Đã tất toán · Chờ chu kỳ mới');
+      current?'CK'+current.number+' · Đang nợ':'Đã tất toán · Chờ chu kỳ mới');
     panel.appendChild(heading);
     if(current){
-      const metrics=makeText('div','debt-cycle-detail-metrics',
-        'Từ '+dayLabel(current.startDay)+' · Ngày '+current.durationDays+
-        ' · '+current.purchaseCount+' đơn (chu kỳ nợ)');
-      const warning=makeText('p','debt-cycle-detail-warning',alertText(current));
-      if(current.policyDueDay){
-        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
-          'Hạn thanh toán hiện tại: '+dayLabel(current.policyDueDay)+
-          ' · Theo '+(current.policyReason==='seven_days'?'mốc 7 ngày':'mốc ngừng mua 3 ngày')));
-      }
+      panel.appendChild(makeText('p','debt-cycle-detail-metrics',
+        numeric(current.purchaseCount)+' đơn · '+numeric(current.durationDays)+
+        ' ngày · Từ '+dayLabel(current.startDay)));
+      // Compact status is the tappable summary; expanding it reveals the
+      // full policy explanation and evidence reminder without losing data.
+      const advice=document.createElement('details');
+      advice.className='debt-cycle-advice';
+      const warning=makeText('summary','debt-cycle-detail-warning',
+        briefCycleStatus(current)+
+        (current.policyDueDay?' · Hạn '+dayLabel(current.policyDueDay):''));
       warning.dataset.warning=current.policyDueDay?(current.policyIsDue===true?'true':''):
         (numeric(current.durationDays)>=7||numeric(current.daysWithoutPurchase)>=3?'true':'');
-      panel.append(metrics,warning);
+      advice.appendChild(warning);
+      advice.appendChild(makeText('p','debt-cycle-detail-explanation',alertText(current)));
+      if(Number(month?.carryOver)>0)advice.appendChild(makeText('p','debt-cycle-detail-explanation',
+        'Có công nợ từ tháng trước chuyển sang, không tính là đơn mua mới.'));
+      if(current.policyDueDay)advice.appendChild(makeText('p','debt-cycle-detail-explanation',
+        'Hạn thanh toán hiện tại: '+dayLabel(current.policyDueDay)+
+        ' · Theo '+(current.policyReason==='seven_days'?'mốc 7 ngày':'mốc ngừng mua 3 ngày')));
+      panel.appendChild(advice);
     }else{
       panel.appendChild(makeText('p','debt-cycle-detail-metrics',
         cycles.length?'Đã đóng '+cycles.length+' chu kỳ · Lần mua nợ sau sẽ mở chu kỳ '+(cycles.length+1):
