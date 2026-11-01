@@ -320,10 +320,10 @@ test('order list cards keep customer, order summary and product hint compact',as
   assert.match(delivered,/productPreview\.remaining \? `<span class="order-product-more">\+\$\{productPreview\.remaining\} mã<\/span>`/);
   assert.doesNotMatch(pending,/note-chip-bullet/);
   assert.doesNotMatch(delivered,/note-chip-bullet/);
-  assert.match(pending,/order-card-title-row[\s\S]{0,220}\$\{o\.tenKh\}[\s\S]{0,220}order-card-total[\s\S]{0,160}\$\{o\.tongThu\.toLocaleString\('vi-VN'\)\}/);
-  assert.match(delivered,/order-card-title-row[\s\S]{0,220}\$\{o\.tenKh\}[\s\S]{0,220}order-card-total[\s\S]{0,160}\$\{o\.tongThu\.toLocaleString\('vi-VN'\)\}/);
-  assert.match(pending,/order-card-meta-row[\s\S]{0,260}\$\{shortTime\}[\s\S]{0,260}profit-only/);
-  assert.match(delivered,/order-card-meta-row[\s\S]{0,260}\$\{shortTime\}[\s\S]{0,260}profit-only/);
+  assert.match(pending,/order-card-title-row[\s\S]{0,220}\$\{escapeProductEditorValue\(o\.tenKh\)\}[\s\S]{0,220}order-card-total[\s\S]{0,160}\$\{o\.tongThu\.toLocaleString\('vi-VN'\)\}/);
+  assert.match(delivered,/order-card-title-row[\s\S]{0,220}\$\{escapeProductEditorValue\(o\.tenKh\)\}[\s\S]{0,220}order-card-total[\s\S]{0,160}\$\{o\.tongThu\.toLocaleString\('vi-VN'\)\}/);
+  assert.match(pending,/order-card-meta-row[\s\S]{0,260}\$\{escapeProductEditorValue\(shortTime\)\}[\s\S]{0,260}profit-only/);
+  assert.match(delivered,/order-card-meta-row[\s\S]{0,260}\$\{escapeProductEditorValue\(shortTime\)\}[\s\S]{0,260}profit-only/);
 });
 
 
