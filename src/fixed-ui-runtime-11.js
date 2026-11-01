@@ -127,6 +127,11 @@
             if (debtSortNative && debtSortVisible) {
                 debtSortVisible.textContent = debtSortNative.options?.[debtSortNative.selectedIndex]?.text || 'Lâu chưa giao';
             }
+            // SPEC-DEBT-SORT-ACTIVE-GROUP-20261101: the existing sort
+            // only applies to owing customers. Hide that control in
+            // surplus/zero groups rather than offering an inert choice.
+            const debtSortControl = document.querySelector('#tab-cong-no .debt-sort-control');
+            if (debtSortControl) debtSortControl.hidden = currentDebtFilter !== 'no';
             if (!appData.khachhang || appData.khachhang.length <= 1) return;
             let khRows = getCustomerRowsVisibleToCurrentRole();
             
