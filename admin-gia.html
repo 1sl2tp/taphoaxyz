@@ -538,7 +538,7 @@
 
     <section id="appView" class="hidden">
       <div class="top">
-        <div class="title"><h1 id="adminPageTitle">Quản trị hàng hóa</h1><p>Tự lưu khi sửa · quản lý kiểu bảng</p></div>
+        <div class="title"><h1 id="adminPageTitle">Quản trị hàng hóa</h1><p id="adminPageSubtitle">Tự lưu khi sửa · quản lý kiểu bảng</p></div>
         <div class="top-actions">
           <a class="btn home" href="./">Bán hàng</a>
           <a class="btn desktop-admin-extra" href="/ncc/admin/">PIN NCC</a>
@@ -1129,10 +1129,10 @@
       // SPEC-ADMIN-NAV-SEMANTICS-20261101: selected tab, heading and keyboard
       // focus must always refer to the same visible panel.
       const tabConfiguration=[
-        ['goods','goodsTabBtn','Quản trị hàng hóa'],
-        ['market','marketTabBtn','Quản trị siêu thị'],
-        ['analytics','analyticsTabBtn','Báo cáo lượt truy cập'],
-        ['customers','customerCareTabBtn','Báo cáo khách hàng']
+        ['goods','goodsTabBtn','Quản trị hàng hóa','Tự lưu khi sửa · quản lý kiểu bảng'],
+        ['market','marketTabBtn','Quản trị siêu thị','Gán sản phẩm và đối chiếu giá siêu thị'],
+        ['analytics','analyticsTabBtn','Báo cáo lượt truy cập','Số lần xem trang báo giá · không phải số khách mua'],
+        ['customers','customerCareTabBtn','Báo cáo khách hàng','Đơn đã giao trong kỳ · công nợ hiện tại']
       ];
       for(const [tab,buttonId] of tabConfiguration){
         const button=$(buttonId),active=tab===adminView;
@@ -1143,6 +1143,8 @@
       const pageTitle=tabConfiguration.find(x=>x[0]===adminView)[2];
       const heading=$('adminPageTitle');
       if(heading)heading.textContent=pageTitle;
+      const subtitle=$('adminPageSubtitle');
+      if(subtitle)subtitle.textContent=tabConfiguration.find(x=>x[0]===adminView)[3];
       if(typeof document!=='undefined')document.title=pageTitle+' · Tạp hóa';
       $('goodsPane').classList.toggle('hidden',adminView!=='goods');
       $('marketPane').classList.toggle('hidden',adminView!=='market');
