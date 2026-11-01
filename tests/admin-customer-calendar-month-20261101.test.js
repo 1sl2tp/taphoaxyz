@@ -10,14 +10,14 @@ const end=report.indexOf('  function periodVisibility(){',start);
 assert.ok(start>=0&&end>start,'reportPeriod helper boundaries');
 
 function period(selector,utcToday,dates={}){
-  const selected={carePeriod:{value:selector},carePeriodStart:{value:dates.start||''},carePeriodEnd:{value:dates.end||''}};
+  const controls={carePeriod:{value:selector},carePeriodStart:{value:dates.start||''},carePeriodEnd:{value:dates.end||''}};
   class FixedDate extends Date{
     constructor(...args){super(...(args.length?args:[utcToday]));}
     static now(){return new Date(utcToday).getTime();}
   }
-  const context=vm.createContext({selected,Date:FixedDate,Intl});
+  const context=vm.createContext({controls,Date:FixedDate,Intl});
   vm.runInContext(`
-    const $=id=>selected[id];
+    const $=id=>controls[id];
     ${report.slice(start,end)}
     globalThis.period=reportPeriod();
   `,context);
