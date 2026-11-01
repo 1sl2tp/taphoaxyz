@@ -920,7 +920,10 @@ async function createCustomer(name){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_read_only');
   const result=await business.createCustomer(name);
-  await refresh(['customers']);
+  // SPEC-COMMITTED-CUSTOMER-MEDIA-20261101: read failures after the
+  // database commit must not invite a duplicate customer or media mutation.
+  try{await refresh(['customers']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function stockCheckLinks(customerId){
@@ -964,22 +967,26 @@ async function productMediaCandidates(query,limit=12){return business.productMed
 async function marketSearch(query,limit=60,source='',offset=0){return business.marketSearch(query,limit,source,offset);}
 async function setProductMedia(productCode,canonicalProductId){
   const result=await business.setProductMedia(productCode,canonicalProductId);
-  await refresh(['products']);
+  try{await refresh(['products']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function setProductMediaCompare(productCode,kind,unitsPerCarton=null){
   const result=await business.setProductMediaCompare(productCode,kind,unitsPerCarton);
-  await refresh(['products']);
+  try{await refresh(['products']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function setProductMediaOwnQc(productCode,unitsPerCarton){
   const result=await business.setProductMediaOwnQc(productCode,unitsPerCarton);
-  await refresh(['products']);
+  try{await refresh(['products']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function clearProductMedia(productCode){
   const result=await business.clearProductMedia(productCode);
-  await refresh(['products']);
+  try{await refresh(['products']);}
+  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 

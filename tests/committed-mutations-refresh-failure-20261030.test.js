@@ -27,7 +27,12 @@ function fixture({readFails=true,writeFails=false}={}){
   async reverseOrder(){calls.push({method:'reverse'});if(writeFails)throw Error('reverse rejected');return success;},
   async deletePending(){calls.push({method:'delete'});if(writeFails)throw Error('delete rejected');return success;},
   async batchOrders(){calls.push({method:'batch'});if(writeFails)throw Error('batch rejected');return success;},
-  async debtTransaction(){calls.push({method:'debt'});if(writeFails)throw Error('debt rejected');return {ok:true,notice_sent:false};}
+  async debtTransaction(){calls.push({method:'debt'});if(writeFails)throw Error('debt rejected');return {ok:true,notice_sent:false};},
+  async createCustomer(){calls.push({method:'createCustomer'});if(writeFails)throw Error('customer rejected');return success;},
+  async setProductMedia(){calls.push({method:'setProductMedia'});if(writeFails)throw Error('media rejected');return success;},
+  async setProductMediaCompare(){calls.push({method:'setProductMediaCompare'});if(writeFails)throw Error('compare rejected');return success;},
+  async setProductMediaOwnQc(){calls.push({method:'setProductMediaOwnQc'});if(writeFails)throw Error('QC rejected');return success;},
+  async clearProductMedia(){calls.push({method:'clearProductMedia'});if(writeFails)throw Error('clear rejected');return success;}
  };
  const client={
   channel(){return {on(){return this;},subscribe(){return this;}};},
@@ -55,7 +60,12 @@ const cases=[
  ['reverseOrder',x=>x.reverseOrder('order-1'), 'reverse'],
  ['deletePending',x=>x.deletePending('order-1'), 'delete'],
  ['batchOrders',x=>x.batchOrders('deliver',['order-1']), 'batch'],
- ['debtTransaction',x=>x.debtTransaction('customer-1','thu_tien',125), 'debt']
+ ['debtTransaction',x=>x.debtTransaction('customer-1','thu_tien',125), 'debt'],
+ ['createCustomer',x=>x.createCustomer('Khách mới'), 'createCustomer'],
+ ['setProductMedia',x=>x.setProductMedia('SP1','media1'), 'setProductMedia'],
+ ['setProductMediaCompare',x=>x.setProductMediaCompare('SP1','box',12), 'setProductMediaCompare'],
+ ['setProductMediaOwnQc',x=>x.setProductMediaOwnQc('SP1',12), 'setProductMediaOwnQc'],
+ ['clearProductMedia',x=>x.clearProductMedia('SP1'), 'clearProductMedia']
 ];
 for(const [label,invoke,method] of cases){
  test(label+' returns committed success if canonical follow-up read is offline',async()=>{
@@ -85,4 +95,12 @@ test('successful canonical refresh does not schedule any extra network reconcili
  assert.equal(result.ok,true);
  assert.equal(f.wake.length,0);
  assert.equal(f.warnings.length,0);
+});
+
+test('rejected customer write is never reported as committed or retried',async()=>{
+ const f=fixture({writeFails:true});
+ await f.runtime.login('owner','pw');
+ await assert.rejects(f.runtime.createCustomer('Khách mới'),/customer rejected/);
+ assert.equal(f.calls.filter(c=>c.method==='read').length,0);
+ assert.equal(f.wake.length,0);
 });
