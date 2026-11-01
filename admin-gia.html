@@ -3006,6 +3006,10 @@
       }
     }
 
+    $('goodsTabBtn').addEventListener('click',()=>switchAdminView('goods'));
+    $('marketTabBtn').addEventListener('click',()=>switchAdminView('market'));
+    $('analyticsTabBtn').addEventListener('click',()=>switchAdminView('analytics'));
+    $('customerCareTabBtn').addEventListener('click',()=>switchAdminView('customers'));
     // Accessible Arrow/Home/End tablist navigation.
     document.querySelector('.admin-tabs').addEventListener('keydown',e=>{
       if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
@@ -3019,10 +3023,6 @@
       switchAdminView(order[next][0]);
       $(order[next][1]).focus();
     });
-    $('goodsTabBtn').addEventListener('click',()=>switchAdminView('goods'));
-    $('marketTabBtn').addEventListener('click',()=>switchAdminView('market'));
-    $('analyticsTabBtn').addEventListener('click',()=>switchAdminView('analytics'));
-    $('customerCareTabBtn').addEventListener('click',()=>switchAdminView('customers'));
     $('analyticsRefreshBtn').addEventListener('click',()=>loadQuoteAnalytics(true));
     $('analyticsDays').addEventListener('change',()=>loadQuoteAnalytics(true));
     $('marketOwnSource').addEventListener('change',()=>loadMarketMappings(true));
