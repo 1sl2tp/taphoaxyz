@@ -290,7 +290,7 @@ function setMsg(id,text='',kind=''){
 }
 function showLogin(message=''){
   $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');
-  if(message)setMsg('loginMsg',message,'error');
+  setMsg('loginMsg',message,message?'error':'');
 }
 function showApp(){
   $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');
@@ -357,7 +357,7 @@ function switchView(view){
   $('ordersTab').classList.toggle('active',view==='orders');
   $('costPanel').classList.toggle('hidden',view!=='cost');
   $('ordersPanel').classList.toggle('hidden',view!=='orders');
-  if(view==='orders'&&(!ordersLoaded||ordersSource!==session?.source_key))loadOrders();
+  if(view==='orders'&&(!ordersLoaded||ordersSource!==session?.source_key))return loadOrders();
 }
 function orderNotes(row){
   return [row.order_note,row.item_note].map(x=>String(x||'').trim()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
@@ -437,15 +437,25 @@ async function loadOrders(){
   }catch(err){
     if(sessionGeneration!==supplierSessionGeneration||requestGeneration!==ordersRequestGeneration||session?.token!==token)return;
     console.error(err);
-    $('ordersSummary').textContent='Không tải được đơn tạm.';
+    orderRows=[];ordersLoaded=false;ordersSource='';
+    renderOrders();
+    $('ordersSummary').textContent='Không tải được đơn tạm. Bấm “Làm mới” để thử lại.';
     if(String(err.message||'').includes('supplier_session_invalid')){
       clearSupplierSession();
       showLogin('Phiên đã hết hạn. Vui lòng nhập PIN lại.');
     }
   }
 }
-function printOrders(){
-  if(activeView!=='orders')switchView('orders');
+// SPEC-NCC-ORDERS-PRINT-READY-20261101: only print successfully loaded
+// order data; the first tab switch may still be loading from the server.
+async function printOrders(){
+  const pending=activeView!=='orders'?switchView('orders'):null;
+  if(pending)await pending;
+  else if(!ordersLoaded||ordersSource!==session?.source_key)await loadOrders();
+  if(!session?.token||!ordersLoaded||ordersSource!==session.source_key){
+    if(session?.token)$('ordersSummary').textContent='Chưa tải xong đơn tạm; không thể in. Hãy thử làm mới.';
+    return;
+  }
   document.body.classList.add('print-orders');
   const cleanup=()=>document.body.classList.remove('print-orders');
   window.addEventListener('afterprint',cleanup,{once:true});
