@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const html=readFileSync(new URL('../ncc/index.html',import.meta.url),'utf8');
 const start=html.indexOf('async function loadCatalog(){');
-const end=html.indexOf("\n\n$('loginForm').addEventListener",start);
+const end=html.indexOf("\n\n// SPEC-NCC-SUPPLIER-LOGIN-ATOMIC-20261101:",start);
 assert.ok(start>=0&&end>start);
 test('expired catalog response cannot repaint NCC UI after logout',async()=>{
  let release;const pending=new Promise(resolve=>release=resolve);
