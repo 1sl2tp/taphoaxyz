@@ -640,7 +640,7 @@
                         <div class="flex items-center min-w-0 flex-1 pr-3 gap-3">
                             ${imageHtml}
                             <div class="min-w-0 flex-1">
-                                <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${tenSp}</p>
+                                <p class="font-bold text-[15px] text-gray-900 line-clamp-1">${escapeProductEditorValue(tenSp)}</p>
                                 <div class="sale-product-price-row mt-1 flex items-center gap-2 min-w-0 ${employeeMode ? 'hidden' : ''}">
                                     ${salePriceHtml}
                                     ${!employeeMode && !isTobacco && giaLe > 0 ? `<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 tabular-nums whitespace-nowrap">${giaLe.toLocaleString('vi-VN',{maximumFractionDigits:2})}</span>` : ''}
@@ -661,9 +661,9 @@
                         </div>
                         <div class="flex items-center shrink-0">
                             <div class="flex items-center gap-1 border border-gray-200 rounded-full px-2 py-1 bg-white shadow-sm">
-                                <button onclick="updateCart('${maSp}', '${tenSp}', ${giaBan}, -1)" class="allow-fast-click w-6 h-6 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><i class="ph-bold ph-minus text-[10px]"></i></button>
-                                <input type="number" value="${qty}" min="1" step="1" inputmode="numeric" data-qty-editor="product" data-qty-id="${maSp}" data-qty-price="${giaBan}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-7 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[12px]">
-                                <button onclick="updateCart('${maSp}', '${tenSp}', ${giaBan}, 1)" class="allow-fast-click w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[10px]"></i></button>
+                                <button data-cart-product-code="${escapeProductEditorValue(maSp)}" data-cart-product-name="${escapeProductEditorValue(tenSp)}" data-cart-price="${giaBan}" onclick="updateCart(this.dataset.cartProductCode, this.dataset.cartProductName, Number(this.dataset.cartPrice), -1)" class="allow-fast-click w-6 h-6 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><i class="ph-bold ph-minus text-[10px]"></i></button>
+                                <input type="number" value="${qty}" min="1" step="1" inputmode="numeric" data-qty-editor="product" data-qty-id="${escapeProductEditorValue(maSp)}" data-qty-price="${giaBan}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-7 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[12px]">
+                                <button data-cart-product-code="${escapeProductEditorValue(maSp)}" data-cart-product-name="${escapeProductEditorValue(tenSp)}" data-cart-price="${giaBan}" onclick="updateCart(this.dataset.cartProductCode, this.dataset.cartProductName, Number(this.dataset.cartPrice), 1)" class="allow-fast-click w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center active:scale-95 shrink-0"><i class="ph-bold ph-plus text-[10px]"></i></button>
                             </div>
                         </div>
                     </div>
