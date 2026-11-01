@@ -8,7 +8,33 @@
   let pending=null;
   let stale=false;
   let previousBalanceSignature='';
+  let cycleIdentity=null,cycleMode=null,ownerInitialized=false;
   const TTL=45000;
+  // User is allowed to read debt balances, but this full-history RPC is
+  // admin-only. Do not leak cached admin cycle details or show an RPC error.
+  function cycleOwner(){
+    const bridge=window.TAPHOA_PRODUCTION;
+    return {identity:bridge?.getIdentity?.()||null,mode:bridge?.getAccessMode?.()||null};
+  }
+  function cycleOwnerCurrent(owner){
+    const now=cycleOwner();
+    return owner.identity===now.identity&&owner.mode===now.mode;
+  }
+  function syncCycleOwner(){
+    const owner=cycleOwner();
+    if(!ownerInitialized||cycleIdentity!==owner.identity||cycleMode!==owner.mode){
+      byCustomer=new Map();loadedAt=0;stale=true;previousBalanceSignature='';
+      pending=null;cycleIdentity=owner.identity;cycleMode=owner.mode;ownerInitialized=true;
+    }
+    return owner;
+  }
+  function canLoadCycles(){
+    if(!hasPermission('canViewDebt'))return false;
+    const bridge=window.TAPHOA_PRODUCTION;
+    const role=bridge?.getIdentity?.()?.role;
+    const mode=bridge?.getAccessMode?.();
+    return (!mode||mode==='account')&&(!role||role==='admin');
+  }
   const summaryFormat=new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric'});
   const dayLabel=key=>{
     if(!/^\d{4}-\d{2}-\d{2}$/.test(String(key||'')))return '—';
@@ -91,13 +117,15 @@
       .sort().join('|');
   }
   async function load({force=false}={}){
-    if(!hasPermission('canViewDebt'))return null;
+    const owner=syncCycleOwner();
+    if(!canLoadCycles())return null;
     if(pending)return pending;
     if(!force&&!stale&&byCustomer.size&&Date.now()-loadedAt<TTL)return byCustomer;
     const bridge=window.TAPHOA_PRODUCTION;
     if(typeof bridge?.debtCycles!=='function')return null;
-    pending=(async()=>{
+    const request=(async()=>{
       const data=await bridge.debtCycles();
+      if(!cycleOwnerCurrent(owner)||!canLoadCycles())return null;
       if(!Array.isArray(data))throw Error('Invalid cycle response');
       const map=new Map();
       for(const item of data){
@@ -110,11 +138,14 @@
         decorateDetail(selected);
       return map;
     })().catch(err=>{
-      console.warn('[taphoa] debt cycles read failed:',String(err?.message||err));
-      showCycleStatus('Không tải được nhịp mua. Công nợ gốc vẫn giữ nguyên.');
+      if(cycleOwnerCurrent(owner)&&canLoadCycles()){
+        console.warn('[taphoa] debt cycles read failed:',String(err?.message||err));
+        showCycleStatus('Không tải được nhịp mua. Công nợ gốc vẫn giữ nguyên.');
+      }
       return null;
-    }).finally(()=>{pending=null;});
-    return pending;
+    }).finally(()=>{if(pending===request)pending=null;});
+    pending=request;
+    return request;
   }
   function showCycleStatus(value){
     const list=document.getElementById('debtCustomerListContainer');
@@ -129,7 +160,7 @@
   }
   function decorateList(){
     const container=document.getElementById('debtCustomerListContainer');
-    if(!container||!hasPermission('canViewDebt'))return;
+    if(!container||!canLoadCycles())return;
     const note=document.getElementById('debtCycleLoadStatus');
     if(note&&byCustomer.size)note.remove();
     for(const card of container.querySelectorAll('.debt-customer-card[data-debt-customer-id]')){
@@ -170,7 +201,11 @@
   function decorateDetail(customerId){
     const holder=document.getElementById('customerDebtContentToShare');
     const history=document.getElementById('cDebtModalHistoryList');
-    if(!holder||!history||!hasPermission('canViewDebt'))return;
+    if(!holder||!history)return;
+    if(!canLoadCycles()){
+      holder.querySelector('#debtCyclePanel')?.remove();
+      return;
+    }
     let panel=holder.querySelector('#debtCyclePanel');
     if(!panel){
       panel=document.createElement('section');panel.id='debtCyclePanel';
@@ -253,6 +288,8 @@
   const oldRender=window.renderCongNo;
   if(typeof oldRender==='function')window.renderCongNo=function(...args){
     const result=oldRender.apply(this,args);
+    syncCycleOwner();
+    if(!canLoadCycles())return result;
     decorateList();
     // switchTab renders the target BEFORE marking it .active. Trigger
     // loading on the actual debt render, otherwise first-open never loads.
@@ -264,6 +301,7 @@
   const oldOpen=window.openCustomerDebtModal;
   if(typeof oldOpen==='function')window.openCustomerDebtModal=async function(customerId,...args){
     const result=await oldOpen.call(this,customerId,...args);
+    syncCycleOwner();
     // The canonical modal already loaded its first ledger page; cycle history
     // always arrives independently from the complete server-side ledger.
     decorateDetail(customerId);
