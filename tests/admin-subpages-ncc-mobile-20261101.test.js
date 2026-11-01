@@ -131,3 +131,16 @@ test('NCC mobile screens keep PIN and toolbar tappable and orders readable',()=>
  assert.match(supplier,/#ordersPanel \.table-wrap\{overflow-x:auto/);
  assert.match(supplier,/\.btn,\.main-tab,\.seg button\{min-height:44px\}/);
 });
+
+
+test('goods, market and visit analytics use accessible responsive controls',()=>{
+ assert.match(admin,/SPEC-ADMIN-SUBPAGES-TOOLS-20261101/);
+ assert.match(admin,/\.top-actions \.btn\{min-height:44px/);
+ assert.match(admin,/\.analytics-head\{flex-direction:column;align-items:stretch;gap:8px/);
+ assert.match(admin,/\.analytics-actions select,\.analytics-actions \.btn\{min-height:44px/);
+ assert.match(admin,/@media\(min-width:520px\) and \(max-width:700px\)\{\s*\.market-toolbar\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(admin,/\.market-toolbar input,\.market-toolbar select\{min-width:0;min-height:44px;font-size:16px/);
+ assert.match(admin,/id="marketRunUpdateBtn"/);
+ assert.match(admin,/id="analyticsRefreshBtn"/);
+ assert.match(admin,/id="addProductBtn"/);
+});
