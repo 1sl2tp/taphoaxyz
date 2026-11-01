@@ -938,6 +938,17 @@
 
     const $=id=>document.getElementById(id);
     const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    // SPEC-ADMIN-MARKET-URL-PROTOCOL-20261101: links and image URLs come
+    // from marketplace data; HTML escaping alone cannot prevent javascript:
+    // or data: URI navigation. Admit only explicit valid web URLs.
+    function safeMarketWebUrl(value){
+      const url=String(value||'').trim();
+      if(!/^https?:\/\//i.test(url)||/[\u0000-\u001f\u007f]/.test(url))return '';
+      try{
+        const parsed=new URL(url);
+        return ['http:','https:'].includes(parsed.protocol)&&parsed.hostname?parsed.href:'';
+      }catch{return '';}
+    }
     const plain=value=>value===null||value===undefined?'':String(value);
     const num=value=>{if(value===null||value===undefined||String(value).trim()==='')return null;const v=Number(String(value).trim().replace(',','.'));return Number.isFinite(v)?v:null};
     // SPEC-ADMIN-VI-MONEY-INPUT-20261101: only EDITOR inputs interpret
@@ -1919,7 +1930,8 @@
       $('marketMapCount').textContent=mapped+'/'+marketItems.length+' sản phẩm đã gán · '+linkCount+' nguồn · tổng '+marketTotal;
       $('marketProductList').innerHTML=marketItems.length?marketItems.map(function(item){
         const links=itemMarketLinks(item);
-        const img=item.image_url?'<img class="market-thumb" src="'+esc(item.image_url)+'" alt="">':'<span class="market-thumb"></span>';
+        const imageUrl=safeMarketWebUrl(item.image_url);
+        const img=imageUrl?'<img class="market-thumb" src="'+esc(imageUrl)+'" alt="">':'<span class="market-thumb"></span>';
         const infoParts=ownProductInfoParts(item);
         const badge=links.length?'<span class="market-map-badge">'+links.length+' GÁN</span>':'';
         return '<button type="button" class="market-list-item '+(item.product_code===marketSelectedCode?'active':'')+'" data-market-product="'+esc(item.product_code)+'">'+
@@ -1958,7 +1970,7 @@
           '<div class="market-link-top"><div><div class="market-link-source">'+esc(link.source||'')+'</div>'+
           '<div class="market-link-name">'+esc(link.name||'')+'</div></div>'+
           '<div class="market-link-actions">'+
-          (link.url?'<a class="market-link-open" href="'+esc(link.url)+'" target="_blank" rel="noopener">Mở ↗</a>':'')+
+          (safeMarketWebUrl(link.url)?'<a class="market-link-open" href="'+esc(safeMarketWebUrl(link.url))+'" target="_blank" rel="noopener noreferrer">Mở ↗</a>':'')+
           (link.image_url?'<button class="market-link-image '+(imageActive?'active':'')+'" type="button" data-market-image="'+esc(link.candidate_id)+'">'+(imageActive?'Ảnh đang dùng':'Dùng ảnh')+'</button>':'')+
           '<button class="market-link-copy" type="button" data-market-copy="'+esc(link.candidate_id)+'">Chép QC</button>'+
           ((link.variant_color||link.variant_label)?'<button class="market-link-copy" type="button" data-market-variant="'+esc(link.candidate_id)+'">Chép màu</button>':'')+
@@ -2054,7 +2066,8 @@
       const item=selectedMarketItem();
       const links=itemMarketLinks(item);
       let html=marketCandidates.map(function(x){
-        const img=x.image_url?'<img class="market-thumb" src="'+esc(x.image_url)+'" alt="">':'<span class="market-thumb"></span>';
+        const imageUrl=safeMarketWebUrl(x.image_url);
+        const img=imageUrl?'<img class="market-thumb" src="'+esc(imageUrl)+'" alt="">':'<span class="market-thumb"></span>';
         const exact=links.some(function(link){return link.candidate_id===x.id;});
         const label=exact?'Đã gán':'Gán';
         return '<div class="market-candidate">'+img+
@@ -2062,7 +2075,7 @@
           '<span class="market-item-meta">'+esc(x.source||'')+' · Giá '+esc(marketSoldPriceText(x,item))+' · '+esc(marketStructureParts(x,item).join(' · '))+
           (x.variant_color?' · Màu '+esc(x.variant_color):'')+(x.variant_label?' · '+esc(x.variant_label):'')+'</span>'+
           '</span>'+
-          (x.open_url?'<a class="market-link-open" href="'+esc(x.open_url)+'" target="_blank" rel="noopener">Mở ↗</a>':'')+
+          (safeMarketWebUrl(x.open_url)?'<a class="market-link-open" href="'+esc(safeMarketWebUrl(x.open_url))+'" target="_blank" rel="noopener noreferrer">Mở ↗</a>':'')+
           '<button class="market-assign" type="button" data-market-candidate="'+esc(x.id)+'" '+(exact?'disabled':'')+'>'+esc(label)+'</button></div>';
       }).join('');
       if(marketCandidateHasMore){
