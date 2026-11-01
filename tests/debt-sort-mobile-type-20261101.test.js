@@ -51,14 +51,27 @@ test('visible text tracks selected option; existing sorting still consumes selec
   assert.ok(start>=0&&end>start);
   const selected={selectedIndex:0,options:[{text:'Lâu chưa giao'},{text:'Nợ cao nhất'}]};
   const display={textContent:''};
+  const control={hidden:false};
   const ctx={document:{getElementById(id){
     return id==='debtSortSelect'?selected:id==='debtSortVisibleValue'?display:null;
+  },querySelector(selector){
+    assert.equal(selector,'#tab-cong-no .debt-sort-control');
+    return control;
   }}};
-  vm.runInNewContext(js.slice(start,end),{document:ctx.document},{timeout:1000});
+  const refresh=group=>vm.runInNewContext(js.slice(start,end),
+    {document:ctx.document,currentDebtFilter:group},{timeout:1000});
+  refresh('no');
   assert.equal(display.textContent,'Lâu chưa giao');
+  assert.equal(control.hidden,false);
   selected.selectedIndex=1;
-  vm.runInNewContext(js.slice(start,end),{document:ctx.document},{timeout:1000});
+  refresh('no');
   assert.equal(display.textContent,'Nợ cao nhất');
+  refresh('du');
+  assert.equal(control.hidden,true);
+  refresh('het');
+  assert.equal(control.hidden,true);
+  refresh('no');
+  assert.equal(control.hidden,false);
 });
 
 test('the three modified PWA assets have refreshed URLs',()=>{
