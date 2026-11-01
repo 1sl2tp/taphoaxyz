@@ -46,3 +46,20 @@ test('both inline handlers send original name/code including apostrophes to cart
     assert.deepEqual(calls,[[code,name,15900,direction]]);
   }
 });
+
+
+// SPEC-PWA-SAFE-SOURCE-CHIPS-20261101
+test('catalog source chips safely handle apostrophes without breaking the filter',()=>{
+  assert.ok(source.includes('data-source-name="${escapeProductEditorValue(src)}"'));
+  assert.ok(source.includes('onclick="filterSource(this.dataset.sourceName)"'));
+  assert.ok(source.includes('aria-label="${escapeProductEditorValue(src)}"'));
+  assert.ok(source.includes('class="source-tag-label-full">${escapeProductEditorValue(src)}</span>'));
+  assert.ok(source.includes('class="source-tag-label-mobile">${escapeProductEditorValue(mobileLabel)}</span>'));
+  const category="Cô O'Brien & \u0022Đặc biệt\u0022";
+  const recorded=[];
+  const fn=vm.runInNewContext('(function(){filterSource(this.dataset.sourceName)})',{
+    filterSource:value=>recorded.push(value)
+  });
+  fn.call({dataset:{sourceName:category}});
+  assert.deepEqual(recorded,[category]);
+});
