@@ -260,7 +260,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
       loaded=true;render();
       const systemDifference=periodSummary.orders-periodSummary.rosterOrders;
       $('careStatus').textContent='Kỳ '+period.label+' · '+number(periodSummary.buying)+'/'+
-        number(periodSummary.roster)+' khách mua · '+number(periodSummary.orders)+' đơn giao · '+
+        number(periodSummary.roster)+' khách mua khác nhau · '+number(periodSummary.orders)+' đơn đã giao · '+
         'dữ liệu '+String(data?.generated_on||'')+
         ' · Công nợ/đơn tạm/lâu chưa mua là trạng thái hiện tại.'+
         (systemDifference>0?' · '+number(systemDifference)+' đơn hệ thống ngoài danh bạ.':
