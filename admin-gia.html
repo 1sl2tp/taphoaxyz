@@ -453,7 +453,7 @@
     /* SPEC-ADMIN-CARE-ALIGNED-CARDS-20261101: balanced 6-card dashboard,
        consistent amount baselines and right-aligned tabular money columns. */
     #customerCarePane .care-overview-cards{
-      grid-template-columns:repeat(3,minmax(0,1fr));
+      grid-template-columns:repeat(4,minmax(0,1fr));
       align-items:stretch;
     }
     #customerCarePane .care-overview-cards .analytics-card{
@@ -782,12 +782,14 @@
         </div>
         <div id="careStatus" class="analytics-status" aria-live="polite">Bấm tab để đọc báo cáo.</div>
         <div class="analytics-cards care-overview-cards">
-          <div class="analytics-card"><span>Khách hàng</span><strong id="careTotal">—</strong></div>
-          <div class="analytics-card"><span>Đã có đơn giao</span><strong id="careBought">—</strong></div>
-          <div class="analytics-card"><span>Chưa có đơn giao</span><strong id="careNever">—</strong></div>
-          <div class="analytics-card"><span>Có đơn tạm</span><strong id="carePending">—</strong></div>
-          <div class="analytics-card"><span>Lâu chưa mua</span><strong id="careLapsed">—</strong></div>
-          <div class="analytics-card"><span>Còn nợ</span><strong id="careOwing">—</strong></div>
+          <div class="analytics-card"><span>Khách danh bạ · tất cả</span><strong id="careTotal">—</strong></div>
+          <div class="analytics-card"><span>Khách mua · trong kỳ</span><strong id="careBought">—</strong></div>
+          <div class="analytics-card"><span>Đơn giao · trong kỳ</span><strong id="careOrders">—</strong></div>
+          <div class="analytics-card"><span>Chưa mua · trong kỳ</span><strong id="careNever">—</strong></div>
+          <div class="analytics-card"><span>Đã từng mua · tất cả</span><strong id="careEverBought">—</strong></div>
+          <div class="analytics-card"><span>Có đơn tạm · hiện tại</span><strong id="carePending">—</strong></div>
+          <div class="analytics-card"><span>Lâu chưa mua · hiện tại</span><strong id="careLapsed">—</strong></div>
+          <div class="analytics-card"><span>Còn nợ · hiện tại</span><strong id="careOwing">—</strong></div>
         </div>
         <div class="care-finance-cards" title="Tổng tiền hiển thị làm tròn tới đơn vị; số liệu gốc vẫn giữ nguyên.">
           <div><span>Doanh thu bán hàng · kỳ</span><strong id="careSystemRevenue">—</strong><small>Tất cả đơn đã giao, gồm tài khoản thử nếu có</small></div>
@@ -798,16 +800,21 @@
         <div class="care-filter care-tools">
           <input id="careSearch" placeholder="Tìm khách hàng…" autocomplete="off" aria-label="Tìm khách hàng">
           <select id="careFilter" aria-label="Lọc khách hàng">
-            <option value="all">Tất cả khách</option><option value="never">Chưa có đơn giao</option>
-            <option value="lapsed">Lâu chưa mua</option><option value="pending">Có đơn tạm</option>
-            <option value="repeat">Mua lặp lại</option><option value="owing">Còn nợ</option>
+            <option value="period" selected>Khách mua trong kỳ</option>
+            <option value="no_period">Chưa mua trong kỳ</option>
+            <option value="all">Tất cả khách danh bạ</option>
+            <option value="never">Chưa từng có đơn giao</option>
+            <option value="lapsed">Lâu chưa mua · hiện tại</option>
+            <option value="pending">Có đơn tạm · hiện tại</option>
+            <option value="repeat">Mua nhiều lần · trong kỳ</option>
+            <option value="owing">Còn nợ · hiện tại</option>
             <option value="demo">Dữ liệu thử</option>
           </select>
           <span id="careCount" class="pager-info"></span>
         </div>
         <div class="care-columns">
           <div class="care-list">
-            <table><thead><tr><th>Khách</th><th>Nhóm</th><th class="num">Đơn kỳ</th><th class="num">Doanh thu kỳ</th><th class="num">Lãi gộp kỳ</th><th class="num">Biên lãi</th><th class="num">Nợ khác kỳ</th><th class="num">Công nợ hiện tại</th></tr></thead>
+            <table><thead><tr><th>Khách</th><th>Nhóm hiện tại</th><th class="num">Đơn kỳ</th><th class="num">Doanh thu kỳ</th><th class="num">Lãi gộp kỳ</th><th class="num">Biên lãi</th><th class="num">Nợ khác kỳ</th><th class="num">Công nợ hiện tại</th></tr></thead>
               <tbody id="careBody"><tr><td colspan="8" class="empty">Chưa tải báo cáo.</td></tr></tbody>
             </table>
           </div>

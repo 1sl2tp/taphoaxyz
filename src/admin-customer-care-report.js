@@ -154,19 +154,50 @@ export function createCustomerCareReport({rpc,getIdentity}){
     const button=add('button','Sao chép lời nhắn','btn primary');button.type='button';button.id='careCopySuggestion';
     add('p','Chỉ sao chép, không tự gửi Chat/Zalo.').id='careCopyStatus';
   }
+  // SPEC-ADMIN-CARE-PERIOD-COHORT-20261101:
+  // Per-customer period_delivered_count belongs to the selected time range.
+  // The older bought_customers and never_delivered_customers RPC totals are
+  // explicitly lifetime counts and must never label month-by-month buyers.
+  function periodCustomerSummary(data){
+    const customers=Array.isArray(data?.customers)?data.customers:[];
+    const buying=customers.filter(r=>Number(r.period_delivered_count)>0).length;
+    const roster=customers.length;
+    const rosterOrders=customers.reduce((total,r)=>total+(Number(r.period_delivered_count)||0),0);
+    const systemOrders=Number(data?.system?.delivered_orders);
+    return {
+      roster, buying, notBuying:roster-buying,
+      orders:Number.isFinite(systemOrders)?systemOrders:rosterOrders,
+      rosterOrders
+    };
+  }
+  function invalidatePeriodFigures(){
+    rows=[];loaded=false;selected='';
+    for(const id of ['careTotal','careBought','careOrders','careNever','careEverBought',
+      'carePending','careLapsed','careOwing','careSystemRevenue','careSystemCost',
+      'careSystemProfit','careSystemMargin','careSystemCostPct'])$(id).textContent='—';
+    $('careCount').textContent='Đang cập nhật kỳ báo cáo…';
+    $('careBody').replaceChildren();
+    $('careDetail').textContent='Chọn khách khi báo cáo tải xong.';
+  }
   function render(){
     const q=String($('careSearch').value||'').trim().toLocaleLowerCase('vi-VN');
     const filter=$('careFilter').value;
     const list=rows.filter(r=>{
       if(q&&!(String(r.name||'')+' '+String(r.username||'')).toLocaleLowerCase('vi-VN').includes(q))return false;
       if(filter==='all')return true;
+      if(filter==='period')return Number(r.period_delivered_count)>0;
+      if(filter==='no_period')return Number(r.period_delivered_count)===0;
+      if(filter==='repeat')return Number(r.period_delivered_count)>=2;
       if(filter==='owing')return Number(r.debt_balance)>0;
       if(filter==='pending')return Number(r.pending_count)>0;
       if(filter==='never')return !Number(r.delivered_count);
       if(filter==='lapsed')return Number(r.delivered_count)>0&&Number(r.days_since_purchase)>=elapsed();
       return r.segment===filter;
-    });
-    $('careCount').textContent=list.length+' khách phù hợp';
+    }).sort((a,b)=>Number(b.period_delivered_count||0)-Number(a.period_delivered_count||0)
+      ||Number(b.total_revenue||0)-Number(a.total_revenue||0)
+      ||String(a.name||'').localeCompare(String(b.name||''),'vi'));
+    const periodOrders=rows.reduce((total,r)=>total+(Number(r.period_delivered_count)||0),0);
+    $('careCount').textContent=list.length+'/'+rows.length+' khách · '+number(periodOrders)+' đơn trong kỳ';
     // SPEC-ADMIN-CARE-SELECTION-20261101: restore selection before rows render;
     // DOM dataset IDs are strings, while RPC IDs may be numeric.
     if(!list.some(x=>String(x.id)===String(selected)))selected=list[0]?.id??'';
@@ -199,12 +230,21 @@ export function createCustomerCareReport({rpc,getIdentity}){
         rpc('taphoa_cycle_sender_voice_setting',{p_voice:null}).catch(()=>null)
       ]);
       if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
+      // Refuse a server reply for a different requested range.
+      if((data?.period_start??null)!==(period.p_start_date??null)||
+         (data?.period_end??null)!==(period.p_end_date??null))
+        throw new Error('Kỳ báo cáo trả về không khớp bộ lọc đã chọn.');
       if(voiceSetting?.young_speaker==='anh'||voiceSetting?.young_speaker==='chị')
         youngSpeaker=voiceSetting.young_speaker;
       rows=Array.isArray(data?.customers)?data.customers:[];
+      const periodSummary=periodCustomerSummary(data);
+      $('careTotal').textContent=number(periodSummary.roster);
+      $('careBought').textContent=number(periodSummary.buying);
+      $('careOrders').textContent=number(periodSummary.orders);
+      $('careNever').textContent=number(periodSummary.notBuying);
+      $('careEverBought').textContent=number(data?.bought_customers);
       for(const [id,key] of [
-        ['careTotal','total_customers'],['careBought','bought_customers'],
-        ['careNever','never_delivered_customers'],['carePending','pending_customers'],
+        ['carePending','pending_customers'],
         ['careLapsed','lapsed_customers'],['careOwing','owing_customers']
       ])$(id).textContent=number(data?.[key]);
       const totals=data?.system||{};
@@ -214,8 +254,12 @@ export function createCustomerCareReport({rpc,getIdentity}){
       $('careSystemMargin').textContent=percent(totals.gross_margin_percent);
       $('careSystemCostPct').textContent='Tỷ lệ vốn: '+percent(totals.cost_ratio_percent);
       loaded=true;render();
-      $('careStatus').textContent='Kỳ '+period.label+' · dữ liệu '+String(data?.generated_on||'')+
-        ' · công nợ hiện tại vẫn tính toàn thời gian · lý do đơn tạm chưa được ghi nhận.';
+      const systemDifference=periodSummary.orders-periodSummary.rosterOrders;
+      $('careStatus').textContent='Kỳ '+period.label+' · '+number(periodSummary.buying)+'/'+
+        number(periodSummary.roster)+' khách mua · '+number(periodSummary.orders)+' đơn giao · '+
+        'dữ liệu '+String(data?.generated_on||'')+
+        ' · Công nợ/đơn tạm/lâu chưa mua là trạng thái hiện tại.'+
+        (systemDifference?' · '+number(Math.abs(systemDifference))+' đơn hệ thống không nằm trong bảng khách.':'');
     }catch(e){
       if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
       $('careStatus').textContent='Không tải được báo cáo: '+String(e?.message||'Có lỗi');
@@ -235,12 +279,14 @@ export function createCustomerCareReport({rpc,getIdentity}){
     $('careBody').replaceChildren();
     $('careDetail').textContent='Chọn khách để xem báo cáo.';
     $('careStatus').textContent='Bấm tab để đọc báo cáo.';
-    for(const id of ['careTotal','careBought','careNever','carePending','careLapsed','careOwing',
-      'careSystemRevenue','careSystemCost','careSystemProfit','careSystemMargin','careSystemCostPct'])$(id).textContent='—';
-    $('careSearch').value='';$('careFilter').value='all';
+    invalidatePeriodFigures();
+    $('careSearch').value='';$('careFilter').value='period';
+    $('carePeriod').value='month_0';$('carePeriodStart').value='';$('carePeriodEnd').value='';
+    periodVisibility();
   }
   function refreshPeriod(){
     loaded=false;
+    invalidatePeriodFigures();
     if(loading){reloadQueued=true;return;}
     void load(true);
   }
@@ -255,8 +301,9 @@ export function createCustomerCareReport({rpc,getIdentity}){
       // range invalidates any inflight older range; don't show its response
       // as though it belonged to the newly selected filter.
       generation++;loading=false;reloadQueued=false;
+      invalidatePeriodFigures();
       if($('carePeriodStart').value&&$('carePeriodEnd').value)refreshPeriod();
-      else $('careStatus').textContent='Chọn từ ngày và đến ngày để tải báo cáo; số liệu đang hiển thị thuộc kỳ trước.';
+      else $('careStatus').textContent='Chọn từ ngày và đến ngày để tải báo cáo.';
     }
   });
   // SPEC-ADMIN-CARE-INCOMPLETE-DATES-20261101: editing away one endpoint
@@ -267,7 +314,8 @@ export function createCustomerCareReport({rpc,getIdentity}){
       if($('carePeriodStart').value&&$('carePeriodEnd').value)refreshPeriod();
       else{
         generation++;loading=false;reloadQueued=false;
-        $('careStatus').textContent='Chọn đủ hai ngày để tải báo cáo; số liệu đang hiển thị thuộc kỳ trước.';
+        invalidatePeriodFigures();
+        $('careStatus').textContent='Chọn đủ hai ngày để tải báo cáo.';
       }
     });
   }
