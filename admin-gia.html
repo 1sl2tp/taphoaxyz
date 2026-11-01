@@ -993,6 +993,25 @@
       $('productSubmitBtn').disabled=false;
       $('marketRunUpdateBtn').disabled=false;
       $('supplierFeedbackBody').replaceChildren();$('supplierFeedbackEmpty').classList.add('hidden');
+      // SPEC-ADMIN-LOGOUT-DOM-PRIVACY-20261101: do not leave stale customer
+      // or product details in hidden DOM nodes after changing accounts.
+      $('productBody').replaceChildren();
+      $('sourceChips').replaceChildren();
+      $('comparisonBody').replaceChildren();$('comparisonText').textContent='';
+      $('comparisonPanel').classList.add('hidden');
+      $('newSource').replaceChildren();
+      $('countText').textContent='Chưa tải dữ liệu';
+      $('statusText').textContent='Sẵn sàng';$('statusText').title='';
+      $('statusText').classList.remove('error');
+      $('statusText').closest('.summary')?.classList.remove('has-save-error');
+      $('pageText').textContent='Trang 1/1';
+      $('historyBody').replaceChildren();$('historyTitle').textContent='Nhật ký giá';
+      $('sourceForm').reset();$('productForm').reset();
+      $('marketCurrent').replaceChildren();
+      $('marketCandidateTags').replaceChildren();
+      $('marketCandidateCount').textContent='';
+      $('marketMapCount').textContent='Chưa tải dữ liệu';
+      $('marketPageText').textContent='Trang 1/1';
       loading=false;pageRefreshQueued=false;pageRefreshReset=false;
       marketLoading=false;marketRefreshQueued=false;marketRefreshReset=false;
       analyticsLoading=false;analyticsReloadQueued=false;analyticsLoaded=false;
@@ -2957,6 +2976,15 @@
     }
     $('logoutBtn').addEventListener('click',logOutAdmin);
     $('mobileLogoutBtn').addEventListener('click',logOutAdmin);
+    // Warn on browser navigation while there are uncommitted changes.
+    // A successful logout already clears the table and pending queue.
+    window.addEventListener('beforeunload',e=>{
+      const dirty=Boolean($('productBody').querySelector('tr[data-dirty="1"]'));
+      if(identity?.role==='admin'&&(dirty||saveQueues.size>0)){
+        e.preventDefault();
+        e.returnValue='';
+      }
+    });
     document.addEventListener('click',e=>{
       const menu=document.querySelector('.mobile-admin-menu');
       if(menu?.open&&!menu.contains(e.target))menu.open=false;
