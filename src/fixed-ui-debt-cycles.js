@@ -185,9 +185,14 @@
       }else{
         // Put the actionable status FIRST so even a narrow card with two
         // visible lines never hides it behind monthly and cycle metadata.
-        panel.textContent=briefCycleStatus(cycle)+' · CK'+cycle.number+
-          ' ('+numeric(cycle.purchaseCount)+' đơn)'+
-          (monthSummary?' · '+monthSummary:'');
+        // Separate the urgent status from context so only overdue text is
+        // red. The full explanation stays in the customer-detail sheet.
+        panel.replaceChildren(
+          makeText('span','debt-cycle-card-status',briefCycleStatus(cycle)),
+          makeText('span','debt-cycle-card-context',' · CK'+cycle.number+
+            ' ('+numeric(cycle.purchaseCount)+' đơn)'+
+            (monthSummary?' · '+monthSummary:''))
+        );
         panel.title=monthCountText(month)+' · Chu kỳ '+cycle.number+
           ' ('+numeric(cycle.purchaseCount)+' đơn) · '+alertText(cycle);
         panel.dataset.warning=cycle.policyDueDay?(cycle.policyIsDue===true?'true':''):
@@ -254,11 +259,13 @@
           'Chưa phát sinh chu kỳ nợ trên App'));
     }
     const months=Array.isArray(row.monthly)?row.monthly:[];
+    if(!months.length&&!cycles.length)return;
+    // One disclosure replaces two competing blue links. Both full histories
+    // remain accessible after one tap; the finance ledger stays untouched.
+    const details=document.createElement('details');details.className='debt-cycle-history';
+    details.appendChild(makeText('summary','debt-cycle-history-title','Xem lịch sử kỳ mua và chu kỳ'));
     if(months.length){
-      const monthHistory=document.createElement('details');
-      monthHistory.className='debt-cycle-history';
-      monthHistory.appendChild(makeText('summary','debt-cycle-history-title',
-        'Xem các kỳ tháng (6 tháng gần nhất)'));
+      details.appendChild(makeText('p','debt-cycle-history-section','Kỳ tháng (6 tháng gần nhất)'));
       const monthlyList=document.createElement('ol');
       for(const item of months){
         const li=document.createElement('li');
@@ -267,23 +274,24 @@
           (Number(item.carryOver)>0?' · Có công nợ chuyển kỳ':'')));
         monthlyList.appendChild(li);
       }
-      monthHistory.appendChild(monthlyList);
-      panel.appendChild(monthHistory);
+      details.appendChild(monthlyList);
     }
-    if(!cycles.length)return;
-    const details=document.createElement('details');details.className='debt-cycle-history';
-    details.appendChild(makeText('summary','debt-cycle-history-title','Xem tất cả '+cycles.length+' chu kỳ (từ đầu App)'));
-    const list=document.createElement('ol');
-    for(const c of cycles){
-      const li=document.createElement('li');li.className='debt-cycle-history-item';
-      const period=dayLabel(c.startDay)+' → '+(c.closedAt?dayLabel(c.endDay):'hôm nay');
-      li.append(
-        makeText('strong','', 'Chu kỳ '+c.number+(c.closedAt?' · Đã tất toán':' · Chưa tất toán')),
-        makeText('span','',period+' · '+compactDays(c)+' · '+numeric(c.purchaseCount)+' đơn')
-      );
-      list.appendChild(li);
+    if(cycles.length){
+      details.appendChild(makeText('p','debt-cycle-history-section',
+        'Tất cả '+cycles.length+' chu kỳ (từ đầu App)'));
+      const list=document.createElement('ol');
+      for(const c of cycles){
+        const li=document.createElement('li');li.className='debt-cycle-history-item';
+        const period=dayLabel(c.startDay)+' → '+(c.closedAt?dayLabel(c.endDay):'hôm nay');
+        li.append(
+          makeText('strong','', 'Chu kỳ '+c.number+(c.closedAt?' · Đã tất toán':' · Chưa tất toán')),
+          makeText('span','',period+' · '+compactDays(c)+' · '+numeric(c.purchaseCount)+' đơn')
+        );
+        list.appendChild(li);
+      }
+      details.appendChild(list);
     }
-    details.appendChild(list);panel.appendChild(details);
+    panel.appendChild(details);
   }
   const oldRender=window.renderCongNo;
   if(typeof oldRender==='function')window.renderCongNo=function(...args){
