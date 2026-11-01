@@ -691,6 +691,18 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
   }
 }
 
+// SPEC-DEBT-MANUAL-LINKED-20261101: manual recipient-specific send only.
+// The server validates admin identity, linked Zalo and its own debt balance.
+async function manualShareDebt(customerId,requestId){
+  if(employeeAccess||publicAccess||identity?.role!=='admin')
+    throw Error('taphoa_admin_required');
+  const id=String(customerId||'').trim(),nonce=String(requestId||'').trim();
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+     ||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nonce))
+    throw Error('manual_debt_request_invalid');
+  return business.manualShareDebt(id,nonce);
+}
+
 async function manualShareOrder(orderId,requestId){
   if(employeeAccess||publicAccess||identity?.role!=='admin')throw Error('taphoa_admin_required');
   const id=String(orderId||'').trim(),nonce=String(requestId||'').trim();
@@ -976,7 +988,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,ledgerToRows,
-  saveOrder,deliverOrder,manualShareOrder,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
+  saveOrder,deliverOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
