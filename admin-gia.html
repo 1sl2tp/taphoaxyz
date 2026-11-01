@@ -794,13 +794,13 @@
     const PAGE_SIZE=100;
     let identity=null,client=null,items=[],comparisonItems=[],sources=[],total=0,offset=0,loading=false,searchTimer=0;
     let selectedSource='';
-    let pageRefreshQueued=false,pageRefreshReset=false,productEditRevision=0;
+    let pageRefreshQueued=false,pageRefreshReset=false,productEditRevision=0,catalogSessionGeneration=0;
     let adminView='goods';
-    let analyticsLoaded=false,analyticsLoading=false,analyticsReloadQueued=false;
+    let analyticsLoaded=false,analyticsLoading=false,analyticsReloadQueued=false,analyticsSessionGeneration=0;
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
     let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketSearchTags=[];
-    let marketRefreshQueued=false,marketRefreshReset=false,marketCandidateGeneration=0;
+    let marketRefreshQueued=false,marketRefreshReset=false,marketCandidateGeneration=0,marketSessionGeneration=0;
     const MARKET_PAGE_SIZE=100;
     const MARKET_CANDIDATE_PAGE_SIZE=120;
     let sourceDialogMode='create';
@@ -957,11 +957,34 @@
     function showLogin(message=''){ $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');$('loginMsg').textContent=message;$('loginMsg').className='msg'+(message?' error':''); }
     function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden'); }
     async function rpc(name,args={}){ if(!client)client=await auth.getClient();const {data,error}=await client.rpc(name,args);if(error)throw error;return data; }
+    // SPEC-ADMIN-SESSION-CLEANUP-20261101: never show a prior admin's report
+    // or continue supermarket polling after logout/account restoration.
+    function resetAdminSessionDisplays(){
+      clearTimeout(marketStatusTimer);marketStatusTimer=0;
+      catalogSessionGeneration++;marketSessionGeneration++;analyticsSessionGeneration++;
+      marketCandidateGeneration++;
+      loading=false;pageRefreshQueued=false;pageRefreshReset=false;
+      marketLoading=false;marketRefreshQueued=false;marketRefreshReset=false;
+      analyticsLoading=false;analyticsReloadQueued=false;analyticsLoaded=false;
+      marketItems=[];marketSources=[];marketTotal=0;marketOffset=0;marketSelectedCode='';
+      marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;marketSearchTags=[];
+      selectedSource='';items=[];sources=[];comparisonItems=[];total=0;offset=0;
+      $('searchInput').value='';$('marketOwnSearch').value='';$('marketOwnSource').value='';
+      $('marketShopSource').value='';$('marketCandidateSearch').value='';
+      $('analyticsStatus').textContent='Mở tab để đọc báo cáo.';
+      for(const id of ['analyticsTotal','analyticsToday','analyticsWeek','analyticsUnique'])$(id).textContent='—';
+      $('analyticsDailyBody').replaceChildren();$('analyticsRecentBody').replaceChildren();
+      $('marketProductList').replaceChildren();$('marketCandidateList').replaceChildren();
+      $('marketUpdateStatus').textContent='Chưa đọc trạng thái nguồn.';
+      switchAdminView('goods');
+    }
     async function enter(info){
       customerCare.reset();
-      identity=info?.identity||null;
-      if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
-      if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
+      const nextIdentity=info?.identity||null;
+      if(!nextIdentity||nextIdentity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
+      if(nextIdentity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
+      resetAdminSessionDisplays();
+      identity=nextIdentity;
       client=info.client||await auth.getClient();showApp();await loadPage(true);await loadSupplierFeedback();await loadMarketStatus();
     }
 
@@ -1000,10 +1023,14 @@
       if(analyticsLoading){if(force)analyticsReloadQueued=true;return;}
       if(!force&&analyticsLoaded)return;
       analyticsLoading=true;
+      const generation=analyticsSessionGeneration;
+      const adminUid=identity?.uid;
       $('analyticsStatus').textContent='Đang tải báo cáo…';
       try{
         const days=Math.max(7,Math.min(90,Number($('analyticsDays').value)||30));
         const data=await rpc('taphoa_admin_quote_visit_report',{p_days:days});
+        if(generation!==analyticsSessionGeneration||identity?.uid!==adminUid)return;
+        if(analyticsReloadQueued)return;
         $('analyticsTotal').textContent=analyticsNumber(data?.total_views);
         $('analyticsToday').textContent=analyticsNumber(data?.today_views);
         $('analyticsWeek').textContent=analyticsNumber(data?.last_7_days);
@@ -1020,8 +1047,10 @@
         analyticsLoaded=true;
         $('analyticsStatus').textContent='Đang xem '+days+' ngày gần nhất · khu vực IP chỉ mang tính ước tính; dữ liệu cập nhật khi mở/làm mới tab.';
       }catch(error){
+        if(generation!==analyticsSessionGeneration||identity?.uid!==adminUid)return;
         $('analyticsStatus').textContent='Không tải được báo cáo: '+(error?.message||'Lỗi không xác định');
       }finally{
+        if(generation!==analyticsSessionGeneration)return;
         analyticsLoading=false;
         if(analyticsReloadQueued){
           analyticsReloadQueued=false;
@@ -1763,6 +1792,7 @@
       if(marketLoading){marketRefreshQueued=true;marketRefreshReset=marketRefreshReset||reset;return;}
       if(reset)marketOffset=0;
       marketLoading=true;
+      const sessionGeneration=marketSessionGeneration;
       let ready=false;
       $('marketMapCount').textContent='Đang tải…';
       try{
@@ -1774,6 +1804,7 @@
           p_limit:MARKET_PAGE_SIZE,
           p_offset:marketOffset
         });
+        if(sessionGeneration!==marketSessionGeneration)return;
         if(marketRefreshQueued||requestedQuery!==$('marketOwnSearch').value.trim()||requestedSource!==$('marketOwnSource').value){
           marketRefreshQueued=true;marketRefreshReset=true;
           return;
@@ -1786,7 +1817,7 @@
         renderMarketCurrent();
         ready=true;
       }catch(error){
-        if(marketRefreshQueued)return;
+        if(sessionGeneration!==marketSessionGeneration||marketRefreshQueued)return;
         console.error('market mappings',error);
         marketItems=[];marketTotal=0;marketSelectedCode='';
         renderMarketCurrent();
@@ -1796,6 +1827,7 @@
         $('marketPrevBtn').disabled=true;
         $('marketNextBtn').disabled=true;
       }finally{
+        if(sessionGeneration!==marketSessionGeneration)return;
         marketLoading=false;
         if(ready)renderMarketProducts();
         if(marketRefreshQueued){
@@ -1995,8 +2027,11 @@
     }
 
     async function loadMarketStatus(){
+      const adminUid=identity?.uid;
+      if(!adminUid)return;
       try{
         const data=await rpc('taphoa_admin_market_update_status');
+        if(identity?.uid!==adminUid)return;
         const active=data&&data.active_run;
         const last=data&&data.last_run;
         const settings=(data&&data.settings)||{};
@@ -2010,6 +2045,7 @@
           $('marketRunUpdateBtn').textContent='Cập nhật nguồn đã gán';
         }
       }catch(error){
+        if(identity?.uid!==adminUid)return;
         console.error('market update status',error);
         $('marketUpdateStatus').textContent='Không đọc được trạng thái cập nhật.';
       }
@@ -2055,6 +2091,7 @@
       // Do not drop quick searches or source switches while a request is in flight.
       if(loading){pageRefreshQueued=true;pageRefreshReset=pageRefreshReset||reset;return;}
       loading=true;
+      const sessionGeneration=catalogSessionGeneration;
       let blocked=false;
       try{
         if(!await flushProductEditsBeforeReload()){blocked=true;return;}
@@ -2068,6 +2105,7 @@
           ?rpc('taphoa_admin_price_catalog',{p_query:query,p_source:'',p_limit:100,p_offset:0})
           :Promise.resolve(null);
         const [data,compareData]=await Promise.all([mainPromise,comparePromise]);
+        if(sessionGeneration!==catalogSessionGeneration)return;
         // A user may edit a visible row while the catalog request is underway.
         // Commit that edit first and refresh again rather than painting stale values.
         if(productEditRevision!==requestedEditRevision){
@@ -2087,9 +2125,11 @@
           :[];
         renderSources();renderProducts();renderComparison();fillProductSources();$('statusText').textContent='Supabase trực tiếp';
       }catch(error){
+        if(sessionGeneration!==catalogSessionGeneration)return;
         console.error(error);comparisonItems=[];renderComparison();
         $('statusText').textContent='Lỗi tải dữ liệu';$('countText').textContent='Không tải được dữ liệu';
       }finally{
+        if(sessionGeneration!==catalogSessionGeneration)return;
         loading=false;updatePager();
         if(blocked){
           pageRefreshQueued=false;pageRefreshReset=false;
@@ -2750,7 +2790,17 @@
     });
 
     $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Đang đăng nhập…';try{await enter(await auth.login($('username').value,$('password').value));$('loginMsg').textContent='';}catch(error){showLogin(error?.message||'Không đăng nhập được');}});
-    async function logOutAdmin(){await auth.logout().catch(()=>{});identity=null;client=null;customerCare.reset();showLogin();}
+    let loggingOutAdmin=false;
+    async function logOutAdmin(){
+      if(loggingOutAdmin)return;
+      loggingOutAdmin=true;
+      try{
+        if(!await flushProductEditsBeforeReload()&&!confirm('Có thay đổi chưa lưu. Bạn vẫn muốn đăng xuất?'))return;
+        await auth.logout().catch(()=>{});
+        identity=null;client=null;customerCare.reset();
+        resetAdminSessionDisplays();showLogin();
+      }finally{loggingOutAdmin=false;}
+    }
     $('logoutBtn').addEventListener('click',logOutAdmin);
     $('mobileLogoutBtn').addEventListener('click',logOutAdmin);
     document.addEventListener('click',e=>{
