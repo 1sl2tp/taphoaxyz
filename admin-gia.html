@@ -435,6 +435,20 @@
       #customerCarePane .care-finance-cards strong{font-variant-numeric:tabular-nums}
     }
     #goodsPane .source-chips .chip:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+
+    /* Show the full save error only when an edit actually failed. */
+    #goodsPane .summary.has-save-error .msg.error{color:#b91c1c;font-weight:800}
+    @media(max-width:700px){
+      #goodsPane .summary.has-save-error{flex-wrap:wrap}
+      #goodsPane .summary.has-save-error .status{
+        flex:1 0 100%;margin-left:0;padding:3px 5px;
+        background:#fff7f7;border-radius:5px
+      }
+      #goodsPane .summary.has-save-error .status .msg.error{
+        display:block;max-width:none;font-size:12px;
+        white-space:normal;overflow:visible;overflow-wrap:anywhere
+      }
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -2501,8 +2515,17 @@
       return payload;
     }
 
+    // SPEC-ADMIN-MOBILE-SAVE-STATUS-20261101: keep failed edits readable on phones.
     function markRow(row,state){
       row.classList.remove('saving','saved','error');if(state)row.classList.add(state);
+      const status=$('statusText');
+      const hasErrors=Boolean($('productBody').querySelector('tr.error'));
+      status.classList.toggle('error',hasErrors);
+      status.closest('.summary')?.classList.toggle('has-save-error',hasErrors);
+      if(state==='saved'&&!hasErrors){
+        status.textContent='Đã lưu';
+        status.title='';
+      }
       if(state==='saved')setTimeout(()=>row.classList.remove('saved'),700);
     }
 
