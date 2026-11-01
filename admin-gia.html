@@ -801,7 +801,7 @@
     let feedbackGeneration=0,historyGeneration=0;
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
-    let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketSearchTags=[];
+    let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketPollingGeneration=0,marketSearchTags=[];
     let marketRefreshQueued=false,marketRefreshReset=false,marketCandidateGeneration=0,marketSessionGeneration=0;
     const MARKET_PAGE_SIZE=100;
     const MARKET_CANDIDATE_PAGE_SIZE=120;
@@ -966,6 +966,9 @@
     // or continue supermarket polling after logout/account restoration.
     function resetAdminSessionDisplays(){
       clearTimeout(marketStatusTimer);marketStatusTimer=0;
+      ++marketPollingGeneration; // Cancel any in-flight timer continuation.
+      clearTimeout(searchTimer);clearTimeout(marketSearchTimer);clearTimeout(marketCandidateTimer);
+      searchTimer=0;marketSearchTimer=0;marketCandidateTimer=0;
       catalogSessionGeneration++;marketSessionGeneration++;analyticsSessionGeneration++;
       feedbackGeneration++;historyGeneration++;marketCandidateGeneration++;
       if($('historyDialog').open)$('historyDialog').close();
@@ -1005,13 +1008,16 @@
       $('analyticsPane').classList.toggle('hidden',adminView!=='analytics');
       $('customerCarePane').classList.toggle('hidden',adminView!=='customers');
       clearTimeout(marketStatusTimer);
+      // SPEC-ADMIN-POLL-OWNER-20261101: each tab activation owns one timer.
+      const pollGeneration=++marketPollingGeneration;
       if(adminView==='market'){
         loadMarketMappings(true);
         loadMarketStatus();
         marketStatusTimer=setTimeout(function tick(){
-          if(adminView!=='market')return;
+          if(pollGeneration!==marketPollingGeneration||adminView!=='market'||identity?.role!=='admin')return;
           loadMarketStatus().finally(function(){
-            if(adminView==='market'&&identity?.role==='admin')marketStatusTimer=setTimeout(tick,15000);
+            if(pollGeneration===marketPollingGeneration&&adminView==='market'&&identity?.role==='admin')
+              marketStatusTimer=setTimeout(tick,15000);
           });
         },15000);
       }else if(adminView==='analytics'){
