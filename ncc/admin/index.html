@@ -74,7 +74,7 @@ h1{font-size:26px;margin:5px 0 8px}.muted{color:#667085;font-size:13px;line-heig
 import {createAuthService} from '/src/core/auth.js';
 
 const auth=createAuthService();
-let client=null,identity=null;
+let client=null,identity=null,sessionRevision=0,listRequestRevision=0;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtDate=value=>{
@@ -176,28 +176,58 @@ function render(items){
     card.querySelector('.save-pin').addEventListener('click',async()=>{
       const pin=pinValue(card);
       if(!/^\d{6}$/.test(pin))return rowMsg(card,'PIN phải đủ 6 số.','error');
+      const adminUid=identity?.uid,revision=sessionRevision;
+      if(identity?.role!=='admin')return;
       const btn=card.querySelector('.save-pin');btn.disabled=true;rowMsg(card,'Đang đổi PIN…','');
       try{
         await rpc('taphoa_admin_supplier_set_pin',{p_source_key:card.dataset.source,p_new_pin:pin});
-        rowMsg(card,'Đã đổi PIN. Có thể sao chép PIN này để gửi NCC; các phiên cũ đã bị đăng xuất.','ok');
-        await load();
+        if(revision!==sessionRevision||identity?.uid!==adminUid)return;
+        // SPEC-NCC-PIN-COPY-AFTER-SAVE-20261101:
+        // Reloading all cards discarded the just-saved PIN before it could be copied.
+        card.querySelector('.source-meta').textContent='PIN: Đã cấu hình · Đặt gần nhất: vừa cập nhật';
+        rowMsg(card,'Đã đổi PIN. Bấm “Sao chép PIN” để gửi NCC; các phiên cũ đã bị đăng xuất.','ok');
       }catch(error){
+        if(revision!==sessionRevision||identity?.uid!==adminUid)return;
         console.error(error);rowMsg(card,'Không đổi được PIN.','error');
-      }finally{btn.disabled=false}
+      }finally{
+        if(revision===sessionRevision&&identity?.uid===adminUid)btn.disabled=false;
+      }
     });
   });
 }
 
+// SPEC-NCC-ADMIN-SESSION-FENCE-20261101: old NCC lists cannot reappear after logout.
 async function load(){
-  const data=await rpc('taphoa_admin_supplier_access_state');
-  render(Array.isArray(data?.items)?data.items:[]);
+  const adminUid=identity?.uid,revision=sessionRevision,request=++listRequestRevision;
+  if(identity?.role!=='admin')return;
+  try{
+    const data=await rpc('taphoa_admin_supplier_access_state');
+    if(revision!==sessionRevision||identity?.uid!==adminUid||request!==listRequestRevision)return;
+    render(Array.isArray(data?.items)?data.items:[]);
+  }catch(error){
+    if(revision!==sessionRevision||identity?.uid!==adminUid||request!==listRequestRevision)return;
+    console.error('supplier access state',error);
+    $('list').textContent='Không tải được danh sách NCC. Vui lòng mở lại trang để thử lại.';
+  }
 }
 
 async function enter(info){
   identity=info?.identity||null;
   if(!identity||identity.active!==true)return showLogin('Tài khoản không có quyền vào Tạp hóa.');
   if(identity.role!=='admin'){await auth.logout().catch(()=>{});return showLogin('Trang này chỉ dành cho quản trị.');}
-  client=info.client||await auth.getClient();showApp();await load();
+  const revision=++sessionRevision;
+  listRequestRevision++;
+  client=info.client||await auth.getClient();
+  if(revision!==sessionRevision)return;
+  showApp();await load();
+}
+
+function clearNccAdminSession(){
+  sessionRevision++;listRequestRevision++;
+  identity=null;client=null;
+  $('list').replaceChildren();
+  $('password').value='';
+  showLogin();
 }
 
 $('loginForm').addEventListener('submit',async e=>{
@@ -206,11 +236,21 @@ $('loginForm').addEventListener('submit',async e=>{
   catch(error){$('loginMsg').textContent=error?.message||'Không đăng nhập được.';$('loginMsg').className='msg error'}
   finally{$('loginBtn').disabled=false}
 });
-$('logoutBtn').addEventListener('click',async()=>{await auth.logout().catch(()=>{});client=null;identity=null;showLogin()});
+$('logoutBtn').addEventListener('click',async()=>{
+  clearNccAdminSession();
+  await auth.logout().catch(error=>console.error('logout',error));
+});
 
-const restored=await auth.restore();
-if(restored)await enter(restored);
-else showLogin();
+try{
+  const restored=await auth.restore();
+  if(restored)await enter(restored);
+  else showLogin();
+}catch(error){
+  console.error('restore NCC session',error);
+  clearNccAdminSession();
+  $('loginMsg').textContent='Không khôi phục được phiên quản trị.';
+  $('loginMsg').className='msg error';
+}
 </script>
 </body>
 </html>
