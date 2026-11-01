@@ -2009,17 +2009,47 @@
       }
     }
 
+    // SPEC-ADMIN-SAFE-EDIT-NAV-20261101: never detach a row while it holds
+    // an unsaved price, a pending write, or a failed validation.
+    async function flushProductEditsBeforeReload(){
+      const rows=Array.from($('productBody').querySelectorAll('tr[data-code]'));
+      const pending=[];
+      for(const row of rows){
+        if(row.dataset.dirty==='1')pending.push(queueSave(row));
+      }
+      pending.push(...saveQueues.values());
+      if(pending.length){
+        $('statusText').textContent='Đang lưu thay đổi…';
+        const results=await Promise.all(pending.map(task=>Promise.resolve(task).catch(()=>false)));
+        if(results.some(ok=>ok===false)){
+          $('statusText').textContent='Có ô chưa lưu · kiểm tra ô đỏ';
+          return false;
+        }
+      }
+      const uncommitted=rows.some(row=>row.dataset.dirty==='1');
+      if(uncommitted)$('statusText').textContent='Có ô chưa lưu · kiểm tra ô đỏ';
+      return !uncommitted;
+    }
     async function loadPage(reset=false){
       // Do not drop quick searches or source switches while a request is in flight.
       if(loading){pageRefreshQueued=true;pageRefreshReset=pageRefreshReset||reset;return;}
-      if(reset)offset=0;loading=true;$('statusText').textContent='Đang tải…';
+      loading=true;
+      let blocked=false;
       try{
+        if(!await flushProductEditsBeforeReload()){blocked=true;return;}
+        if(reset)offset=0;
+        $('statusText').textContent='Đang tải…';
         const query=$('searchInput').value.trim();
+        const requestedSource=selectedSource;
         const mainPromise=rpc('taphoa_admin_price_catalog',{p_query:query,p_source:selectedSource,p_limit:PAGE_SIZE,p_offset:offset});
         const comparePromise=selectedSource&&query
           ?rpc('taphoa_admin_price_catalog',{p_query:query,p_source:'',p_limit:100,p_offset:0})
           :Promise.resolve(null);
         const [data,compareData]=await Promise.all([mainPromise,comparePromise]);
+        if(pageRefreshQueued||query!==$('searchInput').value.trim()||requestedSource!==selectedSource){
+          pageRefreshQueued=true;pageRefreshReset=true;
+          return;
+        }
         items=Array.isArray(data?.items)?data.items:[];
         sources=Array.isArray(data?.sources)?data.sources:[];
         total=Number(data?.total)||0;
@@ -2032,7 +2062,9 @@
         $('statusText').textContent='Lỗi tải dữ liệu';$('countText').textContent='Không tải được dữ liệu';
       }finally{
         loading=false;updatePager();
-        if(pageRefreshQueued){
+        if(blocked){
+          pageRefreshQueued=false;pageRefreshReset=false;
+        }else if(pageRefreshQueued){
           const queuedReset=pageRefreshReset;
           pageRefreshQueued=false;pageRefreshReset=false;
           loadPage(queuedReset);
@@ -2354,7 +2386,7 @@
       const name=read('name');
       if(!name)throw new Error('Tên sản phẩm không được trống');
       const numeric=['cost','supplier_price','legacy_profit','standard_profit_percent','units_per_carton'];
-      const item=items[Number(row.dataset.index)];
+      const item=items.find(x=>x.product_code===row.dataset.code);
       const supplier=num(read('supplier_price'));
       const retailInput=row.querySelector('[data-field="retail_price_override"]');
       const retailRaw=retailInput?.value?.trim()??'';
@@ -2383,15 +2415,26 @@
     }
 
     function queueSave(row){
-      if(!row||row.dataset.dirty!=='1')return;
-      row.dataset.dirty='0';
+      if(!row)return Promise.resolve(true);
       const code=row.dataset.code;
-      const previous=saveQueues.get(code)||Promise.resolve();
-      const task=previous.catch(()=>{}).then(async()=>{
-        const item=items[Number(row.dataset.index)];if(!item)return;
+      if(row.dataset.dirty!=='1')return saveQueues.get(code)||Promise.resolve(true);
+      // Capture the exact product and editor values before async work starts.
+      const item=items.find(x=>x.product_code===code);
+      let payload;
+      try{
+        if(!item)throw new Error('Sản phẩm không còn trong danh sách');
+        payload=rowPayload(row);
+      }catch(error){
+        markRow(row,'error');
+        $('statusText').textContent=String(error?.message||'Ô chưa hợp lệ').slice(0,80);
+        return Promise.resolve(false);
+      }
+      const generation=Number(row.dataset.saveGeneration||0)+1;
+      row.dataset.saveGeneration=String(generation);
+      row.dataset.dirty='0';
+      const previous=saveQueues.get(code)||Promise.resolve(true);
+      const task=previous.catch(()=>false).then(async()=>{
         const oldCost=item.cost;
-        let payload;
-        try{payload=rowPayload(row);}catch(error){markRow(row,'error');throw error;}
         markRow(row,'saving');
         const result=await rpc('taphoa_update_product_from_web',{p_product:payload});
         item.product_name=payload.name;item.cost=payload.cost;
@@ -2433,13 +2476,25 @@
             }
           }
         }
-        updateDerived(row,item);
-        const st=row.querySelector('.state-select');st.className='cell-select state-select '+(payload.admin_state==='hidden'?'state-hidden':payload.admin_state==='discontinued'?'state-discontinued':'state-active');
-        markRow(row,'saved');
-        return result;
-      }).catch(error=>{console.error(error);markRow(row,'error');$('statusText').textContent=String(error?.message||'Lỗi lưu').slice(0,80);});
+        if(row.isConnected&&row.dataset.saveGeneration===String(generation)&&row.dataset.dirty!=='1'){
+          updateDerived(row,item);
+          const st=row.querySelector('.state-select');
+          if(st)st.className='cell-select state-select '+(payload.admin_state==='hidden'?'state-hidden':payload.admin_state==='discontinued'?'state-discontinued':'state-active');
+          markRow(row,'saved');
+        }
+        return true;
+      }).catch(error=>{
+        console.error(error);
+        if(row.dataset.saveGeneration===String(generation)){
+          row.dataset.dirty='1';
+          markRow(row,'error');
+          $('statusText').textContent=String(error?.message||'Lỗi lưu').slice(0,80);
+        }
+        return false;
+      });
       saveQueues.set(code,task);
       task.finally(()=>{if(saveQueues.get(code)===task)saveQueues.delete(code);});
+      return task;
     }
 
     function updatePager(){
@@ -2536,8 +2591,9 @@
     }
 
     async function deleteProduct(row){
-      const item=items[Number(row.dataset.index)];if(!item)return;
+      const item=items.find(x=>x.product_code===row.dataset.code);if(!item)return;
       if(!confirm(`Xóa sản phẩm "${item.product_name}"? Dữ liệu đơn hàng cũ không bị xóa.`))return;
+      if(!await flushProductEditsBeforeReload()){alert('Có thay đổi chưa lưu. Hãy sửa ô đỏ trước khi xóa.');return;}
       try{await rpc('taphoa_delete_product_from_web',{p_product_code:item.product_code});row.remove();total=Math.max(0,total-1);$('countText').textContent=`${total} sản phẩm`;}
       catch(error){alert(error?.message||'Không xóa được sản phẩm');}
     }
