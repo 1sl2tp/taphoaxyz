@@ -61,7 +61,8 @@ test('narrow viewport source filters use short labels without changing source va
   assert.match(runtime,/'hang u': 'Hàng U'/);
   assert.match(runtime,/source-tag-label-full/);
   assert.match(runtime,/source-tag-label-mobile/);
-  assert.match(runtime,/filterSource\('\$\{src\}'\)/);
+  assert.match(runtime,/data-source-name="\$\{escapeProductEditorValue\(src\)\}"/);
+  assert.match(runtime,/filterSource\(this\.dataset\.sourceName\)/);
   assert.match(css,/UI-126[^\n]*Sales uses the resolved in-app mode/);
   assert.match(css,/source-tag-label-full\{display:none/);
   assert.match(css,/source-tag-label-mobile\{display:inline/);
