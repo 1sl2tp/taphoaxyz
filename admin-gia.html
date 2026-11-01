@@ -383,7 +383,9 @@
       #customerCarePane .care-finance-cards>div{padding:7px}
       #customerCarePane .care-finance-cards small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     }
-    @media(max-width:540px){
+    /* SPEC-ADMIN-MOBILE-NAV-20261101: show compact menu before the desktop
+       buttons crowd the heading at widths between 541px and 700px. */
+    @media(max-width:700px){
       .top{flex-wrap:nowrap;align-items:center;gap:5px;margin-bottom:7px}
       .top .title{flex:1;min-width:0}
       .top .title h1{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -536,7 +538,7 @@
 
     <section id="appView" class="hidden">
       <div class="top">
-        <div class="title"><h1>Quản trị hàng hóa</h1><p>Tự lưu khi sửa · quản lý kiểu bảng</p></div>
+        <div class="title"><h1 id="adminPageTitle">Quản trị hàng hóa</h1><p>Tự lưu khi sửa · quản lý kiểu bảng</p></div>
         <div class="top-actions">
           <a class="btn home" href="./">Bán hàng</a>
           <a class="btn desktop-admin-extra" href="/ncc/admin/">PIN NCC</a>
@@ -551,14 +553,14 @@
         </div>
       </div>
 
-      <div class="admin-tabs" role="tablist" aria-label="Quản trị hàng hóa">
-        <button id="goodsTabBtn" class="admin-tab active" type="button">Hàng hóa</button>
-        <button id="marketTabBtn" class="admin-tab" type="button">Siêu thị</button>
-        <button id="analyticsTabBtn" class="admin-tab" type="button" aria-label="Lượt truy cập">Lượt truy cập</button>
-        <button id="customerCareTabBtn" class="admin-tab" type="button" aria-label="Báo cáo khách hàng">Báo cáo KH</button>
+      <div class="admin-tabs" role="tablist" aria-label="Chuyển chức năng quản trị">
+        <button id="goodsTabBtn" class="admin-tab active" type="button" role="tab" aria-controls="goodsPane" aria-selected="true">Hàng hóa</button>
+        <button id="marketTabBtn" class="admin-tab" type="button" role="tab" aria-controls="marketPane" aria-selected="false" tabindex="-1">Siêu thị</button>
+        <button id="analyticsTabBtn" class="admin-tab" type="button" role="tab" aria-controls="analyticsPane" aria-selected="false" tabindex="-1" aria-label="Lượt truy cập">Lượt truy cập</button>
+        <button id="customerCareTabBtn" class="admin-tab" type="button" role="tab" aria-controls="customerCarePane" aria-selected="false" tabindex="-1" aria-label="Báo cáo khách hàng">Báo cáo KH</button>
       </div>
 
-      <div id="goodsPane">
+      <div id="goodsPane" role="tabpanel" aria-labelledby="goodsTabBtn">
       <section class="panel">
         <div class="searchbar">
           <input id="searchInput" type="search" aria-label="Tìm sản phẩm" placeholder="Tìm nhanh sản phẩm…" autocomplete="off">
@@ -662,7 +664,7 @@
       </section>
       </div>
 
-      <section id="marketPane" class="market-panel hidden">
+      <section id="marketPane" class="market-panel hidden" role="tabpanel" aria-labelledby="marketTabBtn">
         <div class="market-head">
           <div>
             <strong title="Gán một lần GO!, WinMart, Bách Hóa XANH hoặc VNM để so sánh giá">Gán sản phẩm siêu thị</strong>
@@ -710,7 +712,7 @@
         </div>
       </section>
 
-      <section id="analyticsPane" class="analytics-panel hidden">
+      <section id="analyticsPane" class="analytics-panel hidden" role="tabpanel" aria-labelledby="analyticsTabBtn">
         <div class="analytics-head">
           <div>
             <strong title="Đếm lần mở hoặc tải lại trang báo giá, không phải số khách hàng">Lượt truy cập báo giá</strong>
@@ -754,7 +756,7 @@
         </div>
       </section>
 
-      <section id="customerCarePane" class="analytics-panel hidden" aria-label="Báo cáo khách hàng Admin">
+      <section id="customerCarePane" class="analytics-panel hidden" role="tabpanel" aria-labelledby="customerCareTabBtn" aria-label="Báo cáo khách hàng Admin">
         <div class="analytics-head">
           <div><strong title="Chỉ đọc dữ liệu khách hàng khi mở tab; không gửi tin tự động">Báo cáo & chăm sóc khách hàng</strong><small>Chỉ đọc khi mở tab · không tự gửi tin</small></div>
           <div class="care-tools">
@@ -1124,10 +1126,24 @@
 
     function switchAdminView(view){
       adminView=['goods','market','analytics','customers'].includes(view)?view:'goods';
-      $('goodsTabBtn').classList.toggle('active',adminView==='goods');
-      $('marketTabBtn').classList.toggle('active',adminView==='market');
-      $('analyticsTabBtn').classList.toggle('active',adminView==='analytics');
-      $('customerCareTabBtn').classList.toggle('active',adminView==='customers');
+      // SPEC-ADMIN-NAV-SEMANTICS-20261101: selected tab, heading and keyboard
+      // focus must always refer to the same visible panel.
+      const tabConfiguration=[
+        ['goods','goodsTabBtn','Quản trị hàng hóa'],
+        ['market','marketTabBtn','Quản trị siêu thị'],
+        ['analytics','analyticsTabBtn','Báo cáo lượt truy cập'],
+        ['customers','customerCareTabBtn','Báo cáo khách hàng']
+      ];
+      for(const [tab,buttonId] of tabConfiguration){
+        const button=$(buttonId),active=tab===adminView;
+        button.classList.toggle('active',active);
+        if(button.setAttribute)button.setAttribute('aria-selected',String(active));
+        button.tabIndex=active?0:-1;
+      }
+      const pageTitle=tabConfiguration.find(x=>x[0]===adminView)[2];
+      const heading=$('adminPageTitle');
+      if(heading)heading.textContent=pageTitle;
+      if(typeof document!=='undefined')document.title=pageTitle+' · Tạp hóa';
       $('goodsPane').classList.toggle('hidden',adminView!=='goods');
       $('marketPane').classList.toggle('hidden',adminView!=='market');
       $('analyticsPane').classList.toggle('hidden',adminView!=='analytics');
@@ -2990,6 +3006,19 @@
       }
     }
 
+    // Accessible Arrow/Home/End tablist navigation.
+    document.querySelector('.admin-tabs').addEventListener('keydown',e=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+      const order=[['goods','goodsTabBtn'],['market','marketTabBtn'],
+        ['analytics','analyticsTabBtn'],['customers','customerCareTabBtn']];
+      const current=order.findIndex(([,id])=>$(id)===e.target);
+      if(current<0)return;
+      e.preventDefault();
+      const next=e.key==='Home'?0:e.key==='End'?order.length-1:
+        (current+(e.key==='ArrowRight'?1:-1)+order.length)%order.length;
+      switchAdminView(order[next][0]);
+      $(order[next][1]).focus();
+    });
     $('goodsTabBtn').addEventListener('click',()=>switchAdminView('goods'));
     $('marketTabBtn').addEventListener('click',()=>switchAdminView('market'));
     $('analyticsTabBtn').addEventListener('click',()=>switchAdminView('analytics'));
