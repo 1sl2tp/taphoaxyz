@@ -38,7 +38,7 @@ test('cycle UI hooks the original debt list and modal without touching finance a
   assert.match(index,/fixed-ui-debt-cycles\.css/);
   assert.match(index,/fixed-ui-debt-cycles\.js/);
   assert(index.indexOf('fixed-production-overrides.js')<index.indexOf('fixed-ui-debt-cycles.js'));
-  assert.match(render,/data-debt-customer-id="\$\{c\.maKh\}"/);
+  assert.match(render,/data-debt-customer-id="\$\{escapeProductEditorValue\(c\.maKh\)\}"/);
   assert.match(css,/#tab-cong-no \.debt-cycle-card-meta/);
   assert.match(css,/#customerDebtContentToShare \.debt-cycle-history/);
   assert.match(js,/const result=oldRender\.apply\(this,args\)/);
