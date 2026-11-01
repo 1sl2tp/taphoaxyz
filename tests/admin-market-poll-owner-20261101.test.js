@@ -11,7 +11,7 @@ function fixture(){
  const nodes=new Map(['goodsTabBtn','marketTabBtn','analyticsTabBtn','customerCareTabBtn','goodsPane','marketPane','analyticsPane','customerCarePane'].map(id=>[id,{
   classList:{toggle(){}}
  }]));
- const state={timers:new Map(),lastId:0,requests:[],resolve:null,analytics:0,care:0};
+ const state={nodes,timers:new Map(),lastId:0,requests:[],resolvers:[],analytics:0,care:0};
  const ctx=vm.createContext({state,Promise});
  vm.runInContext(`
   let adminView='goods',marketPollingGeneration=0,marketStatusTimer=0,identity={role:'admin'};
@@ -19,12 +19,12 @@ function fixture(){
   const clearTimeout=id=>state.timers.delete(id);
   const setTimeout=(fn,ms)=>{const id=++state.lastId;state.timers.set(id,fn);return id;};
   const loadMarketMappings=()=>{};
-  const loadMarketStatus=()=>{state.requests.push('market');return new Promise(resolve=>state.resolve=resolve);};
+  const loadMarketStatus=()=>{state.requests.push('market');return new Promise(resolve=>state.resolvers.push(resolve));};
   const loadQuoteAnalytics=()=>state.analytics++;
   const customerCare={load:()=>state.care++};
   ${source}
   globalThis.api={switchAdminView,timer:()=>marketStatusTimer};
- `,Object.assign(ctx,{state:{...state,nodes}}));
+ `,ctx);
  return {state,api:ctx.api};
 }
 test('switching away and back cannot revive an older market polling timer',async()=>{
@@ -32,13 +32,14 @@ test('switching away and back cannot revive an older market polling timer',async
  f.api.switchAdminView('market');
  const firstTimer=f.api.timer();
  const tick1=f.state.timers.get(firstTimer);
+ f.state.timers.delete(firstTimer); // Native setTimeout removes callbacks once fired.
  tick1();
  assert.equal(f.state.requests.length,2);
  f.api.switchAdminView('goods');
  f.api.switchAdminView('market');
  assert.equal(f.state.requests.length,3);
  const current=f.api.timer();
- f.state.resolve();
+ f.state.resolvers[1](); // Complete the old tab's in-flight polling request.
  await Promise.resolve();await Promise.resolve();
  assert.equal(f.api.timer(),current);
  assert.equal(f.state.timers.has(current),true);
