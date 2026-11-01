@@ -978,6 +978,7 @@
       analyticsLoading=false;analyticsReloadQueued=false;analyticsLoaded=false;
       marketItems=[];marketSources=[];marketTotal=0;marketOffset=0;marketSelectedCode='';
       marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;marketSearchTags=[];
+      saveQueues.clear(); // New session must not inherit queued product writes.
       selectedSource='';items=[];sources=[];comparisonItems=[];total=0;offset=0;
       $('searchInput').value='';$('marketOwnSearch').value='';$('marketOwnSource').value='';
       $('marketShopSource').value='';$('marketCandidateSearch').value='';
@@ -2521,14 +2522,19 @@
         $('statusText').title=String(error?.message||'Ô chưa hợp lệ');
         return Promise.resolve(false);
       }
+      // SPEC-ADMIN-SAVE-SESSION-FENCE-20261101: a queued write belongs to
+      // the exact login session in which its values were captured.
+      const sessionGeneration=catalogSessionGeneration,adminUid=identity?.uid;
       const generation=Number(row.dataset.saveGeneration||0)+1;
       row.dataset.saveGeneration=String(generation);
       row.dataset.dirty='0';
       const previous=saveQueues.get(code)||Promise.resolve(true);
       const task=previous.catch(()=>false).then(async()=>{
+        if(sessionGeneration!==catalogSessionGeneration||identity?.uid!==adminUid)return false;
         const oldCost=item.cost;
         markRow(row,'saving');
         const result=await rpc('taphoa_update_product_from_web',{p_product:payload});
+        if(sessionGeneration!==catalogSessionGeneration||identity?.uid!==adminUid)return false;
         item.product_name=payload.name;item.cost=payload.cost;
         item.sale_price_mode=result?.sale_price_mode??payload.sale_price_mode;
         item.sale_price_basis=result?.sale_price_basis??payload.sale_price_basis;
@@ -2577,6 +2583,7 @@
         }
         return true;
       }).catch(error=>{
+        if(sessionGeneration!==catalogSessionGeneration||identity?.uid!==adminUid)return false;
         console.error(error);
         if(row.dataset.saveGeneration===String(generation)){
           row.dataset.dirty='1';

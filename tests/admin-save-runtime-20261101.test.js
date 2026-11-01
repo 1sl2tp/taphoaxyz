@@ -25,6 +25,7 @@ function fixture(rpcImpl){
   const ctx=vm.createContext({state,console,Promise,Map,Date});
   vm.runInContext(`
     let items=state.items;
+    let catalogSessionGeneration=0,identity={uid:'admin-1'};
     const saveQueues=new Map();
     const $=id=>id==='statusText'?state.status:null;
     const rpc=(name,args)=>state.rpcImpl(name,args);
@@ -35,7 +36,7 @@ function fixture(rpcImpl){
     const updateDerived=(row,item)=>{row.renderedCode=item.product_code;};
     const loadSupplierFeedback=async()=>{};
     ${queueSource}
-    globalThis.api={queueSave,saveQueues};
+    globalThis.api={queueSave,saveQueues,changeSession:()=>{catalogSessionGeneration++;identity={uid:'admin-2'};saveQueues.clear();}};
   `,ctx);
   const row=(code,name,legacyProfit)=>({
     dataset:{code,dirty:'1'},isConnected:true,lastState:'',
@@ -94,4 +95,41 @@ test('save generations do not turn an older completion into a saved indicator',a
   assert.equal(await p2,true);
   assert.equal(row.renderedCode,'p1');
   assert.equal(f.state.items.find(x=>x.product_code==='p1').product_name,'Second');
+});
+
+test('queued save from an expired login never writes through the next account',async()=>{
+  let unblock;
+  const inFlight=new Promise(resolve=>{unblock=resolve;});
+  let firstStarted;
+  const firstStart=new Promise(resolve=>{firstStarted=resolve;});
+  const f=fixture(async p=>{
+    if(p.name==='Block'){firstStarted();await inFlight;}
+    return {};
+  });
+  const row=f.row('p1','Block',7);
+  const first=f.api.queueSave(row);
+  await firstStart;
+  row.dataset.dirty='1';row.payload.name='Old pending';
+  const second=f.api.queueSave(row);
+  f.api.changeSession();
+  unblock();
+  assert.equal(await first,false,'old response must be ignored');
+  assert.equal(await second,false,'queued old write must not run with new credentials');
+  assert.equal(f.state.calls.length,1);
+  assert.equal(f.state.items[0].product_name,'Original');
+});
+
+test('a completed old-session response never mutates newly opened admin data',async()=>{
+  let resume,started;
+  const pending=new Promise(resolve=>{resume=resolve;});
+  const began=new Promise(resolve=>{started=resolve;});
+  const f=fixture(async()=>{started();await pending;return {price:1234};});
+  const row=f.row('p1','Old response',4);
+  const task=f.api.queueSave(row);
+  await began;
+  f.api.changeSession();
+  resume();
+  assert.equal(await task,false);
+  assert.equal(f.state.items[0].product_name,'Original');
+  assert.equal(f.state.items[0].price,null);
 });
