@@ -143,10 +143,13 @@ export function createCustomerCareReport({rpc,getIdentity}){
       return r.segment===filter;
     });
     $('careCount').textContent=list.length+' khách phù hợp';
+    // SPEC-ADMIN-CARE-SELECTION-20261101: restore selection before rows render;
+    // DOM dataset IDs are strings, while RPC IDs may be numeric.
+    if(!list.some(x=>String(x.id)===String(selected)))selected=list[0]?.id??'';
     const tbody=$('careBody');tbody.replaceChildren();
     for(const r of list){
       const row=tbody.insertRow();
-      if(r.id===selected)row.className='active';
+      if(String(r.id)===String(selected))row.className='active';
       const first=row.insertCell(),button=document.createElement('button');
       button.type='button';button.dataset.customerId=String(r.id);button.textContent=address(r).name;first.append(button);
       const values=[group(r),number(r.period_delivered_count),amount(r.total_revenue),
@@ -154,8 +157,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
       values.forEach((v,i)=>{const cell=row.insertCell();cell.textContent=v;if(i>=1)cell.className='num';});
     }
     if(!list.length){const cell=tbody.insertRow().insertCell();cell.colSpan=8;cell.textContent='Không có khách phù hợp.';cell.className='empty';}
-    if(!list.some(x=>x.id===selected))selected=list[0]?.id||'';
-    detail(list.find(x=>x.id===selected)||null);
+    detail(list.find(x=>String(x.id)===String(selected))||null);
   }
   async function load(force=false){
     const identity=getIdentity();
@@ -172,9 +174,9 @@ export function createCustomerCareReport({rpc,getIdentity}){
         }),
         rpc('taphoa_cycle_sender_voice_setting',{p_voice:null}).catch(()=>null)
       ]);
+      if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
       if(voiceSetting?.young_speaker==='anh'||voiceSetting?.young_speaker==='chị')
         youngSpeaker=voiceSetting.young_speaker;
-      if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
       rows=Array.isArray(data?.customers)?data.customers:[];
       for(const [id,key] of [
         ['careTotal','total_customers'],['careBought','bought_customers'],
@@ -191,6 +193,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
       $('careStatus').textContent='Kỳ '+period.label+' · dữ liệu '+String(data?.generated_on||'')+
         ' · công nợ hiện tại vẫn tính toàn thời gian · lý do đơn tạm chưa được ghi nhận.';
     }catch(e){
+      if(generation!==requestGeneration||getIdentity()?.uid!==identity.uid||reloadQueued)return;
       $('careStatus').textContent='Không tải được báo cáo: '+String(e?.message||'Có lỗi');
     }finally{
       if(generation===requestGeneration){
