@@ -723,8 +723,9 @@ async function manualShareOrder(orderId,requestId){
   const id=String(orderId||'').trim(),nonce=String(requestId||'').trim();
   if(!/^[0-9a-f-]{36}$/i.test(id)||!/^[0-9a-f-]{36}$/i.test(nonce))
     throw Error('saved_order_request_invalid');
+  const mutationOwner=captureProductionOwner();
   const response=await business.manualShareOrder(id,nonce);
-  if(!response?.ok)return response;
+  if(!productionOwnerCurrent(mutationOwner)||!response?.ok)return response;
   // The server has already sent the canonical text to this order's customer.
   // Upload to the matching existing message without changing the order or debt.
   const imageAttached=await attachOrderNoticePortrait(response.order,{manual:true});
@@ -733,9 +734,13 @@ async function manualShareOrder(orderId,requestId){
 
 async function saveOrder(payload){
   if(employeeAccess)throw new Error('employee_read_only');
+  const mutationOwner=captureProductionOwner();
   const result=publicAccess
     ?await publicRpc('taphoa_public_save_pending_access',{p_order:orderRpcPayload({...payload,status:'pending'}),p_command_id:crypto.randomUUID()})
     :await business.saveOrder(payload);
+  // SPEC-MUTATION-SESSION-CONTINUATION-20261101: a committed write from A
+  // cannot refresh or attach Chat media using B's newly authenticated session.
+  if(!productionOwnerCurrent(mutationOwner))return result;
   if(!publicAccess&&!employeeAccess)void attachOrderNoticePortrait(result?.order);
   // F-181: A confirmed pending draft (new or edited) never changes the
   // sale ledger. The DB prevents delivered → pending downgrades. Avoid
@@ -749,7 +754,9 @@ async function saveOrder(payload){
 async function deliverOrder(id){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
+  const mutationOwner=captureProductionOwner();
   const result=await business.deliverOrder(id);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   void attachOrderNoticePortrait(result?.order);
   try{await refresh(['orders','debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
@@ -758,16 +765,20 @@ async function deliverOrder(id){
 async function reverseOrder(id,reason='Hoàn đơn'){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
+  const mutationOwner=captureProductionOwner();
   const result=await business.reverseOrder(id,reason);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   try{await refresh(['orders','debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function deletePending(id){
   if(employeeAccess)throw new Error('employee_read_only');
+  const mutationOwner=captureProductionOwner();
   const result=publicAccess
     ?await publicRpc('taphoa_public_delete_pending_access',{p_order_id:String(id||''),p_command_id:crypto.randomUUID()})
     :await business.deletePending(id);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   try{await refresh(['orders']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
@@ -775,7 +786,9 @@ async function deletePending(id){
 async function batchOrders(action,ids){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
+  const mutationOwner=captureProductionOwner();
   const result=await business.batchOrders(action,ids);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   try{await refresh(['orders','debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
@@ -925,7 +938,9 @@ async function repairRecentFinanceImages(customerId){
 async function debtTransaction(customerId,type,amount,note=''){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_read_only');
+  const mutationOwner=captureProductionOwner();
   const result=await business.debtTransaction(customerId,type,amount,note);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   void attachDebtNoticeImage(result);
   try{await refresh(['debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
@@ -934,7 +949,9 @@ async function debtTransaction(customerId,type,amount,note=''){
 async function createCustomer(name){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_read_only');
+  const mutationOwner=captureProductionOwner();
   const result=await business.createCustomer(name);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   // SPEC-COMMITTED-CUSTOMER-MEDIA-20261101: read failures after the
   // database commit must not invite a duplicate customer or media mutation.
   try{await refresh(['customers']);}
@@ -981,25 +998,33 @@ async function orderDetail(id){
 async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}
 async function marketSearch(query,limit=60,source='',offset=0){return business.marketSearch(query,limit,source,offset);}
 async function setProductMedia(productCode,canonicalProductId){
+  const mutationOwner=captureProductionOwner();
   const result=await business.setProductMedia(productCode,canonicalProductId);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   try{await refresh(['products']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function setProductMediaCompare(productCode,kind,unitsPerCarton=null){
+  const mutationOwner=captureProductionOwner();
   const result=await business.setProductMediaCompare(productCode,kind,unitsPerCarton);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   try{await refresh(['products']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function setProductMediaOwnQc(productCode,unitsPerCarton){
+  const mutationOwner=captureProductionOwner();
   const result=await business.setProductMediaOwnQc(productCode,unitsPerCarton);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   try{await refresh(['products']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function clearProductMedia(productCode){
+  const mutationOwner=captureProductionOwner();
   const result=await business.clearProductMedia(productCode);
+  if(!productionOwnerCurrent(mutationOwner))return result;
   try{await refresh(['products']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
