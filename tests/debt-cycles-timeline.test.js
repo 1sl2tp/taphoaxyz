@@ -218,3 +218,34 @@ test('admin cycle fetch completing after switching to user is ignored and not ex
   assert.equal(window.TAPHOA_DEBT_CYCLES.current('c1'),null);
   assert.equal(window.TAPHOA_DEBT_CYCLES.list('c1').length,0);
 });
+
+
+test('debt overview uses compact spacing without shrinking payment controls',()=>{
+ const popup=fs.readFileSync(new URL('../src/fixed-ui-debt-popup.css',import.meta.url),'utf8');
+ const markup=fs.readFileSync(new URL('../src/fixed-ui-markup-2.js',import.meta.url),'utf8');
+ assert.match(popup,/SPEC-DEBT-WORKSPACE-DENSITY-20261101/);
+ assert.match(popup,/#tab-cong-no > header\{[\s\S]*?padding-top:10px;[\s\S]*?padding-bottom:12px;/);
+ assert.match(popup,/#tab-cong-no > main\{[\s\S]*?padding:12px 14px 64px;/);
+ assert.match(popup,/#tab-cong-no > main > \[data-permission="canMutateDebt"\]\.hidden \+ div\{[\s\S]*?margin-top:0 !important;/,
+  'readonly user must not retain the hidden quick form spacing');
+ assert.match(popup,/#tab-cong-no \.debt-customer-card\{[\s\S]*?min-height:72px;[\s\S]*?padding:11px 12px;/);
+ assert.match(popup,/#tab-cong-no #quickDebtCustomerButton,[\s\S]*?#tab-cong-no button\[onclick\^="submitQuickDebt\("\]\{[\s\S]*?min-height:44px;/);
+ assert.match(markup,/data-permission=\\?"canMutateDebt\\?"/);
+ assert.match(markup,/id=\\?"quickDebtAmount\\?"/);
+ assert.match(index,/fixed-ui-debt-popup\.css\?v=[^"\\]*density=20261101/);
+});
+
+test('customer debt modal keeps the existing ledger scroll owner and readable fixed payment actions',()=>{
+ const popup=fs.readFileSync(new URL('../src/fixed-ui-debt-popup.css',import.meta.url),'utf8');
+ const markup=fs.readFileSync(new URL('../src/fixed-ui-markup-4.js',import.meta.url),'utf8');
+ assert.match(popup,/#customerDebtBottomSheet > \.cart-handle \+ div\{[\s\S]*?padding:8px 14px;/);
+ assert.match(popup,/#customerDebtBottomSheet #cDebtModalHistoryList\{[\s\S]*?padding:9px 14px;[\s\S]*?min-height:0;/);
+ assert.match(popup,/#customerDebtBottomSheet #cDebtModalHistoryList > div:not\(#debtHistoryPageFooter\)\{[\s\S]*?min-height:44px;/);
+ assert.match(popup,/#customerDebtBottomSheet > \[data-permission="canMutateDebt"\]\{[\s\S]*?padding:12px 16px;/);
+ assert.match(popup,/#customerDebtBottomSheet #popupDebtAmount,[\s\S]*?button\[onclick\^="submitPopupDebt\("\]\{[\s\S]*?min-height:44px;/);
+ assert.match(markup,/id=\\?"cDebtModalHistoryList\\?"/);
+ assert.match(markup,/id=\\?"popupDebtAmount\\?"/);
+ assert.match(markup,/submitPopupDebt\(\\?'thu\\?'\)/);
+ assert.match(markup,/submitPopupDebt\(\\?'no\\?'\)/);
+ assert.match(popup,/#cDebtModalHistoryList \.debt-history-more-button/);
+});
