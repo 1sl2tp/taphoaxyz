@@ -26,8 +26,8 @@
                 html += `
                 <div ${clickAttr} class="flex justify-between items-center py-2.5 px-2 rounded-xl transition ${cursorStyle} border-b border-gray-100 text-xs">
                     <div>
-                        <p class="font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> ${h.loaiGd} ${orderIdMatch ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">${h.time}</p>
+                        <p class="font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> ${escapeProductEditorValue(h.loaiGd)} ${orderIdMatch ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">${escapeProductEditorValue(h.time)}</p>
                     </div>
                     <div class="text-right">
                         <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${h.soTien.toLocaleString('vi-VN')}</p>
