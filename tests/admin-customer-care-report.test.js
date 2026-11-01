@@ -39,5 +39,5 @@ test('customer care module imports cleanly without browser side effects',async()
 test('report resets previous account rows and ignores inflight response after logout',()=>{
  assert.match(module,/generation\+\+;loading=false;reloadQueued=false;rows=\[\];loaded=false/);
  assert.match(module,/if\(generation!==requestGeneration\|\|getIdentity\(\)\?\.uid!==identity\.uid\|\|reloadQueued\)return/);
- assert.match(page,/customerCare\.reset\(\);\s*identity=info\?\.identity/);
+ assert.match(page,/customerCare\.reset\(\);\s*identity=null;client=null;\s*resetAdminSessionDisplays\(\);\s*const nextIdentity=info\?\.identity/);
 });
