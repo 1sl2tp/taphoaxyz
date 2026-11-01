@@ -83,7 +83,7 @@ test('supplier pending cost is cleared by reverting but not by hiding the row',(
  f.state.inputs=[];f.api.updateSaveState();
  assert.equal(f.api.cost().A,'150');
  f.state.inputs=[f.input('A','100')];f.api.updateSaveState();
- assert.deepEqual(f.api.cost(),{});
+ assert.equal(Object.keys(f.api.cost()).length,0);
  assert.equal(f.state.saveBtn.disabled,true);
  f.state.inputs=[f.input('B','')];f.api.updateSaveState();
  assert.equal(f.api.cost().B,'');
@@ -103,7 +103,7 @@ function pinFixture(file){
  }));
  const ctx={document:{querySelectorAll:()=>inputs}};
  vm.createContext(ctx);
- vm.runInContext(source.slice(start,end)+'\nglobalThis.bind=bindPinBoxes',ctx);
+ vm.runInContext((file==='ncc/index.html'?'const pinInputs=()=>document.querySelectorAll();\n':'')+source.slice(start,end)+'\nglobalThis.bind=bindPinBoxes',ctx);
  if(file==='ncc/admin/index.html')ctx.bind({querySelectorAll:()=>inputs});
  else ctx.bind();
  return inputs;
