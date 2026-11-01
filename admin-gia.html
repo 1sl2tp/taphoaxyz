@@ -334,6 +334,69 @@
     @media(max-width:700px){
       .top-actions .btn,.admin-tab,#goodsPane .searchbar .btn,#goodsPane #searchInput,#goodsPane .source-manage summary{min-height:44px}
     }
+
+    /* SPEC-ADMIN-FOUR-TABS-DENSITY-20261101: phone-first admin navigation and supermarket search. */
+    .mobile-admin-menu,.tab-short,.market-back{display:none}
+    .top-actions{position:relative}
+    @media(max-width:700px){
+      .wrap{padding:7px}
+      .admin-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:3px}
+      .admin-tab{min-width:0;padding:5px 3px;font-size:12px;text-align:center}
+      .admin-tabs .tab-short{display:inline}
+      .admin-tabs .tab-long{display:none}
+      .market-head{padding:8px;gap:6px}
+      .market-head small{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100vw - 40px)}
+      .market-head-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center;width:100%}
+      .market-update-status{min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .market-head-actions #marketRunUpdateBtn{width:auto;flex:none;max-width:148px;font-size:12px;padding:6px 8px;line-height:1.2}
+      .market-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px}
+      .market-toolbar #marketOwnSource{grid-column:1;grid-row:1}
+      .market-toolbar #marketShopSource{grid-column:2;grid-row:1}
+      .market-toolbar #marketOwnSearch{grid-column:1/-1;grid-row:2}
+      .market-toolbar #marketCandidateFilter{grid-column:1/-1;grid-row:3}
+      .market-toolbar select{font-size:14px!important;padding:0 6px}
+      .market-list,.market-candidates{padding:6px}
+      .market-list-item,.market-candidate{gap:7px;margin-bottom:5px;padding:8px;align-items:flex-start}
+      .market-list-item .market-thumb,.market-candidate .market-thumb{width:44px;height:44px}
+      .market-list-item>span.market-thumb,.market-candidate>span.market-thumb{display:none}
+      .market-item-name{display:block;font-size:13px;line-height:1.3;font-weight:850;white-space:normal;overflow-wrap:anywhere}
+      .market-item-meta{font-size:11px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .market-map-badge{font-size:10px}
+      .market-back{display:block;align-self:flex-start;margin:8px 8px 0;min-height:42px}
+      .market-candidate-head{gap:7px}
+      .market-candidate-head span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .market-name-row{min-width:0}
+      .market-current{padding:9px}
+      .analytics-head{padding:8px;gap:6px}
+      .analytics-head small{font-size:11px;line-height:1.35}
+      #analyticsPane .analytics-head,#customerCarePane>.analytics-head{gap:6px}
+      .analytics-cards{gap:6px;padding:7px}
+      .analytics-card{min-width:0;padding:8px}
+      .analytics-card strong{font-size:22px}
+      .analytics-block{padding:8px}
+      .analytics-status{padding:6px 8px;font-size:11px}
+      #customerCarePane>.analytics-head>.care-tools{gap:6px}
+      #customerCarePane #careRefreshBtn{min-height:40px}
+      #customerCarePane .care-finance-cards{padding:7px;gap:6px}
+      #customerCarePane .care-finance-cards>div{padding:7px}
+      #customerCarePane .care-finance-cards small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    }
+    @media(max-width:540px){
+      .top{flex-wrap:nowrap;align-items:center;gap:5px;margin-bottom:7px}
+      .top .title{flex:1;min-width:0}
+      .top .title h1{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .top-actions{width:auto;flex:none;gap:5px;margin-left:auto}
+      .top-actions .home{display:inline-flex!important;min-height:40px;padding:6px 8px;font-size:12px}
+      .top-actions .desktop-admin-extra{display:none!important}
+      .mobile-admin-menu{display:block;position:relative}
+      .mobile-admin-menu>summary{display:flex;min-height:40px;align-items:center;justify-content:center;padding:6px 8px;font-size:12px;list-style:none;cursor:pointer}
+      .mobile-admin-menu>summary::-webkit-details-marker{display:none}
+      .mobile-admin-menu[open]>summary{background:#eff6ff;border-color:#93c5fd}
+      .mobile-admin-menu-items{position:absolute;top:calc(100% + 5px);right:0;width:150px;z-index:30;background:#fff;padding:7px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 28px rgba(15,23,42,.18);display:grid;gap:6px}
+      .mobile-admin-menu-items .btn{display:block;width:100%;min-height:42px;text-align:left;padding:9px}
+      .admin-tab{font-size:11px;letter-spacing:-.1px}
+      #marketPane .market-list{max-height:min(52dvh,440px)}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -355,16 +418,23 @@
         <div class="title"><h1>Quản trị hàng hóa</h1><p>Tự lưu khi sửa · quản lý kiểu bảng</p></div>
         <div class="top-actions">
           <a class="btn home" href="./">Bán hàng</a>
-          <a class="btn" href="/ncc/admin/">PIN NCC</a>
-          <button id="logoutBtn" class="btn" type="button">Đăng xuất</button>
+          <a class="btn desktop-admin-extra" href="/ncc/admin/">PIN NCC</a>
+          <button id="logoutBtn" class="btn desktop-admin-extra" type="button">Đăng xuất</button>
+          <details class="mobile-admin-menu">
+            <summary class="btn" aria-label="Mở các chức năng quản trị khác">Khác ▾</summary>
+            <div class="mobile-admin-menu-items">
+              <a class="btn" href="/ncc/admin/">PIN NCC</a>
+              <button id="mobileLogoutBtn" class="btn" type="button">Đăng xuất</button>
+            </div>
+          </details>
         </div>
       </div>
 
       <div class="admin-tabs" role="tablist" aria-label="Quản trị hàng hóa">
         <button id="goodsTabBtn" class="admin-tab active" type="button">Hàng hóa</button>
         <button id="marketTabBtn" class="admin-tab" type="button">Siêu thị</button>
-        <button id="analyticsTabBtn" class="admin-tab" type="button">Lượt truy cập</button>
-        <button id="customerCareTabBtn" class="admin-tab" type="button">Báo cáo KH</button>
+        <button id="analyticsTabBtn" class="admin-tab" type="button" aria-label="Lượt truy cập"><span class="tab-long">Lượt truy cập</span><span class="tab-short">Truy cập</span></button>
+        <button id="customerCareTabBtn" class="admin-tab" type="button" aria-label="Báo cáo khách hàng"><span class="tab-long">Báo cáo KH</span><span class="tab-short">Khách hàng</span></button>
       </div>
 
       <div id="goodsPane">
@@ -473,8 +543,8 @@
       <section id="marketPane" class="market-panel hidden">
         <div class="market-head">
           <div>
-            <strong>Gán sản phẩm siêu thị</strong>
-            <small>Gán một lần GO! / WinMart / Bách Hóa XANH / VNM với sản phẩm mình đang bán để so sánh và gợi ý đúng hơn.</small>
+            <strong title="Gán một lần GO!, WinMart, Bách Hóa XANH hoặc VNM để so sánh giá">Gán sản phẩm siêu thị</strong>
+            <small>Gán sản phẩm đang bán với nguồn siêu thị để so sánh giá.</small>
           </div>
           <div class="market-head-actions">
             <span id="marketUpdateStatus" class="market-update-status">Đang đọc trạng thái cập nhật…</span>
@@ -482,18 +552,18 @@
           </div>
         </div>
         <div class="market-toolbar">
-          <select id="marketOwnSource"><option value="">Tất cả nguồn hàng</option></select>
-          <input id="marketOwnSearch" type="search" placeholder="Tìm sản phẩm mình bán…" autocomplete="off">
-          <select id="marketShopSource">
+          <select id="marketOwnSource" aria-label="Lọc nguồn sản phẩm của mình" title="Lọc theo nguồn hàng"><option value="">Tất cả nguồn hàng</option></select>
+          <input id="marketOwnSearch" type="search" aria-label="Tìm sản phẩm đang bán" title="Tìm sản phẩm đang bán" placeholder="Tìm sản phẩm mình bán…" autocomplete="off">
+          <select id="marketShopSource" aria-label="Lọc siêu thị" title="Lọc theo siêu thị">
             <option value="">Tất cả siêu thị</option>
             <option value="GO!">GO!</option>
             <option value="WinMart">WinMart</option>
             <option value="Bách Hóa XANH">Bách Hóa XANH</option>
             <option value="VNM">VNM</option>
           </select>
-          <div class="market-filter-box" id="marketCandidateFilter">
+          <div class="market-filter-box hidden" id="marketCandidateFilter" aria-label="Tìm gợi ý siêu thị sau khi chọn sản phẩm">
             <div id="marketCandidateTags"></div>
-            <input id="marketCandidateSearch" type="search" placeholder="Tự lọc theo sản phẩm…" autocomplete="off" disabled>
+            <input id="marketCandidateSearch" type="search" aria-label="Tìm sản phẩm trong siêu thị" placeholder="Tìm sản phẩm siêu thị…" autocomplete="off" disabled>
           </div>
         </div>
         <div class="market-grid">
@@ -507,6 +577,7 @@
             </div>
           </div>
           <div class="market-detail">
+            <button id="marketBackToListBtn" class="btn market-back" type="button">← Chọn sản phẩm khác</button>
             <div id="marketCurrent" class="market-current">
               <div class="market-current-title">Chọn một sản phẩm bên trái</div>
               <div class="market-current-sub">Hệ thống sẽ gợi ý sản phẩm siêu thị theo tên hiện tại.</div>
@@ -520,8 +591,8 @@
       <section id="analyticsPane" class="analytics-panel hidden">
         <div class="analytics-head">
           <div>
-            <strong>Lượt truy cập báo giá</strong>
-            <small>Mỗi lần mở/tải lại /bao-gia/ được tính một lượt, không đồng nghĩa một khách hàng. Chỉ đọc báo cáo khi mở tab này.</small>
+            <strong title="Đếm lần mở hoặc tải lại trang báo giá, không phải số khách hàng">Lượt truy cập báo giá</strong>
+            <small>Đếm lượt mở/tải lại báo giá, không phải số khách hàng.</small>
           </div>
           <div class="analytics-actions">
             <select id="analyticsDays" aria-label="Khoảng thời gian">
@@ -563,7 +634,7 @@
 
       <section id="customerCarePane" class="analytics-panel hidden" aria-label="Báo cáo khách hàng Admin">
         <div class="analytics-head">
-          <div><strong>Báo cáo & chăm sóc khách hàng</strong><small>Chỉ nhóm KH; chỉ đọc khi mở tab; không gửi tin tự động</small></div>
+          <div><strong title="Chỉ đọc dữ liệu khách hàng khi mở tab; không gửi tin tự động">Báo cáo & chăm sóc khách hàng</strong><small>Chỉ đọc khi mở tab · không tự gửi tin</small></div>
           <div class="care-tools">
             <div class="care-tool-field">
               <label for="careInactiveDays">Lâu chưa mua</label>
@@ -1567,7 +1638,7 @@
           img+
           '<span class="market-item-copy">'+
             '<span class="market-item-name">'+esc(item.product_name)+'</span>'+
-            '<span class="market-item-meta">'+esc(infoParts.join(' · '))+'</span>'+
+            '<span class="market-item-meta" title="'+esc(infoParts.join(' · '))+'">'+esc(infoParts.join(' · '))+'</span>'+
             marketPriceRefsHtml(item)+
           '</span>'+badge+
         '</button>';
@@ -1579,6 +1650,7 @@
 
     function renderMarketCurrent(){
       const item=selectedMarketItem();
+      $('marketCandidateFilter').classList.toggle('hidden',!item);
       if(!item){
         $('marketCurrent').innerHTML='<div class="market-current-title">Chọn một sản phẩm bên trái</div><div class="market-current-sub">Hệ thống sẽ gợi ý sản phẩm siêu thị theo tên hiện tại.</div>';
         $('marketCandidateSearch').disabled=true;
@@ -2471,7 +2543,12 @@
     });
     $('marketProductList').addEventListener('click',e=>{
       const b=e.target.closest('[data-market-product]');
-      if(b)selectMarketProduct(b.dataset.marketProduct);
+      if(b){
+        selectMarketProduct(b.dataset.marketProduct);
+        if(window.matchMedia('(max-width:980px)').matches){
+          requestAnimationFrame(()=>$('marketCurrent').scrollIntoView({behavior:'smooth',block:'start'}));
+        }
+      }
     });
     $('marketCurrent').addEventListener('click',e=>{
       const rename=e.target.closest('[data-market-rename]');
@@ -2500,9 +2577,18 @@
     $('marketPrevBtn').addEventListener('click',()=>{marketOffset=Math.max(0,marketOffset-MARKET_PAGE_SIZE);loadMarketMappings(false);});
     $('marketNextBtn').addEventListener('click',()=>{if(marketOffset+MARKET_PAGE_SIZE<marketTotal){marketOffset+=MARKET_PAGE_SIZE;loadMarketMappings(false);}});
     $('marketRunUpdateBtn').addEventListener('click',runMarketUpdate);
+    $('marketBackToListBtn').addEventListener('click',()=>{
+      $('marketProductList').scrollIntoView({behavior:'smooth',block:'start'});
+    });
 
     $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Đang đăng nhập…';try{await enter(await auth.login($('username').value,$('password').value));$('loginMsg').textContent='';}catch(error){showLogin(error?.message||'Không đăng nhập được');}});
-    $('logoutBtn').addEventListener('click',async()=>{await auth.logout().catch(()=>{});identity=null;client=null;customerCare.reset();showLogin();});
+    async function logOutAdmin(){await auth.logout().catch(()=>{});identity=null;client=null;customerCare.reset();showLogin();}
+    $('logoutBtn').addEventListener('click',logOutAdmin);
+    $('mobileLogoutBtn').addEventListener('click',logOutAdmin);
+    document.addEventListener('click',e=>{
+      const menu=document.querySelector('.mobile-admin-menu');
+      if(menu?.open&&!menu.contains(e.target))menu.open=false;
+    });
     // UI-136: shared search owner selects once on focus entry only.
     // Do not reselect on click while the user edits an existing query.
     $('searchInput').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadPage(true),220);});
