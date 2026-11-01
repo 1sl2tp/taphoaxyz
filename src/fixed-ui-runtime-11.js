@@ -204,7 +204,7 @@
             filteredList.forEach(c => {
                 // SPEC-DEBT-CARD-READABILITY-20261101: the full timestamp
                 // remains in the ledger; the card needs only the date.
-                const lastDate = String(c.lastTime || '').match(/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/)?.[0] || String(c.lastTime || '--');
+                const lastDate = String(c.lastTime || '').match(/\d{1,2}\/\d{1,2}\/\d{4}/)?.[0] || String(c.lastTime || '--');
                 let subText = `GD cuối ${lastDate}`;
                 if (currentDebtFilter === 'no' && c.debt > 0 && Number.isFinite(c.daysAgo)) {
                     subText += ` · Giao cách ${c.daysAgo} ngày`;
