@@ -214,7 +214,8 @@
             }
 
             // SPEC-DEBT-CARD-ESCAPE-20261101: customer text and ids are
-            // inserted as HTML; encode text and use dataset for click.\n            let listHtml = '';
+            // inserted as HTML; encode text and use dataset for click.
+            let listHtml = '';
             filteredList.forEach(c => {
                 // SPEC-DEBT-CARD-READABILITY-20261101: the full timestamp
                 // remains in the ledger; the card needs only the date.
