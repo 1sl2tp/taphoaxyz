@@ -177,7 +177,8 @@ body[data-force-pc="1"] #customerDebtContentToShare{
 }
 #tab-cong-no > header > .grid > div > div:first-child{min-width:0}
 #tab-cong-no > main{
-  padding:12px 14px 64px;
+  /* Keep the original 80px scroll-end clearance for the last customer. */
+  padding:12px 14px 80px;
 }
 #tab-cong-no > main > :not([hidden]) ~ :not([hidden]){
   margin-top:10px;
