@@ -220,8 +220,16 @@ export function createCustomerCareReport({rpc,getIdentity}){
   $('careInactiveDays').addEventListener('change',refreshPeriod);
   $('carePeriod').addEventListener('change',()=>{
     periodVisibility();loaded=false;
-    if($('carePeriod').value!=='custom')refreshPeriod();
-    else $('careStatus').textContent='Chọn từ ngày và đến ngày để tải báo cáo.';
+    if($('carePeriod').value!=='custom'){
+      refreshPeriod();
+    }else{
+      // SPEC-ADMIN-CARE-PERIOD-20261101: choosing an incomplete custom
+      // range invalidates any inflight older range; don't show its response
+      // as though it belonged to the newly selected filter.
+      generation++;loading=false;reloadQueued=false;
+      if($('carePeriodStart').value&&$('carePeriodEnd').value)refreshPeriod();
+      else $('careStatus').textContent='Chọn từ ngày và đến ngày để tải báo cáo; số liệu đang hiển thị thuộc kỳ trước.';
+    }
   });
   for(const id of ['carePeriodStart','carePeriodEnd']){
     $(id).addEventListener('change',()=>{
