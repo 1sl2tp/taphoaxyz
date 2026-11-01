@@ -532,7 +532,9 @@
             const html = ['Tất cả', ...orderedSources].map(src => {
                 let activeClass = (src === currentFilter) ? 'bg-primary text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:bg-gray-50';
                 const mobileLabel = getMobileSourceLabel(src);
-                return `<button onclick="filterSource('${src}')" class="source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${src}"><span class="source-tag-label-full">${src}</span><span class="source-tag-label-mobile">${mobileLabel}</span></button>`;
+                // SPEC-PWA-SAFE-SOURCE-CHIPS-20261101: source names may contain
+                // apostrophes, quotes or ampersands; never insert them into JS.
+                return `<button data-source-name="${escapeProductEditorValue(src)}" onclick="filterSource(this.dataset.sourceName)" class="source-filter-chip allow-fast-click px-4 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap shrink-0 transition ${activeClass}" aria-label="${escapeProductEditorValue(src)}"><span class="source-tag-label-full">${escapeProductEditorValue(src)}</span><span class="source-tag-label-mobile">${escapeProductEditorValue(mobileLabel)}</span></button>`;
             }).join('');
             document.getElementById('sourceTagsContainer').innerHTML = html;
         }
