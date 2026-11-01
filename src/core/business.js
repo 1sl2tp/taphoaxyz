@@ -53,7 +53,7 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
       const entryType=type==='thu_tien'?'collection':type==='ghi_no'?'payment':null;
       if(!entryType)throw new Error('invalid_debt_transaction_type');
       const exactAmount=Number(amount);
-      if(!Number.isFinite(exactAmount)||!Number.isInteger(exactAmount)||exactAmount<=0)
+      if(!Number.isFinite(exactAmount)||!Number.isSafeInteger(exactAmount)||exactAmount<=0)
         throw new Error('invalid_debt_amount');
       const id=commandId();
       const result=await gateway.rpc('taphoa_debt_transaction',{
