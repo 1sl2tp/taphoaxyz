@@ -336,3 +336,73 @@ body[data-force-pc="1"] #customerDebtContentToShare{
   min-width:0;
   margin-top:1px;
 }
+
+
+/* SPEC-DEBT-SORT-MOBILE-TYPE-20261101:
+   Visual label remains 13px, matching other compact filters. The fully
+   interactive native select overlays the visual text at 16px (iOS zoom-safe).
+   No duplicate click/sort owner; one existing onchange still calls renderCongNo.
+   Keyboard focus is visibly inset, without a colored bleed on the PWA edge. */
+#tab-cong-no .debt-sort-field{
+  position:relative;
+  box-sizing:border-box;
+  width:142px;
+  min-width:0;
+  height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:4px;
+  padding:0 10px 0 12px;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  background-color:#f8fafc;
+  color:#334155;
+}
+#tab-cong-no .debt-sort-visible-value{
+  display:block;
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  pointer-events:none;
+  font-size:13px;
+  font-weight:650;
+  line-height:1.3;
+}
+#tab-cong-no .debt-sort-caret{
+  pointer-events:none;
+  flex:none;
+  color:#475569;
+  font-size:14px;
+}
+#tab-cong-no .debt-sort-field #debtSortSelect{
+  appearance:none;
+  -webkit-appearance:none;
+  position:absolute;
+  inset:0;
+  z-index:1;
+  display:block;
+  width:100% !important;
+  max-width:100% !important;
+  height:100% !important;
+  min-height:44px !important;
+  margin:0;
+  padding:0;
+  border:0;
+  opacity:0;
+  cursor:pointer;
+  font-size:16px !important;
+  touch-action:manipulation;
+}
+#tab-cong-no .debt-sort-field:focus-within{
+  box-shadow:inset 0 0 0 2px #16a34a;
+}
+@media(max-width:350px){
+  #tab-cong-no .debt-sort-field{
+    width:130px;
+    padding-left:8px;
+    padding-right:8px;
+  }
+}
