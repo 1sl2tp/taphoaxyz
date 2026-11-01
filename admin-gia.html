@@ -809,6 +809,7 @@
     const PAGE_SIZE=100;
     let identity=null,client=null,items=[],comparisonItems=[],sources=[],total=0,offset=0,loading=false,searchTimer=0;
     let selectedSource='';
+    let lastRenderedCatalog={offset:0,source:'',query:''};
     let pageRefreshQueued=false,pageRefreshReset=false,productEditRevision=0,catalogSessionGeneration=0;
     let adminView='goods';
     let analyticsLoaded=false,analyticsLoading=false,analyticsReloadQueued=false,analyticsSessionGeneration=0;
@@ -1020,6 +1021,7 @@
       marketCandidates=[];marketCandidateOffset=0;marketCandidateHasMore=false;marketCandidateLoadingMore=false;marketSearchTags=[];
       saveQueues.clear(); // New session must not inherit queued product writes.
       selectedSource='';items=[];sources=[];comparisonItems=[];total=0;offset=0;
+      lastRenderedCatalog={offset:0,source:'',query:''};
       $('searchInput').value='';$('marketOwnSearch').value='';$('marketOwnSource').value='';
       $('marketShopSource').value='';$('marketCandidateSearch').value='';
       $('analyticsStatus').textContent='Mở tab để đọc báo cáo.';
@@ -2205,6 +2207,15 @@
       if(uncommitted)$('statusText').textContent='Có ô chưa lưu · kiểm tra ô đỏ';
       return !uncommitted;
     }
+    // SPEC-ADMIN-INVALID-EDIT-NAV-20261101: preserve the last rendered
+    // filters if validation blocks navigation; never display an old page
+    // under the label of a different source or page number.
+    function restoreBlockedCatalogNavigation(){
+      offset=lastRenderedCatalog.offset;
+      selectedSource=lastRenderedCatalog.source;
+      $('searchInput').value=lastRenderedCatalog.query;
+      renderSources();
+    }
     async function loadPage(reset=false){
       // Do not drop quick searches or source switches while a request is in flight.
       if(loading){pageRefreshQueued=true;pageRefreshReset=pageRefreshReset||reset;return;}
@@ -2243,6 +2254,7 @@
           ?compareData.items.filter(x=>x.source_key!==selectedSource)
           :[];
         renderSources();renderProducts();renderComparison();fillProductSources();$('statusText').textContent='Supabase trực tiếp';
+        lastRenderedCatalog={offset,source:selectedSource,query};
       }catch(error){
         if(sessionGeneration!==catalogSessionGeneration)return;
         console.error(error);comparisonItems=[];renderComparison();
@@ -2252,6 +2264,8 @@
         loading=false;updatePager();
         if(blocked){
           pageRefreshQueued=false;pageRefreshReset=false;
+          restoreBlockedCatalogNavigation();
+          updatePager();
         }else if(pageRefreshQueued){
           const queuedReset=pageRefreshReset;
           pageRefreshQueued=false;pageRefreshReset=false;
