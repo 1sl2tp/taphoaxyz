@@ -34,7 +34,7 @@ test('mobile tabs use 11px labels, sufficient inactive contrast and retain dynam
   const block=source4.slice(source4.indexOf('SPEC-PWA-TAB-READABILITY-20261101'),source4.indexOf('FIXED STYLE: sales-header-compact-capacity'));
   assert.match(block,/@media \(max-width:767px\)/);
   assert.match(block,/#topNav \.tab-btn\.text-gray-400\s*\{\s*color:#64748b !important/);
-  assert.match(block,/#topNav \.tab-btn > span\s*\{[^}]*font-size:11px !important/);
+  assert.match(block,/#topNav \.tab-btn > span\s*\{[^}]*font-size:11\\.5px !important/);
   assert.match(block,/#topNav \.tab-btn > i\s*\{[^}]*font-size:18px !important/);
   assert.doesNotMatch(block,/#topNav \.tab-btn\.text-primary\s*\{|#topNav\s*\{[^}]*height\s*:/);
   assert.match(markup,/h-\[64px\]/);
