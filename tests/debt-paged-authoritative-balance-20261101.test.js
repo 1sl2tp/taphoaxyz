@@ -68,7 +68,7 @@ test('zero, negative and missing snapshot balances retain correct semantics',()=
 
 test('server supplies cumulative balances and behavior sorts rows by timestamp and stable ledger ID',()=>{
   assert.match(bridge,/const balanceAfter=first\(tx,\['balanceAfter','balance_after'\]/);
-  assert.match(bridge,/balanceAfter==='' \? ''/);
+  assert.ok(bridge.includes("balanceAfter===''?'':"));
   assert.match(normalize,/function __normalizeDebtLedgerRows\(\)/);
   assert.match(normalize,/rows\.sort\(\(a,b\)=>/);
   assert.match(normalize,/Number\(a\?\.\[0\]\)\|\|0/);
