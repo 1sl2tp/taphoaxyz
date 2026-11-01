@@ -14,7 +14,9 @@ test('clearing a custom reporting date invalidates the old in-flight report',()=
  const ctx=vm.createContext({state});
  vm.runInContext(`
    let generation=12,loading=true,reloadQueued=true,loaded=true;
-   const $=id=>({addEventListener(type,handler){state.nodes[id].handlers[type]=handler},...state.nodes[id]});
+   const $=id=>state.nodes[id];
+   for(const id of ['carePeriodStart','carePeriodEnd'])
+     state.nodes[id].addEventListener=(type,handler)=>{state.nodes[id].handlers[type]=handler;};
    const refreshPeriod=()=>{state.refreshes++};
    ${source.slice(start,end)}
    globalThis.api={check:()=>({generation,loading,reloadQueued,loaded})};
