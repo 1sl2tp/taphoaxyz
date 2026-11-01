@@ -15,12 +15,14 @@ const html=read('index.html');
 const semantic=read('src/fixed-ui-semantic-columns.css');
 
 test('native sorting remains the only interactive select over an inert visual label',()=>{
-  assert.ok(markup.includes(String.raw`class="debt-sort-field"`));
-  assert.ok(markup.includes(String.raw`id="debtSortVisibleValue" aria-hidden="true">Lâu chưa giao`));
-  assert.ok(markup.includes(String.raw`id="debtSortSelect" aria-label="Sắp xếp danh sách công nợ" onchange="renderCongNo()"`));
-  assert.ok(markup.includes(String.raw`value="days">Lâu chưa giao`));
-  assert.ok(markup.includes(String.raw`value="amount">Nợ cao nhất`));
-  assert.equal(markup.split(String.raw`id="debtSortSelect"`).length-1,1);
+  // Source is document.write with escaped quotation marks; inspect real HTML.
+  const visibleHtml=markup.replaceAll(String.fromCharCode(92)+'"', '"');
+  assert.ok(visibleHtml.includes('class="debt-sort-field"'));
+  assert.ok(visibleHtml.includes('id="debtSortVisibleValue" aria-hidden="true">Lâu chưa giao'));
+  assert.ok(visibleHtml.includes('id="debtSortSelect" aria-label="Sắp xếp danh sách công nợ" onchange="renderCongNo()"'));
+  assert.ok(visibleHtml.includes('value="days">Lâu chưa giao'));
+  assert.ok(visibleHtml.includes('value="amount">Nợ cao nhất'));
+  assert.equal(visibleHtml.split('id="debtSortSelect"').length-1,1);
 });
 
 test('visual copy is 13px; underlying select is 16px, 44px high and accessible to touch',()=>{
@@ -52,10 +54,10 @@ test('visible text tracks selected option; existing sorting still consumes selec
   const ctx={document:{getElementById(id){
     return id==='debtSortSelect'?selected:id==='debtSortVisibleValue'?display:null;
   }}};
-  vm.runInNewContext(js.slice(start,end),ctx,{timeout:1000});
+  vm.runInNewContext(js.slice(start,end),{document:ctx.document},{timeout:1000});
   assert.equal(display.textContent,'Lâu chưa giao');
   selected.selectedIndex=1;
-  vm.runInNewContext(js.slice(start,end),ctx,{timeout:1000});
+  vm.runInNewContext(js.slice(start,end),{document:ctx.document},{timeout:1000});
   assert.equal(display.textContent,'Nợ cao nhất');
 });
 
