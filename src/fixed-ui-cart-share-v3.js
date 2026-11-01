@@ -11,6 +11,21 @@
   let detailSharePrepareSignature='';
   let detailShareGeneration=0;
 
+  // SPEC-ORDER-SHARE-ROUND-TOTAL-20261101: rounding belongs to the
+  // displayed summary only. Keep unit prices and line extensions unchanged.
+  function parseVisibleMoney(value){
+    const plain=String(value??'').trim().replace(/\s/g,'').replace(/[^\d,.-]/g,'');
+    if(!plain)return 0;
+    // Values already formatted for vi-VN: dots group thousands, comma is decimal.
+    const parsed=Number(plain.replace(/\./g,'').replace(',','.'));
+    return Number.isFinite(parsed)?parsed:0;
+  }
+  function displayRoundedTotal(value){
+    const n=typeof value==='string'?parseVisibleMoney(value):Number(value);
+    if(!Number.isFinite(n))return '—';
+    return (Math.sign(n)*Math.round(Math.abs(n))).toLocaleString('vi-VN');
+  }
+
   function stableShareHash(value){
     const text=String(value||'');
     let hash=2166136261;
@@ -286,7 +301,7 @@
       isDraft:meta.isCreatingSaleDraft||/^DT[0-9]+$/.test(meta.orderId),
       orderId:meta.orderId,customer:meta.customer,time:meta.time,
       items,lineCount:items.length,totalQty,
-      totalPriceText:totalPrice.toLocaleString('vi-VN')
+      totalPriceText:displayRoundedTotal(totalPrice)
     });
     return {...built,totalQty,totalPrice,meta};
   }
@@ -311,11 +326,13 @@
     const customer=getText(source,'#detailModalKH')||meta.customer;
     const time=getText(source,'#detailModalTime')
       .replace(/^Thời gian\s*:\s*/i,'')||meta.time;
-    const number=(text)=>Number(String(text||'0').replace(/[^\d-]/g,''))||0;
+    const number=parseVisibleMoney;
     const totalQty=number(getText(source,'#detailTotalQtyDisplay'))
       ||items.reduce((sum,item)=>sum+number(item.qtyText),0);
-    const totalPriceText=getText(source,'#detailModalTotal')
-      ||(items.reduce((sum,item)=>sum+number(item.totalText),0)).toLocaleString('vi-VN');
+    const rawTotal=getText(source,'#detailModalTotal');
+    const totalPriceText=displayRoundedTotal(
+      rawTotal?parseVisibleMoney(rawTotal):items.reduce((sum,item)=>sum+number(item.totalText),0)
+    );
     return portrait.createPage({
       isDraft:/^DT[0-9]+$/.test(orderCode||meta.orderId),
       orderId:orderCode||meta.orderId,
@@ -455,7 +472,7 @@
       out.push(`${i+1}. ${String(item?.name||id)} | ${vi(qty)} | ${vi(price)} | ${vi(line)}`);
       if(String(item?.note||'').trim())out.push('   Ghi chú: '+String(item.note).trim());
     });
-    out.push('Tổng SL: '+vi(quantity),'Tổng tiền: '+vi(total));
+    out.push('Tổng SL: '+vi(quantity),'Tổng tiền: '+displayRoundedTotal(total));
     return out.join('\n');
   }
 
@@ -475,7 +492,7 @@
       if(col('.order-line-note'))out.push('   Ghi chú: '+col('.order-line-note'));
     }
     const sum=get('#detailModalTotal');
-    if(sum)out.push('Tổng tiền: '+sum);
+    if(sum)out.push('Tổng tiền: '+displayRoundedTotal(sum));
     return out.join('\n');
   }
 

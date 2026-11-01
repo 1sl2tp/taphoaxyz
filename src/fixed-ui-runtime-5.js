@@ -7,7 +7,8 @@
                 totalPrice += (Number(item.qty) || 0) * (Number(item.price) || 0);
             });
 
-            const strTotal = totalPrice.toLocaleString('vi-VN');
+            // Only the TOTAL is rounded for display; each unit price and line amount stays exact.
+            const strTotal = Math.round(totalPrice).toLocaleString('vi-VN');
             const setText = (id, value) => {
                 const el = document.getElementById(id);
                 if (el) el.innerText = value;

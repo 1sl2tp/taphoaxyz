@@ -350,7 +350,8 @@
                 }
             }
 
-            let strTotal = totalPrice.toLocaleString('vi-VN');
+            // Round only the displayed basket total, never per-item prices or line amounts.
+            let strTotal = Math.round(totalPrice).toLocaleString('vi-VN');
             document.getElementById('headerQuickQty').innerText = totalQty; document.getElementById('headerQuickTotal').innerText = strTotal;
             document.getElementById('cartCountBadgeMob').innerText = totalQty; document.getElementById('cartTotalMob').innerText = strTotal;
             const cartLineCountEl = document.getElementById('cartLineCountDisplay');

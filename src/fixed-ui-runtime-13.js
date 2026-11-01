@@ -56,7 +56,7 @@
             if (detailLineCountEl) detailLineCountEl.innerText = items.length;
             const detailTotalQtyEl = document.getElementById('detailTotalQtyDisplay');
             if (detailTotalQtyEl) detailTotalQtyEl.innerText = totalQty;
-            document.getElementById('detailModalTotal').innerText = total.toLocaleString('vi-VN');
+            document.getElementById('detailModalTotal').innerText = Math.round(total).toLocaleString('vi-VN');
             const orderCodeEl = document.getElementById('detailModalOrderCode');
             if (orderCodeEl) orderCodeEl.innerText = "Mã đơn: " + orderId;
 
@@ -305,7 +305,7 @@
                 const totalQtyEl = clone.querySelector('#detailTotalQtyDisplay');
                 if (totalQtyEl) totalQtyEl.textContent = String(totalQty);
                 const totalEl = clone.querySelector('#detailModalTotal');
-                if (totalEl) totalEl.textContent = totalPrice.toLocaleString('vi-VN');
+                if (totalEl) totalEl.textContent = Math.round(totalPrice).toLocaleString('vi-VN');
 
                 clone.querySelectorAll('.order-detail-compact-grid').forEach(row => {
                     row.style.minHeight = '34px';

@@ -15,7 +15,7 @@ test('cart share v3 supports a live sale draft before it becomes a saved order',
   assert.match(js,/Đơn đang tạo/);
   assert.match(js,/don_dang_tao/);
   assert.match(js,/Object\.entries\(currentCart\)/);
-  assert.match(js,/totalPrice\.toLocaleString\('vi-VN'\)/);
+  assert.match(js,/totalPriceText:displayRoundedTotal\(totalPrice\)/);
 });
 
 
