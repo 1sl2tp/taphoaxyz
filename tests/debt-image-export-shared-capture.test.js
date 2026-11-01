@@ -81,3 +81,115 @@ test('debt Save calls one direct PNG download even in installed iOS PWA',async()
   await save('save');
   assert.deepEqual(actions,['save','toast']);
 });
+
+
+const manualDebtSql=fs.readFileSync('supabase/migrations/20261101013000_taphoa_manual_customer_debt_chat_zalo.sql','utf8');
+const businessCode=fs.readFileSync('src/core/business.js','utf8');
+const bridgeCode=fs.readFileSync('src/fixed-production-bridge.js','utf8');
+const indexHtml=fs.readFileSync('index.html','utf8');
+const aliceId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const requestId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+function debtSendFixture({role='admin',mode='account',response={ok:true},throwError=null,connected=true}={}){
+  const calls=[],blobs=[],toasts=[],alerts=[],shares=[];
+  const blob={size:2018,type:'image/png'};
+  const window={
+    TAPHOA_PRODUCTION:{
+      getIdentity:()=>({role}),getAccessMode:()=>mode,
+      manualShareDebt:async(...args)=>{
+        calls.push(args);
+        if(throwError)throw throwError;
+        return response;
+      }
+    },
+    TAPHOA_IOS_SHARE_FALLBACK:{shouldUse:()=>false}
+  };
+  if(!connected)delete window.TAPHOA_PRODUCTION.manualShareDebt;
+  const context={
+    window,
+    activeDebtCustomerId:aliceId,
+    crypto:{randomUUID:()=>requestId},
+    createCustomerDebtPngBlob:async()=>{blobs.push(blob);return blob},
+    navigator:{canShare:()=>true,share:async options=>{shares.push(options)}},
+    File:class{constructor(parts,name,options){this.parts=parts;this.name=name;this.type=options.type}},
+    showToast:(...args)=>toasts.push(args),
+    showAlertPopup:(...args)=>alerts.push(args)
+  };
+  const fn=vm.runInNewContext('('+saveShare+')',context);
+  return {fn,calls,blobs,toasts,alerts,shares,context,blob};
+}
+
+test('linked customer sends verified manual debt directly into their conversation, not to OS contact chooser',async()=>{
+ const f=debtSendFixture({response:{ok:true,message_id:'confirmed'}});
+ await f.fn('send');
+ assert.deepEqual(f.calls,[[aliceId,requestId]]);
+ assert.equal(f.blobs.length,0,'no capture or native share for a known linked recipient');
+ assert.equal(f.shares.length,0);
+ assert.equal(f.alerts.length,0);
+ assert.equal(f.toasts.length,1);
+ assert.match(f.toasts[0][0],/Chat.*Zalo/);
+});
+
+test('unlinked Zalo contact retains the original PNG file share on web',async()=>{
+ const f=debtSendFixture({response:{ok:false,reason:'zalo_not_linked'}});
+ await f.fn('send');
+ assert.equal(f.calls.length,1);
+ assert.equal(f.blobs.length,1);
+ assert.equal(f.shares.length,1);
+ assert.equal(f.shares[0].files[0].name,'congno.png');
+ assert.equal(f.shares[0].files[0].type,'image/png');
+ assert.equal(f.toasts.length,0,'no direct-send success toast for unlinked customers');
+});
+
+test('user and public link never call admin-only linked-contact manual send',async()=>{
+ for(const options of [{role:'user'}, {mode:'public-link'}, {connected:false}]){
+  const f=debtSendFixture(options);
+  await f.fn('send');
+  assert.equal(f.calls.length,0);
+  assert.equal(f.shares.length,1);
+  assert.equal(f.toasts.length,0);
+ }
+});
+
+test('recent duplicate manual debt send does not create a second OS share or another RPC',async()=>{
+ const f=debtSendFixture({response:{ok:false,reason:'recently_sent'}});
+ await f.fn('send');
+ assert.equal(f.calls.length,1);
+ assert.equal(f.blobs.length,0);
+ assert.equal(f.shares.length,0);
+ assert.match(f.toasts[0][0],/Không gửi lại/);
+});
+
+test('manual debt RPC failure never claims a successful Chat/Zalo message or shares elsewhere',async()=>{
+ const f=debtSendFixture({throwError:Error('backend unavailable')});
+ await f.fn('send');
+ assert.equal(f.calls.length,1);
+ assert.equal(f.blobs.length,0);
+ assert.equal(f.shares.length,0);
+ assert.equal(f.toasts.length,0);
+ assert.match(f.alerts[0][0],/Chưa gửi công nợ trực tiếp/);
+});
+
+test('manual debt send is admin-only, bound to customer ID, and never mutates finance rows',()=>{
+ assert.match(manualDebtSql,/create or replace function public\.taphoa_manual_send_customer_debt\(\s*p_customer_id uuid,p_request_id uuid/);
+ assert.match(manualDebtSql,/taphoa_access_context\(\)/);
+ assert.match(manualDebtSql,/v_ctx->>'taphoa_role'<>'admin'/);
+ assert.match(manualDebtSql,/auth\.uid\(\) is null/);
+ assert.match(manualDebtSql,/from public\.zalo_user_links z[\s\S]*?z\.chat_account_id=v_customer\.id/);
+ assert.match(manualDebtSql,/reason','zalo_not_linked'/);
+ assert.match(manualDebtSql,/pg_advisory_xact_lock/);
+ assert.match(manualDebtSql,/manual:debt:/);
+ assert.match(manualDebtSql,/m\.created_at>now\(\)-interval '20 seconds'/);
+ assert.match(manualDebtSql,/taphoa_chat_customer_balance_value\(p_customer_id\)/);
+ assert.match(manualDebtSql,/taphoa_customer_mini_link\(p_customer_id,'no'/);
+ assert.match(manualDebtSql,/taphoa_chat_notify_customer\(\s*p_customer_id,v_sender,v_client_id,v_notice/);
+ assert.match(manualDebtSql,/revoke all on function public\.taphoa_manual_send_customer_debt\(uuid,uuid\)/);
+ assert.match(manualDebtSql,/grant execute on function public\.taphoa_manual_send_customer_debt\(uuid,uuid\)\s+to authenticated/);
+ assert.doesNotMatch(manualDebtSql,/\b(?:insert|update|delete)\s+(?:into\s+|from\s+)?(?:public\.)?taphoa_debt_ledger\b/i);
+ assert.doesNotMatch(manualDebtSql,/create table|alter table/i);
+ assert.match(businessCode,/manualShareDebt:\(id,requestId\)=>gateway\.rpc\('taphoa_manual_send_customer_debt'/);
+ assert.match(bridgeCode,/async function manualShareDebt\(customerId,requestId\)/);
+ assert.match(bridgeCode,/manualShareOrder,manualShareDebt,reverseOrder/);
+ assert.match(indexHtml,/fixed-production-bridge\.js\?v=[^"]*manual-debt=20261101/);
+ assert.match(indexHtml,/fixed-ui-runtime-12\.js\?v=[^"]*linked-contact=20261101/);
+});
