@@ -177,7 +177,8 @@
                     && bridge?.getIdentity?.()?.role === 'admin'
                     && typeof bridge.manualShareDebt === 'function'
                     && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(customerId)
-                    && typeof crypto?.randomUUID === 'function';
+                    && typeof crypto !== 'undefined'
+                    && typeof crypto.randomUUID === 'function';
                 if (eligible) {
                     try {
                         const response = await bridge.manualShareDebt(customerId, crypto.randomUUID());
