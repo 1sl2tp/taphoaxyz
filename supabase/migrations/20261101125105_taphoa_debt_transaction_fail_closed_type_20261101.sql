@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.taphoa_debt_transaction(p_customer_id uuid, p_
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $function$
+AS $
 declare
   ctx jsonb := public.taphoa_access_context();
   prior jsonb;
@@ -145,4 +145,4 @@ Xem công nợ: ' || v_url;
 
   return v_result;
 end;
-$function$
+$
