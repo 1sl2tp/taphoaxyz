@@ -397,6 +397,23 @@
       .admin-tab{font-size:11px;letter-spacing:-.1px}
       #marketPane .market-list{max-height:min(52dvh,440px)}
     }
+
+    /* SPEC-ADMIN-GOODS-PRICE-JUMP-20261101: compact pinned product name, fast price navigation. */
+    #goodsPane .price-jump{display:none;border-color:#bfdbfe;color:#1d4ed8;background:#eff6ff;font-size:11px;white-space:nowrap;padding:4px 8px}
+    @media(max-width:700px){
+      #goodsPane .price-jump:not(.hidden){display:inline-flex;align-items:center;justify-content:center;min-height:30px}
+      #goodsPane .summary .status{margin-left:auto}
+      #goodsPane .summary .status .msg{max-width:100px}
+      #goodsPane .sheet-wrap{scrollbar-gutter:stable;overscroll-behavior-x:contain}
+      #goodsPane .sheet-wrap th{font-size:11px}
+    }
+    @media(max-width:540px){
+      #goodsPane .summary{gap:5px;padding:5px 7px}
+      #goodsPane #countText{font-size:11px;white-space:nowrap}
+      #goodsPane .summary .status .msg{display:none}
+      #goodsPane .sheet-wrap table.name-sticky td[data-col="name"]{box-shadow:2px 0 0 #cbd5e1}
+      #goodsPane .sheet-wrap table.name-sticky thead th[data-col="name"]{box-shadow:2px 0 0 #cbd5e1}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
@@ -461,6 +478,7 @@
         <div class="summary">
           <span id="countText">Đang tải…</span>
           <span class="summary-hint" title="Rời ô hoặc nhấn Enter để lưu; AUTO xanh là giá tự động; ô xanh là giá bán đang dùng">ⓘ Tự lưu · giá AUTO</span>
+          <button id="jumpPriceBtn" class="btn price-jump hidden" type="button" title="Chuyển nhanh giữa cột tên và giá bán">Giá bán →</button>
           <span class="status"><span id="statusText" class="msg" aria-live="polite">Sẵn sàng</span></span>
         </div>
 
@@ -758,10 +776,11 @@
     let selectedSource='';
     let pageRefreshQueued=false,pageRefreshReset=false;
     let adminView='goods';
-    let analyticsLoaded=false,analyticsLoading=false;
+    let analyticsLoaded=false,analyticsLoading=false,analyticsReloadQueued=false;
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
     let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketSearchTags=[];
+    let marketRefreshQueued=false,marketRefreshReset=false,marketCandidateGeneration=0;
     const MARKET_PAGE_SIZE=100;
     const MARKET_CANDIDATE_PAGE_SIZE=120;
     let sourceDialogMode='create';
@@ -834,7 +853,9 @@
       }
       for(const col of COLUMN_DEFS){
         const hidden=columnPrefs.hidden.includes(col.id);
-        const width=columnPrefs.widths[col.id]||col.width;
+        const savedWidth=columnPrefs.widths[col.id]||col.width;
+        const width=window.matchMedia('(max-width:540px)').matches&&col.id==='name'
+          ?Math.min(savedWidth,186):savedWidth;
         table.querySelectorAll(`[data-col="${col.id}"]`).forEach(cell=>{
           cell.style.display=hidden?'none':'';
           if(!hidden){
@@ -847,6 +868,19 @@
       // Only pin the name when it is the first visible column; preserve custom ordering.
       table.classList.toggle('name-sticky',columnPrefs.order.find(id=>!columnPrefs.hidden.includes(id))==='name');
       installColumnResizers();
+      syncPriceJump();
+    }
+    function syncPriceJump(){
+      const button=$('jumpPriceBtn'),wrap=document.querySelector('#goodsPane .sheet-wrap');
+      const price=wrap?.querySelector('thead th[data-col="price"]');
+      if(!button||!wrap||!price)return;
+      const available=!columnPrefs.hidden.includes('price')&&window.matchMedia('(max-width:700px)').matches;
+      button.classList.toggle('hidden',!available);
+      if(!available)return;
+      const name=wrap.querySelector('thead th[data-col="name"]');
+      const sticky=wrap.querySelector('table.name-sticky')?name?.getBoundingClientRect().width||0:0;
+      const target=Math.max(0,price.getBoundingClientRect().left-wrap.getBoundingClientRect().left+wrap.scrollLeft-sticky-8);
+      button.textContent=wrap.scrollLeft+16<target?'Giá bán →':'← Tên';
     }
     function installColumnResizers(){
       document.querySelectorAll('.sheet-wrap thead th[data-col]').forEach(th=>{
@@ -943,7 +977,8 @@
       return Number.isNaN(d.getTime())?String(value||''):d.toLocaleDateString('vi-VN');
     };
     async function loadQuoteAnalytics(force=false){
-      if(analyticsLoading||(!force&&analyticsLoaded))return;
+      if(analyticsLoading){if(force)analyticsReloadQueued=true;return;}
+      if(!force&&analyticsLoaded)return;
       analyticsLoading=true;
       $('analyticsStatus').textContent='Đang tải báo cáo…';
       try{
@@ -968,6 +1003,10 @@
         $('analyticsStatus').textContent='Không tải được báo cáo: '+(error?.message||'Lỗi không xác định');
       }finally{
         analyticsLoading=false;
+        if(analyticsReloadQueued){
+          analyticsReloadQueued=false;
+          loadQuoteAnalytics(true);
+        }
       }
     }
 
@@ -1146,6 +1185,8 @@
     }
 
     async function autoRefineMarketCandidates(item){
+      const generation=++marketCandidateGeneration;
+      const selectedCode=item.product_code;
       const planned=marketAutoSearchTags(item);
       marketSearchTags=[];
       $('marketCandidateSearch').value='';
@@ -1165,6 +1206,7 @@
             p_source:$('marketShopSource').value,
             p_offset:0
           });
+          if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
           const batch=Array.isArray(data)?data:[];
           if(batch.length){
             accepted=next;
@@ -1184,10 +1226,12 @@
           p_source:$('marketShopSource').value,
           p_offset:0
         }).catch(()=>[]);
+        if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
         bestBatch=Array.isArray(data)?data:[];
         accepted=fallback?[fallback]:[];
       }
 
+      if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
       setMarketSearchTags(accepted);
       marketCandidates=sortMarketCandidates(bestBatch,item);
       marketCandidateOffset=marketCandidates.length;
@@ -1691,7 +1735,7 @@
     }
 
     async function loadMarketMappings(reset=false){
-      if(marketLoading)return;
+      if(marketLoading){marketRefreshQueued=true;marketRefreshReset=marketRefreshReset||reset;return;}
       if(reset)marketOffset=0;
       marketLoading=true;
       $('marketMapCount').textContent='Đang tải…';
@@ -1715,6 +1759,11 @@
       }finally{
         marketLoading=false;
         renderMarketProducts();
+        if(marketRefreshQueued){
+          const queuedReset=marketRefreshReset;
+          marketRefreshQueued=false;marketRefreshReset=false;
+          loadMarketMappings(queuedReset);
+        }
       }
     }
 
@@ -1756,6 +1805,8 @@
     async function loadMarketCandidates(reset=true){
       const item=selectedMarketItem();
       if(!item)return;
+      const generation=++marketCandidateGeneration;
+      const selectedCode=item.product_code;
       if(reset){
         marketCandidateOffset=0;
         marketCandidates=[];
@@ -1770,6 +1821,7 @@
           p_source:$('marketShopSource').value,
           p_offset:marketCandidateOffset
         });
+        if(generation!==marketCandidateGeneration||marketSelectedCode!==selectedCode)return;
         const batch=Array.isArray(data)?data:[];
         marketCandidates=sortMarketCandidates(reset?batch:marketCandidates.concat(batch),item);
         marketCandidateOffset=marketCandidates.length;
@@ -2687,6 +2739,22 @@
       if(from<0||to<0)return;
       columnPrefs.order.splice(from,1);columnPrefs.order.splice(to,0,draggedColumn);
       saveColumnPrefs();renderColumnSettings();applyColumnLayout();
+    });
+    $('jumpPriceBtn').addEventListener('click',()=>{
+      const wrap=document.querySelector('#goodsPane .sheet-wrap');
+      const price=wrap?.querySelector('thead th[data-col="price"]');
+      if(!wrap||!price)return;
+      const name=wrap.querySelector('thead th[data-col="name"]');
+      const sticky=wrap.querySelector('table.name-sticky')?name?.getBoundingClientRect().width||0:0;
+      const target=Math.max(0,price.getBoundingClientRect().left-wrap.getBoundingClientRect().left+wrap.scrollLeft-sticky-8);
+      wrap.scrollTo({left:wrap.scrollLeft+16<target?target:0,behavior:'smooth'});
+    });
+    document.querySelector('#goodsPane .sheet-wrap').addEventListener('scroll',syncPriceJump,{passive:true});
+    let compactNameMode=window.matchMedia('(max-width:540px)').matches;
+    window.addEventListener('resize',()=>{
+      const next=window.matchMedia('(max-width:540px)').matches;
+      if(next!==compactNameMode){compactNameMode=next;applyColumnLayout();}
+      else syncPriceJump();
     });
     $('prevBtn').addEventListener('click',()=>{offset=Math.max(0,offset-PAGE_SIZE);loadPage(false)});
     $('nextBtn').addEventListener('click',()=>{if(offset+PAGE_SIZE<total){offset+=PAGE_SIZE;loadPage(false)}});
