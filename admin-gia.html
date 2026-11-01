@@ -1848,6 +1848,10 @@
       if(marketLoading){marketRefreshQueued=true;marketRefreshReset=marketRefreshReset||reset;return;}
       if(reset)marketOffset=0;
       marketLoading=true;
+      // SPEC-ADMIN-PAGER-LOCK-20261101: disable paging at request start,
+      // not only after the previous page has finished rendering.
+      $('marketPrevBtn').disabled=true;
+      $('marketNextBtn').disabled=true;
       const sessionGeneration=marketSessionGeneration;
       let ready=false;
       $('marketMapCount').textContent='Đang tải…';
@@ -2205,6 +2209,7 @@
       // Do not drop quick searches or source switches while a request is in flight.
       if(loading){pageRefreshQueued=true;pageRefreshReset=pageRefreshReset||reset;return;}
       loading=true;
+      updatePager();
       const sessionGeneration=catalogSessionGeneration;
       let blocked=false;
       try{
@@ -2956,8 +2961,14 @@
       const b=e.target.closest('[data-market-candidate]');
       if(b)assignMarketCandidate(b.dataset.marketCandidate);
     });
-    $('marketPrevBtn').addEventListener('click',()=>{marketOffset=Math.max(0,marketOffset-MARKET_PAGE_SIZE);loadMarketMappings(false);});
-    $('marketNextBtn').addEventListener('click',()=>{if(marketOffset+MARKET_PAGE_SIZE<marketTotal){marketOffset+=MARKET_PAGE_SIZE;loadMarketMappings(false);}});
+    $('marketPrevBtn').addEventListener('click',()=>{
+      if(marketLoading||marketOffset<=0)return;
+      marketOffset=Math.max(0,marketOffset-MARKET_PAGE_SIZE);loadMarketMappings(false);
+    });
+    $('marketNextBtn').addEventListener('click',()=>{
+      if(marketLoading||marketOffset+MARKET_PAGE_SIZE>=marketTotal)return;
+      marketOffset+=MARKET_PAGE_SIZE;loadMarketMappings(false);
+    });
     $('marketRunUpdateBtn').addEventListener('click',runMarketUpdate);
     $('marketBackToListBtn').addEventListener('click',()=>{
       $('marketProductList').scrollIntoView({behavior:'smooth',block:'start'});
@@ -3110,8 +3121,14 @@
       if(next!==compactNameMode){compactNameMode=next;applyColumnLayout();}
       else syncPriceJump();
     });
-    $('prevBtn').addEventListener('click',()=>{offset=Math.max(0,offset-PAGE_SIZE);loadPage(false)});
-    $('nextBtn').addEventListener('click',()=>{if(offset+PAGE_SIZE<total){offset+=PAGE_SIZE;loadPage(false)}});
+    $('prevBtn').addEventListener('click',()=>{
+      if(loading||offset<=0)return;
+      offset=Math.max(0,offset-PAGE_SIZE);loadPage(false);
+    });
+    $('nextBtn').addEventListener('click',()=>{
+      if(loading||offset+PAGE_SIZE>=total)return;
+      offset+=PAGE_SIZE;loadPage(false);
+    });
 
     $('productBody').addEventListener('focusin',e=>{
       if(e.target.matches('.cell-input')){
