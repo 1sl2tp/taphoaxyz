@@ -280,7 +280,9 @@ body[data-force-pc="1"] #customerDebtContentToShare{
    let the cycle summary occupy the entire text+amount width on row 3.
    Use the existing DOM; no data, role, or amount changes. */
 #tab-cong-no .debt-customer-card{
-  grid-template-rows:auto auto auto;
+  /* Row 3 is implicit, so readonly user cards without a cycle badge
+     do not reserve a blank third row. */
+  grid-template-rows:auto auto;
   row-gap:2px;
   min-height:64px;
 }
