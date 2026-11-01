@@ -284,13 +284,13 @@ test('order list cards keep customer, order summary and product hint compact',as
     read('src/fixed-ui-runtime-11.js')
   ]);
 
-  assert.ok(pending.includes('${o.tenKh}</p>'));
-  assert.ok(delivered.includes('${o.tenKh}</p>'));
+  assert.ok(pending.includes('${escapeProductEditorValue(o.tenKh)}</p>'));
+  assert.ok(delivered.includes('${escapeProductEditorValue(o.tenKh)}</p>'));
   assert.ok(!pending.includes('${o.tenKh} - <span'));
   assert.ok(!delivered.includes('${o.tenKh} - <span'));
 
-  assert.ok(pending.includes('${shortTime} · ${o.countSp} mã · SL ${o.tongSl}'));
-  assert.ok(delivered.includes('${shortTime} · ${o.countSp} mã · SL ${o.tongSl}'));
+  assert.ok(pending.includes('${escapeProductEditorValue(shortTime)} · ${o.countSp} mã · SL ${o.tongSl}'));
+  assert.ok(delivered.includes('${escapeProductEditorValue(shortTime)} · ${o.countSp} mã · SL ${o.tongSl}'));
   assert.ok(!pending.includes('${shortTime} · ${k} ·'));
   assert.ok(!delivered.includes('${shortTime} · ${k} ·'));
   assert.ok(!pending.includes('text-[#ea580c] font-extrabold">${k}'));
