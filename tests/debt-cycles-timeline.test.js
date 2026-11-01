@@ -102,12 +102,15 @@ test('on opening Công nợ, renders cycle number, buy count, days idle, and com
   window.renderCongNo();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(reads,1,'one full-history RPC for the entire debt tab');
-  assert.match(body1.children[0].textContent,/Trễ 5 ngày · CK2 \(5 đơn\)/);
-  assert.match(body1.children[0].textContent,/T10\/2026 · 1 ngày mua\/3 đơn/);
-  assert.doesNotMatch(body1.children[0].textContent,/Cách lần mua gần nhất/);
+  const visibleText=node=>String(node.textContent||'')+(node.children||[]).map(visibleText).join('');
+  assert.match(visibleText(body1.children[0]),/Trễ 5 ngày · CK2 \(5 đơn\)/);
+  assert.match(visibleText(body1.children[0]),/T10\/2026 · 1 ngày mua\/3 đơn/);
+  assert.doesNotMatch(visibleText(body1.children[0]),/Cách lần mua gần nhất/);
   assert.match(body1.children[0].title,/Cách lần mua gần nhất 4 ngày/,
     'full monitoring explanation remains available outside the compact list');
-  assert.match(body2.children[0].textContent,/Cách mua 1 ngày · CK1 \(2 đơn\)/);
+  assert.match(visibleText(body2.children[0]),/Cách mua 1 ngày · CK1 \(2 đơn\)/);
+  assert.equal(body1.children[0].children[0].className,'debt-cycle-card-status');
+  assert.equal(body1.children[0].children[1].className,'debt-cycle-card-context');
   window.renderCongNo();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(reads,1,'cached RPC is not repeated by every render');
@@ -122,6 +125,9 @@ test('on opening Công nợ, renders cycle number, buy count, days idle, and com
   assert.match(advice.children[1].textContent,/Có thể trao đổi trực tiếp, tránh nhắc liên tục/);
   const details=panel.children.find(n=>n.tag==='details'&&n.children[0]?.textContent?.includes('chu kỳ'));
   assert(details);
+  assert.equal(panel.children.filter(n=>n.tag==='details'&&n.className==='debt-cycle-history').length,1,
+    'one expandable link contains both monthly and debt-cycle history');
+  assert.equal(details.children.filter(n=>n.tag==='ol').length,2);
   assert.equal(details.children.at(-1).children.length,2);
   assert.match(details.children.at(-1).children[0].children[0].textContent,/Chu kỳ 1 · Đã tất toán/);
   assert.match(details.children.at(-1).children[1].children[0].textContent,/Chu kỳ 2 · Chưa tất toán/);
@@ -137,7 +143,8 @@ test('compact readonly debt UI limits card status to two lines and retains histo
   assert.match(js,/makeText\('p','debt-cycle-detail-explanation',alertText\(current\)\)/);
   assert.match(js,/makeText\('summary','debt-cycle-detail-warning'/);
   assert.match(js,/current\.policyDueDay\?' · Hạn '/);
-  assert.match(js,/Xem tất cả '\+cycles\.length\+' chu kỳ/);
+  assert.match(js,/Tất cả '\+cycles\.length\+' chu kỳ/);
+  assert.match(js,/Xem lịch sử kỳ mua và chu kỳ/);
   assert.match(source,/function openCustomerDebtModal\(/);
   assert.match(source,/h\.soTien\.toLocaleString\('vi-VN'\)/);
   assert.match(source,/h\.currentDebt\.toLocaleString\('vi-VN'\)/);
@@ -249,4 +256,28 @@ test('customer debt modal keeps the existing ledger scroll owner and readable fi
  assert.match(markup,/submitPopupDebt\(\\?'thu\\?'\)/);
  assert.match(markup,/submitPopupDebt\(\\?'no\\?'\)/);
  assert.match(popup,/#cDebtModalHistoryList \.debt-history-more-button/);
+});
+
+
+test('debt-card status hierarchy keeps overdue red while monthly metadata stays muted',()=>{
+ const view=fs.readFileSync(new URL('../src/fixed-ui-debt-cycles.css',import.meta.url),'utf8');
+ assert.match(view,/\.debt-cycle-card-meta\[data-warning="true"\]\{color:#475569/);
+ assert.match(view,/\.debt-cycle-card-meta\[data-warning="true"\] \.debt-cycle-card-status\{color:#b42318\}/);
+ assert.match(view,/\.debt-cycle-card-context\{color:#64748b/);
+ assert.match(view,/-webkit-line-clamp:2/);
+ assert.match(js,/panel\.replaceChildren\(/);
+});
+
+test('last-transaction caption hides clock time in card without modifying the ledger',()=>{
+ const a=render.indexOf('                const lastDate = String(c.lastTime');
+ const b=render.indexOf('\n\n                listHtml +=',a);
+ assert(a>=0&&b>a,'short caption belongs to source renderer');
+ const caption=vm.runInNewContext('(c,currentDebtFilter)=>{'+render.slice(a,b)+';return subText;}',{String,Number});
+ assert.equal(caption({lastTime:'09/10/2026 20:45:01',debt:41,daysAgo:24},'no'),
+   'GD cuối 09/10/2026 · Giao cách 24 ngày');
+ assert.equal(caption({lastTime:'09/10/2026 20:45:01',debt:0,daysAgo:24},'het'),
+   'GD cuối 09/10/2026');
+ const popup=fs.readFileSync(new URL('../src/fixed-ui-debt-popup.css',import.meta.url),'utf8');
+ assert.match(popup,/#tab-cong-no \.debt-customer-detail\{[\s\S]*?color:#64748b/);
+ assert.match(popup,/#tab-cong-no > main > div:nth-child\(2\)\{/);
 });
