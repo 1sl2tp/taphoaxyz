@@ -159,3 +159,84 @@ body[data-force-pc="1"] #customerDebtContentToShare{
   touch-action:manipulation;
 }
 #cDebtModalHistoryList .debt-history-more-button:disabled{opacity:.6;cursor:wait}
+
+/* SPEC-DEBT-WORKSPACE-DENSITY-20261101 — Admin/User debt screen.
+   Reduce stacked decoration, not legible text, tappable targets or ledger rows.
+   Scoped to the debt workspace (never the general sales/order UI). */
+#tab-cong-no > header{
+  padding-top:10px;
+  padding-bottom:12px;
+}
+#tab-cong-no > header > .grid{
+  margin-top:8px;
+  gap:8px;
+}
+#tab-cong-no > header > .grid > div{
+  min-height:56px;
+  padding:9px 10px;
+}
+#tab-cong-no > header > .grid > div > div:first-child{min-width:0}
+#tab-cong-no > main{
+  padding:12px 14px 64px;
+}
+#tab-cong-no > main > :not([hidden]) ~ :not([hidden]){
+  margin-top:10px;
+}
+/* Role=user hides the quick receipt form with .hidden, not [hidden].
+   Its Tailwind space-y margin must not remain above the first filter card. */
+#tab-cong-no > main > [data-permission="canMutateDebt"].hidden + div{
+  margin-top:0 !important;
+}
+#tab-cong-no > main > [data-permission="canMutateDebt"]{
+  padding:12px;
+}
+#tab-cong-no > main > [data-permission="canMutateDebt"] > :not([hidden]) ~ :not([hidden]){
+  margin-top:7px;
+}
+#tab-cong-no #quickDebtCustomerButton,
+#tab-cong-no #quickDebtAmount,
+#tab-cong-no button[onclick^="submitQuickDebt("]{
+  min-height:44px;
+}
+#tab-cong-no #quickDebtAmount{margin-top:4px}
+#tab-cong-no label[for="quickDebtAmount"]{
+  margin-top:5px;
+  margin-bottom:0;
+}
+#tab-cong-no .debt-customer-card{
+  min-height:72px;
+  padding:11px 12px;
+}
+#tab-cong-no .debt-customer-detail{margin-top:2px}
+#tab-cong-no #debtCustomerListContainer > :not([hidden]) ~ :not([hidden]){
+  margin-top:8px;
+}
+/* Keep the modal header/actions pinned and its existing ledger as scroll owner.
+   Reduce chrome before ledger rows rather than cutting off transaction text. */
+#customerDebtBottomSheet > .cart-handle{
+  padding-top:8px;
+  padding-bottom:2px;
+}
+#customerDebtBottomSheet > .cart-handle + div{
+  padding:8px 14px;
+}
+#customerDebtContentToShare > div:first-child{
+  padding:9px 16px;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList{
+  padding:9px 14px;
+  min-height:0;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList > div:not(#debtHistoryPageFooter){
+  min-height:44px;
+  padding-top:8px;
+  padding-bottom:8px;
+}
+#customerDebtBottomSheet > [data-permission="canMutateDebt"]{
+  padding:12px 16px;
+}
+/* Payment controls remain comfortably usable on iPhone, including iOS zoom. */
+#customerDebtBottomSheet #popupDebtAmount,
+#customerDebtBottomSheet button[onclick^="submitPopupDebt("]{
+  min-height:44px;
+}
