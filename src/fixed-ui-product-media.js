@@ -7,6 +7,13 @@
   let candidateTimer=null;
   let compareTimer=null;
   let ownQcTimer=null;
+  // SPEC-MEDIA-CANDIDATES-SESSION-20261101: stale search replies cannot
+  // show options from another product, account or picker session.
+  let candidateRequestGeneration=0,pickerGeneration=0;
+  const currentMediaUser=()=>String(prod()?.getIdentity?.()?.uid||'');
+  const mediaSelectionCurrent=(code,user,generation)=>
+    activeProductCode===code&&currentMediaUser()===user&&pickerGeneration===generation&&
+    !document.getElementById('productImageManagerWrapper')?.classList.contains('hidden');
 
   const prod=()=>window.TAPHOA_PRODUCTION;
   const esc=value=>String(value??'')
@@ -16,6 +23,14 @@
   const productCode=p=>String(p?.id||p?.maSP||p?.product_code||'').trim();
   const productName=p=>String(p?.ten||p?.product_name||p?.name||'').trim();
   const productImage=p=>String(p?.imageUrl||p?.image_url||p?.image||'').trim();
+  const safeMediaUrl=value=>{
+    const raw=String(value||'').trim();
+    if(!/^https?:\/\//i.test(raw)||/[\u0000-\u001f\u007f]/.test(raw))return '';
+    try{
+      const url=new URL(raw);
+      return (url.protocol==='https:'||url.protocol==='http:')&&url.hostname?url.href:'';
+    }catch{return '';}
+  };
 
   function isEnabled(){
     return (localStorage.getItem('APP_PRODUCT_VIEW')||'default')==='image';
@@ -139,7 +154,9 @@
     });
     wrapper.querySelector('#productImageCandidateSearch')?.addEventListener('input',event=>{
       clearTimeout(candidateTimer);
-      candidateTimer=setTimeout(()=>loadCandidates(event.target.value),220);
+      candidateRequestGeneration++; // invalidate reply as soon as the query changes
+      const query=event.target.value;
+      candidateTimer=setTimeout(()=>loadCandidates(query),220);
     });
     wrapper.querySelector('#productImageClearButton')?.addEventListener('click',clearSelectedImage);
     wrapper.querySelector('#productImageOwnPriceSummary')?.addEventListener('change',event=>{
@@ -411,7 +428,7 @@
     const source=String(product?.marketSource||'').trim();
     const sourceUrl=String(product?.imageSourceUrl||product?.image_source_url||'').trim();
     const packTable=productMarketDetailPackTable(product,market);
-    const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
+    const safeLink=safeMediaUrl(sourceUrl);
     body.innerHTML=`
       <div class="product-market-detail-hero">
         <div class="product-market-detail-image"><img src="${esc(productImage(product))}" alt="${esc(ownName)}"></div>
@@ -585,7 +602,7 @@
     const qcValue=compare.qc>0?String(compare.qc).replace(/\.0+$/,''):'';
     const priceText=carton||'—';
     const retailText=retail||'—';
-    const safeLink=/^https?:\/\//i.test(sourceUrl)?sourceUrl:'';
+    const safeLink=safeMediaUrl(sourceUrl);
     return `<span class="product-image-compare-label">HỌ</span>
       ${source?`<button aria-label="Tìm sản phẩm liên quan từ tên siêu thị đã lưu" class="product-image-compare-source" data-market-related-search title="Tìm sản phẩm liên quan" type="button">${esc(source)}</button>`:`<span class="product-image-compare-source">—</span>`}
       <label class="product-image-compare-kind product-image-compare-kind-edit">
@@ -604,7 +621,7 @@
     const wrap=document.getElementById('productImageSelectedThumbWrap');
     const img=document.getElementById('productImageSelectedThumb');
     if(!wrap||!img)return;
-    const src=productImage(product);
+    const src=safeMediaUrl(productImage(product));
     if(src){
       img.src=src;
       img.alt=productName(product);
@@ -678,6 +695,8 @@
   async function selectProduct(code){
     const p=stateProducts().find(row=>productCode(row)===String(code));
     if(!p)return;
+    clearTimeout(candidateTimer);
+    candidateRequestGeneration++;
     activeProductCode=productCode(p);
     activeProductName=productName(p);
     const selected=document.getElementById('productImageSelectedName');
@@ -758,9 +777,14 @@
   async function loadCandidates(query){
     const list=document.getElementById('productImageCandidateList');
     if(!list||!activeProductCode)return;
+    const requestGeneration=++candidateRequestGeneration;
+    const code=activeProductCode,user=currentMediaUser(),generation=pickerGeneration;
+    const isCurrent=()=>requestGeneration===candidateRequestGeneration&&
+      mediaSelectionCurrent(code,user,generation);
     list.innerHTML='<div class="py-10 text-center text-gray-400 text-[12px]"><i class="ph-bold ph-spinner animate-spin mr-1"></i>Đang tìm ảnh...</div>';
     try{
       const rows=await prod()?.productMediaCandidates?.(String(query||''),150);
+      if(!isCurrent())return;
       const candidates=Array.isArray(rows)?rows:[];
       if(!candidates.length){
         list.innerHTML='<div class="py-10 text-center text-gray-400 text-[12px]">Không thấy ảnh phù hợp. Bạn có thể đổi từ khóa tìm kiếm.</div>';
@@ -768,11 +792,11 @@
       }
       const countLabel=candidates.length>=150?'150+':String(candidates.length);
       list.innerHTML=`<div class="mb-2 flex items-center justify-between gap-2 text-[10px] text-gray-400"><span>${countLabel} kết quả</span><span>Khớp tên trước · giá thấp trước</span></div><div class="product-image-candidate-grid">${candidates.map(row=>{
-        const id=String(row?.id||''),name=String(row?.name||''),image=String(row?.image_url||'');
+        const id=String(row?.id||''),name=String(row?.name||''),image=safeMediaUrl(row?.image_url);
         const meta=candidateMeta(row),host=sourceHost(row?.image_source_url),prices=candidatePriceHtml(row);
         return `<button type="button" data-candidate-id="${esc(id)}" class="product-image-candidate-card text-left rounded-xl border border-gray-100 bg-white p-2 hover:border-primary/40 transition">
           <div class="product-image-candidate-thumb rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
-            <img src="${esc(image)}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">
+            ${image?`<img src="${esc(image)}" alt="" class="w-full h-full object-contain" loading="lazy" decoding="async">`:``}
           </div>
           <div class="mt-2 text-[11px] font-bold text-gray-900 line-clamp-2 min-h-[30px]">${esc(name)}</div>
           ${prices}
@@ -784,6 +808,7 @@
         </button>`;
       }).join('')}</div>`;
     }catch(error){
+      if(!isCurrent())return;
       console.error('product image candidates',error);
       list.innerHTML='<div class="py-10 text-center text-danger text-[12px]">Không tải được nguồn ảnh.</div>';
       if(typeof showToast==='function')showToast(error?.message||'Không tải được nguồn ảnh.','warning');
@@ -833,6 +858,8 @@
       if(typeof showToast==='function')showToast('Chỉ Admin được chọn ảnh sản phẩm.','warning');
       return;
     }
+    pickerGeneration++;candidateRequestGeneration++;
+    clearTimeout(candidateTimer);
     activeProductCode='';
     activeProductName='';
     const wrapper=ensureModal();
@@ -854,6 +881,8 @@
   };
 
   window.closeProductImageManager=function(){
+    pickerGeneration++;candidateRequestGeneration++;
+    clearTimeout(candidateTimer);
     const wrapper=document.getElementById('productImageManagerWrapper');
     wrapper?.classList.add('hidden');
     wrapper?.classList.remove('flex');
