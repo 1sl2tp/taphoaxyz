@@ -110,7 +110,8 @@ body[data-resolved-mode="mobile"] .product-editor-source-btn{
    Given a compact 12px product editor on mobile Safari/PWA, focusing a
    real editable input must not cause the OS to enlarge the page. Only the
    focused input grows to the iOS-safe 16px; idle labels, 28px row geometry,
-   product values and single save owner remain unchanged. */
+   product values and single save owner remain unchanged.
+   CSS P4 owner: this mobile editor input only; no body-wide font rule. */
 body[data-resolved-mode="mobile"] input.product-editor-input:focus{
   font-size:16px !important;
 }

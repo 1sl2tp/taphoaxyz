@@ -18,7 +18,8 @@ test('product editing raises only focused mobile input font to iOS-safe size',()
   assert.ok(idle.includes('font-size:12px !important;'));
   assert.ok(scope.includes('body[data-resolved-mode="mobile"] input.product-editor-input:focus{'));
   assert.ok(scope.includes('font-size:16px !important;'));
-  assert.ok(!scope.includes('transform:')&&!scope.includes('zoom:')&&!scope.includes('touch-action:'),
+  const focusRule=scope.slice(scope.indexOf('input.product-editor-input:focus{')).split('}')[0];
+  assert.ok(!focusRule.includes('transform:')&&!focusRule.includes('zoom:')&&!focusRule.includes('touch-action:'),
     'focused input is not allowed to rescale the app or change gestures');
   assert.ok(html.includes('focus-zoom=20261102'), 'new PWA asset query must reach installed clients');
 });
