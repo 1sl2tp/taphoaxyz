@@ -5,6 +5,27 @@
     <meta name="app-build-id" content="source-main">
     <!-- TAPHOA_GEMINI_100_SAMPLE_FIXED · sole production UI source -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- SPEC-TAPHOA-PWA-VIEWPORT-ZOOM-20261102 · P0 application viewport.
+         Browser tabs keep ordinary accessible page zoom; installed PWA locks
+         accidental shell zoom. iOS image/share preview lives outside #appContainer. -->
+    <script id="taphoa-pwa-viewport-policy">
+      (() => {
+        const standalone = navigator.standalone === true ||
+          !!window.matchMedia?.('(display-mode: standalone)')?.matches;
+        if (!standalone) return;
+        document.documentElement.dataset.taphoaStandalone = 'true';
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) viewport.content =
+          'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+        const preventShellPinch = event => {
+          if (!event.cancelable || !event.target?.closest?.('#appContainer')) return;
+          event.preventDefault();
+        };
+        for (const type of ['gesturestart', 'gesturechange']) {
+          document.addEventListener(type, preventShellPinch, {capture:true, passive:false});
+        }
+      })();
+    </script>
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">

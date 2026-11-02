@@ -15,6 +15,13 @@
         .bottom-sheet-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
         #appContainer { transition: max-width 0.2s ease; width: 100%; max-width: 428px; height: 100vh; height: 100dvh; }
+/* P0: only the installed PWA shell disables native page pinch/double-tap zoom.
+   Vertical and horizontal pan, taps, input selection and scrolling stay native.
+   The iOS share/PNG viewer is a separate body overlay, not this shell. */
+html[data-taphoa-standalone="true"] #appContainer{
+  touch-action:pan-x pan-y;
+}
+
 /* SPEC-IOS-PWA-SHELL-TOP-20261101:
    iOS installed PWA has an independent dynamic visual viewport. A centered
    100vh body around a 100dvh app can leave a conspicuous gray top gutter.
