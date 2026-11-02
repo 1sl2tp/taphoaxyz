@@ -1,0 +1,27 @@
+name: Rust TAPHOA HTML-boundary pilot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rust/ui-boundary-check/**"
+      - ".github/workflows/rust-ui-pilot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-ui-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check preinstalled Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
+      - name: Run offline Rust boundary contracts
+        run: cargo test --manifest-path rust/ui-boundary-check/Cargo.toml --offline
+      - name: Check existing production JavaScript debt HTML contract
+        run: node --test tests/pwa-debt-history-html-safe-20261102.test.js
