@@ -51,6 +51,20 @@
             };
         }
 
+        // SPEC-SOURCE-DETAIL-OWNER-20261103: a superseded modal close,
+        // animation or note-write response must not repaint another source.
+        function nextSourceDetailModalEpoch(wrapper) {
+            const epoch = String((Number(wrapper?.dataset.sourceDetailEpoch) || 0) + 1);
+            if (wrapper) wrapper.dataset.sourceDetailEpoch = epoch;
+            return epoch;
+        }
+        function sourceDetailIsCurrent(state, wrapper, epoch) {
+            return !!wrapper && activeSourceDetailState === state &&
+                wrapper.dataset.sourceDetailEpoch === epoch &&
+                !wrapper.classList.contains('hidden') &&
+                !wrapper.classList.contains('pointer-events-none');
+        }
+
         function openSourceDetail(sheetName, sourceName) {
             const built = buildSourceDetailData(sheetName, sourceName);
             activeSourceDetailState = {
@@ -66,18 +80,27 @@
             const wrap = promoteSourceDetailModalLayer();
             const card = document.getElementById('sourceDetailModalCard');
             if (!wrap || !card) return;
+            const state = activeSourceDetailState;
+            const epoch = nextSourceDetailModalEpoch(wrap);
             wrap.classList.remove('hidden');
             wrap.classList.remove('opacity-0','pointer-events-none');
-            requestAnimationFrame(() => card.classList.remove('translate-y-full'));
+            requestAnimationFrame(() => {
+                if (sourceDetailIsCurrent(state, wrap, epoch))
+                    card.classList.remove('translate-y-full');
+            });
         }
 
         function closeSourceDetailModal() {
             const wrap = document.getElementById('sourceDetailModalWrapper');
             const card = document.getElementById('sourceDetailModalCard');
             if (!wrap) return;
+            const epoch = nextSourceDetailModalEpoch(wrap);
             card?.classList.add('translate-y-full');
             wrap.classList.add('opacity-0','pointer-events-none');
-            setTimeout(() => wrap.classList.add('hidden'), 300);
+            setTimeout(() => {
+                if (wrap.dataset.sourceDetailEpoch === epoch)
+                    wrap.classList.add('hidden');
+            }, 300);
         }
 
         function switchSourceDetailTab(tabName) {
@@ -154,7 +177,11 @@
             button.classList.add('hidden');
             input.classList.remove('hidden');
             input.value = String(button.dataset.noteCurrent || '');
+            const state = activeSourceDetailState;
+            const modal = document.getElementById('sourceDetailModalWrapper');
+            const epoch = modal?.dataset.sourceDetailEpoch;
             requestAnimationFrame(() => {
+                if (!sourceDetailIsCurrent(state, modal, epoch)) return;
                 input.focus({ preventScroll: true });
                 input.select();
             });
@@ -183,10 +210,14 @@
                 cancelSourceLineNoteEditor(input);
                 return;
             }
+            const sourceState = activeSourceDetailState;
+            const modal = document.getElementById('sourceDetailModalWrapper');
+            const epoch = modal?.dataset.sourceDetailEpoch;
             input.dataset.noteSaving = '1';
             input.disabled = true;
             try {
                 await window.savePendingOrderItemNoteDirect(backendOrderId, productCode, next);
+                if (!sourceDetailIsCurrent(sourceState, modal, epoch)) return;
                 const activeTab = activeSourceDetailState.tab;
                 const built = buildSourceDetailData(activeSourceDetailState.sheetName, activeSourceDetailState.source);
                 activeSourceDetailState = {
@@ -201,6 +232,7 @@
                 switchSourceDetailTab(activeTab);
                 showToast('Đã cập nhật ghi chú.','success');
             } catch (error) {
+                if (!sourceDetailIsCurrent(sourceState, modal, epoch)) return;
                 console.error('save source line note', error);
                 input.disabled = false;
                 input.dataset.noteSaving = '0';
