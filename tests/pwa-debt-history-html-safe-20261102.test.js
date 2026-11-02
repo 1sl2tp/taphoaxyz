@@ -84,7 +84,7 @@ test('an invalid running balance must not falsely claim the debt is settled',()=
   assert.doesNotMatch(out,/Đã hết nợ/);
  }
  const clear=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
-  soTien:-975,currentDebt:0});
+  soTien:-975,currentDebt:0},0);
  assert.match(clear,/Đã hết nợ/,'verified zero remains settled');
  const fallback=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
   soTien:-975,currentDebt:45},'invalid-latest-snapshot');
