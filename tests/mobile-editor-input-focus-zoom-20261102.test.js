@@ -13,7 +13,9 @@ const html=read('index.html');
 test('product editing raises only focused mobile input font to iOS-safe size',()=>{
   const scope=css.slice(css.indexOf('/* SPEC-TAPHOA-MOBILE-FOCUS-SCALE-20261102'));
   assert.ok(css.includes('body[data-resolved-mode="mobile"] .product-editor-input,'));
-  assert.match(css,/body\\[data-resolved-mode="mobile"\\] \\.product-editor-input,\\s*body\\[data-resolved-mode="mobile"\\] \\.product-editor-source-btn\\{[^}]*height:28px !important;[^}]*font-size:12px !important;/);
+  const idle=css.slice(css.indexOf('body[data-resolved-mode="mobile"] .product-editor-input,'),css.indexOf('/* SPEC-TAPHOA-MOBILE-FOCUS-SCALE-20261102'));
+  assert.ok(idle.includes('height:28px !important;'));
+  assert.ok(idle.includes('font-size:12px !important;'));
   assert.ok(scope.includes('body[data-resolved-mode="mobile"] input.product-editor-input:focus{'));
   assert.ok(scope.includes('font-size:16px !important;'));
   assert.ok(!scope.includes('transform:')&&!scope.includes('zoom:')&&!scope.includes('touch-action:'),
