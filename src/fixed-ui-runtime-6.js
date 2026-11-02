@@ -141,6 +141,9 @@
                 cartSheet.style.setProperty('--cart-unit-track', Math.max(54, Math.ceil(unitChars * 7.2 + 8)) + 'px');
                 cartSheet.style.setProperty('--cart-total-track', Math.max(69, Math.ceil(totalChars * 7.2 + 8)) + 'px');
             }
+            // SPEC-TAPHOA-CART-SAFE-HANDLERS-20261102: keep product codes and
+            // names in escaped data-* attributes. Inline JS string interpolation
+            // breaks on apostrophes and must never own cart quantity changes.
             const lineCount = cartEntries.length;
             for (const [id, item] of cartEntries) {
                 totalQty += item.qty; totalPrice += (item.qty * item.price);
