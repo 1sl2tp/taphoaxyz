@@ -28,7 +28,10 @@ test('debt popup shows small bank transaction reference independently of label',
   assert.match(debtUI,/billReference: String\(row\?\.\[9\] \|\| ''\)/);
   assert.match(debtUI,/Mã GD: \$\{billRef\}/);
   assert.match(debtUI,/break-all/);
-  assert.match(debtUI,/h\.soTien\.toLocaleString\('vi-VN'\)/);
+  assert.match(debtUI,/amountValue\.toLocaleString\('vi-VN'\)/);
+  assert.match(debtUI,/const amountLabel = validAmount \?/);
+  assert.doesNotMatch(debtUI,/h\.soTien\.toLocaleString\('vi-VN'\)/,
+    'ledger values must be parsed before rendering; no injected HTML');
   assert.doesNotMatch(debtUI,/Math\.abs\(runningDebt\)\s*\/\s*1000/);
 });
 
