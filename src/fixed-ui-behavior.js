@@ -279,8 +279,16 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
 
   let html = '';
   displayHistory.slice().reverse().forEach(h => {
-    const isThu = h.soTien < 0;
-    const sign = isThu ? '' : '+';
+    // SPEC-DEBT-HTML-AMOUNT-20261103: never interpolate raw ledger amounts
+    // into HTML or display an invalid monetary value as a fabricated zero.
+    const rawAmount = h.soTien;
+    const amountValue = (typeof rawAmount === 'number' ||
+      (typeof rawAmount === 'string' && /^-?\d+(?:\.\d+)?$/.test(rawAmount.trim())))
+      ? Number(rawAmount) : NaN;
+    const validAmount = Number.isFinite(amountValue);
+    const amountLabel = validAmount ? amountValue.toLocaleString('vi-VN') : '—';
+    const isThu = validAmount && amountValue < 0;
+    const sign = validAmount && !isThu ? '+' : '';
     const runningDebt = Number(h.currentDebt || 0);
     const runningBalanceText = runningDebt > 0
       ? `Nợ ${Math.abs(runningDebt).toLocaleString('vi-VN')}`
@@ -307,7 +315,7 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
         <p class="text-[10px] text-gray-400 mt-0.5">Ghi sổ: ${escapeProductEditorValue(h.time)}</p>
       </div>
       <div class="text-right">
-        <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${h.soTien.toLocaleString('vi-VN')}</p>
+        <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${amountLabel}</p>
         <p class="text-[10px] text-gray-400 mt-0.5">${runningBalanceText}</p>
       </div>
     </div>`;

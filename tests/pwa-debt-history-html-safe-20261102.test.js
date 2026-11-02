@@ -58,9 +58,28 @@ test('valid order display codes remain clickable without changing ledger values'
  assert.ok(out.includes('Thu tiền đơn hàng DG156'));
  assert.ok(out.includes('Ghi sổ: 02/11/2026 20:59'));
 });
+test('untrusted ledger amount is never rendered as HTML or false zero',()=>{
+ const out=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
+  soTien:'<img src=x onerror="alert(8)">',currentDebt:100});
+ assert.doesNotMatch(out,/<img|onerror=/i);
+ assert.match(out,/>—<\/p>/);
+ assert.doesNotMatch(out,/\+0<\/p>|\+NaN<\/p>/);
+});
+test('numeric-string amounts keep safe sign and Vietnamese thousands formatting',()=>{
+ const collected=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
+  soTien:'-975000',currentDebt:100});
+ assert.match(collected,/>-975\.000<\/p>/);
+ const charged=fixture({loaiGd:'Phát sinh nợ',time:'03/11/2026 10:00',
+  soTien:'1234567',currentDebt:100});
+ assert.match(charged,/>\+1\.234\.567<\/p>/);
+ const missing=fixture({loaiGd:'Lịch sử',time:'03/11/2026 10:00',
+  soTien:null,currentDebt:100});
+ assert.match(missing,/>—<\/p>/);
+});
 test('only original source escapes and PWA cache query is bumped',()=>{
  assert.match(source,/escapeProductEditorValue\(h\.loaiGd\)/);
  assert.match(source,/escapeProductEditorValue\(h\.time\)/);
  assert.match(source,/\^D\[GT\]\[0-9\]\{1,12\}\$/);
  assert.match(index,/fixed-ui-behavior\.js[^\n]*debt-html-safe=20261102/);
+ assert.match(index,/fixed-ui-behavior\.js[^\n]*debt-amount-safe=20261103/);
 });
