@@ -255,19 +255,32 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
 
   document.getElementById('cDebtModalName').innerText = 'KH: ' + tenKh;
   const storedBalance = window.customerDebtCurrentBalanceData?.[maKh];
-  const currentTotalDebt = Number.isFinite(Number(storedBalance))
-    ? Number(storedBalance)
-    : (history.length > 0 ? Number(history[history.length - 1].currentDebt) || 0 : 0);
+  // SPEC-DEBT-BALANCE-EVIDENCE-20261103: absent/invalid server balances
+  // are UNKNOWN, never proof of settlement. Keep verified zero as zero.
+  const parseFiniteBalance = value => {
+    const valid = typeof value === 'number' ||
+      (typeof value === 'string' && /^-?\d+(?:\.\d+)?$/.test(value.trim()));
+    const parsed = valid ? Number(value) : NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const officialBalance = parseFiniteBalance(storedBalance);
+  const historicalBalance = history.length
+    ? parseFiniteBalance(history[history.length - 1].currentDebt) : null;
+  const currentTotalDebt = officialBalance ?? historicalBalance ?? NaN;
+  const hasConfirmedBalance = Number.isFinite(currentTotalDebt);
   const totalEl = document.getElementById('cDebtModalTotal');
   const balanceLabelEl = document.getElementById('cDebtModalBalanceLabel');
   if (balanceLabelEl) {
-    balanceLabelEl.innerText = currentTotalDebt > 0
-      ? 'Số tiền còn nợ'
-      : currentTotalDebt < 0
-        ? 'Số tiền còn dư'
-        : 'Đã hết nợ';
+    balanceLabelEl.innerText = !hasConfirmedBalance
+      ? 'Số dư chưa xác minh'
+      : currentTotalDebt > 0
+        ? 'Số tiền còn nợ'
+        : currentTotalDebt < 0
+          ? 'Số tiền còn dư'
+          : 'Đã hết nợ';
   }
-  totalEl.innerText = Math.abs(currentTotalDebt).toLocaleString('vi-VN');
+  totalEl.innerText = hasConfirmedBalance
+    ? Math.abs(currentTotalDebt).toLocaleString('vi-VN') : '—';
   totalEl.className = `text-[18px] font-extrabold ${currentTotalDebt > 0 ? 'text-danger' : currentTotalDebt < 0 ? 'text-success' : 'text-gray-700'}`;
 
   const displayHistory = visibleHistory.map(h => ({ ...h }));
@@ -289,7 +302,7 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
     const amountLabel = validAmount ? amountValue.toLocaleString('vi-VN') : '—';
     const isThu = validAmount && amountValue < 0;
     const sign = validAmount && !isThu ? '+' : '';
-    const runningDebt = Number(h.currentDebt || 0);
+    const runningDebt = Number(h.currentDebt);
     // An unparseable server balance is not evidence that the debt is paid.
     const runningBalanceText = !Number.isFinite(runningDebt)
       ? 'Số dư chưa xác minh'

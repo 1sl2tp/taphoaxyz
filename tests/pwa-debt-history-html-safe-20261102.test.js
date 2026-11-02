@@ -21,13 +21,13 @@ const escapeStart=esc.indexOf('function escapeProductEditorValue(value)');
 const escapeEnd=esc.indexOf('document.addEventListener',escapeStart);
 assert.ok(start>=0&&end>start&&escapeStart>=0&&escapeEnd>escapeStart);
 const htmlEscape=vm.runInNewContext('('+esc.slice(escapeStart,escapeEnd).trim()+')');
-function fixture(entry){
+function fixture(entry,storedBalance=100){
  const ids=['cDebtModalName','cDebtModalTotal','cDebtModalBalanceLabel',
   'cDebtModalHistoryList','customerDebtModalWrapper','customerDebtBottomSheet'];
  const el=Object.fromEntries(ids.map(id=>[id,{innerText:'',innerHTML:'',className:'',scrollTop:0,dataset:{},
   classList:{remove(){},add(){}}}]));
  const ctx={
-  window:{customerDebtHistoryData:{sam:[entry]},customerDebtCurrentBalanceData:{sam:100}},
+  window:{customerDebtHistoryData:{sam:[entry]},customerDebtCurrentBalanceData:{sam:storedBalance}},
   appData:{khachhang:[['id','name'],['sam','C Sâm']]},
   document:{getElementById:id=>el[id]},
   hasPermission:()=>true,denyPermission(){throw Error('denied')},
@@ -79,13 +79,16 @@ test('numeric-string amounts keep safe sign and Vietnamese thousands formatting'
 test('an invalid running balance must not falsely claim the debt is settled',()=>{
  for(const bad of ['not a number', 'Infinity', 'NaN']){
   const out=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
-   soTien:-975,currentDebt:bad});
+   soTien:-975,currentDebt:bad},bad);
   assert.match(out,/Số dư chưa xác minh/);
   assert.doesNotMatch(out,/Đã hết nợ/);
  }
  const clear=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
   soTien:-975,currentDebt:0});
  assert.match(clear,/Đã hết nợ/,'verified zero remains settled');
+ const fallback=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
+  soTien:-975,currentDebt:45},'invalid-latest-snapshot');
+ assert.match(fallback,/Nợ 45/,'verified ledger balance stays usable if latest snapshot is invalid');
 });
 test('only original source escapes and PWA cache query is bumped',()=>{
  assert.match(source,/escapeProductEditorValue\(h\.loaiGd\)/);
