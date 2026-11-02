@@ -364,12 +364,26 @@
             renderCartFooterActions();
         }
 
+        /* SPEC-TAPHOA-CART-TRANSITION-20261102
+           One modal, one effective transition. Cancel stale delayed visibility
+           writes before the next user intent; never mutate order/cart state
+           just to reconcile the animation. */
+        let cartOpenTimer = null;
+        let cartCloseTimer = null;
         function openCartMobile() {
             if(window.innerWidth >= 768 && document.body.classList.contains('pc-mode')) return;
+            if (cartCloseTimer !== null) {
+                clearTimeout(cartCloseTimer);
+                cartCloseTimer = null;
+            }
             document.getElementById('cartModalWrapper').classList.remove('pointer-events-none', 'opacity-0');
             // Only geometry, no data load. Useful after the sheet becomes visible.
             requestAnimationFrame(syncCartHeaderScrollbar);
-            setTimeout(() => document.getElementById('cartBottomSheet').classList.remove('translate-y-full'), 10);
+            if (cartOpenTimer !== null) clearTimeout(cartOpenTimer);
+            cartOpenTimer = setTimeout(() => {
+                cartOpenTimer = null;
+                document.getElementById('cartBottomSheet').classList.remove('translate-y-full');
+            }, 10);
         }
         function closeCartMobile() {
             // Khi đang sửa trên mobile, nút X chỉ đóng sheet Giỏ để người dùng sửa sản phẩm ở Bán hàng.
@@ -400,8 +414,16 @@
             }
 
             if(window.innerWidth >= 768 && document.body.classList.contains('pc-mode')) return;
+            if (cartOpenTimer !== null) {
+                clearTimeout(cartOpenTimer);
+                cartOpenTimer = null;
+            }
             document.getElementById('cartBottomSheet').classList.add('translate-y-full');
-            setTimeout(() => document.getElementById('cartModalWrapper').classList.add('pointer-events-none', 'opacity-0'), 300);
+            if (cartCloseTimer !== null) clearTimeout(cartCloseTimer);
+            cartCloseTimer = setTimeout(() => {
+                cartCloseTimer = null;
+                document.getElementById('cartModalWrapper').classList.add('pointer-events-none', 'opacity-0');
+            }, 300);
         }
 
         function openCustomerModal(context = 'sale') {
