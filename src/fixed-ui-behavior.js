@@ -321,9 +321,13 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
   if(preserveScroll){historyList.scrollTop=previousScroll;return true;}
   historyList.scrollTop=0;
 
-  document.getElementById('customerDebtModalWrapper').classList.remove('hidden');
+  const wrapper=document.getElementById('customerDebtModalWrapper');
+  const transition=nextCustomerDebtModalTransition(wrapper);
+  wrapper.classList.remove('hidden');
   setTimeout(() => {
-    document.getElementById('customerDebtModalWrapper').classList.remove('opacity-0', 'pointer-events-none');
+    if(wrapper.dataset.debtTransitionSeq!==transition||
+       String(activeDebtCustomerId)!==String(maKh))return;
+    wrapper.classList.remove('opacity-0', 'pointer-events-none');
     document.getElementById('customerDebtBottomSheet').classList.remove('translate-y-full');
   }, 10);
 };

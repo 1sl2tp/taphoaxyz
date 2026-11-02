@@ -1,3 +1,10 @@
+        // SPEC-DEBT-MODAL-TRANSITION-RACE-20261102: one epoch for the
+        // legacy opener, canonical override, and delayed closing stages.
+        function nextCustomerDebtModalTransition(wrapper) {
+            const seq=String((Number(wrapper?.dataset.debtTransitionSeq)||0)+1);
+            if(wrapper)wrapper.dataset.debtTransitionSeq=seq;
+            return seq;
+        }
         function openCustomerDebtModal(maKh) {
             if (!hasPermission('canViewDebt')) return denyPermission('Công nợ chỉ dành cho Owner.');
             activeDebtCustomerId = maKh;
@@ -38,9 +45,13 @@
             if(history.length === 0) html = '<p class="text-center text-gray-400 py-6 text-xs">Chưa có lịch sử giao dịch</p>';
             document.getElementById('cDebtModalHistoryList').innerHTML = html;
 
-            document.getElementById('customerDebtModalWrapper').classList.remove('hidden');
+            const wrapper=document.getElementById('customerDebtModalWrapper');
+            const transition=nextCustomerDebtModalTransition(wrapper);
+            wrapper.classList.remove('hidden');
             setTimeout(() => {
-                document.getElementById('customerDebtModalWrapper').classList.remove('opacity-0', 'pointer-events-none');
+                if(wrapper.dataset.debtTransitionSeq!==transition||
+                   String(activeDebtCustomerId)!==String(maKh))return;
+                wrapper.classList.remove('opacity-0', 'pointer-events-none');
                 document.getElementById('customerDebtBottomSheet').classList.remove('translate-y-full');
             }, 10);
         }
@@ -56,10 +67,16 @@
 
         function closeCustomerDebtModal() {
             activeDebtCustomerId = null;
+            const wrapper=document.getElementById('customerDebtModalWrapper');
+            const transition=nextCustomerDebtModalTransition(wrapper);
             document.getElementById('customerDebtBottomSheet').classList.add('translate-y-full');
             setTimeout(() => {
-                document.getElementById('customerDebtModalWrapper').classList.add('pointer-events-none', 'opacity-0');
-                setTimeout(() => document.getElementById('customerDebtModalWrapper').classList.add('hidden'), 300);
+                if(wrapper.dataset.debtTransitionSeq!==transition)return;
+                wrapper.classList.add('pointer-events-none', 'opacity-0');
+                setTimeout(() => {
+                    if(wrapper.dataset.debtTransitionSeq!==transition)return;
+                    wrapper.classList.add('hidden');
+                }, 300);
             }, 300);
         }
 
