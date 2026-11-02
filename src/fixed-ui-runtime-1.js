@@ -96,7 +96,14 @@
                 restoreStatusBarIdle();
             }, type === 'success' ? 3000 : 6000);
         }
+        /* SPEC-TAPHOA-LOADING-TRANSITION-20261102: a previous fade-out
+           cannot hide the overlay of a newly started operation. */
+        let loadingOverlayHideTimer = null;
         function showLoading(msg = "Đang xử lý...") {
+            if (loadingOverlayHideTimer !== null) {
+                clearTimeout(loadingOverlayHideTimer);
+                loadingOverlayHideTimer = null;
+            }
             statusLoading = true;
             const overlay = document.getElementById('loadingOverlay');
             const text = document.getElementById('loadingText');
@@ -117,9 +124,16 @@
         function hideLoading() {
             statusLoading = false;
             const overlay = document.getElementById('loadingOverlay');
+            if (loadingOverlayHideTimer !== null) {
+                clearTimeout(loadingOverlayHideTimer);
+                loadingOverlayHideTimer = null;
+            }
             if (overlay) {
                 overlay.classList.add('opacity-0');
-                setTimeout(() => overlay.classList.add('hidden'), 300);
+                loadingOverlayHideTimer = setTimeout(() => {
+                    loadingOverlayHideTimer = null;
+                    if (!statusLoading) overlay.classList.add('hidden');
+                }, 300);
             }
             restoreStatusBarIdle();
         }
