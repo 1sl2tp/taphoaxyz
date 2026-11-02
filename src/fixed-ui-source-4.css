@@ -116,11 +116,13 @@ body[data-resolved-mode="mobile"] input.product-editor-input:focus{
   font-size:16px !important;
 }
 
-/* SPEC-TAPHOA-MOBILE-DEBT-MONEY-FOCUS-20261102:
-   The quick debt amount is a 12px text-xs input in the source markup.
-   Keep it at >=16px on mobile Safari so focusing it cannot zoom the
-   surrounding PWA, without changing currency parsing or receipt actions. */
-body[data-resolved-mode="mobile"] #quickDebtAmount{
+/* SPEC-TAPHOA-MOBILE-CUSTOMER-INPUT-FOCUS-20261102:
+   The picker auto-focuses its 13px search input, and its new-customer
+   form also uses 13px. Keep these two picker inputs at Safari-safe 16px
+   on mobile without changing modal geometry, filtering or customer data.
+   Debt money fields already have their own owner in fixed-ui-debt-popup.css. */
+body[data-resolved-mode="mobile"] #customerSearchInput,
+body[data-resolved-mode="mobile"] #newCustomerName{
   font-size:16px !important;
   min-height:44px;
 }
