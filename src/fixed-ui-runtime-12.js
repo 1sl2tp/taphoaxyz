@@ -7,9 +7,9 @@
         }
         function openCustomerDebtModal(maKh) {
             if (!hasPermission('canViewDebt')) return denyPermission('Công nợ chỉ dành cho Owner.');
-            activeDebtCustomerId = maKh;
             let kh = appData.khachhang.slice(1).find(r => r[0] == maKh);
             if(!kh) return;
+            activeDebtCustomerId = maKh;
             let tenKh = kh[1];
             let history = (window.customerDebtHistoryData && window.customerDebtHistoryData[maKh]) ? window.customerDebtHistoryData[maKh] : [];
 

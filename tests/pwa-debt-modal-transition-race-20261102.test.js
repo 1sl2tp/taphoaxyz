@@ -50,6 +50,15 @@ test('reopen cancels a pending second-stage hide timer',()=>{
  assert(!x.nodes.customerDebtModalWrapper.classList.contains('hidden'));
  assert(!x.nodes.customerDebtModalWrapper.classList.contains('opacity-0'));
 });
+test('unknown customer cannot replace the valid active modal owner or queue a timer',()=>{
+ const x=setup();x.ctx.openCustomerDebtModal('sam');x.run(10);
+ const epoch=x.nodes.customerDebtModalWrapper.dataset.debtTransitionSeq;
+ x.ctx.openCustomerDebtModal('missing-customer');
+ assert.equal(x.ctx.activeDebtCustomerId,'sam');
+ assert.equal(x.nodes.customerDebtModalWrapper.dataset.debtTransitionSeq,epoch);
+ assert.equal(x.tasks.length,0);
+ assert(!x.nodes.customerDebtModalWrapper.classList.contains('hidden'));
+});
 test('both source owners and PWA cache version share the transition epoch',()=>{
  assert(r.includes('function nextCustomerDebtModalTransition(wrapper)'));
  assert(b.includes('nextCustomerDebtModalTransition(wrapper)'));

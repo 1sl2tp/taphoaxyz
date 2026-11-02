@@ -237,9 +237,9 @@ renderCongNo = function() {
 /* Đơn đã hoàn vẫn giữ trong data/audit nhưng ẩn cả dòng giao và dòng hoàn khỏi lịch sử nhìn thấy. */
 openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
   if (!hasPermission('canViewDebt')) return denyPermission('Tài khoản này không được xem Công nợ.');
-  activeDebtCustomerId = maKh;
   const kh = appData.khachhang.slice(1).find(r => String(r[0]) === String(maKh));
   if (!kh) return;
+  activeDebtCustomerId = maKh;
   const tenKh = kh[1];
   const history = (window.customerDebtHistoryData && window.customerDebtHistoryData[maKh]) ? window.customerDebtHistoryData[maKh] : [];
   const reversedBackendOrderIds = new Set(
