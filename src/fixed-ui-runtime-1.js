@@ -1,15 +1,28 @@
 
+        /* SPEC-TAPHOA-PWA-BUTTON-HITTEST-20261102
+           Prevent double submission in capture without removing hit testing.
+           pointer-events:none lets the next tap fall through to a different
+           control under a dialog; forcing pointerEvents=auto also overrides
+           intentionally disabled controls. Rapid quantity/navigation actions
+           already opt out through allow-fast-click. */
         document.addEventListener('click', function(e) {
-            if (document.activeElement && document.activeElement.tagName === 'BUTTON') { document.activeElement.blur(); }
-            let el = e.target.closest('button') || e.target.closest('[onclick]');
-            if (!el || el.tagName.toLowerCase() === 'input' || el.classList.contains('allow-fast-click')) return;
-            if (el.dataset.isLocked === "true") { e.preventDefault(); e.stopPropagation(); return; }
+            const target=e.target;
+            const el=target?.closest?.('button') || target?.closest?.('[onclick]');
+            if (!el || el.tagName.toLowerCase() === 'input' ||
+                el.classList.contains('allow-fast-click')) return;
+            if (el.dataset.isLocked === "true") {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
 
             el.dataset.isLocked = "true";
-            let oldOpacity = el.style.opacity;
-            el.style.opacity = "0.6"; el.style.pointerEvents = "none";
-
-            setTimeout(() => { el.dataset.isLocked = "false"; el.style.opacity = oldOpacity; el.style.pointerEvents = "auto"; }, 1500); 
+            const oldOpacity=el.style.opacity;
+            el.style.opacity="0.6";
+            setTimeout(() => {
+                el.dataset.isLocked="false";
+                if (el.style.opacity === "0.6") el.style.opacity=oldOpacity;
+            }, 1500);
         }, true); 
 
         let confirmActionCallback = null;
