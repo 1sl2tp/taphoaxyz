@@ -10,8 +10,8 @@ const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 test('quick debt amount remains a real numeric text field and is not rewritten',()=>{
   assert.ok(markup.includes('id=\\"quickDebtAmount\\"'));
   assert.ok(markup.includes('inputmode=\\"numeric\\"'));
-  assert.ok(markup.includes('onclick=\\"submitQuickDebt(\\\'thu\\\')\\"'));
-  assert.ok(markup.includes('onclick=\\"submitQuickDebt(\\\'no\\\')\\"'));
+  assert.ok(markup.includes("submitQuickDebt('thu')"));
+  assert.ok(markup.includes("submitQuickDebt('no')"));
 });
 
 test('mobile debt input is Safari-safe without global font-size or browser zoom locks',()=>{
