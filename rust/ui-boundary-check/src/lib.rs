@@ -38,6 +38,28 @@ pub fn canonical_order_display_id(raw: &str) -> Option<String> {
 mod tests {
     use super::*;
 
+
+    /// The same scenarios are executed against the current JavaScript
+    /// source via tests/rust-ui-boundary-parity-20261103.test.js.
+    #[test]
+    fn shared_production_js_parity_fixtures() {
+        for line in include_str!("../fixtures/ui_cases.tsv").lines() {
+            if line.starts_with('#') || line.is_empty() { continue; }
+            let columns: Vec<&str> = line.split('|').collect();
+            assert_eq!(columns.len(), 3, "invalid fixture columns: {line}");
+            let kind = columns[0];
+            let input = columns[1];
+            let expected = columns[2];
+            let actual = match kind {
+                "escape" => escape_html_double_quoted(input),
+                "order" => canonical_order_display_id(input)
+                    .unwrap_or_else(|| "INVALID".to_string()),
+                _ => panic!("unknown fixture kind {kind}"),
+            };
+            assert_eq!(actual, expected, "{kind} input={input:?}");
+        }
+    }
+
     #[test]
     fn neutral_html_is_unmodified() {
         assert_eq!(escape_html_double_quoted("Thu tiền C Sâm 975.000"), "Thu tiền C Sâm 975.000");

@@ -25,3 +25,5 @@ jobs:
         run: cargo test --manifest-path rust/ui-boundary-check/Cargo.toml --offline
       - name: Check existing production JavaScript debt HTML contract
         run: node --test tests/pwa-debt-history-html-safe-20261102.test.js
+      - name: Shared Rust and canonical JavaScript HTML/ID fixture parity
+        run: node --test tests/rust-ui-boundary-parity-20261103.test.js

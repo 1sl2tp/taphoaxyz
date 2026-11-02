@@ -30,3 +30,15 @@ Only consider using this crate in production if we have a measured benefit,
 byte-for-byte differential fixtures against JS, a documented WASM/toolchain
 supply chain and fallback, full GitHub verification, and actual iPhone/PWA
 testing. No one-pass rewrite of the entire application is approved.
+
+## Rust / JavaScript parity gate, 2026-11-03
+
+The same 22 inputs are read by `src/lib.rs` and the Node test
+`tests/rust-ui-boundary-parity-20261103.test.js`. The Node test evaluates
+the **current production JS escaping function and actual order-code regex**,
+not a second reimplementation. Edge inputs include HTML attributes, markup,
+Unicode, apostrophes, false order codes, max-length and full-width digits.
+
+This gate detects drift only. It is **not** evidence that Rust is now used in
+production or makes the deployed browser faster; the existing JS owner,
+customer data and build remain unchanged.

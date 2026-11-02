@@ -1,0 +1,23 @@
+#kind|input|expected
+escape|plain|plain
+escape|Thu tiền C Sâm 975.000|Thu tiền C Sâm 975.000
+escape|<script>|&lt;script&gt;
+escape|a&b|a&amp;b
+escape|" autofocus="true|&quot; autofocus=&quot;true
+escape|It's OK|It's OK
+escape|<img src=x onerror="alert(1)">|&lt;img src=x onerror=&quot;alert(1)&quot;&gt;
+escape|&lt;|&amp;lt;
+escape|😊|😊
+escape|<svg onload="x"></svg>|&lt;svg onload=&quot;x&quot;&gt;&lt;/svg&gt;
+order|DG156|DG156
+order|dt42|DT42
+order|Dg000001|DG000001
+order|DG123456789012|DG123456789012
+order|DG|INVALID
+order|DX1|INVALID
+order| DG1|INVALID
+order|DG1' onclick='x|INVALID
+order|DT１２|INVALID
+order|DG1234567890123|INVALID
+order|DG-1|INVALID
+order||INVALID
