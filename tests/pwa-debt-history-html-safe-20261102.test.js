@@ -76,10 +76,22 @@ test('numeric-string amounts keep safe sign and Vietnamese thousands formatting'
   soTien:null,currentDebt:100});
  assert.match(missing,/>—<\/p>/);
 });
+test('an invalid running balance must not falsely claim the debt is settled',()=>{
+ for(const bad of ['not a number', 'Infinity', 'NaN']){
+  const out=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
+   soTien:-975,currentDebt:bad});
+  assert.match(out,/Số dư chưa xác minh/);
+  assert.doesNotMatch(out,/Đã hết nợ/);
+ }
+ const clear=fixture({loaiGd:'Thu tiền',time:'03/11/2026 10:00',
+  soTien:-975,currentDebt:0});
+ assert.match(clear,/Đã hết nợ/,'verified zero remains settled');
+});
 test('only original source escapes and PWA cache query is bumped',()=>{
  assert.match(source,/escapeProductEditorValue\(h\.loaiGd\)/);
  assert.match(source,/escapeProductEditorValue\(h\.time\)/);
  assert.match(source,/\^D\[GT\]\[0-9\]\{1,12\}\$/);
  assert.match(index,/fixed-ui-behavior\.js[^\n]*debt-html-safe=20261102/);
  assert.match(index,/fixed-ui-behavior\.js[^\n]*debt-amount-safe=20261103/);
+ assert.match(index,/fixed-ui-behavior\.js[^\n]*debt-balance-finite=20261103/);
 });

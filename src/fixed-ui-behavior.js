@@ -290,11 +290,14 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
     const isThu = validAmount && amountValue < 0;
     const sign = validAmount && !isThu ? '+' : '';
     const runningDebt = Number(h.currentDebt || 0);
-    const runningBalanceText = runningDebt > 0
-      ? `Nợ ${Math.abs(runningDebt).toLocaleString('vi-VN')}`
-      : runningDebt < 0
-        ? `Dư ${Math.abs(runningDebt).toLocaleString('vi-VN')}`
-        : 'Đã hết nợ';
+    // An unparseable server balance is not evidence that the debt is paid.
+    const runningBalanceText = !Number.isFinite(runningDebt)
+      ? 'Số dư chưa xác minh'
+      : runningDebt > 0
+        ? `Nợ ${Math.abs(runningDebt).toLocaleString('vi-VN')}`
+        : runningDebt < 0
+          ? `Dư ${Math.abs(runningDebt).toLocaleString('vi-VN')}`
+          : 'Đã hết nợ';
     const badgeColor = isThu ? 'text-success bg-green-50' : 'text-danger bg-red-50';
     const iconClass = isThu ? 'ph-fill ph-arrow-down-left' : 'ph-fill ph-push-pin';
     // SPEC-TAPHOA-DEBT-HISTORY-HTML-SAFE-20261102: server/order fields are
