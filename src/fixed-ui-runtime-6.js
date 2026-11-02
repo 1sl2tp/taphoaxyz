@@ -680,12 +680,14 @@
                 const active = String(kh[0]) === String(currentId);
                 const customerCode = kh[2] || kh[0];
                 return `
-                    <button type="button" onclick="selectCustomer('${kh[0]}', '${kh[1]}')" class="allow-fast-click w-full p-3 rounded-xl border ${active ? 'border-primary bg-primaryLight' : 'border-gray-100 bg-white hover:bg-gray-50'} cursor-pointer flex justify-between items-center transition text-left">
+                    <!-- SPEC-TAPHOA-CUSTOMER-PICKER-SAFE-NAME-20261102:
+                         Customer names/IDs are data, never inline JavaScript. -->
+                    <button type="button" data-customer-select-id="${escapeProductEditorValue(kh[0])}" data-customer-select-name="${escapeProductEditorValue(kh[1])}" onclick="selectCustomer(this.dataset.customerSelectId, this.dataset.customerSelectName)" class="allow-fast-click w-full p-3 rounded-xl border ${active ? 'border-primary bg-primaryLight' : 'border-gray-100 bg-white hover:bg-gray-50'} cursor-pointer flex justify-between items-center transition text-left">
                         <span class="pointer-events-none min-w-0 flex items-center gap-3 flex-1">
                             ${customerAvatarMarkup(kh)}
                             <span class="min-w-0 flex-1">
-                                <span class="block font-bold text-sm text-gray-900 truncate">${kh[1]}</span>
-                                <span class="block text-xs text-gray-400 mt-0.5 truncate">Mã: ${customerCode}</span>
+                                <span class="block font-bold text-sm text-gray-900 truncate">${escapeProductEditorValue(kh[1])}</span>
+                                <span class="block text-xs text-gray-400 mt-0.5 truncate">Mã: ${escapeProductEditorValue(customerCode)}</span>
                             </span>
                         </span>
                         ${active ? '<i class="ph-fill ph-check-circle text-primary text-[16px] pointer-events-none ml-2"></i>' : ''}
