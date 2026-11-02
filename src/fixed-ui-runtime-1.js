@@ -33,7 +33,16 @@
             let modal = document.getElementById('confirmModal'); modal.classList.remove('opacity-0', 'pointer-events-none'); document.getElementById('confirmBox').classList.remove('scale-95');
         }
         function closeConfirmModal() { document.getElementById('confirmModal').classList.add('opacity-0', 'pointer-events-none'); document.getElementById('confirmBox').classList.add('scale-95'); confirmActionCallback = null; }
-        document.getElementById('confirmBtn').addEventListener('click', () => { if (confirmActionCallback) confirmActionCallback(); closeConfirmModal(); });
+        /* SPEC-TAPHOA-CONFIRM-ONCE-20261102: consume confirmation before
+           invoking its action. A fast second tap must not repeat a mutation;
+           callbacks can safely show another confirmation without it being
+           closed by the first click handler. */
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            const action=confirmActionCallback;
+            if (typeof action !== 'function') return;
+            closeConfirmModal();
+            action();
+        });
 
         function showAlertPopup(title, desc) {
             document.getElementById('alertTitle').innerText = title; document.getElementById('alertDesc').innerText = desc;
