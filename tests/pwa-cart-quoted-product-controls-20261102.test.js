@@ -16,7 +16,7 @@ test('cart +/- use escaped data attributes, not injected JS string arguments',()
     assert.ok(!source.includes("onclick=\"updateCart('${id}', '${item.name}'"),'no raw inline JS');
   }
   assert.equal(source.split('data-cart-product-code="${escapeProductEditorValue(id)}"').length-1,2);
-  assert.equal(source.split('data-cart-product-name="${escapeProductEditorValue(item.name)}"').length-1,2);
+  assert.equal(source.split('data-cart-product-name="${escapeProductEditorValue(item.name)}"').length-1,3,'two quantity buttons plus the existing note button');
   assert.ok(source.includes('data-qty-id="${escapeProductEditorValue(id)}"'));
   assert.ok(source.includes('data-qty-price="${Number(item.price)}"'));
   assert.ok(html.includes('safe-cart-quotes=20261102'),'fresh script query avoids stale handlers');
