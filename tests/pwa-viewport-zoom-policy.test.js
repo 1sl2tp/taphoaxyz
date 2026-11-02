@@ -5,10 +5,11 @@ import vm from 'node:vm';
 
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../src/fixed-ui-source-1.css',import.meta.url),'utf8');
-const script=html.match(/<script id="taphoa-pwa-viewport-policy">([\\s\\S]*?)<\\/script>/)?.[1];
+const script=html.split('<script id="taphoa-pwa-viewport-policy">')[1]?.split('</script>')[0];
 assert.ok(script,'P0 policy must run synchronously in the HTML head');
 assert.ok(html.indexOf('taphoa-pwa-viewport-policy')<html.indexOf('fixed-pwa-auto-update.js'));
-assert.match(css,/html\\[data-taphoa-standalone="true"\\] #appContainer\\s*\\{\\s*touch-action:pan-x pan-y;/);
+assert.ok(css.includes('html[data-taphoa-standalone="true"] #appContainer{'));
+assert.ok(css.includes('touch-action:pan-x pan-y;'));
 
 function runPolicy({displayMode=false,iosStandalone=false}={}){
   const handlers=new Map();
