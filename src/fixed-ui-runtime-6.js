@@ -429,6 +429,11 @@
             }, 300);
         }
 
+        /* SPEC-TAPHOA-CUSTOMER-PICKER-FOCUS-20261102:
+           Only the most recently opened visible picker/form may focus a
+           field. Closing a dialog must not re-open iOS keyboard from a
+           previously queued animation frame. */
+        let customerPickerFocusToken = 0;
         function openCustomerModal(context = 'sale') {
             if (currentAuthRole === 'user' && context === 'sale') {
                 syncUserSelfCustomer();
@@ -437,6 +442,7 @@
             }
             customerSelectionContext = context || 'sale';
             closeNewCustomerForm({ focusSearch: false });
+            const focusToken=++customerPickerFocusToken;
             const newButton = document.getElementById('newCustomerButton');
             if (newButton) newButton.classList.toggle('hidden', !(currentAuthRole === 'admin' && customerSelectionContext === 'sale'));
 
@@ -453,6 +459,11 @@
                     search.focus();
                 }
                 requestAnimationFrame(() => {
+                    const modal=document.getElementById('customerModal');
+                    const form=document.getElementById('newCustomerForm');
+                    if (focusToken !== customerPickerFocusToken ||
+                        modal?.classList.contains('opacity-0') ||
+                        !form?.classList.contains('hidden')) return;
                     if (document.activeElement !== search) {
                         try {
                             search.focus({ preventScroll: true });
@@ -466,7 +477,10 @@
 
         function closeCustomerModal() {
             closeNewCustomerForm({ focusSearch: false });
-            document.getElementById('customerModal').classList.add('opacity-0', 'pointer-events-none');
+            ++customerPickerFocusToken;
+            const modal=document.getElementById('customerModal');
+            if (modal?.contains(document.activeElement)) document.activeElement?.blur?.();
+            modal?.classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('customerBox').classList.add('scale-95');
         }
 
@@ -486,7 +500,11 @@
             setNewCustomerError('');
             form.classList.remove('hidden');
             input.value = String(search?.value || '').trim();
+            const focusToken=++customerPickerFocusToken;
             requestAnimationFrame(() => {
+                if (focusToken!==customerPickerFocusToken ||
+                    form.classList.contains('hidden') ||
+                    document.getElementById('customerModal')?.classList.contains('opacity-0')) return;
                 try {
                     input.focus({ preventScroll: true });
                     input.select();
@@ -497,6 +515,7 @@
         }
 
         function closeNewCustomerForm({ focusSearch = true } = {}) {
+            const focusToken=++customerPickerFocusToken;
             const form = document.getElementById('newCustomerForm');
             const input = document.getElementById('newCustomerName');
             const saveButton = document.getElementById('newCustomerSaveButton');
@@ -509,7 +528,12 @@
             setNewCustomerError('');
             if (focusSearch) {
                 const search = document.getElementById('customerSearchInput');
-                if (search) requestAnimationFrame(() => search.focus({ preventScroll: true }));
+                if (search) requestAnimationFrame(() => {
+                    const modal=document.getElementById('customerModal');
+                    if (focusToken!==customerPickerFocusToken ||
+                        modal?.classList.contains('opacity-0') || !search.isConnected) return;
+                    search.focus({ preventScroll: true });
+                });
             }
         }
 
