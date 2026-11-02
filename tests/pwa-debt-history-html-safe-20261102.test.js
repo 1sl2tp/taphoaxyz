@@ -11,6 +11,10 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const source=read('src/fixed-ui-behavior.js');
 const index=read('index.html');
 const esc=read('src/fixed-ui-runtime-3.js');
+const debtModal=read('src/fixed-ui-runtime-12.js');
+const transitionStart=debtModal.indexOf('function nextCustomerDebtModalTransition(');
+const transitionEnd=debtModal.indexOf('function openCustomerDebtModal(',transitionStart);
+assert.ok(transitionStart>=0&&transitionEnd>transitionStart);
 const start=source.indexOf('openCustomerDebtModal = function(maKh,');
 const end=source.indexOf('// Page loader renders cached server data',start);
 const escapeStart=esc.indexOf('function escapeProductEditorValue(value)');
@@ -20,7 +24,7 @@ const htmlEscape=vm.runInNewContext('('+esc.slice(escapeStart,escapeEnd).trim()+
 function fixture(entry){
  const ids=['cDebtModalName','cDebtModalTotal','cDebtModalBalanceLabel',
   'cDebtModalHistoryList','customerDebtModalWrapper','customerDebtBottomSheet'];
- const el=Object.fromEntries(ids.map(id=>[id,{innerText:'',innerHTML:'',className:'',scrollTop:0,
+ const el=Object.fromEntries(ids.map(id=>[id,{innerText:'',innerHTML:'',className:'',scrollTop:0,dataset:{},
   classList:{remove(){},add(){}}}]));
  const ctx={
   window:{customerDebtHistoryData:{sam:[entry]},customerDebtCurrentBalanceData:{sam:100}},
@@ -31,6 +35,7 @@ function fixture(entry){
   escapeProductEditorValue:htmlEscape,setTimeout(){},
  };
  vm.createContext(ctx);
+ vm.runInContext(debtModal.slice(transitionStart,transitionEnd),ctx,{timeout:1000});
  vm.runInContext(source.slice(start,end),ctx,{timeout:1000});
  assert.equal(ctx.openCustomerDebtModal('sam'),undefined);
  assert.equal(ctx.activeDebtCustomerId,'sam');
