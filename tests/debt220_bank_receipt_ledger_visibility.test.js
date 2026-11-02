@@ -10,7 +10,7 @@ test('debt detail retains backend ledger ID as visible proof of bank collection'
   assert.match(bridge,/text\(first\(tx,\['id','maGD','transaction_id'\]/);
   assert.match(debt,/ledgerId:\s*\/\^\\d\+\$\/.test\(String\(row\?\.\[0\]\|\|''\)\)/);
   assert.match(debt,/Sổ #\$\{ledgerId\}/);
-  assert.match(debt,/Ghi sổ: \$\{h\.time\}/);
+  assert.match(debt,/Ghi sổ: \$\{escapeProductEditorValue\(h\.time\)\}/);
   assert.match(debt,/const isThu = h\.soTien < 0/);
   assert.match(debt,/h\.soTien\.toLocaleString\('vi-VN'\)/);
 });

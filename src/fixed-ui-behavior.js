@@ -289,7 +289,10 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
         : 'Đã hết nợ';
     const badgeColor = isThu ? 'text-success bg-green-50' : 'text-danger bg-red-50';
     const iconClass = isThu ? 'ph-fill ph-arrow-down-left' : 'ph-fill ph-push-pin';
-    const orderId = String(h.orderId || (String(h.loaiGd || '').match(/DG\d+|DT\d+/)?.[0] || ''));
+    // SPEC-TAPHOA-DEBT-HISTORY-HTML-SAFE-20261102: server/order fields are
+    // untrusted. Inline order navigation accepts only canonical display codes.
+    const rawOrderId = String(h.orderId || (String(h.loaiGd || '').match(/DG\d+|DT\d+/)?.[0] || ''));
+    const orderId = /^D[GT][0-9]{1,12}$/i.test(rawOrderId) ? rawOrderId.toUpperCase() : '';
     const clickAttr = orderId ? `onclick="clickOrderFromDebt('${orderId}')"` : '';
     const cursorStyle = orderId ? 'cursor-pointer hover:bg-gray-50' : '';
     const billRef = String(h.billReference || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
@@ -298,10 +301,10 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
     html += `
     <div ${clickAttr} class="flex justify-between items-center py-2.5 px-2 rounded-xl transition ${cursorStyle} border-b border-gray-100 text-xs">
       <div>
-        <p class="font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> ${h.loaiGd} ${orderId ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
+        <p class="font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> ${escapeProductEditorValue(h.loaiGd)} ${orderId ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
         ${billRef ? `<p class="text-[10px] text-gray-500 mt-0.5 break-all">Mã GD: ${billRef}</p>` : ''}
         ${ledgerId ? `<p class="text-[10px] text-gray-500 mt-0.5">Sổ #${ledgerId}</p>` : ''}
-        <p class="text-[10px] text-gray-400 mt-0.5">Ghi sổ: ${h.time}</p>
+        <p class="text-[10px] text-gray-400 mt-0.5">Ghi sổ: ${escapeProductEditorValue(h.time)}</p>
       </div>
       <div class="text-right">
         <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${h.soTien.toLocaleString('vi-VN')}</p>
