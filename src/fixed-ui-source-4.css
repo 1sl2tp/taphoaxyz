@@ -115,6 +115,15 @@ body[data-resolved-mode="mobile"] .product-editor-source-btn{
 body[data-resolved-mode="mobile"] input.product-editor-input:focus{
   font-size:16px !important;
 }
+
+/* SPEC-TAPHOA-MOBILE-DEBT-MONEY-FOCUS-20261102:
+   The quick debt amount is a 12px text-xs input in the source markup.
+   Keep it at >=16px on mobile Safari so focusing it cannot zoom the
+   surrounding PWA, without changing currency parsing or receipt actions. */
+body[data-resolved-mode="mobile"] #quickDebtAmount{
+  font-size:16px !important;
+  min-height:44px;
+}
 body[data-resolved-mode="mobile"] .product-editor-name{
   height:30px !important;
   font-size:13px !important;
