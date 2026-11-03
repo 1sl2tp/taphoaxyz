@@ -41,6 +41,11 @@ jobs:
       - name: Run all contracts
         run: npm test
 
+      - name: Rust UI boundary pilot offline and JavaScript parity
+        run: |
+          cargo test --offline --manifest-path rust/ui-boundary-check/Cargo.toml
+          node --test tests/rust-ui-boundary-parity-20261103.test.js
+
       - name: Build production
         id: build
         if: ${{ always() && steps.install.outcome == 'success' }}
