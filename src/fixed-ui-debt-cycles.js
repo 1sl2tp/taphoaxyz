@@ -45,6 +45,20 @@
       &&(role==='admin'||role==='user')
       &&typeof bridge?.orderCycles==='function';
   }
+  // SPEC-DEBT-PERIOD-VISUAL-20261104: payment tone tracks the real
+  // policy due date, NEVER the 7-day progress fill. Colors must be
+  // redundant with text, including overdue vs due today.
+  function paymentCycleTone(row,policy){
+    if(row?.isOpen!==true||!policy?.dueDay)return 'neutral';
+    if(policy.isDue===true)return numeric(policy.daysOverdue)>0?'danger':'warning';
+    const today=String(row.todayDay||'');
+    const due=String(policy.dueDay||'');
+    if(/^\d{4}-\d{2}-\d{2}$/.test(today)&&/^\d{4}-\d{2}-\d{2}$/.test(due)){
+      const remaining=(Date.parse(due+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000;
+      if(Number.isFinite(remaining)&&remaining<=1)return 'warning';
+    }
+    return 'success';
+  }
   // A PAYMENT cycle is one open debt period, not one D7 per order.
   // Reuse the exact private policy also used by server payment-due logic.
   function displayOrderCycles(row){
@@ -290,34 +304,54 @@
       holder.insertBefore(panel,history);
     }
     panel.replaceChildren();
+    panel.dataset.tone='neutral';
     const purchase=orderByCustomer.get(String(customerId));
     if(purchase){
       const orders=Array.isArray(purchase.orderCycles)?purchase.orderCycles:[];
       const policy=purchase.paymentPolicy;
       if(purchase.isOpen&&policy?.dueDay){
-        panel.appendChild(makeText('strong','debt-cycle-detail-title',
-          'Chu kỳ nợ '+numeric(policy.cycleNo)+' · '+numeric(purchase.orderCount)+' đơn nhập'));
+        const tone=paymentCycleTone(purchase,policy);
+        panel.dataset.tone=tone;
+        const late=numeric(policy.daysOverdue);
+        const reason=policy.dueReason==='stopped_buying'?'ngừng nhập đủ 3 ngày':'đến D7';
+        const status=late>0?'Quá hạn '+late+' ngày':
+          policy.isDue===true?'Đến hạn hôm nay':
+          tone==='warning'?'Sắp đến hạn':'Trong hạn';
+        const heading=document.createElement('div');
+        heading.className='debt-cycle-period-header';
+        heading.append(
+          makeText('strong','debt-cycle-detail-title',
+            'Chu kỳ nợ '+numeric(policy.cycleNo)+' · '+numeric(purchase.orderCount)+' đơn'),
+          makeText('span','debt-cycle-status-pill',status)
+        );
+        panel.appendChild(heading);
         const progress=document.createElement('progress');
         progress.className='debt-cycle-order-progress debt-cycle-period-progress';
         progress.max=7;
         progress.value=Math.max(1,Math.min(7,numeric(policy.durationDays)||1));
-        progress.setAttribute('aria-label','Tiến trình chu kỳ nợ ngày '+progress.value+' trên 7');
+        progress.dataset.tone=tone;
+        progress.setAttribute('aria-label','Ngày '+numeric(policy.durationDays)+
+          ' của chu kỳ 7 ngày · '+status);
         panel.appendChild(progress);
+        panel.appendChild(makeText('p','debt-cycle-period-due',
+          'Hạn tất toán '+dayLabel(policy.dueDay)+' · '+reason));
         panel.appendChild(makeText('p','debt-cycle-detail-metrics',
-          'Ngày '+numeric(policy.durationDays)+
-          ' của chu kỳ · D7 tối đa '+dayLabel(policy.sevenDueDay)));
-        const late=numeric(policy.daysOverdue);
-        const reason=policy.dueReason==='stopped_buying'?'ngừng nhập hàng 3 ngày':'đủ 7 ngày';
-        panel.appendChild(makeText('p','debt-cycle-detail-warning',
-          'Hạn tất toán toàn bộ: '+dayLabel(policy.dueDay)+
-          ' · '+reason+
-          (policy.isDue===true?(late>0?' · Quá hạn '+late+' ngày':' · Đến hạn hôm nay'):' · Chưa đến hạn')));
-        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
-          'Mua gần nhất '+dayLabel(policy.lastPurchaseDay)+
-          ' · '+numeric(policy.idleDays)+' ngày chưa nhập'+
+          (numeric(policy.durationDays)>7?'Đã qua D7':'Ngày '+numeric(policy.durationDays)+'/7')+
+          ' · Mua cuối '+dayLabel(policy.lastPurchaseDay)+
+          ' · '+numeric(policy.idleDays)+' ngày chưa nhập'));
+        // Policy explanation is available on demand rather than occupying
+        // six rows above the independently scrollable transaction list.
+        const policyDetails=document.createElement('details');
+        policyDetails.className='debt-cycle-policy-details';
+        policyDetails.appendChild(makeText('summary','debt-cycle-policy-summary',
+          'Xem cách tính hạn thanh toán'));
+        policyDetails.appendChild(makeText('p','debt-cycle-detail-explanation',
+          'Bắt đầu kỳ '+dayLabel(policy.startDay)+
+          ' · D7 tối đa '+dayLabel(policy.sevenDueDay)+
           ' · Mốc ngừng nhập '+dayLabel(policy.stopDueDay)));
-        panel.appendChild(makeText('p','debt-cycle-detail-explanation',
-          'Một chu kỳ tính từ lần mở nợ đến khi tất toán hết; mua thêm không kéo dài D7. Đạt hạn mức đã thỏa thuận cũng phải tất toán ngay.'));
+        policyDetails.appendChild(makeText('p','debt-cycle-detail-explanation',
+          'Hạn sớm nhất được giữ nguyên dù mua thêm. Phải tất toán toàn bộ khi ngừng nhập 3 ngày, đến D7 hoặc đạt hạn mức đã thỏa thuận.'));
+        panel.appendChild(policyDetails);
       }else if(purchase.isOpen){
         panel.appendChild(makeText('strong','debt-cycle-detail-title','Đang nợ · Chưa xác định hạn chính sách'));
         panel.appendChild(makeText('p','debt-cycle-detail-explanation',
