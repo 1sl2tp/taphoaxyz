@@ -34,6 +34,9 @@ function fixture({mode = 'account', role = 'admin', response = {ok: true, messag
       TAPHOA_IMAGE_SAVE: {savePng: (...args) => {saves.push(args); return 'download';}},
     },
     activeDebtCustomerId: customerId,
+    // A real openCustomerDebtModal always stamps a positive transition epoch.
+    document: {getElementById: id => id === 'customerDebtModalWrapper'
+      ? {dataset: {debtTransitionSeq: '3'}} : null},
     crypto: {randomUUID: () => requestId},
     showToast: (...args) => toasts.push(args),
     showAlertPopup: (...args) => alerts.push(args),
