@@ -88,6 +88,11 @@
             // SPEC-DEBT-PNG-RECIPIENT-EPOCH-20261104:
             // A→B→A and close/reopen are new modal epochs. Never upload an old
             // customer's screenshot to the previously sent recipient's message.
+            // A server-bound PNG must carry the modal epoch from the click.
+            // Treat missing/invalid epochs as unsafe, not as a disabled guard.
+            if(withDimensions && (expectedCustomerId===null ||
+                !/^[1-9][0-9]*$/.test(String(expectedTransitionSeq??''))))
+                throw new Error('Không xác định được phiên công nợ. Ảnh chưa được gửi.');
             const isSameDebtModal=()=>(
                 (expectedCustomerId===null ||
                  String(activeDebtCustomerId||'')===String(expectedCustomerId))
@@ -237,6 +242,9 @@
                     :null;
                 const eligible = bridge?.getAccessMode?.() === 'account'
                     && bridge?.getIdentity?.()?.role === 'admin'
+                    // The initial modal open always stamps a positive epoch.
+                    // Without it an A→B→A change could escape the PNG guard.
+                    && /^[1-9][0-9]*$/.test(String(modalEpoch??''))
                     && typeof bridge.manualShareDebt === 'function'
                     && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(customerId)
                     && typeof crypto !== 'undefined'
