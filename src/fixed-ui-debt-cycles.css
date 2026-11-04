@@ -134,3 +134,83 @@
 #customerDebtContentToShare .debt-cycle-order-progress::-moz-progress-bar{
   background:#16a34a;border-radius:999px
 }
+
+/* SPEC-DEBT-PERIOD-VISUAL-20261104
+   Compact the policy above the independently scrolling debt ledger.
+   Tone is based on the authoritative payment deadline (not progress fill).
+   Every tone also has text, so color is never the only indicator. */
+#customerDebtContentToShare .debt-cycle-detail{
+  padding:7px 12px 6px;
+}
+#customerDebtContentToShare .debt-cycle-period-header{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:4px 8px;min-width:0;
+}
+#customerDebtContentToShare .debt-cycle-status-pill{
+  display:inline-flex;align-items:center;border-radius:999px;
+  background:#dcfce7;color:#166534;padding:2px 7px;
+  font-size:10px;line-height:1.4;font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="warning"] .debt-cycle-status-pill{
+  background:#fef3c7;color:#92400e;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="danger"] .debt-cycle-status-pill{
+  background:#fee2e2;color:#b42318;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="neutral"] .debt-cycle-status-pill{
+  background:#e2e8f0;color:#475569;
+}
+#customerDebtContentToShare .debt-cycle-period-progress{
+  height:6px;margin:5px 0 3px;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="success"]::-webkit-progress-value{
+  background:#16a34a;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="warning"]::-webkit-progress-value{
+  background:#d97706;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="danger"]::-webkit-progress-value{
+  background:#dc2626;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="neutral"]::-webkit-progress-value{
+  background:#64748b;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="success"]::-moz-progress-bar{
+  background:#16a34a;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="warning"]::-moz-progress-bar{
+  background:#d97706;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="danger"]::-moz-progress-bar{
+  background:#dc2626;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="neutral"]::-moz-progress-bar{
+  background:#64748b;
+}
+#customerDebtContentToShare .debt-cycle-period-due{
+  margin:1px 0 0;font-size:11px;font-weight:700;
+  color:#166534;line-height:1.35;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="warning"] .debt-cycle-period-due{
+  color:#92400e;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="danger"] .debt-cycle-period-due{
+  color:#b42318;
+}
+#customerDebtContentToShare .debt-cycle-policy-details{margin-top:2px}
+#customerDebtContentToShare .debt-cycle-policy-summary{
+  cursor:pointer;color:#2563eb;font-size:11px;line-height:1.4;
+  min-height:32px;display:list-item;padding:7px 0 2px 2px;
+}
+#customerDebtContentToShare .debt-cycle-policy-details > .debt-cycle-detail-explanation{
+  margin:3px 0;
+}
+@media (max-width:767px){
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-detail{
+    padding:7px 11px 5px;
+  }
+  body:not(.pc-mode):not([data-force-pc="1"]) #customerDebtContentToShare .debt-cycle-period-progress{
+    margin:4px 0 3px;
+  }
+}
