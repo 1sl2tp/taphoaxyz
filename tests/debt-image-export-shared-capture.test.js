@@ -193,6 +193,10 @@ test('manual debt send is admin-only, bound to customer ID, and never mutates fi
  assert.match(bridgeCode,/manualShareOrder,manualShareDebt,reverseOrder/);
  assert.match(indexHtml,/fixed-production-bridge\.js\?v=[^"]*manual-debt=20261101/);
  assert.match(indexHtml,/fixed-ui-runtime-12\.js\?v=[^"]*linked-contact=20261101/);
+ // Both owners of a single manual debt send must share an updated query epoch.
+ // A new index must not load a stale cached text-only JS handler on mobile PWA.
+ assert.match(indexHtml,/fixed-production-bridge\.js\?v=[^"]*manual-debt-png=20261104/);
+ assert.match(indexHtml,/fixed-ui-runtime-12\.js\?v=[^"]*manual-debt-png=20261104/);
 });
 
 
