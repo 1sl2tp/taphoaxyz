@@ -168,7 +168,7 @@ SET request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
 -- Even a valid Admin ticket must not allow forged or absent Storage ownership.
 -- The Storage API normally assigns owner_id from JWT, but a direct DB caller
 -- must be denied rather than leaving a misleading, unattachable object.
-DO $
+DO $guard$
 BEGIN
   INSERT INTO storage.objects(bucket_id,name,owner_id,metadata)
   VALUES('v21-media',current_setting('test.png_key'),
@@ -176,15 +176,15 @@ BEGIN
     '{"mimetype":"image/png","size":321}');
   RAISE EXCEPTION 'Admin could insert with a forged Storage owner_id';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
-END $;
-DO $
+END $guard$;
+DO $guard$
 BEGIN
   INSERT INTO storage.objects(bucket_id,name,owner_id,metadata)
   VALUES('v21-media',current_setting('test.png_key'),
     NULL,'{"mimetype":"image/png","size":321}');
   RAISE EXCEPTION 'Admin could insert without a Storage owner_id';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
-END $;
+END $guard$;
 -- Attachment without a file must fail closed, not create a media row.
 DO $$
 BEGIN
