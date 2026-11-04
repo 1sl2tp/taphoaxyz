@@ -82,7 +82,20 @@
 
         // Generate ONE debt PNG for all three actions. No title/text is handed
         // to native file share: macOS treats those as additional share items.
-        async function createCustomerDebtPngBlob({withDimensions=false}={}) {
+        async function createCustomerDebtPngBlob({
+            withDimensions=false,expectedCustomerId=null,expectedTransitionSeq=null
+        }={}) {
+            // SPEC-DEBT-PNG-RECIPIENT-EPOCH-20261104:
+            // A→B→A and close/reopen are new modal epochs. Never upload an old
+            // customer's screenshot to the previously sent recipient's message.
+            const isSameDebtModal=()=>(
+                (expectedCustomerId===null ||
+                 String(activeDebtCustomerId||'')===String(expectedCustomerId))
+                && (expectedTransitionSeq===null ||
+                    String(document.getElementById('customerDebtModalWrapper')?.dataset?.debtTransitionSeq||'')===
+                    String(expectedTransitionSeq))
+            );
+            if(!isSameDebtModal())throw new Error('Đã chuyển công nợ sang khách khác. Ảnh chưa được gửi.');
             const source = document.getElementById('customerDebtContentToShare');
             if (!source) throw new Error('Chưa mở công nợ khách hàng.');
 
@@ -173,6 +186,7 @@
                 document.body.appendChild(captureHost);
 
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                if(!isSameDebtModal())throw new Error('Đã chuyển công nợ khi chuẩn bị ảnh. Ảnh chưa được gửi.');
 
                 const captureHeight = Math.ceil(clone.scrollHeight) + 4;
                 // Match the working order-image path: lazy-load html2canvas
@@ -191,8 +205,10 @@
                 });
 
                 // Preserve dimensions before canvasToPngBlob clears canvas memory.
+                if(!isSameDebtModal())throw new Error('Đã chuyển công nợ khi tạo ảnh. Ảnh chưa được gửi.');
                 const pngWidth=canvas.width,pngHeight=canvas.height;
                 const blob=await capture.canvasToPngBlob(canvas, 'Không tạo được ảnh công nợ.');
+                if(!isSameDebtModal())throw new Error('Đã chuyển công nợ khi xuất ảnh. Ảnh chưa được gửi.');
                 return withDimensions?{blob,width:pngWidth,height:pngHeight}:blob;
             } finally {
                 captureHost?.remove();
@@ -209,6 +225,9 @@
             if (action === 'send') {
                 const bridge = window.TAPHOA_PRODUCTION;
                 const customerId = String(activeDebtCustomerId || '').trim();
+                const modalEpoch=typeof document!=='undefined'
+                    ?document.getElementById('customerDebtModalWrapper')?.dataset?.debtTransitionSeq??null
+                    :null;
                 const eligible = bridge?.getAccessMode?.() === 'account'
                     && bridge?.getIdentity?.()?.role === 'admin'
                     && typeof bridge.manualShareDebt === 'function'
@@ -219,7 +238,10 @@
                     try {
                         const response = await bridge.manualShareDebt(
                             customerId, crypto.randomUUID(),
-                            ()=>createCustomerDebtPngBlob({withDimensions:true})
+                            ()=>createCustomerDebtPngBlob({
+                                withDimensions:true,expectedCustomerId:customerId,
+                                expectedTransitionSeq:modalEpoch
+                            })
                         );
                         if (response?.ok === true) {
                             if(response.image_attached===true){
