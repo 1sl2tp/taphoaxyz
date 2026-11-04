@@ -1,3 +1,13 @@
+> **HISTORICAL / ĐÃ THAY THẾ VỀ HẠN THANH TOÁN (04/11/2026).**
+> Văn bản dưới đây từng nhầm **mốc từng đơn** với **chu kỳ thanh toán**.
+> Quy định gốc trong `src/customer-policy-notice.js` chỉ có **một chu kỳ
+> thanh toán cho toàn bộ đợt nợ đang mở**; mốc tất toán là 3 ngày ngừng nhập
+> hoặc D7 từ ngày mở nợ (hoặc đạt hạn mức theo thỏa thuận), điều kiện đến trước.
+> Các mốc/giá trị theo đơn chỉ là dữ liệu lịch sử nhập hàng, **không được hiển thị
+> như các hạn công nợ độc lập**. Xem quy định đang áp dụng:
+> [SPEC-PAYMENT-PERIOD-CANONICAL-20261104](SPEC-PAYMENT-PERIOD-CANONICAL-20261104.md).
+> Các phần dưới đây giữ lại chỉ để ghi nhận thay đổi đã thực hiện.
+
 # SPEC-ORDER-CYCLES-READONLY-20261104
 
 ## E0 — Yêu cầu / Given–When–Then
