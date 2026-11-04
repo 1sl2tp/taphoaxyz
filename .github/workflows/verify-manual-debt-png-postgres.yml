@@ -1,0 +1,55 @@
+name: Verify manual debt PNG SQL (isolated PostgreSQL)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-manual-debt-png-postgres.yml"
+      - "tests/sql/manual-debt-png-isolated.sql"
+      - "supabase/migrations/20261104093000_taphoa_manual_debt_image_handoff.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-debt-png-postgres-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migration-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: taphoa_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d taphoa_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGDATABASE: taphoa_test
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test exact migration in disposable PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql --version
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/manual-debt-png-isolated.sql
+      - name: Confirm no production credentials are used
+        shell: bash
+        run: |
+          test "$PGDATABASE" = "taphoa_test"
+          test "$PGHOST" = "127.0.0.1"
+          echo "Isolated service only; no production project credentials"
