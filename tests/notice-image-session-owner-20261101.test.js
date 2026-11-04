@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const src=readFileSync(new URL('../src/fixed-production-bridge.js',import.meta.url),'utf8');
 const from=src.indexOf('const orderImageUploadsInFlight=new Set();');
-const until=src.indexOf('// SPEC-DEBT-MANUAL-LINKED-20261101',from);
+const until=src.indexOf('// SPEC-TAPHOA-MANUAL-DEBT-PNG-20261104',from);
 assert.ok(from>=0&&until>from);
 const slice=src.slice(from,until);
 function fixture(){
