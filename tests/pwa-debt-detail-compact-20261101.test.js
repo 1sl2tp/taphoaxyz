@@ -61,7 +61,7 @@ test('cycle information and both disclosures remain intact while spacing becomes
   assert.match(cycleRuntime,/Hạn '\+dayLabel\(current\.policyDueDay\)/);
   assert.match(cycleRuntime,/const advice=document\.createElement\('details'\)/);
   assert.match(cycleRuntime,/const details=document\.createElement\('details'\)/);
-  assert.match(cycleRuntime,/Lịch sử chu kỳ công nợ/);
+  assert.match(cycleRuntime,/Theo dõi mốc từng đơn và đợt công nợ/);
 });
 
 test('ledger details, share source and finance commands stay untouched',()=>{
