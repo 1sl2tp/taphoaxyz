@@ -116,7 +116,7 @@ const indexHtml=fs.readFileSync('index.html','utf8');
 const aliceId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const requestId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
-function debtSendFixture({role='admin',mode='account',response={ok:true},throwError=null,connected=true}={}){
+function debtSendFixture({role='admin',mode='account',response={ok:true},throwError=null,connected=true,epoch='3'}={}){
   const calls=[],blobs=[],toasts=[],alerts=[],shares=[];
   const blob={size:2018,type:'image/png'};
   const window={
@@ -134,6 +134,7 @@ function debtSendFixture({role='admin',mode='account',response={ok:true},throwEr
   const context={
     window,
     activeDebtCustomerId:aliceId,
+    document:{getElementById:id=>id==='customerDebtModalWrapper'&&epoch!==null?{dataset:{debtTransitionSeq:epoch}}:null},
     crypto:{randomUUID:()=>requestId},
     createCustomerDebtPngBlob:async()=>{blobs.push(blob);return blob},
     navigator:{canShare:()=>true,share:async options=>{shares.push(options)}},
@@ -177,6 +178,17 @@ test('oversized PNG fallback retains confirmed Chat text without duplicate outbo
  assert.equal(f.alerts.length,0);
  assert.match(f.toasts[0][0],/Lịch sử quá dài/);
  assert.match(f.toasts[0][0],/liên kết/);
+});
+
+test('missing or invalid debt modal epoch blocks direct send before creating Chat text',async()=>{
+ for(const epoch of [null,'','0','not-a-serial']){
+  const f=debtSendFixture({epoch});
+  await f.fn('send');
+  assert.equal(f.calls.length,0,'no Chat text when modal epoch is absent');
+  assert.equal(f.blobs.length,0,'no image when modal epoch is absent');
+  assert.equal(f.shares.length,0,'no OS fallback');
+  assert.match(f.alerts[0][0],/Chưa thể gửi vào Chat/);
+ }
 });
 
 test('failed Chat delivery reports error rather than opening PNG share',async()=>{
@@ -318,6 +330,18 @@ function guardedDebtPngFixture({onFrame=()=>{},onCapture=()=>{},onPng=()=>{}}={}
   const create=vm.runInNewContext('('+generator+')',context);
   return {create,state,context};
 }
+
+test('server-bound PNG cannot skip modal identity and epoch guard',async()=>{
+ const f=guardedDebtPngFixture();
+ await assert.rejects(f.create({
+   withDimensions:true,expectedCustomerId:f.state.customer
+ }),/Không xác định được phiên công nợ/);
+ await assert.rejects(f.create({
+   withDimensions:true,expectedTransitionSeq:'3'
+ }),/Không xác định được phiên công nợ/);
+ assert.equal(f.state.renders,0);
+ assert.equal(f.state.converted,0);
+});
 
 test('debt PNG denies wrong recipient before capturing or showing any bytes',async()=>{
   const f=guardedDebtPngFixture();
