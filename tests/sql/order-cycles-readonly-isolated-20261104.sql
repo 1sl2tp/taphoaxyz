@@ -54,14 +54,19 @@ $fn$;
 INSERT INTO public.v21_accounts(id,role,contact_group) VALUES
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','admin',null),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','user','customer'),
- ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','user','customer');
+ ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','user','customer'),
+ ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','user','customer');
 
 INSERT INTO public.taphoa_orders(id,customer_account_id,status,created_at,delivered_at) VALUES
  ('11111111-1111-4111-8111-111111111111','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','delivered','2026-10-03 02:00+00','2026-10-03 02:00+00'),
  ('22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','delivered','2026-10-03 03:00+00','2026-10-03 03:00+00'),
  ('33333333-3333-4333-8333-333333333333','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','delivered','2026-10-05 02:00+00','2026-10-05 02:00+00'),
  ('44444444-4444-4444-8444-444444444444','cccccccc-cccc-4ccc-8ccc-cccccccccccc','delivered','2026-10-03 02:00+00','2026-10-03 02:00+00'),
- ('55555555-5555-4555-8555-555555555555','cccccccc-cccc-4ccc-8ccc-cccccccccccc','delivered','2026-10-06 02:00+00','2026-10-06 02:00+00');
+ ('55555555-5555-4555-8555-555555555555','cccccccc-cccc-4ccc-8ccc-cccccccccccc','delivered','2026-10-06 02:00+00','2026-10-06 02:00+00'),
+ ('66666666-6666-4666-8666-666666666666','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','delivered','2026-10-03 02:00+00','2026-10-03 02:00+00'),
+ ('77777777-7777-4777-8777-777777777777','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','delivered','2026-10-05 02:00+00','2026-10-05 02:00+00'),
+ ('88888888-8888-4888-8888-888888888888','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','delivered','2026-10-07 02:00+00','2026-10-07 02:00+00'),
+ ('99999999-9999-4999-8999-999999999999','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','delivered','2026-10-09 02:00+00','2026-10-09 02:00+00');
 
 -- B: two orders on D1 plus another on D3, collection PARTIAL only.
 -- C: paid in full. A later new order will open a fresh debt period.
@@ -71,7 +76,11 @@ INSERT INTO public.taphoa_debt_ledger(id,customer_account_id,created_at,order_id
  (3,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','2026-10-05 02:01+00','33333333-3333-4333-8333-333333333333','sale',300),
  (4,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','2026-10-05 04:00+00',null,'collection',-100),
  (5,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','2026-10-03 02:01+00','44444444-4444-4444-8444-444444444444','sale',100),
- (6,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','2026-10-04 05:00+00',null,'collection',-100);
+ (6,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','2026-10-04 05:00+00',null,'collection',-100),
+ (10,'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','2026-10-03 02:01+00','66666666-6666-4666-8666-666666666666','sale',50),
+ (11,'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','2026-10-05 02:01+00','77777777-7777-4777-8777-777777777777','sale',50),
+ (12,'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','2026-10-07 02:01+00','88888888-8888-4888-8888-888888888888','sale',50),
+ (13,'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','2026-10-09 02:01+00','99999999-9999-4999-8999-999999999999','sale',50);
 
 \i supabase/migrations/20261024073000_cycle196_policy_snapshot.sql
 \i supabase/migrations/20261104211500_taphoa_order_cycles_readonly_admin_user.sql
@@ -123,6 +132,48 @@ BEGIN
 END;
 $cycle_test$;
 
+-- A later purchase AFTER the first 3-day no-buy deadline must never
+-- erase or extend it. B purchases again on 10/10, after due 08/10.
+RESET ROLE;
+INSERT INTO public.taphoa_orders(id,customer_account_id,status,created_at,delivered_at)
+VALUES('aaaaaaaa-1111-4111-8111-111111111111',
+ 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','delivered',
+ '2026-10-10 02:00+00','2026-10-10 02:00+00');
+INSERT INTO public.taphoa_debt_ledger(id,customer_account_id,created_at,order_id,entry_type,amount_vnd)
+VALUES(8,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+ '2026-10-10 02:01+00','aaaaaaaa-1111-4111-8111-111111111111','sale',10);
+SET ROLE authenticated;
+SET request.jwt.claim.sub='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+DO $cycle_test$
+DECLARE p jsonb;
+BEGIN
+ p:=public.taphoa_order_cycles_view()->0->'paymentPolicy';
+ IF p->>'dueDay' IS DISTINCT FROM '2026-10-08'
+ OR p->>'sevenDueDay' IS DISTINCT FROM '2026-10-09'
+ OR p->>'lastPurchaseDay' IS DISTINCT FROM '2026-10-10'
+ OR p->>'firstGapDay' IS DISTINCT FROM '2026-10-08'
+ THEN RAISE EXCEPTION 'Late purchase shifted an expired period deadline: %',p; END IF;
+END;
+$cycle_test$;
+
+-- D buys on D1, D3, D5 and D7; no 3-day idle interval occurs.
+-- In this case the fixed D7 deadline wins even if the last sale is on D7.
+SET request.jwt.claim.sub='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+DO $cycle_test$
+DECLARE arr jsonb; p jsonb;
+BEGIN
+ arr:=public.taphoa_order_cycles_view();
+ SELECT x->'paymentPolicy' INTO p FROM jsonb_array_elements(arr) x
+ WHERE x->>'customerId'='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+ IF p IS NULL
+ OR p->>'dueDay' IS DISTINCT FROM '2026-10-09'
+ OR p->>'sevenDueDay' IS DISTINCT FROM '2026-10-09'
+ OR p->>'dueReason' IS DISTINCT FROM 'seven_days'
+ OR p->>'lastPurchaseDay' IS DISTINCT FROM '2026-10-09'
+ THEN RAISE EXCEPTION 'Frequent buying incorrectly extends fixed D7: %',p; END IF;
+END;
+$cycle_test$;
+
 SET request.jwt.claim.sub='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 DO $cycle_test$
 DECLARE v jsonb; x jsonb;
@@ -142,7 +193,7 @@ DO $cycle_test$
 DECLARE v jsonb;
 BEGIN
  v:=public.taphoa_order_cycles_view();
- IF jsonb_array_length(v)<>2 THEN RAISE EXCEPTION 'Admin not seeing customer list: %',v; END IF;
+ IF jsonb_array_length(v)<>3 THEN RAISE EXCEPTION 'Admin not seeing customer list: %',v; END IF;
 END;
 $cycle_test$;
 
@@ -179,10 +230,10 @@ $cycle_test$;
 RESET ROLE;
 DO $cycle_test$
 BEGIN
- IF (SELECT count(*) FROM public.taphoa_debt_ledger)<>7 THEN
+ IF (SELECT count(*) FROM public.taphoa_debt_ledger)<>12 THEN
    RAISE EXCEPTION 'Read-only RPC mutated monetary ledger';
  END IF;
 END;
 $cycle_test$;
 
-\echo 'PASS: per-order D7, newest-first UI source, FIFO partial estimate and Admin/User scope'
+\echo 'PASS: canonical payment policy earliest 3 idle/D7, irreversible missed deadline, Admin/User account scope'
