@@ -323,14 +323,12 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
     const ledgerId = /^\d+$/.test(String(h.ledgerId || '')) ? String(h.ledgerId) : '';
 
     html += `
-    <div ${clickAttr} class="flex justify-between items-center py-2.5 px-2 rounded-xl transition ${cursorStyle} border-b border-gray-100 text-xs">
-      <div>
-        <p class="font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> ${escapeProductEditorValue(h.loaiGd)} ${orderId ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
-        ${billRef ? `<p class="text-[10px] text-gray-500 mt-0.5 break-all">Mã GD: ${billRef}</p>` : ''}
-        ${ledgerId ? `<p class="text-[10px] text-gray-500 mt-0.5">Sổ #${ledgerId}</p>` : ''}
-        <p class="text-[10px] text-gray-400 mt-0.5">Ghi sổ: ${escapeProductEditorValue(h.time)}</p>
+    <div ${clickAttr} class="debt-ledger-row py-2.5 px-2 rounded-xl transition ${cursorStyle} border-b border-gray-100 text-xs">
+      <div class="debt-ledger-info">
+        <p class="debt-ledger-title font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> <span class="debt-ledger-label">${escapeProductEditorValue(h.loaiGd)}</span> ${orderId ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
+        <p class="debt-ledger-meta text-[10px] text-gray-500 mt-0.5">${ledgerId ? `Sổ #${ledgerId} · ` : ''}Ghi sổ: ${escapeProductEditorValue(h.time)}${billRef ? ` · Mã GD: ${billRef}` : ''}</p>
       </div>
-      <div class="text-right">
+      <div class="debt-ledger-side text-right">
         <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${amountLabel}</p>
         <p class="text-[10px] text-gray-400 mt-0.5">${runningBalanceText}</p>
       </div>
