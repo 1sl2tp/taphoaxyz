@@ -74,6 +74,7 @@ INSERT INTO public.taphoa_debt_ledger(id,customer_account_id,created_at,order_id
 
 \i supabase/migrations/20261104211500_taphoa_order_cycles_readonly_admin_user.sql
 \i supabase/migrations/20261104215000_taphoa_order_cycles_progress_amount_readonly.sql
+\i supabase/migrations/20261104220000_taphoa_order_cycles_unpaid_due_readonly.sql
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -103,6 +104,9 @@ BEGIN
   OR (x#>>'{orderCycles,1,estimatedRemainingThousands}')::numeric<>200
   OR (x#>>'{orderCycles,2,estimatedRemainingThousands}')::numeric<>300
   OR (x#>>'{orderCycles,0,progressDays}')::int<>7
+  OR (x->>'dueCount')::int<>2
+  OR (x#>>'{orderCycles,0,isDue}')::boolean IS DISTINCT FROM false
+  OR (x#>>'{orderCycles,1,isDue}')::boolean IS DISTINCT FROM true
  THEN RAISE EXCEPTION 'FIFO partial-payment projection or progress mismatch: %',x; END IF;
 END;
 $cycle_test$;
