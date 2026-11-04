@@ -447,10 +447,45 @@
       if(orderMutationInFlight)return;
       orderMutationInFlight=true;
       showLoading('Đang xóa toàn bộ...');
+      const prod=backend();
+      const owner={identity:prod?.getIdentity?.(),mode:prod?.getAccessMode?.()};
       try{
-        await backend().batchOrders('delete_pending',ids);
-        resetSaleSession();
-        showToast('Đã xóa sạch đơn tạm!','success');
+        let targetIds=ids;
+        if(typeof prod?.refresh==='function'&&typeof prod?.getState==='function'){
+          const fresh=await prod.refresh(['orders']);
+          if(backend()!==prod||prod.getIdentity?.()!==owner.identity
+            ||prod.getAccessMode?.()!==owner.mode)return;
+          const orders=Array.isArray(fresh?.orders)?fresh.orders:prod.getState()?.orders;
+          if(!Array.isArray(orders))throw Error('Không xác minh được đơn tạm trên máy chủ.');
+          const available=new Map();
+          for(const item of orders){
+            if(String(item.status||item.trangThai||'').toLowerCase()!=='pending')continue;
+            const backendId=String(prod.backendOrderId?.(item)||
+              item.backendOrderId||item.order_id||item.id||'').trim();
+            const displayId=String(prod.orderDisplayCode?.(item)||
+              item.displayCode||item.display_code||item.maDon||'').trim();
+            if(backendId){
+              available.set(backendId,backendId);
+              if(displayId)available.set(displayId,backendId);
+            }
+          }
+          targetIds=[...new Set(ids.map(id=>available.get(id)).filter(Boolean))];
+          if(!targetIds.length){
+            try{await refreshFixedSheets(['dontam','dongiao']);}
+            catch(error){console.warn('refresh stale draft list',error);}
+            showToast('Danh sách đơn tạm đã cũ. Máy chủ không còn đơn nào trong danh sách cần xóa.','warning');
+            return;
+          }
+        }
+        const result=await prod.batchOrders('delete_pending',targetIds);
+        if(result?.ok!==true)throw Error('Máy chủ chưa xác nhận xóa đơn tạm.');
+        const deleted=Number(result.deleted);
+        if(Number.isInteger(deleted)&&deleted===0){
+          showToast('Các đơn tạm đã không còn trên máy chủ. Danh sách đã làm mới.','warning');
+        }else{
+          resetSaleSession();
+          showToast('Đã xóa '+(Number.isInteger(deleted)?deleted:targetIds.length)+' đơn tạm.','success');
+        }
         // The committed delete is not undone by a stale/failed UI projection.
         try{await refreshFixedSheets(['dontam','thuchi']);}
         catch(refreshError){console.warn('refresh deleted draft orders',refreshError);}
