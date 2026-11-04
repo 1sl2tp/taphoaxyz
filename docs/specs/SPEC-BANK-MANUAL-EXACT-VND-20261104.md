@@ -1,3 +1,5 @@
+> **LƯU Ý: SPEC LỊCH SỬ, ĐÃ ĐƯỢC THAY THẾ.** Theo quyết định mới ngày 2026-11-04, khi ghi thu Agribank thủ công sẽ bỏ phần lẻ 1–999 đồng khỏi công nợ nhưng giữ nguyên chứng từ và ghi chú chênh lệch. Xem trạng thái production/CI hiện tại tại [SPEC-BANK-MANUAL-ROUND-DOWN-20261104](SPEC-BANK-MANUAL-ROUND-DOWN-20261104.md). Phần mô tả “ghi đủ số đồng lẻ” bên dưới chỉ là thiết kế cũ, không còn là quy tắc triển khai.
+
 # SPEC-BANK-MANUAL-EXACT-VND-20261104 — Thu Agribank thủ công đúng số đồng
 
 ## E0 — Bằng chứng và Given / When / Then
