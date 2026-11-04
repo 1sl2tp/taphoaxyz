@@ -228,9 +228,7 @@
                         // Customer has no linked Zalo contact: offer the same
                         // native image share workflow as before, not a guessed
                         // chat recipient or an unrelated contact.
-                        if (!['zalo_not_linked','customer_not_found'].includes(response?.reason)) {
-                            throw Error(response?.reason || 'manual_debt_send_failed');
-                        }
+                        throw Error(response?.reason || 'manual_debt_send_failed');
                     } catch (error) {
                         const missingRpc = String(error?.code || '') === 'PGRST202'
                             || String(error?.code || '') === '42883'
@@ -238,7 +236,8 @@
                         if (missingRpc) {
                             // Until the guarded database migration is applied,
                             // keep the original image share usable on web/PWA.
-                            showToast('Chưa kích hoạt gửi trực tiếp; mở chia sẻ ảnh công nợ.', 'info');
+                            showAlertPopup('Chưa thể gửi vào Chat', 'Máy chủ chưa sẵn sàng gửi công nợ. Không có tin nhắn nào được xác nhận.');
+                            return;
                         } else {
                             // A timeout could mean the server already sent it;
                             // never automatically send a second copy elsewhere.
@@ -248,6 +247,10 @@
                             return;
                         }
                     }
+                } else {
+                    showAlertPopup('Chưa thể gửi vào Chat',
+                        'Phiên hiện tại chưa đủ điều kiện gửi trực tiếp. Hãy đăng nhập tài khoản quản trị TAPHOA, mở lại công nợ của khách rồi thử lại. Không có tin nhắn nào được gửi.');
+                    return;
                 }
             }
             const pendingBlob = createCustomerDebtPngBlob();
