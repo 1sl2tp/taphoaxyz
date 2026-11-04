@@ -13,6 +13,7 @@ END;
 $role$;
 
 CREATE SCHEMA auth;
+CREATE SCHEMA v21_private;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $fn$
  SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;
 $fn$;
@@ -72,9 +73,11 @@ INSERT INTO public.taphoa_debt_ledger(id,customer_account_id,created_at,order_id
  (5,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','2026-10-03 02:01+00','44444444-4444-4444-8444-444444444444','sale',100),
  (6,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','2026-10-04 05:00+00',null,'collection',-100);
 
+\i supabase/migrations/20261024073000_cycle196_policy_snapshot.sql
 \i supabase/migrations/20261104211500_taphoa_order_cycles_readonly_admin_user.sql
 \i supabase/migrations/20261104215000_taphoa_order_cycles_progress_amount_readonly.sql
 \i supabase/migrations/20261104220000_taphoa_order_cycles_unpaid_due_readonly.sql
+\i supabase/migrations/20261104224500_taphoa_payment_period_policy_projection.sql
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -108,6 +111,15 @@ BEGIN
   OR (x#>>'{orderCycles,0,isDue}')::boolean IS DISTINCT FROM false
   OR (x#>>'{orderCycles,1,isDue}')::boolean IS DISTINCT FROM true
  THEN RAISE EXCEPTION 'FIFO partial-payment projection or progress mismatch: %',x; END IF;
+ -- 03/10 is D1, so D7 is 09/10. Last delivery 05/10, therefore
+ -- the third full no-purchase day is 08/10, which comes before D7.
+ IF x#>>'{paymentPolicy,cycleNo}' IS DISTINCT FROM '1'
+  OR x#>>'{paymentPolicy,startDay}' IS DISTINCT FROM '2026-10-03'
+  OR x#>>'{paymentPolicy,stopDueDay}' IS DISTINCT FROM '2026-10-08'
+  OR x#>>'{paymentPolicy,sevenDueDay}' IS DISTINCT FROM '2026-10-09'
+  OR x#>>'{paymentPolicy,dueDay}' IS DISTINCT FROM '2026-10-08'
+  OR x#>>'{paymentPolicy,dueReason}' IS DISTINCT FROM 'stopped_buying'
+ THEN RAISE EXCEPTION 'Payment due is not the earliest 3-no-buy/D7 period deadline: %',x; END IF;
 END;
 $cycle_test$;
 
@@ -120,6 +132,7 @@ BEGIN
   OR x->>'customerId' IS DISTINCT FROM 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
   OR (x->>'isOpen')::boolean IS DISTINCT FROM false
   OR jsonb_array_length(x->'orderCycles')<>0
+  OR x->'paymentPolicy' IS DISTINCT FROM 'null'::jsonb
  THEN RAISE EXCEPTION 'Paid customer must reset all active order cycles: %',v; END IF;
 END;
 $cycle_test$;
@@ -157,6 +170,9 @@ BEGIN
   OR x#>>'{orderCycles,0,number}' IS DISTINCT FROM '1'
   OR x#>>'{orderCycles,0,dueDay}' IS DISTINCT FROM '2026-10-12'
   OR (x#>>'{orderCycles,0,estimatedRemainingThousands}')::numeric<>400
+  OR x#>>'{paymentPolicy,cycleNo}' IS DISTINCT FROM '2'
+  OR x#>>'{paymentPolicy,startDay}' IS DISTINCT FROM '2026-10-06'
+  OR x#>>'{paymentPolicy,dueDay}' IS DISTINCT FROM '2026-10-09'
  THEN RAISE EXCEPTION 'New debt period failed to reset order sequence: %',x; END IF;
 END;
 $cycle_test$;
