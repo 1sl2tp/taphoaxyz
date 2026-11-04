@@ -98,7 +98,10 @@ test('Save is a separate local PNG path, never a Chat or Zalo send', async () =>
 });
 
 test('server contract gates sender/recipient and deduplicates an actual Chat text message', () => {
-  assert.match(bridge, /async function manualShareDebt\(customerId,requestId\)/);
+  assert.match(bridge, /async function manualShareDebt\(customerId,requestId,captureImage\)/);
+  assert.match(bridge, /taphoa_manual_debt_image_ticket/);
+  assert.match(bridge, /taphoa_manual_debt_image_attach/);
+  assert.match(bridge, /if\(!response\?\.ok\)return response/);
   assert.match(business, /manualShareDebt:\(id,requestId\)=>gateway\.rpc\('taphoa_manual_send_customer_debt'/);
   assert.match(sql, /v_ctx->>'taphoa_role'<>'admin'/);
   assert.match(sql, /a\.role='user' and a\.contact_group='customer'/);
