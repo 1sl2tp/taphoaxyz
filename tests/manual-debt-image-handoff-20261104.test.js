@@ -161,6 +161,11 @@ test('manual image SQL isolates permissions, owner, storage, and outbound from f
   assert.match(migration,/v_message\.client_id IS DISTINCT FROM 'manual:debt:'\|\|p_request_id::text/);
   assert.match(migration,/v_mime IS DISTINCT FROM 'image\/png'/);
   assert.match(migration,/v_size IS DISTINCT FROM p_size_bytes/);
+  assert.equal((migration.match(/'attached_asset_missing'/g)||[]).length,2);
+  assert.match(migration,/a\.id=v_ticket\.asset_id AND a\.message_id=v_ticket\.message_id/);
+  assert.match(migration,/a\.owner_account_id=v_sender AND a\.kind='image'/);
+  assert.match(migration,/a\.mime_type='image\/png' AND a\.storage_key=v_ticket\.storage_key/);
+  assert.match(migration,/RAISE EXCEPTION 'manual_image_asset_not_confirmed'/);
   assert.match(migration,/insert into public\.v21_media_assets/i);
   assert.doesNotMatch(migration,/update\s+public\.taphoa_debt_ledger/i);
   assert.doesNotMatch(migration,/insert\s+into\s+public\.v21_messages/i);
