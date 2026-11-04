@@ -22,7 +22,7 @@ test('debt image lazy-loads through the same helper as order images',async()=>{
   const actions=[];
   const canvas={width:672,height:896};
   const png={size:4803,type:'image/png'};
-  const clone={style:{},scrollHeight:640,removeAttribute(){},
+  const clone={style:{},scrollHeight:640,classList:{add(){}},prepend(){},removeAttribute(){},
     querySelector(){return null;}};
   const host={style:{},setAttribute(){},appendChild(){},remove(){actions.push('remove');}};
   const capture={
