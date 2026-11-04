@@ -156,6 +156,29 @@ test('linked customer sends verified manual debt directly into their conversatio
  assert.match(f.toasts[0][0],/Chat.*Zalo/);
 });
 
+test('confirmed debt text explains missing PNG backend without inviting repeat send',async()=>{
+ const f=debtSendFixture({response:{ok:true,image_attached:false,image_reason:'image_feature_not_deployed'}});
+ await f.fn('send');
+ assert.equal(f.calls.length,1);
+ assert.equal(f.blobs.length,0);
+ assert.equal(f.shares.length,0);
+ assert.equal(f.alerts.length,0);
+ assert.match(f.toasts[0][0],/Máy chủ chưa triển khai gửi ảnh/);
+ assert.match(f.toasts[0][0],/không cần gửi lại/);
+ assert.match(f.toasts[0][0],/Chưa xác nhận Zalo/);
+});
+
+test('oversized PNG fallback retains confirmed Chat text without duplicate outbound',async()=>{
+ const f=debtSendFixture({response:{ok:true,image_attached:false,image_reason:'image_too_long'}});
+ await f.fn('send');
+ assert.equal(f.calls.length,1);
+ assert.equal(f.blobs.length,0);
+ assert.equal(f.shares.length,0);
+ assert.equal(f.alerts.length,0);
+ assert.match(f.toasts[0][0],/Lịch sử quá dài/);
+ assert.match(f.toasts[0][0],/liên kết/);
+});
+
 test('failed Chat delivery reports error rather than opening PNG share',async()=>{
  const f=debtSendFixture({response:{ok:false,reason:'customer_not_found'}});
  await f.fn('send');
