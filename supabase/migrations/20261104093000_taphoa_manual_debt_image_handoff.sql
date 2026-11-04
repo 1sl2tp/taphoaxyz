@@ -69,9 +69,18 @@ BEGIN
       -- A prior ticket does not prove its media asset is still present.
       IF NOT EXISTS(
         SELECT 1 FROM public.v21_media_assets a
-        WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
-          AND a.kind='image' AND a.mime_type='image/png'
-          AND a.deleted_at IS NULL
+      JOIN storage.objects o
+        ON o.bucket_id='v21-media' AND o.name=a.storage_key
+      WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
+        AND a.conversation_id=v_ticket.conversation_id
+        AND a.owner_account_id=v_sender
+        AND a.kind='image' AND a.mime_type='image/png'
+        AND a.size_bytes>0 AND a.deleted_at IS NULL
+        AND o.owner_id=auth.uid()::text
+        AND o.archived_at IS NULL AND NOT o.is_delete_marker
+        AND split_part(lower(coalesce(o.metadata->>'mimetype','')),';',1)='image/png'
+        AND coalesce((o.metadata->>'size')::bigint,
+                     (o.metadata->>'contentLength')::bigint,0)=a.size_bytes
       ) THEN
         RETURN jsonb_build_object('ok',false,'reason','attached_asset_missing');
       END IF;
@@ -178,9 +187,18 @@ BEGIN
   IF v_ticket.attached_at IS NOT NULL THEN
     IF NOT EXISTS(
       SELECT 1 FROM public.v21_media_assets a
+      JOIN storage.objects o
+        ON o.bucket_id='v21-media' AND o.name=a.storage_key
       WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
+        AND a.conversation_id=v_ticket.conversation_id
+        AND a.owner_account_id=v_sender
         AND a.kind='image' AND a.mime_type='image/png'
-        AND a.deleted_at IS NULL
+        AND a.size_bytes>0 AND a.deleted_at IS NULL
+        AND o.owner_id=auth.uid()::text
+        AND o.archived_at IS NULL AND NOT o.is_delete_marker
+        AND split_part(lower(coalesce(o.metadata->>'mimetype','')),';',1)='image/png'
+        AND coalesce((o.metadata->>'size')::bigint,
+                     (o.metadata->>'contentLength')::bigint,0)=a.size_bytes
     ) THEN
       RETURN jsonb_build_object('ok',false,'reason','attached_asset_missing');
     END IF;
