@@ -1,4 +1,4 @@
-name: Verify manual debt PNG SQL (isolated PostgreSQL)
+name: Verify TAPHOA finance SQL (isolated PostgreSQL)
 
 on:
   push:
@@ -7,13 +7,15 @@ on:
       - ".github/workflows/verify-manual-debt-png-postgres.yml"
       - "tests/sql/manual-debt-png-isolated.sql"
       - "supabase/migrations/20261104093000_taphoa_manual_debt_image_handoff.sql"
+      - "tests/sql/bank-manual-exact-vnd-isolated.sql"
+      - "supabase/migrations/20261104184500_chat_bank_manual_collect_exact_vnd.sql"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: manual-debt-png-postgres-${{ github.ref }}
+  group: taphoa-finance-postgres-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -47,6 +49,12 @@ jobs:
           set -euo pipefail
           psql --version
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/manual-debt-png-isolated.sql
+      - name: Test exact Agribank manual money migration on a separate fake database
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE taphoa_bank_test'
+          PGDATABASE=taphoa_bank_test psql -X -v ON_ERROR_STOP=1 -f tests/sql/bank-manual-exact-vnd-isolated.sql
       - name: Confirm no production credentials are used
         shell: bash
         run: |
