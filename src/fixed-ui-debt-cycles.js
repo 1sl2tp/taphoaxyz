@@ -63,11 +63,12 @@
     const [y,m,d]=key.split('-');return d+'/'+m+'/'+y;
   };
   const numeric=value=>Math.max(0,Number(value)||0);
-  const formatOrderVnd=thousands=>{
-    const value=Number(thousands);
-    if(!Number.isFinite(value)||value<0||!Number.isSafeInteger(Math.round(value*1000)))return '—';
-    return new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0})
-      .format(Math.round(value*1000))+'đ';
+  // Finance panels use thousands of VND consistently (e.g. 1.037).
+  // A unit caption is shown once; no trailing currency suffix per amount.
+  const formatOrderThousands=value=>{
+    const amount=Number(value);
+    if(!Number.isFinite(amount)||amount<0)return '—';
+    return new Intl.NumberFormat('vi-VN',{maximumFractionDigits:3}).format(amount);
   };
   const compactDays=cycle=>{
     const d=numeric(cycle.durationDays);
@@ -311,7 +312,7 @@
             makeText('strong','', 'CK'+order.number+' · '+dayLabel(order.purchaseDay)),
             makeText('strong','debt-cycle-order-money',
               order.estimatedRemainingThousands==null||!Number.isFinite(remaining)||remaining<0?'Chưa xác định':
-              remaining>0?'Còn ước tính '+formatOrderVnd(remaining):'Đã bù tạm tính')
+              remaining>0?'Còn ước tính '+formatOrderThousands(remaining):'Đã bù tạm tính')
           );
           const progress=document.createElement('progress');
           progress.className='debt-cycle-order-progress';
@@ -324,12 +325,12 @@
               'D'+Math.max(1,numeric(order.elapsedDays))+'/7 · D7 '+
                 dayLabel(order.dueDay)+
                 (order.isDue?' · Đến mốc D7':'')+
-                ' · Đơn '+formatOrderVnd(order.amountThousands))
+                ' · Đơn '+formatOrderThousands(order.amountThousands))
           );
           list.appendChild(li);
         }
         details.appendChild(makeText('p','debt-cycle-detail-explanation',
-          'Số còn trả là tạm tính: khoản đã thu được đối chiếu vào đơn cũ trước, không ghi phân bổ vào sổ.'));
+          'Đơn vị: nghìn đồng. Số còn trả chỉ tạm tính theo đơn cũ trước; không ghi phân bổ vào sổ.'));
         details.appendChild(list);
         if(orders.length>60)details.appendChild(makeText('p','debt-cycle-detail-explanation',
           'Hiển thị 60/'+orders.length+' đơn mới nhất; tổng và hạn sớm nhất vẫn tính toàn bộ.'));
