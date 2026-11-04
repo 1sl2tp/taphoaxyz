@@ -6,17 +6,18 @@ import vm from 'node:vm';
 const root=new URL('../',import.meta.url);
 const read=p=>fs.readFileSync(new URL(p,root),'utf8');
 const sql=read('supabase/migrations/20261104211500_taphoa_order_cycles_readonly_admin_user.sql');
+const amountsSQL=read('supabase/migrations/20261104215000_taphoa_order_cycles_progress_amount_readonly.sql');
 const js=read('src/fixed-ui-debt-cycles.js');
 const html=read('index.html');
 const bridge=read('src/fixed-production-bridge.js');
 const business=read('src/core/business.js');
 const example=[
- {customerId:'a',isOpen:true,activePeriodNo:1,balanceThousands:4800,
+ {customerId:'a',isOpen:true,activePeriodNo:1,balanceThousands:500,
   todayDay:'2026-11-05',orderCount:3,
   orderCycles:[
-   {number:1,orderId:'o1',purchaseDay:'2026-11-03',dueDay:'2026-11-09',isDue:false},
-   {number:2,orderId:'o2',purchaseDay:'2026-11-03',dueDay:'2026-11-09',isDue:false},
-   {number:3,orderId:'o3',purchaseDay:'2026-11-05',dueDay:'2026-11-11',isDue:false}],
+   {number:1,orderId:'o1',purchaseDay:'2026-11-03',dueDay:'2026-11-09',isDue:false,amountThousands:100,estimatedRemainingThousands:0,progressDays:3,elapsedDays:3},
+   {number:2,orderId:'o2',purchaseDay:'2026-11-03',dueDay:'2026-11-09',isDue:false,amountThousands:200,estimatedRemainingThousands:200,progressDays:3,elapsedDays:3},
+   {number:3,orderId:'o3',purchaseDay:'2026-11-05',dueDay:'2026-11-11',isDue:false,amountThousands:300,estimatedRemainingThousands:300,progressDays:1,elapsedDays:1}],
   earliestDueDay:'2026-11-09',dueCount:0,
   lastPurchaseDay:'2026-11-05',idleDays:0,
   idleReviewDay:'2026-11-08',idleNeedsReview:false},
@@ -89,9 +90,24 @@ test('each delivered order has own D7 even two orders on one day',async()=>{
  assert.match(text(f.bodies.b.children[0]),/Đã tất toán/);
  await f.window.openCustomerDebtModal('a');
  const body=text(f.modal.children.find(c=>c.id==='debtCyclePanel'));
- assert.match(body,/CK1 · Mua 03\/11\/2026/);
- assert.match(body,/CK2 · Mua 03\/11\/2026/);
- assert.match(body,/CK3 · Mua 05\/11\/2026/);
+ assert.match(body,/CK1 · 03\/11\/2026/);
+ assert.match(body,/CK2 · 03\/11\/2026/);
+ assert.match(body,/CK3 · 05\/11\/2026/);
+ assert.match(body,/Đã bù tạm tính/);
+ assert.match(body,/Còn ước tính 200\.000đ/);
+ assert.match(body,/Còn ước tính 300\.000đ/);
+ const panel=f.modal.children.find(c=>c.id==='debtCyclePanel');
+ const listing=panel.children.find(n=>n.tag==='details'&&text(n).includes('Xem 3 mốc D7'));
+ const items=listing.children.find(n=>n.tag==='ol').children;
+ assert.equal(items.length,3);
+ assert.match(text(items[0]),/CK3 · 05\/11\/2026/,'newest order first');
+ assert.match(text(items[1]),/CK2 · 03\/11\/2026/);
+ assert.match(text(items[2]),/CK1 · 03\/11\/2026/);
+ for(const [item,expectedDay] of [[items[0],1],[items[1],3],[items[2],3]]){
+   const progress=item.children.find(n=>n.tag==='progress');
+   assert.equal(progress.max,7);assert.equal(progress.value,expectedDay);
+ }
+ assert.match(body,/Số còn trả là tạm tính/);
  assert.match(body,/D7 09\/11\/2026/);
  assert.match(body,/D7 11\/11\/2026/);
  assert.match(body,/Mốc 3 ngày 08\/11\/2026/);
@@ -111,6 +127,11 @@ test('signed-in User loads only own data, never Admin history or another custome
 });
 test('SQL read-only contract scopes User to account and resets at full settlement',()=>{
  assert.match(sql,/v_role='admin' OR a\.id=v_actor/);
+ assert.match(amountsSQL,/estimated_remaining_thousands/);
+ assert.match(amountsSQL,/ORDER BY n\.order_cycle_no DESC/);
+ assert.match(amountsSQL,/greatest\(0::numeric,least\(n\.amount_thousands/);
+ assert.match(amountsSQL,/least\(7,greatest\(1,v_today-purchase_day\+1\)\)/);
+ assert.doesNotMatch(amountsSQL,/cron\.schedule|send_due_notices/);
  assert.match(sql,/public\.taphoa_access_context\(\)/);
  assert.match(sql,/balance_after>0/);
  assert.match(sql,/r\.balance_after-r\.amount_vnd<=0/);
