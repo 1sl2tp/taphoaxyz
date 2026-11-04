@@ -625,6 +625,14 @@
         </div>
       </section>
 
+      <section id="crossSourcePanel" class="compare-panel hidden" aria-label="So sánh Hàng thường và Sữa">
+        <div class="compare-head"><strong>So sánh trùng tên · Hàng thường ↔ Sữa</strong><span id="crossSourceText"></span></div>
+        <div class="compare-wrap"><table class="compare-table">
+          <thead><tr><th style="min-width:240px;text-align:left">Tên sản phẩm</th><th>Vốn Hàng thường</th><th>Vốn Sữa</th><th>Chênh vốn (Sữa − Thường)</th><th>Bán Hàng thường</th><th>Bán Sữa</th><th>Chênh bán</th></tr></thead>
+          <tbody id="crossSourceBody"></tbody>
+        </table></div>
+      </section>
+
       <section id="comparisonPanel" class="compare-panel hidden">
         <div class="compare-head">
           <strong>Nguồn khác để so sánh</strong>
@@ -2458,7 +2466,34 @@
       return matches;
     }
 
+    function renderCrossSource(){
+      const panel=$('crossSourcePanel');
+      const query=$('searchInput').value.trim();
+      const visible=Boolean(query&&(!selectedSource||selectedSource==='hang-thuong'||selectedSource==='sua'));
+      const rows=selectedSource ? [...items,...comparisonItems] : items;
+      const byName=new Map();
+      for(const item of rows){
+        if(!['hang-thuong','sua'].includes(item.source_key))continue;
+        const key=crossSourceName(item.product_name);
+        if(!key)continue;
+        if(!byName.has(key))byName.set(key,{});
+        const group=byName.get(key);
+        const source=item.source_key;
+        (group[source]??=[]).push(item);
+      }
+      const pairs=[...byName.values()].filter(group=>group['hang-thuong']?.length===1&&group.sua?.length===1);
+      panel.classList.toggle('hidden',!visible);
+      $('crossSourceText').textContent=visible?pairs.length+' cặp trùng tên chính xác · chỉ trong kết quả đã tải':'';
+      const diff=(a,b)=>a===null||b===null?'—':(b-a>0?'+':'')+pretty(b-a);
+      $('crossSourceBody').innerHTML=visible?(pairs.map(group=>{
+        const regular=group['hang-thuong'][0],milk=group.sua[0];
+        const a=num(regular.cost),b=num(milk.cost),c=num(regular.price),d=num(milk.price);
+        return `<tr><td class="compare-name">${esc(regular.product_name)}</td><td class="compare-num">${esc(pretty(a))}</td><td class="compare-num">${esc(pretty(b))}</td><td class="compare-num"><strong>${esc(diff(a,b))}</strong></td><td class="compare-num">${esc(pretty(c))}</td><td class="compare-num">${esc(pretty(d))}</td><td class="compare-num"><strong>${esc(diff(c,d))}</strong></td></tr>`;
+      }).join('')||'<tr><td colspan="7" style="padding:10px;color:#64748b">Chưa có cặp trùng tên chính xác giữa Hàng thường và Sữa trong kết quả đã tải.</td></tr>'):'';
+    }
+
     function renderComparison(){
+      renderCrossSource();
       const panel=$('comparisonPanel');
       const query=$('searchInput').value.trim();
       const visible=Boolean(selectedSource&&query&&comparisonItems.length);
