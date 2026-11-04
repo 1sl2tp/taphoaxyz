@@ -114,10 +114,10 @@ export function createCustomerCareReport({rpc,getIdentity}){
       ['Đơn giao kỳ / toàn thời gian',number(r.period_delivered_count)+' / '+number(r.delivered_count)],
       ['Doanh thu hàng bán · kỳ',amount(r.total_revenue)],
       ['Giá vốn tại lúc bán · kỳ',costComplete?amount(r.total_cost):'Thiếu giá vốn ('+number(r.missing_cost_lines)+' dòng)'],
-      ['Lãi gộp · kỳ',amount(r.gross_profit)],
-      ['Biên lãi / tỷ lệ vốn',percent(r.gross_margin_percent)+' / '+percent(r.cost_ratio_percent)],
+      ['Lãi gộp · kỳ',costComplete?amount(r.gross_profit):'Chưa đủ giá vốn'],
+      ['Biên lãi / tỷ lệ vốn',costComplete?percent(r.gross_margin_percent)+' / '+percent(r.cost_ratio_percent):'Chưa đủ giá vốn'],
       ['Tỷ trọng doanh thu / tổng hệ thống',percent(r.revenue_share_percent)],
-      ['Tỷ trọng lãi / tổng lãi hệ thống',percent(r.profit_share_percent)],
+      ['Tỷ trọng lãi / tổng lãi hệ thống',costComplete?percent(r.profit_share_percent):'Chưa đủ giá vốn'],
       ['TB/đơn giao kỳ',amount(r.avg_order_value)],
       ['Tổng doanh thu đã giao · toàn thời gian',amount(r.lifetime_revenue)],
       ['Ghi nợ khác · trong kỳ',amount(r.period_manual_debt)],
@@ -220,7 +220,8 @@ export function createCustomerCareReport({rpc,getIdentity}){
       // Missing cost is not silently treated as zero.
       const values=[group(r),number(r.period_delivered_count),amount(r.total_revenue),
         Number(r.missing_cost_lines)>0?'Thiếu giá vốn':amount(r.total_cost),
-        amount(r.gross_profit),percent(r.gross_margin_percent),
+        Number(r.missing_cost_lines)>0?'Chưa đủ giá vốn':amount(r.gross_profit),
+        Number(r.missing_cost_lines)>0?'—':percent(r.gross_margin_percent),
         amount(r.period_manual_debt),amount(r.debt_balance)];
       values.forEach((v,i)=>{const cell=row.insertCell();cell.textContent=v;if(i>=1)cell.className='num';});
     }
@@ -263,9 +264,9 @@ export function createCustomerCareReport({rpc,getIdentity}){
       const totals=data?.system||{};
       $('careSystemRevenue').textContent=amount(totals.revenue);
       $('careSystemCost').textContent=Number(totals.missing_cost_lines)>0?'Thiếu '+totals.missing_cost_lines+' giá vốn':amount(totals.cost);
-      $('careSystemProfit').textContent=amount(totals.gross_profit);
-      $('careSystemMargin').textContent=percent(totals.gross_margin_percent);
-      $('careSystemCostPct').textContent='Tỷ lệ vốn: '+percent(totals.cost_ratio_percent);
+      $('careSystemProfit').textContent=Number(totals.missing_cost_lines)>0?'Chưa đủ giá vốn':amount(totals.gross_profit);
+      $('careSystemMargin').textContent=Number(totals.missing_cost_lines)>0?'—':percent(totals.gross_margin_percent);
+      $('careSystemCostPct').textContent='Tỷ lệ vốn: '+(Number(totals.missing_cost_lines)>0?'—':percent(totals.cost_ratio_percent));
       loaded=true;render();
       const systemDifference=periodSummary.orders-periodSummary.rosterOrders;
       $('careStatus').textContent='Kỳ '+period.label+' · '+number(periodSummary.buying)+'/'+
