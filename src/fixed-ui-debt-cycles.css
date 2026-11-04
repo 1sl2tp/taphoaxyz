@@ -218,3 +218,73 @@
     margin:4px 0 3px;
   }
 }
+
+/* SPEC-DEBT-VISUAL-SOFT-20261104:
+   Color signals urgency; it does not compete with transaction values.
+   Keep text labels for accessibility and existing canonical due logic. */
+#customerDebtContentToShare #cDebtModalTotal.text-danger{
+  color:#334155;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="danger"] .debt-cycle-status-pill{
+  background:#fff1f2;color:#993c48;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="warning"] .debt-cycle-status-pill{
+  background:#fff7e6;color:#916324;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="success"] .debt-cycle-status-pill{
+  background:#edf8f2;color:#26724e;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="danger"]::-webkit-progress-value{
+  background:#cb7777;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="danger"]::-moz-progress-bar{
+  background:#cb7777;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="warning"]::-webkit-progress-value{
+  background:#c99a52;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="warning"]::-moz-progress-bar{
+  background:#c99a52;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="success"]::-webkit-progress-value{
+  background:#66a68a;
+}
+#customerDebtContentToShare .debt-cycle-period-progress[data-tone="success"]::-moz-progress-bar{
+  background:#66a68a;
+}
+#customerDebtContentToShare .debt-cycle-period-due{
+  color:#475569;font-weight:600;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="danger"] .debt-cycle-period-due{
+  color:#815c61;
+}
+#customerDebtContentToShare .debt-cycle-detail[data-tone="warning"] .debt-cycle-period-due{
+  color:#8c704b;
+}
+#customerDebtContentToShare .debt-cycle-more{
+  margin-top:2px;
+}
+#customerDebtContentToShare .debt-cycle-more-summary{
+  cursor:pointer;display:list-item;
+  min-height:32px;padding:7px 0 3px 2px;
+  color:#566579;font-size:11px;line-height:1.4;font-weight:600;
+}
+#customerDebtContentToShare .debt-cycle-more[open]{
+  border-top:1px solid #e2e8f0;
+  margin-top:6px;padding-top:3px;
+}
+#customerDebtContentToShare .debt-cycle-more > details{
+  margin:2px 0 0 9px;
+}
+#customerDebtContentToShare .debt-cycle-more .debt-cycle-policy-summary,
+#customerDebtContentToShare .debt-cycle-more .debt-cycle-history-title{
+  color:#64748b;font-size:11px;font-weight:500;
+  min-height:30px;padding:6px 0 2px 1px;
+}
+#customerDebtContentToShare .debt-cycle-more > details[open]{
+  border-left:2px solid #e2e8f0;
+  padding-left:8px;
+}
+#customerDebtContentToShare #cDebtModalHistoryList .debt-ledger-side .text-danger{
+  color:#a65357;
+}
