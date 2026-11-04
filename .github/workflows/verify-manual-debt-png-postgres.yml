@@ -9,6 +9,7 @@ on:
       - "supabase/migrations/20261104093000_taphoa_manual_debt_image_handoff.sql"
       - "tests/sql/bank-manual-exact-vnd-isolated.sql"
       - "supabase/migrations/20261104184500_chat_bank_manual_collect_exact_vnd.sql"
+      - "supabase/migrations/20261104193000_chat_bank_manual_round_down_remainder.sql"
   workflow_dispatch:
 
 permissions:
