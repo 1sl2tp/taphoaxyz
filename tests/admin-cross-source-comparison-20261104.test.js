@@ -1,3 +1,4 @@
+import vmModule from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -16,3 +17,15 @@ test('all-source search renders comparison for matching milk and regular goods',
   assert.match(html,/crossSourcePanel/);
   assert.match(html,/group\['hang-thuong'\]\?\.length===1&&group\.sua\?\.length===1/);
 });
+
+test('normalizer matches names with repeated spaces and case',()=>{
+ const vm=requireVm();
+ const begin=html.indexOf('    function crossSourceName(value){');
+ const end=html.indexOf('\n    function crossSourceMatches(){',begin);
+ assert.ok(begin>=0&&end>begin);
+ const normalize=vm.runInNewContext(html.slice(begin,end)+';crossSourceName');
+ assert.equal(normalize('  SỮA    NGÔI SAO  RẺ '),normalize('sữa ngôi sao rẻ'));
+});
+function requireVm(){
+ return vmModule;
+}
