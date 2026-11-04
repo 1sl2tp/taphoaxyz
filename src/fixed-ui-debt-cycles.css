@@ -12,6 +12,10 @@
 #tab-cong-no .debt-cycle-card-status{color:#334155;font-weight:700}
 #tab-cong-no .debt-cycle-card-meta[data-warning="true"] .debt-cycle-card-status{color:#b42318}
 #tab-cong-no .debt-cycle-card-context{color:#64748b;font-weight:400}
+/* Due today/next day is amber; only truly overdue cards are red. */
+#tab-cong-no .debt-cycle-card-meta[data-tone="warning"] .debt-cycle-card-status{color:#92400e}
+#tab-cong-no .debt-cycle-card-meta[data-tone="danger"] .debt-cycle-card-status{color:#b42318}
+#tab-cong-no .debt-cycle-card-meta[data-tone="success"] .debt-cycle-card-status{color:#166534}
 #tab-cong-no .debt-customer-body{min-width:0;flex:1 1 auto}
 #tab-cong-no .debt-customer-money{flex:0 0 auto}
 #tab-cong-no .debt-cycle-load-status{
