@@ -301,8 +301,13 @@
                         }
                     }
                 } else {
+                    const invalidModalEpoch = bridge?.getAccessMode?.() === 'account'
+                        && bridge?.getIdentity?.()?.role === 'admin'
+                        && !/^[1-9][0-9]*$/.test(String(modalEpoch??''));
                     showAlertPopup('Chưa thể gửi vào Chat',
-                        'Phiên hiện tại chưa đủ điều kiện gửi trực tiếp. Hãy đăng nhập tài khoản quản trị TAPHOA, mở lại công nợ của khách rồi thử lại. Không có tin nhắn nào được gửi.');
+                        invalidModalEpoch
+                            ? 'Không xác định được phiên công nợ đang mở. Hãy đóng và mở lại công nợ của đúng khách. Không có tin nhắn nào được gửi.'
+                            : 'Phiên hiện tại chưa đủ điều kiện gửi trực tiếp. Hãy đăng nhập tài khoản quản trị TAPHOA, mở lại công nợ của khách rồi thử lại. Không có tin nhắn nào được gửi.');
                     return;
                 }
             }
