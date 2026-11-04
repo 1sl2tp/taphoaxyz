@@ -715,16 +715,80 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
   }
 }
 
-// SPEC-DEBT-MANUAL-LINKED-20261101: manual recipient-specific send only.
-// The server validates admin identity, linked Zalo and its own debt balance.
-async function manualShareDebt(customerId,requestId){
+// SPEC-TAPHOA-MANUAL-DEBT-PNG-20261104: text -> ticket -> PNG -> same message.
+// The isolated DB migration must be applied by the approved database owner.
+// Until then text still sends, but PNG and Zalo delivery are never claimed.
+async function manualShareDebt(customerId,requestId,captureImage){
   if(employeeAccess||publicAccess||identity?.role!=='admin')
     throw Error('taphoa_admin_required');
   const id=String(customerId||'').trim(),nonce=String(requestId||'').trim();
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-     ||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nonce))
-    throw Error('manual_debt_request_invalid');
-  return business.manualShareDebt(id,nonce);
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if(!uuid.test(id)||!uuid.test(nonce))throw Error('manual_debt_request_invalid');
+  const owner=captureProductionOwner();
+  // Only this existing business RPC may create the canonical debt notice text.
+  // A failed/ambiguous call must NOT be replayed by image handling.
+  const response=await business.manualShareDebt(id,nonce);
+  if(!response?.ok)return response;
+  if(!productionOwnerCurrent(owner))
+    return {...response,image_attached:false,image_reason:'session_changed'};
+  if(!uuid.test(String(response?.message_id||''))
+    ||String(response?.customer_id||'').toLowerCase()!==id.toLowerCase())
+    return {...response,image_attached:false,image_reason:'message_identity_unverified'};
+  if(typeof captureImage!=='function')
+    return {...response,image_attached:false,image_reason:'image_capture_unavailable'};
+  try{
+    const client=await auth.getClient();
+    if(!productionOwnerCurrent(owner))
+      return {...response,image_attached:false,image_reason:'session_changed'};
+    // Fail closed before capturing/uploading bytes when the migration or permission is absent.
+    const {data:ticket,error:ticketError}=await client.rpc('taphoa_manual_debt_image_ticket',{
+      p_customer_id:id,p_request_id:nonce
+    });
+    if(!productionOwnerCurrent(owner))
+      return {...response,image_attached:false,image_reason:'session_changed'};
+    if(ticketError)throw ticketError;
+    if(!ticket?.ok)
+      return {...response,image_attached:false,image_reason:String(ticket?.reason||'image_ticket_denied')};
+    if(String(ticket.message_id||'').toLowerCase()!==String(response.message_id).toLowerCase())
+      throw Error('manual_debt_image_message_mismatch');
+    if(ticket.already_attached===true)
+      return {...response,image_attached:true,image_asset_id:ticket.asset_id,already_attached:true};
+    if(!uuid.test(String(ticket.asset_id||''))
+      ||typeof ticket.storage_key!=='string'
+      ||!ticket.storage_key.endsWith('/'+String(ticket.asset_id)))
+      throw Error('manual_debt_image_ticket_invalid');
+    const image=await captureImage();
+    if(!productionOwnerCurrent(owner))
+      return {...response,image_attached:false,image_reason:'session_changed'};
+    const blob=image?.blob,width=Number(image?.width),height=Number(image?.height);
+    if(!blob||blob.type!=='image/png'||!Number.isSafeInteger(blob.size)
+      ||blob.size<1||blob.size>15728640
+      ||!Number.isSafeInteger(width)||width<1||width>20000
+      ||!Number.isSafeInteger(height)||height<1||height>20000)
+      throw Error('manual_debt_png_metadata_invalid');
+    const upload=await client.storage.from('v21-media').upload(ticket.storage_key,blob,{
+      contentType:'image/png',upsert:false,cacheControl:'3600'
+    });
+    if(!productionOwnerCurrent(owner))
+      return {...response,image_attached:false,image_reason:'session_changed'};
+    if(upload.error)throw upload.error;
+    const {data:attached,error:attachError}=await client.rpc('taphoa_manual_debt_image_attach',{
+      p_request_id:nonce,p_asset_id:ticket.asset_id,
+      p_size_bytes:blob.size,p_width_px:width,p_height_px:height
+    });
+    if(!productionOwnerCurrent(owner))
+      return {...response,image_attached:false,image_reason:'session_changed'};
+    if(attachError)throw attachError;
+    if(attached?.ok!==true
+      ||String(attached.message_id||'').toLowerCase()!==String(response.message_id).toLowerCase()
+      ||String(attached.asset_id||'').toLowerCase()!==String(ticket.asset_id).toLowerCase())
+      throw Error('manual_debt_image_attach_unverified');
+    return {...response,image_attached:true,image_asset_id:ticket.asset_id};
+  }catch(error){
+    // The text may have committed; never retry it or send the PNG elsewhere.
+    console.warn('[taphoa] manual debt PNG not attached:',String(error?.code||error?.message||error));
+    return {...response,image_attached:false,image_reason:'image_attach_failed'};
+  }
 }
 
 async function manualShareOrder(orderId,requestId){
