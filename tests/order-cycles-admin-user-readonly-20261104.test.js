@@ -9,6 +9,7 @@ const sql=read('supabase/migrations/20261104211500_taphoa_order_cycles_readonly_
 const amountsSQL=read('supabase/migrations/20261104215000_taphoa_order_cycles_progress_amount_readonly.sql');
 const paymentSQL=read('supabase/migrations/20261104224500_taphoa_payment_period_policy_projection.sql');
 const js=read('src/fixed-ui-debt-cycles.js');
+const css=read('src/fixed-ui-debt-cycles.css');
 const html=read('index.html');
 const bridge=read('src/fixed-production-bridge.js');
 const business=read('src/core/business.js');
@@ -51,7 +52,7 @@ class Node {
  querySelectorAll(){return []}
 }
 const text=n=>String(n?.textContent||'')+(n?.children||[]).map(text).join('');
-function fixture(role='admin'){
+function fixture(role='admin',overrides={}){
   const bodies={a:new Node('div'),b:new Node('div')};
   const cards=Object.entries(bodies).map(([id,body])=>({
    dataset:{debtCustomerId:id},querySelector:s=>s==='.debt-customer-body'?body:null
@@ -66,7 +67,8 @@ function fixture(role='admin'){
    customerDebtModalWrapper:wrapper
   };
   let identity={uid:role==='admin'?'admin-a':'a',role},adminReads=0,userReads=0;
-  const all=example;
+  const all=structuredClone(example);
+  Object.assign(all[0],overrides);
   const bridge={
    getIdentity:()=>identity,getAccessMode:()=> 'account',
    debtCycles:async()=>{adminReads++;return [];},
@@ -97,10 +99,10 @@ test('Admin shows one payment deadline, independent of history order count',asyn
  await f.window.openCustomerDebtModal('a');
  const panel=f.modal.children.find(n=>n.id==='debtCyclePanel');
  const body=text(panel);
- assert.match(body,/Chu kỳ nợ 1 · 3 đơn nhập/);
- assert.match(body,/Hạn tất toán toàn bộ: 08\/11\/2026 · ngừng nhập hàng 3 ngày/);
+ assert.match(body,/Chu kỳ nợ 1 · 3 đơn/);
+ assert.match(body,/Hạn tất toán 08\/11\/2026 · ngừng nhập đủ 3 ngày/);
  assert.match(body,/D7 tối đa 09\/11\/2026/);
- assert.match(body,/Mua gần nhất 05\/11\/2026/);
+ assert.match(body,/Mua cuối 05\/11\/2026/);
  assert.match(body,/Mốc ngừng nhập 08\/11\/2026/);
  assert.doesNotMatch(body,/CK\d+|Còn ước tính|Đã bù tạm tính|D7 sớm nhất/);
  const progress=panel.children.find(n=>n.tag==='progress');
@@ -136,6 +138,42 @@ test('debt period already overdue is not reset by a new purchase',()=>{
  const missing=fn({isOpen:true,orderCount:7,paymentPolicy:null});
  assert.match(missing.context,/Chưa xác định hạn/,'missing backend policy fails closed');
 });
+test('green, amber and red match the canonical deadline and stay compact',async()=>{
+ const cases=[
+  {todayDay:'2026-11-05',dueDay:'2026-11-08',isDue:false,daysOverdue:0,tone:'success',phrase:/Trong hạn/},
+  {todayDay:'2026-11-07',dueDay:'2026-11-08',isDue:false,daysOverdue:0,tone:'warning',phrase:/Sắp đến hạn/},
+  {todayDay:'2026-11-08',dueDay:'2026-11-08',isDue:true,daysOverdue:0,tone:'warning',phrase:/Đến hạn hôm nay/},
+  {todayDay:'2026-11-09',dueDay:'2026-11-08',isDue:true,daysOverdue:1,tone:'danger',phrase:/Quá hạn 1 ngày/},
+  {todayDay:'2026-11-04',dueDay:'2026-10-07',isDue:true,daysOverdue:28,tone:'danger',phrase:/Quá hạn 28 ngày/}
+ ];
+ for(const {todayDay,dueDay,isDue,daysOverdue,tone,phrase} of cases){
+  const f=fixture('admin',{
+   todayDay,paymentPolicy:{...example[0].paymentPolicy,dueDay,isDue,daysOverdue}
+  });
+  f.window.renderCongNo();
+  await new Promise(resolve=>setImmediate(resolve));
+  await f.window.openCustomerDebtModal('a');
+  const panel=f.modal.children.find(c=>c.id==='debtCyclePanel');
+  assert.equal(panel.dataset.tone,tone,'detail panel tone');
+  const bar=panel.children.find(c=>c.tag==='progress');
+  assert.equal(bar.dataset.tone,tone,'progress bar tone must equal payment status');
+  const header=panel.children.find(c=>c.className==='debt-cycle-period-header');
+  assert.match(text(header),phrase);
+  assert.equal(f.bodies.a.children[0].dataset.tone,tone,'customer list status tone');
+  assert.equal(panel.children.filter(c=>c.className==='debt-cycle-detail-explanation').length,0,
+   'long policy explanation is collapsed to give transaction history space');
+  const explanatory=panel.children.find(c=>c.className==='debt-cycle-policy-details');
+  assert(explanatory&&explanatory.children.some(c=>c.tag==='summary'),
+   'policy details remain accessible on demand');
+ }
+ for(const tone of ['success','warning','danger']){
+  assert(css.includes('.debt-cycle-period-progress[data-tone="'+tone+'"]::-webkit-progress-value'));
+  assert(css.includes('.debt-cycle-period-progress[data-tone="'+tone+'"]::-moz-progress-bar'));
+  assert(css.includes('.debt-cycle-detail[data-tone="'+tone+'"] .debt-cycle-status-pill')||tone==='success');
+ }
+ assert.match(html,/fixed-ui-debt-cycles\.js\?v=[^"]*debt-tone=20261104/);
+ assert.match(html,/fixed-ui-debt-cycles\.css\?v=[^"]*debt-tone=20261104/);
+});
 test('signed-in User loads only own data, never Admin history or another customer',async()=>{
  const f=fixture('user');f.window.renderCongNo();
  await new Promise(resolve=>setImmediate(resolve));
@@ -144,7 +182,7 @@ test('signed-in User loads only own data, never Admin history or another custome
  assert.equal(f.window.TAPHOA_DEBT_CYCLES.orders('b').length,0);
  assert.equal(f.window.TAPHOA_DEBT_CYCLES.list('a').length,0);
  await f.window.openCustomerDebtModal('a');
- assert.match(text(f.modal.children.find(c=>c.id==='debtCyclePanel')),/Chu kỳ nợ 1 · 3 đơn nhập/);
+ assert.match(text(f.modal.children.find(c=>c.id==='debtCyclePanel')),/Chu kỳ nợ 1 · 3 đơn/);
  f.setIdentity({uid:'b',role:'user'});
  assert.equal(f.window.TAPHOA_DEBT_CYCLES.orders('a').length,0,
   'an account transition invalidates previously loaded customer cycles');
