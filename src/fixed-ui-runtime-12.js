@@ -94,7 +94,8 @@
                 const width = Math.min(760, Math.max(360, sourceWidth));
 
                 const clone = source.cloneNode(true);
-                clone.removeAttribute('id');
+                // Keep the capture root ID: debt detail CSS is scoped to it.
+                // Removing it strips flex, typography and cycle layouts from the PNG.
                 clone.style.width = width + 'px';
                 clone.style.height = 'auto';
                 clone.style.maxHeight = 'none';
@@ -133,7 +134,7 @@
 
                 const cloneHistory = clone.querySelector('#cDebtModalHistoryList');
                 if (cloneHistory) {
-                    cloneHistory.removeAttribute('id');
+                    // Keep the history ID so scoped history styles still apply.
                     cloneHistory.style.height = 'auto';
                     cloneHistory.style.maxHeight = 'none';
                     cloneHistory.style.minHeight = '0';
