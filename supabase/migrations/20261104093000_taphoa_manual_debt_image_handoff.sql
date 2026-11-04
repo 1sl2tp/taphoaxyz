@@ -153,8 +153,9 @@ DROP POLICY IF EXISTS v21_taphoa_manual_debt_image_upload ON storage.objects;
 CREATE POLICY v21_taphoa_manual_debt_image_upload
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK(
-  bucket_id='v21-media' AND
-  v21_storage_private.can_upload_taphoa_manual_debt_image(name)
+  bucket_id='v21-media'
+  AND owner_id=auth.uid()::text
+  AND v21_storage_private.can_upload_taphoa_manual_debt_image(name)
 );
 
 CREATE OR REPLACE FUNCTION public.taphoa_manual_debt_image_attach(
