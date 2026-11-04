@@ -66,6 +66,15 @@ BEGIN
       OR v_ticket.conversation_id IS DISTINCT FROM v_message.conversation_id
     THEN RAISE EXCEPTION 'manual_image_ticket_owner_mismatch' USING errcode='42501'; END IF;
     IF v_ticket.attached_at IS NOT NULL THEN
+      -- A prior ticket does not prove its media asset is still present.
+      IF NOT EXISTS(
+        SELECT 1 FROM public.v21_media_assets a
+        WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
+          AND a.kind='image' AND a.mime_type='image/png'
+          AND a.deleted_at IS NULL
+      ) THEN
+        RETURN jsonb_build_object('ok',false,'reason','attached_asset_missing');
+      END IF;
       RETURN jsonb_build_object('ok',true,'already_attached',true,
         'message_id',v_ticket.message_id,'asset_id',v_ticket.asset_id);
     END IF;
@@ -167,6 +176,14 @@ BEGIN
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'manual_image_ticket_not_found' USING errcode='42501'; END IF;
   IF v_ticket.attached_at IS NOT NULL THEN
+    IF NOT EXISTS(
+      SELECT 1 FROM public.v21_media_assets a
+      WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
+        AND a.kind='image' AND a.mime_type='image/png'
+        AND a.deleted_at IS NULL
+    ) THEN
+      RETURN jsonb_build_object('ok',false,'reason','attached_asset_missing');
+    END IF;
     RETURN jsonb_build_object('ok',true,'already_attached',true,
       'message_id',v_ticket.message_id,'asset_id',v_ticket.asset_id);
   END IF;
@@ -213,6 +230,17 @@ BEGIN
     v_ticket.asset_id,v_ticket.conversation_id,v_ticket.message_id,v_sender,
     'image','image/png',p_size_bytes,v_ticket.storage_key,p_width_px,p_height_px,0
   ) ON CONFLICT(id) DO NOTHING;
+  -- Fail closed if another row already owned this ID or media is missing.
+  IF NOT EXISTS(
+    SELECT 1 FROM public.v21_media_assets a
+    WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
+      AND a.conversation_id=v_ticket.conversation_id
+      AND a.owner_account_id=v_sender AND a.kind='image'
+      AND a.mime_type='image/png' AND a.storage_key=v_ticket.storage_key
+      AND a.size_bytes=p_size_bytes AND a.deleted_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'manual_image_asset_not_confirmed';
+  END IF;
   UPDATE v21_private.taphoa_manual_debt_image_uploads
   SET attached_at=now() WHERE message_id=v_ticket.message_id;
   RETURN jsonb_build_object('ok',true,'message_id',v_ticket.message_id,
