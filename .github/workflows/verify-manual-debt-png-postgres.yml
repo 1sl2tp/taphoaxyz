@@ -13,6 +13,8 @@ on:
       - "supabase/migrations/20261104211500_taphoa_order_cycles_readonly_admin_user.sql"
       - "supabase/migrations/20261104215000_taphoa_order_cycles_progress_amount_readonly.sql"
       - "supabase/migrations/20261104220000_taphoa_order_cycles_unpaid_due_readonly.sql"
+      - "supabase/migrations/20261104224500_taphoa_payment_period_policy_projection.sql"
+      - "supabase/migrations/20261024073000_cycle196_policy_snapshot.sql"
       - "tests/sql/order-cycles-readonly-isolated-20261104.sql"
   workflow_dispatch:
 
