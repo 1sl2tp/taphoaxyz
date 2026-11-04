@@ -33,7 +33,7 @@ function fixture({refreshFails=false}={}){
   appData:{dontam:[['id'],['ORDER-1']],dongiao:[['id'],['DELIVERED-1']]},
   hasPermission:()=>true,denyPermission:msg=>{throw Error(msg);},
   uniqueOrderIds:()=>['ORDER-BACKEND-ID'],
-  backendOrderIdFor:()=> 'ORDER-BACKEND-ID',
+  backendOrderIdFor:()=> '11111111-1111-4111-8111-111111111111',
   backend:()=>svc,
   showConfirmModal:(...args)=>confirmations.push(args.at(-1)),
   showToast:(...args)=>toasts.push(args),
