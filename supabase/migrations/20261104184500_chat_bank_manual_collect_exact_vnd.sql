@@ -1,3 +1,8 @@
+-- SUPERSEDED / DO NOT APPLY ALONE: preserved as a regression baseline.
+-- Production uses 20261104193000_chat_bank_manual_round_down_remainder.sql
+-- (bank evidence exact, manual debt booked after dropping 1-999 VND remainder).
+-- Reapplying this older version after the rounded version would regress the
+-- requested behavior; all deploys must finish on the later migration.
 -- SPEC-BANK-MANUAL-EXACT-VND-20261104 (SOURCE ONLY; no production DDL from this commit).
 -- Regression: Agribank #198 was blocked as invalid_bank_notice solely because
 -- its verified incoming credit of 16,000,008 VND is not a multiple of 1,000.
