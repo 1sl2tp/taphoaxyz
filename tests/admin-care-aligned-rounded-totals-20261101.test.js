@@ -33,7 +33,7 @@ test('missing totals remain missing; zero remains zero; percentages keep two dec
 test('all customer finance amounts use the rounded formatter; counts and percentages do not',()=>{
  assert.match(code,/\$\('careSystemRevenue'\)\.textContent=amount\(totals\.revenue\)/);
  assert.match(code,/\$\('careSystemCost'\)\.textContent=[^\n]*amount\(totals\.cost\)/);
- assert.match(code,/\$\('careSystemProfit'\)\.textContent=amount\(totals\.gross_profit\)/);
+ assert.match(code,/\$\('careSystemProfit'\)\.textContent=Number\(totals\.missing_cost_lines\)>0\?'Chưa đủ giá vốn':amount\(totals\.gross_profit\)/);
  assert.match(code,/const balance=Number\(r\.debt_balance\)<0\?'Dư '\+amount/);
  assert.match(code,/amount\(r\.total_revenue\)/);
  assert.match(code,/amount\(r\.period_collected\)/);
