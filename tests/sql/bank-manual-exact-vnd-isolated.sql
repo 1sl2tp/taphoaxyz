@@ -19,6 +19,7 @@ CREATE TABLE public.v21_accounts(
   id uuid PRIMARY KEY,
   role text NOT NULL,
   contact_group text,
+  display_name text,
   deleted_at timestamptz,
   locked_at timestamptz
 );
@@ -47,7 +48,8 @@ CREATE TABLE public.chat_bank_manual_collections(
   ledger_id bigint NOT NULL UNIQUE,
   mode text NOT NULL,
   note text,
-  confirmed_by uuid
+  confirmed_by uuid,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE public.chat_bank_app_collection_links(
   notification_id bigint PRIMARY KEY,
@@ -88,10 +90,10 @@ RETURNS void LANGUAGE plpgsql VOLATILE AS $body$
 BEGIN RETURN; END;
 $body$;
 
-INSERT INTO public.v21_accounts(id,role,contact_group)
-VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','admin',null),
-       ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','user','customer'),
-       ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','user','customer');
+INSERT INTO public.v21_accounts(id,role,contact_group,display_name)
+VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','admin',null,'Fake Admin'),
+       ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','user','customer','Fake Customer 1'),
+       ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','user','customer','Fake Customer 2');
 
 -- Authentic-looking but 100% fabricated alerts: unique 8 dong ending,
 -- malformed raw amount, invalid credited account, own-transfer and used proof.
@@ -109,23 +111,36 @@ INSERT INTO public.taphoa_agribank_notifications(
  (202,'review','com.vnpay.Agribank3g',
   '2901181999999: +16.000.008 VND',16000008,false,'2901181999999',now()),
  (203,'credit_candidate','com.vnpay.Agribank3g',
+  '2901181999999: +16.000.008 VND',16000008,false,'2901181999999',now()),
+ (204,'credit_candidate','com.vnpay.Agribank3g',
+  '2901181999999: +16.000.008 VND',16000008,false,'2901181999999',now()),
+ (205,'credit_candidate','com.vnpay.Agribank3g',
   '2901181999999: +16.000.008 VND',16000008,false,'2901181999999',now());
 INSERT INTO public.chat_bank_app_collection_links(notification_id,ledger_id)
 VALUES (203,9999);
 
--- Run the exact new migration; no copied SQL or production database.
-\i supabase/migrations/20261104184500_chat_bank_manual_collect_exact_vnd.sql
+-- Run exact round-down migration, not a simplified SQL implementation.
+\i supabase/migrations/20261104193000_chat_bank_manual_round_down_remainder.sql
 
 SET ROLE authenticated;
 DO $bank_test$
-DECLARE r jsonb;
+DECLARE r jsonb; p jsonb;
 BEGIN
+ p:=public.chat_bank_manual_collection_prepare(
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',198);
+ IF p->>'recorded_amount_vnd' IS DISTINCT FROM '16000000'
+    OR p->>'ignored_remainder_vnd' IS DISTINCT FROM '8'
+    OR jsonb_array_length(p->'possible_existing')<>0 THEN
+   RAISE EXCEPTION 'bank preview should disclose 8 VND difference without existing ledger: %',p;
+ END IF;
  r:=public.chat_bank_manual_collect(
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd',198,
   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   'Thu qua thong bao Agribank da doi chieu',null);
  IF r->>'status' IS DISTINCT FROM 'collected'
     OR r->>'amount_vnd' IS DISTINCT FROM '16000008'
+    OR r->>'recorded_amount_vnd' IS DISTINCT FROM '16000000'
+    OR r->>'ignored_remainder_vnd' IS DISTINCT FROM '8'
     OR r->>'debt_changed' IS DISTINCT FROM 'true' THEN
    RAISE EXCEPTION 'valid 16,000,008 VND credit rejected: %',r;
  END IF;
@@ -135,6 +150,17 @@ BEGIN
   'Thu qua thong bao Agribank da doi chieu',null);
  IF r->>'status' IS DISTINCT FROM 'already_collected' THEN
    RAISE EXCEPTION 'duplicate notification charged again: %',r;
+ END IF;
+ p:=public.chat_bank_manual_collection_prepare(
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',204);
+ IF jsonb_array_length(p->'possible_existing')<>1 THEN
+   RAISE EXCEPTION 'manual duplicate candidate hidden after rounding down: %',p;
+ END IF;
+ r:=public.chat_bank_manual_collect(
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',204,
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Giao dich khac trung so tien',null);
+ IF r->>'status' IS DISTINCT FROM 'possible_manual_collection' THEN
+   RAISE EXCEPTION 'same-account manual duplicate not blocked: %',r;
  END IF;
  r:=public.chat_bank_manual_collect(
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd',199,
@@ -170,15 +196,17 @@ END;
 $bank_test$;
 RESET ROLE;
 
--- All financial activity is limited to ONE exactly accounted fake receipt.
+-- All financial activity is limited to ONE round-down fake receipt.
 DO $bank_test$
 BEGIN
  IF (SELECT count(*) FROM public.taphoa_debt_ledger)<>1
-    OR (SELECT amount_vnd FROM public.taphoa_debt_ledger LIMIT 1)<>-16000.008::numeric
+    OR (SELECT amount_vnd FROM public.taphoa_debt_ledger LIMIT 1)<>-16000::numeric
+    OR (SELECT count(*) FROM public.taphoa_debt_ledger WHERE note LIKE '%bỏ 8đ lẻ%')<>1
+    OR (SELECT count(*) FROM public.chat_bank_manual_collections WHERE note LIKE '%bỏ 8đ lẻ%')<>1
     OR (SELECT count(*) FROM public.chat_bank_manual_collections)<>1 THEN
    RAISE EXCEPTION 'duplicate or rounded bank collection detected';
  END IF;
 END;
 $bank_test$;
 
-\echo 'PASS: exact non-thousand VND, no rounding, idempotency, raw-credit, own-transfer, account and prior-auto guards'
+\echo 'PASS: verified 16,000,008 VND bank credit -> 16,000,000 VND ledger, 8 VND audit, duplicate/raw/account guards'
