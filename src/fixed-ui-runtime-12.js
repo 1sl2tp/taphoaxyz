@@ -255,6 +255,10 @@
                                 showToast(response.already_sent
                                     ? 'Ảnh công nợ đã có trong Chat của khách. Chưa xác nhận gửi qua Zalo.'
                                     : 'Đã đính kèm ảnh công nợ vào Chat của khách. Chưa xác nhận gửi qua Zalo.', 'success');
+                            }else if(response.image_reason==='image_feature_not_deployed'){
+                                showToast('Đã gửi thông báo công nợ vào Chat. Máy chủ chưa triển khai gửi ảnh; không cần gửi lại. Chưa xác nhận Zalo.', 'info');
+                            }else if(response.image_reason==='image_too_long'){
+                                showToast('Thông báo công nợ đã vào Chat. Lịch sử quá dài nên không gửi ảnh; khách có thể xem qua liên kết. Chưa xác nhận Zalo.', 'info');
                             }else{
                                 showToast(response.already_sent
                                     ? 'Thông báo công nợ đã có trong Chat; ảnh chưa xác nhận. Chưa xác nhận gửi qua Zalo.'
