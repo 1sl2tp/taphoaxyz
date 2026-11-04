@@ -798,8 +798,18 @@ async function manualShareDebt(customerId,requestId,captureImage){
     return {...response,image_attached:true,image_asset_id:ticket.asset_id};
   }catch(error){
     // The text may have committed; never retry it or send the PNG elsewhere.
-    console.warn('[taphoa] manual debt PNG not attached:',String(error?.code||error?.message||error));
-    return {...response,image_attached:false,image_reason:'image_attach_failed'};
+    const code=String(error?.code||'');
+    const detail=String(error?.message||error||'');
+    // A confirmed Chat text is NOT an image or Zalo delivery ACK. Give a
+    // precise, non-sensitive reason so Admin does not keep sending duplicates.
+    const reason=code==='PGRST202'||code==='42883'
+      ||/could not find the function|function .* does not exist/i.test(detail)
+      ?'image_feature_not_deployed'
+      :/Lịch sử công nợ quá dài/.test(detail)
+        ?'image_too_long'
+        :'image_attach_failed';
+    console.warn('[taphoa] manual debt PNG not attached:',code||detail);
+    return {...response,image_attached:false,image_reason:reason};
   }
 }
 
