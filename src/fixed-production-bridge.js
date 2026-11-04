@@ -751,8 +751,13 @@ async function manualShareDebt(customerId,requestId,captureImage){
       return {...response,image_attached:false,image_reason:String(ticket?.reason||'image_ticket_denied')};
     if(String(ticket.message_id||'').toLowerCase()!==String(response.message_id).toLowerCase())
       throw Error('manual_debt_image_message_mismatch');
-    if(ticket.already_attached===true)
+    if(ticket.already_attached===true){
+      // An already-attached ACK must identify a concrete matching media asset.
+      // The guarded SQL ticket checks that the canonical media row is still live.
+      if(!uuid.test(String(ticket.asset_id||'')))
+        throw Error('manual_debt_existing_image_unverified');
       return {...response,image_attached:true,image_asset_id:ticket.asset_id,already_attached:true};
+    }
     if(!uuid.test(String(ticket.asset_id||''))
       ||typeof ticket.storage_key!=='string'
       ||!ticket.storage_key.endsWith('/'+String(ticket.asset_id)))
@@ -771,7 +776,14 @@ async function manualShareDebt(customerId,requestId,captureImage){
     });
     if(!productionOwnerCurrent(owner))
       return {...response,image_attached:false,image_reason:'session_changed'};
-    if(upload.error)throw upload.error;
+    if(upload.error){
+      // A timeout AFTER Storage committed can leave the deterministic ticket
+      // key occupied. A 409 is not an upload success acknowledgement: only the
+      // following server attach RPC can verify owner, storage MIME and exact size.
+      const status=String(upload.error.statusCode??upload.error.status??'');
+      const duplicate=status==='409'||String(upload.error.code||'')==='AssetAlreadyExists';
+      if(!duplicate)throw upload.error;
+    }
     const {data:attached,error:attachError}=await client.rpc('taphoa_manual_debt_image_attach',{
       p_request_id:nonce,p_asset_id:ticket.asset_id,
       p_size_bytes:blob.size,p_width_px:width,p_height_px:height
