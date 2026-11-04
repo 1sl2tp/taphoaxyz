@@ -224,3 +224,12 @@ test('debt PNG clone retains scoped IDs required for cycle and history layout',(
   assert.match(css,/#customerDebtContentToShare \.debt-cycle-detail/);
   assert.match(css,/#customerDebtContentToShare \.debt-cycle-history ol/);
 });
+
+test('new manual debt migration sends to Chat without requiring a Zalo link',()=>{
+ const sql=fs.readFileSync('supabase/migrations/20261104040000_taphoa_manual_debt_chat_without_zalo_requirement.sql','utf8');
+ assert.match(sql,/create or replace function public\.taphoa_manual_send_customer_debt/);
+ assert.match(sql,/taphoa_chat_notify_customer/);
+ assert.doesNotMatch(sql,/from public\.zalo_user_links/);
+ assert.match(sql,/taphoa_role'<>'admin'/);
+ assert.match(sql,/pg_advisory_xact_lock/);
+});
