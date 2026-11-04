@@ -77,10 +77,32 @@ test('missing/unapplied DB ticket keeps already sent Chat text, never captures/u
   const x=await f.send();
   assert.equal(x.ok,true);
   assert.equal(x.image_attached,false);
+  assert.equal(x.image_reason,'image_feature_not_deployed');
   assert.equal(f.textCalls(),1);
   assert.equal(f.captureCalls(),0);
   assert.equal(f.events.filter(x=>x.name==='storage.upload').length,0);
   assert.equal(f.events.filter(x=>x.name==='taphoa_manual_debt_image_attach').length,0);
+});
+
+test('oversized debt PNG is distinguished from failed upload without retrying Chat text',async()=>{
+  const f=fixture();
+  const x=await f.send(async()=>{throw Error('Lịch sử công nợ quá dài để tạo ảnh.');});
+  assert.equal(x.ok,true);
+  assert.equal(x.image_attached,false);
+  assert.equal(x.image_reason,'image_too_long');
+  assert.equal(f.textCalls(),1);
+  assert.equal(f.events.filter(x=>x.name==='storage.upload').length,0);
+  assert.equal(f.events.filter(x=>x.name==='taphoa_manual_debt_image_attach').length,0);
+});
+
+test('other image errors never claim a deployed PNG failure is a text failure',async()=>{
+  const f=fixture({ticketError:{code:'42501',message:'permission denied'}});
+  const x=await f.send();
+  assert.equal(x.ok,true);
+  assert.equal(x.image_attached,false);
+  assert.equal(x.image_reason,'image_attach_failed');
+  assert.equal(f.textCalls(),1);
+  assert.equal(f.events.filter(x=>x.name==='storage.upload').length,0);
 });
 
 test('denied/expired ticket never renders or uploads any image',async()=>{
