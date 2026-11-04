@@ -102,6 +102,21 @@
                 clone.style.minHeight = '0';
                 clone.style.overflow = 'visible';
                 clone.style.flex = 'none';
+                clone.style.display = 'block';
+                clone.style.maxWidth = 'none';
+                // Export is a document, not the live fixed-height scroll sheet.
+                // Nested flex children otherwise retain their modal heights and
+                // later sections paint on top of the transaction cards.
+                clone.classList.add('debt-png-export');
+                const exportStyle = document.createElement('style');
+                exportStyle.textContent = \`
+                  .debt-png-export { display:block!important; height:auto!important; max-height:none!important; overflow:visible!important; }
+                  .debt-png-export > * { position:relative!important; flex:none!important; height:auto!important; max-height:none!important; min-height:0!important; overflow:visible!important; }
+                  .debt-png-export #cDebtModalHistoryList { display:block!important; height:auto!important; max-height:none!important; overflow:visible!important; }
+                  .debt-png-export #cDebtModalHistoryList > * { position:relative!important; height:auto!important; max-height:none!important; min-height:0!important; overflow:visible!important; }
+                  .debt-png-export .debt-cycle-history ol { max-height:none!important; overflow:visible!important; }
+                \`;
+                clone.prepend(exportStyle);
 
                 const customerName = String(document.getElementById('cDebtModalName')?.innerText || '')
                     .replace(/^KH:\s*/i, '')
