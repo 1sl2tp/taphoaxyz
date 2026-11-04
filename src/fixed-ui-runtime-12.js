@@ -82,7 +82,7 @@
 
         // Generate ONE debt PNG for all three actions. No title/text is handed
         // to native file share: macOS treats those as additional share items.
-        async function createCustomerDebtPngBlob() {
+        async function createCustomerDebtPngBlob({withDimensions=false}={}) {
             const source = document.getElementById('customerDebtContentToShare');
             if (!source) throw new Error('Chưa mở công nợ khách hàng.');
 
@@ -190,7 +190,10 @@
                     libraryTimeout: 6500
                 });
 
-                return await capture.canvasToPngBlob(canvas, 'Không tạo được ảnh công nợ.');
+                // Preserve dimensions before canvasToPngBlob clears canvas memory.
+                const pngWidth=canvas.width,pngHeight=canvas.height;
+                const blob=await capture.canvasToPngBlob(canvas, 'Không tạo được ảnh công nợ.');
+                return withDimensions?{blob,width:pngWidth,height:pngHeight}:blob;
             } finally {
                 captureHost?.remove();
                 hideLoading();
@@ -214,11 +217,20 @@
                     && typeof crypto.randomUUID === 'function';
                 if (eligible) {
                     try {
-                        const response = await bridge.manualShareDebt(customerId, crypto.randomUUID());
+                        const response = await bridge.manualShareDebt(
+                            customerId, crypto.randomUUID(),
+                            ()=>createCustomerDebtPngBlob({withDimensions:true})
+                        );
                         if (response?.ok === true) {
-                            showToast(response.already_sent
-                                ? 'Công nợ đã được gửi vào cuộc trò chuyện của khách.'
-                                : 'Đã gửi thông báo công nợ vào Chat của khách. Chưa xác nhận gửi qua Zalo.', 'success');
+                            if(response.image_attached===true){
+                                showToast(response.already_sent
+                                    ? 'Ảnh công nợ đã có trong Chat của khách. Chưa xác nhận gửi qua Zalo.'
+                                    : 'Đã đính kèm ảnh công nợ vào Chat của khách. Chưa xác nhận gửi qua Zalo.', 'success');
+                            }else{
+                                showToast(response.already_sent
+                                    ? 'Thông báo công nợ đã có trong Chat; ảnh chưa xác nhận. Chưa xác nhận gửi qua Zalo.'
+                                    : 'Đã gửi thông báo công nợ vào Chat; ảnh chưa đính kèm. Chưa xác nhận gửi qua Zalo.', 'info');
+                            }
                             return;
                         }
                         if (response?.reason === 'recently_sent') {
