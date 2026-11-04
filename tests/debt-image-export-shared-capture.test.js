@@ -122,7 +122,7 @@ function debtSendFixture({role='admin',mode='account',response={ok:true},throwEr
 test('linked customer sends verified manual debt directly into their conversation, not to OS contact chooser',async()=>{
  const f=debtSendFixture({response:{ok:true,message_id:'confirmed'}});
  await f.fn('send');
- assert.deepEqual(f.calls,[[aliceId,requestId]]);
+ assert.deepEqual(f.calls.map(([id,nonce,capture])=>[id,nonce,typeof capture]),[[aliceId,requestId,'function']]);
  assert.equal(f.blobs.length,0,'no capture or native share for a known linked recipient');
  assert.equal(f.shares.length,0);
  assert.equal(f.alerts.length,0);
@@ -187,7 +187,9 @@ test('manual debt send is admin-only, bound to customer ID, and never mutates fi
  assert.doesNotMatch(manualDebtSql,/\b(?:insert|update|delete)\s+(?:into\s+|from\s+)?(?:public\.)?taphoa_debt_ledger\b/i);
  assert.doesNotMatch(manualDebtSql,/create table|alter table/i);
  assert.match(businessCode,/manualShareDebt:\(id,requestId\)=>gateway\.rpc\('taphoa_manual_send_customer_debt'/);
- assert.match(bridgeCode,/async function manualShareDebt\(customerId,requestId\)/);
+ assert.match(bridgeCode,/async function manualShareDebt\(customerId,requestId,captureImage\)/);
+ assert.match(bridgeCode,/taphoa_manual_debt_image_ticket/);
+ assert.match(bridgeCode,/taphoa_manual_debt_image_attach/);
  assert.match(bridgeCode,/manualShareOrder,manualShareDebt,reverseOrder/);
  assert.match(indexHtml,/fixed-production-bridge\.js\?v=[^"]*manual-debt=20261101/);
  assert.match(indexHtml,/fixed-ui-runtime-12\.js\?v=[^"]*linked-contact=20261101/);
