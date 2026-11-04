@@ -122,6 +122,7 @@ FROM (
 ) t
 \gset
 SET test.png_asset = :'png_asset';
+SET test.png_key = :'png_key';
 DO $$
 DECLARE v jsonb;
 BEGIN
@@ -134,8 +135,18 @@ BEGIN
  END IF;
 END $$;
 
--- Forged Storage upload prior to the authorized owner, or wrong key, is denied.
+-- A non-Admin must not get a ticket, even when the request ID is valid.
 SET request.jwt.claim.sub='99999999-9999-4999-8999-999999999999';
+DO $
+BEGIN
+  PERFORM public.taphoa_manual_debt_image_ticket(
+    '33333333-3333-4333-8333-333333333333',
+    '77777777-7777-4777-8777-777777777777');
+  RAISE EXCEPTION 'non-Admin unexpectedly obtained a PNG ticket';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $;
+
+-- Wrong auth owner must be denied for BOTH an invented key and the real key.
 DO $$
 BEGIN
   INSERT INTO storage.objects(bucket_id,name,owner_id,metadata)
@@ -143,7 +154,15 @@ BEGIN
     '99999999-9999-4999-8999-999999999999','{"mimetype":"image/png","size":321}');
   RAISE EXCEPTION 'wrong owner inserted Storage object unexpectedly';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
-END $$;
+END $;
+DO $
+BEGIN
+  INSERT INTO storage.objects(bucket_id,name,owner_id,metadata)
+  VALUES('v21-media',current_setting('test.png_key'),
+    '99999999-9999-4999-8999-999999999999','{"mimetype":"image/png","size":321}');
+  RAISE EXCEPTION 'non-Admin inserted object into real ticket path';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $;
 
 SET request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
 -- Attachment without a file must fail closed, not create a media row.
@@ -162,7 +181,25 @@ VALUES('v21-media',:'png_key','11111111-1111-4111-8111-111111111111',
   '{"mimetype":"image/png","size":321}'::jsonb);
 
 -- MIME, size and requested asset ID must be server-verified.
-DO $$
+-- A media object may be present but not be a PNG: it must not be accepted.
+RESET ROLE;
+UPDATE storage.objects SET metadata='{"mimetype":"image/jpeg","size":321}'::jsonb
+WHERE name=:'png_key';
+SET ROLE authenticated;
+DO $
+BEGIN
+ PERFORM public.taphoa_manual_debt_image_attach(
+  '77777777-7777-4777-8777-777777777777',
+  current_setting('test.png_asset')::uuid,321,700,1250);
+ RAISE EXCEPTION 'wrong MIME was accepted';
+EXCEPTION WHEN OTHERS THEN
+ IF SQLERRM IS DISTINCT FROM 'image_storage_missing_or_invalid' THEN RAISE; END IF;
+END $;
+RESET ROLE;
+UPDATE storage.objects SET metadata='{"mimetype":"image/png","size":321}'::jsonb
+WHERE name=:'png_key';
+SET ROLE authenticated;
+DO $
 BEGIN
  PERFORM public.taphoa_manual_debt_image_attach(
    '77777777-7777-4777-8777-777777777777',current_setting('test.png_asset')::uuid,
@@ -218,4 +255,54 @@ BEGIN
   END IF;
 END $$;
 
-\echo 'PASS: disposable PostgreSQL migration, RLS, exact-recipient, media-ACK and idempotency'
+-- A locked recipient revokes even an existing image acknowledgment.
+RESET ROLE;
+UPDATE public.v21_accounts SET locked_at=now()
+WHERE id='33333333-3333-4333-8333-333333333333';
+SET ROLE authenticated;
+DO $
+DECLARE v jsonb;
+BEGIN
+  v:=public.taphoa_manual_debt_image_ticket(
+    '33333333-3333-4333-8333-333333333333',
+    '77777777-7777-4777-8777-777777777777');
+  IF v->>'reason' IS DISTINCT FROM 'customer_not_found' THEN
+    RAISE EXCEPTION 'locked recipient got ticket: %',v;
+  END IF;
+  BEGIN
+    PERFORM public.taphoa_manual_debt_image_attach(
+      '77777777-7777-4777-8777-777777777777',
+      current_setting('test.png_asset')::uuid,321,700,1250);
+    RAISE EXCEPTION 'locked recipient falsely acknowledged media';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM IS DISTINCT FROM 'manual_notice_no_longer_allowed' THEN RAISE; END IF;
+  END;
+END $;
+
+-- A deleted message invalidates the ticket and attached media ACK.
+RESET ROLE;
+UPDATE public.v21_accounts SET locked_at=NULL
+WHERE id='33333333-3333-4333-8333-333333333333';
+UPDATE public.v21_messages SET deleted_at=now()
+WHERE id='66666666-6666-4666-8666-666666666666';
+SET ROLE authenticated;
+DO $
+DECLARE v jsonb;
+BEGIN
+  v:=public.taphoa_manual_debt_image_ticket(
+    '33333333-3333-4333-8333-333333333333',
+    '77777777-7777-4777-8777-777777777777');
+  IF v->>'reason' IS DISTINCT FROM 'manual_notice_not_found_or_expired' THEN
+    RAISE EXCEPTION 'deleted message got ticket: %',v;
+  END IF;
+  BEGIN
+    PERFORM public.taphoa_manual_debt_image_attach(
+      '77777777-7777-4777-8777-777777777777',
+      current_setting('test.png_asset')::uuid,321,700,1250);
+    RAISE EXCEPTION 'deleted message falsely acknowledged media';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM IS DISTINCT FROM 'manual_notice_no_longer_allowed' THEN RAISE; END IF;
+  END;
+END $;
+
+\echo 'PASS: disposable PostgreSQL migration, RLS, exact-recipient, MIME, locked/deleted state, media-ACK and idempotency'
