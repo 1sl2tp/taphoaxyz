@@ -600,6 +600,15 @@ async function debtCycles(){
   if(employeeAccess||publicAccess||identity?.role!=='admin')throw new Error('admin_only');
   return business.debtCycles();
 }
+async function orderCycles(){
+  if(employeeAccess||publicAccess||!['admin','user'].includes(identity?.role))
+    throw new Error('account_only');
+  const owner=captureProductionOwner();
+  const cycles=await business.orderCycles();
+  if(!productionOwnerCurrent(owner))return [];
+  if(!Array.isArray(cycles))throw Error('invalid_order_cycles_response');
+  return cycles;
+}
 async function debtLedger(customerId,{beforeAt=null,beforeId=null,limit=50}={}){
   if(employeeAccess)throw new Error('employee_read_only');
   const pageLimit=Math.max(1,Math.min(100,Number(limit)||50));
@@ -1134,7 +1143,7 @@ window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('tapho
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
-  login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,ledgerToRows,
+  login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,orderCycles,ledgerToRows,
   saveOrder,deliverOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
