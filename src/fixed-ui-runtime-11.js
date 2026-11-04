@@ -187,6 +187,22 @@
             serverLedgerBalances.forEach((balance, customerId) => {
                 if (customerDebts[customerId]) customerDebts[customerId].debt = balance;
             });
+            // SPEC-DEBT-FILTER-AUTHORITATIVE-20261104: the 50-row history
+            // is an optional, cached page and can be older than a later
+            // bank/manual collection. Classification must follow the same
+            // canonical server summary used by the bootstrap/debt domain.
+            // Fall back to the ledger page only when that summary is absent.
+            const officialSummary = window.TAPHOA_PRODUCTION?.getState?.()?.debtSummary;
+            if (Array.isArray(officialSummary)) {
+                for (const account of officialSummary) {
+                    const customerId = String(account?.maKH ?? account?.id ?? account?.customer_id ?? '').trim();
+                    const raw = account?.soDu ?? account?.balance ?? account?.total;
+                    if (!customerId || raw == null || String(raw).trim() === '') continue;
+                    const balance = Number(raw);
+                    if (Number.isFinite(balance) && customerDebts[customerId])
+                        customerDebts[customerId].debt = balance;
+                }
+            }
 
             let totalDebt = 0; let debtCount = 0;
             let totalSurplus = 0; let surplusCount = 0;
