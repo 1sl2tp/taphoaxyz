@@ -536,3 +536,46 @@ body[data-force-pc="1"] #customerDebtContentToShare{
     font-size:14px;
   }
 }
+
+/* SPEC-DEBT-LEDGER-TWO-LINE-20261104 — One transaction title plus one
+   combined book/time line. Both money figures sit vertically centered at
+   the right; ledger amounts and scroll/click behavior stay unchanged. */
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:10px;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-info{
+  min-width:0;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-title{
+  min-width:0;
+  line-height:1.3;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-title > i{
+  flex-shrink:0;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-label{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-meta{
+  line-height:1.3;
+  overflow-wrap:anywhere;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-side{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  align-self:center;
+  min-width:66px;
+  gap:2px;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+#customerDebtBottomSheet #cDebtModalHistoryList .debt-ledger-side > p{
+  margin:0;
+  line-height:1.3;
+}
