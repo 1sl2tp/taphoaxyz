@@ -73,6 +73,7 @@ INSERT INTO public.taphoa_debt_ledger(id,customer_account_id,created_at,order_id
  (6,'cccccccc-cccc-4ccc-8ccc-cccccccccccc','2026-10-04 05:00+00',null,'collection',-100);
 
 \i supabase/migrations/20261104211500_taphoa_order_cycles_readonly_admin_user.sql
+\i supabase/migrations/20261104215000_taphoa_order_cycles_progress_amount_readonly.sql
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -95,6 +96,14 @@ BEGIN
   OR x#>>'{orderCycles,1,dueDay}' IS DISTINCT FROM '2026-10-09'
   OR x#>>'{orderCycles,2,dueDay}' IS DISTINCT FROM '2026-10-11'
  THEN RAISE EXCEPTION 'D7 per order not independent: %',x; END IF;
+ IF (x#>>'{orderCycles,0,amountThousands}')::numeric<>100
+  OR (x#>>'{orderCycles,1,amountThousands}')::numeric<>200
+  OR (x#>>'{orderCycles,2,amountThousands}')::numeric<>300
+  OR (x#>>'{orderCycles,0,estimatedRemainingThousands}')::numeric<>0
+  OR (x#>>'{orderCycles,1,estimatedRemainingThousands}')::numeric<>200
+  OR (x#>>'{orderCycles,2,estimatedRemainingThousands}')::numeric<>300
+  OR (x#>>'{orderCycles,0,progressDays}')::int<>7
+ THEN RAISE EXCEPTION 'FIFO partial-payment projection or progress mismatch: %',x; END IF;
 END;
 $cycle_test$;
 
@@ -143,6 +152,7 @@ BEGIN
   OR (x->>'orderCount')::int<>1
   OR x#>>'{orderCycles,0,number}' IS DISTINCT FROM '1'
   OR x#>>'{orderCycles,0,dueDay}' IS DISTINCT FROM '2026-10-12'
+  OR (x#>>'{orderCycles,0,estimatedRemainingThousands}')::numeric<>400
  THEN RAISE EXCEPTION 'New debt period failed to reset order sequence: %',x; END IF;
 END;
 $cycle_test$;
@@ -155,4 +165,4 @@ BEGIN
 END;
 $cycle_test$;
 
-\echo 'PASS: per-order D7, 3-day idle, Admin vs User scope, partial vs fully paid reset'
+\echo 'PASS: per-order D7, newest-first UI source, FIFO partial estimate and Admin/User scope'
