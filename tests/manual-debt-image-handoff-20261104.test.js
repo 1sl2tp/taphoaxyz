@@ -164,7 +164,9 @@ test('manual image SQL isolates permissions, owner, storage, and outbound from f
   assert.match(migration,/insert into public\.v21_media_assets/i);
   assert.doesNotMatch(migration,/update\s+public\.taphoa_debt_ledger/i);
   assert.doesNotMatch(migration,/insert\s+into\s+public\.v21_messages/i);
-  assert.match(ui,/createCustomerDebtPngBlob\(\{withDimensions:true\}\)/);
+  assert.match(ui,/createCustomerDebtPngBlob\(\{\s*withDimensions:true,expectedCustomerId:customerId/);
+  assert.match(ui,/expectedTransitionSeq:modalEpoch/);
+  assert.match(ui,/if\(!isSameDebtModal\(\)\)throw new Error/);
   assert.match(ui,/response\.image_attached===true/);
   assert.match(ui,/ảnh chưa đính kèm/);
   assert.match(ui,/Chưa xác nhận gửi qua Zalo/);
