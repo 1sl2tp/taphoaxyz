@@ -233,3 +233,80 @@ test('new manual debt migration sends to Chat without requiring a Zalo link',()=
  assert.match(sql,/taphoa_role'<>'admin'/);
  assert.match(sql,/pg_advisory_xact_lock/);
 });
+
+// SPEC-DEBT-PNG-RECIPIENT-EPOCH-20261104: an async PNG must stay bound to
+// the customer/modal epoch at the original click, never whichever sheet is open later.
+function guardedDebtPngFixture({onFrame=()=>{},onCapture=()=>{},onPng=()=>{}}={}){
+  const state={customer:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',epoch:'3',renders:0,converted:0};
+  const wrapper={dataset:{get debtTransitionSeq(){return state.epoch;}}};
+  const clone={style:{},scrollHeight:400,classList:{add(){}},prepend(){},insertBefore(){},
+    querySelector(){return null;},firstChild:null};
+  const host={style:{},setAttribute(){},appendChild(){},remove(){}};
+  const capture={
+    captureElement:async()=>{state.renders++;onCapture(state);return{width:500,height:800};},
+    canvasToPngBlob:async()=>{state.converted++;onPng(state);return{size:120,type:'image/png'};}
+  };
+  let frames=0;
+  const context={
+    activeDebtCustomerId:state.customer,
+    window:{TAPHOA_SHARE_CAPTURE:capture},
+    document:{
+      getElementById:id=>id==='customerDebtModalWrapper'?wrapper
+        :id==='customerDebtContentToShare'
+          ?{getBoundingClientRect:()=>({width:450}),cloneNode:()=>clone}
+          :{innerText:''},
+      createElement:()=>host,body:{appendChild(){}}
+    },
+    requestAnimationFrame:cb=>{frames++;onFrame(state,frames,context);cb();},
+    showLoading(){},hideLoading(){}
+  };
+  const create=vm.runInNewContext('('+generator+')',context);
+  return {create,state,context};
+}
+
+test('debt PNG denies wrong recipient before capturing or showing any bytes',async()=>{
+  const f=guardedDebtPngFixture();
+  await assert.rejects(f.create({
+    withDimensions:true,expectedCustomerId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    expectedTransitionSeq:'3'
+  }),/Đã chuyển công nợ/);
+  assert.equal(f.state.renders,0);
+  assert.equal(f.state.converted,0);
+});
+
+test('A→B→A modal epoch change before capture refuses the old debt screenshot',async()=>{
+  const f=guardedDebtPngFixture({onFrame:(state,frames)=>{
+    if(frames===1)state.epoch='5'; // customer ID is the same, but modal was replaced
+  }});
+  await assert.rejects(f.create({
+    withDimensions:true,expectedCustomerId:f.state.customer,expectedTransitionSeq:'3'
+  }),/Đã chuyển công nợ/);
+  assert.equal(f.state.renders,0);
+  assert.equal(f.state.converted,0);
+});
+
+test('recipient change while capture is pending prevents PNG export and later upload',async()=>{
+  const f=guardedDebtPngFixture({onCapture:(state)=>{
+    state.customer='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  }});
+  const expected=f.state.customer;
+  // Match a real modal action: the global selected customer changes during canvas render.
+  const originalCapture= f.context.window.TAPHOA_SHARE_CAPTURE.captureElement;
+  f.context.window.TAPHOA_SHARE_CAPTURE.captureElement=async(...args)=>{
+    const canvas=await originalCapture(...args);
+    f.context.activeDebtCustomerId=f.state.customer;
+    return canvas;
+  };
+  await assert.rejects(f.create({withDimensions:true,
+    expectedCustomerId:expected,expectedTransitionSeq:'3'}),/Đã chuyển công nợ/);
+  assert.equal(f.state.renders,1);
+  assert.equal(f.state.converted,0);
+});
+
+test('modal epoch changing during PNG serialization is rejected after conversion',async()=>{
+  const f=guardedDebtPngFixture({onPng:(state)=>{state.epoch='4';}});
+  await assert.rejects(f.create({withDimensions:true,
+    expectedCustomerId:f.state.customer,expectedTransitionSeq:'3'}),/Đã chuyển công nợ/);
+  assert.equal(f.state.renders,1);
+  assert.equal(f.state.converted,1);
+});
