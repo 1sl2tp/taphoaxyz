@@ -75,6 +75,7 @@ BEGIN
         AND a.conversation_id=v_ticket.conversation_id
         AND a.owner_account_id=v_sender
         AND a.kind='image' AND a.mime_type='image/png'
+        AND a.storage_key=v_ticket.storage_key
         AND a.size_bytes>0 AND a.deleted_at IS NULL
         AND o.owner_id=auth.uid()::text
         AND o.archived_at IS NULL AND NOT o.is_delete_marker
@@ -184,30 +185,6 @@ BEGIN
   WHERE request_id=p_request_id AND asset_id=p_asset_id AND sender_account_id=v_sender
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'manual_image_ticket_not_found' USING errcode='42501'; END IF;
-  IF v_ticket.attached_at IS NOT NULL THEN
-    IF NOT EXISTS(
-      SELECT 1 FROM public.v21_media_assets a
-      JOIN storage.objects o
-        ON o.bucket_id='v21-media' AND o.name=a.storage_key
-      WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
-        AND a.conversation_id=v_ticket.conversation_id
-        AND a.owner_account_id=v_sender
-        AND a.kind='image' AND a.mime_type='image/png'
-        AND a.size_bytes>0 AND a.deleted_at IS NULL
-        AND o.owner_id=auth.uid()::text
-        AND o.archived_at IS NULL AND NOT o.is_delete_marker
-        AND split_part(lower(coalesce(o.metadata->>'mimetype','')),';',1)='image/png'
-        AND coalesce((o.metadata->>'size')::bigint,
-                     (o.metadata->>'contentLength')::bigint,0)=a.size_bytes
-    ) THEN
-      RETURN jsonb_build_object('ok',false,'reason','attached_asset_missing');
-    END IF;
-    RETURN jsonb_build_object('ok',true,'already_attached',true,
-      'message_id',v_ticket.message_id,'asset_id',v_ticket.asset_id);
-  END IF;
-  IF v_ticket.created_at<now()-interval '20 minutes'
-  THEN RAISE EXCEPTION 'manual_image_ticket_expired'; END IF;
-
   SELECT * INTO v_message FROM public.v21_messages WHERE id=v_ticket.message_id;
   SELECT * INTO v_recipient FROM public.v21_accounts
   WHERE id=v_ticket.customer_account_id;
@@ -225,6 +202,31 @@ BEGIN
         AND (c.member_a=v_ticket.customer_account_id OR c.member_b=v_ticket.customer_account_id)
     )
   THEN RAISE EXCEPTION 'manual_notice_no_longer_allowed' USING errcode='42501'; END IF;
+  IF v_ticket.attached_at IS NOT NULL THEN
+    IF NOT EXISTS(
+      SELECT 1 FROM public.v21_media_assets a
+      JOIN storage.objects o
+        ON o.bucket_id='v21-media' AND o.name=a.storage_key
+      WHERE a.id=v_ticket.asset_id AND a.message_id=v_ticket.message_id
+        AND a.conversation_id=v_ticket.conversation_id
+        AND a.owner_account_id=v_sender
+        AND a.kind='image' AND a.mime_type='image/png'
+        AND a.storage_key=v_ticket.storage_key
+        AND a.size_bytes>0 AND a.deleted_at IS NULL
+        AND o.owner_id=auth.uid()::text
+        AND o.archived_at IS NULL AND NOT o.is_delete_marker
+        AND split_part(lower(coalesce(o.metadata->>'mimetype','')),';',1)='image/png'
+        AND coalesce((o.metadata->>'size')::bigint,
+                     (o.metadata->>'contentLength')::bigint,0)=a.size_bytes
+    ) THEN
+      RETURN jsonb_build_object('ok',false,'reason','attached_asset_missing');
+    END IF;
+    RETURN jsonb_build_object('ok',true,'already_attached',true,
+      'message_id',v_ticket.message_id,'asset_id',v_ticket.asset_id);
+  END IF;
+  IF v_ticket.created_at<now()-interval '20 minutes'
+  THEN RAISE EXCEPTION 'manual_image_ticket_expired'; END IF;
+
   IF EXISTS(
     SELECT 1 FROM public.v21_media_assets a
     WHERE a.message_id=v_message.id AND a.kind='image'
