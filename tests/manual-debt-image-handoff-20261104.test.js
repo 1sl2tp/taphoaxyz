@@ -17,13 +17,13 @@ const message='00000000-0000-4000-8000-000000000001';
 const asset='00000000-0000-4000-8000-000000000002';
 const storageKey='admin-account/conv/'+asset;
 
-function fixture({textResponse={ok:true,message_id:message,customer_id:customer},ticketResponse={ok:true,message_id:message,asset_id:asset,storage_key:storageKey},ticketError=null,uploadError=null,attachResponse={ok:true,message_id:message,asset_id:asset},captureResult={blob:{size:321,type:'image/png'},width:700,height:1250}}={}){
+function fixture({textResponse={ok:true,message_id:message,customer_id:customer},ticketResponse={ok:true,message_id:message,asset_id:asset,storage_key:storageKey},ticketError=null,uploadError=null,attachError=null,attachResponse={ok:true,message_id:message,asset_id:asset},captureResult={blob:{size:321,type:'image/png'},width:700,height:1250}}={}){
   const events=[];let ownerCurrent=true,textCalls=0,captureCalls=0;
   const client={
     async rpc(name,args){
       events.push({name,args});
       if(name==='taphoa_manual_debt_image_ticket')return {data:ticketResponse,error:ticketError};
-      if(name==='taphoa_manual_debt_image_attach')return {data:attachResponse,error:null};
+      if(name==='taphoa_manual_debt_image_attach')return {data:attachResponse,error:attachError};
       throw Error('unexpected RPC: '+name);
     },
     storage:{
@@ -146,6 +146,41 @@ test('already-attached server ticket is idempotent without duplicate PNG bytes',
   assert.equal(x.image_attached,true);
   assert.equal(f.captureCalls(),0);
   assert.equal(f.events.filter(x=>x.name==='storage.upload').length,0);
+});
+
+
+test('Storage 409 permits only server-verified attach, never a duplicate Chat text message',async()=>{
+  const f=fixture({uploadError:{statusCode:'409',code:'Duplicate',message:'resource already exists'}});
+  const x=await f.send();
+  assert.equal(x.image_attached,true);
+  assert.equal(f.textCalls(),1);
+  assert.equal(f.captureCalls(),1);
+  assert.equal(f.events.filter(x=>x.name==='taphoa_manual_debt_image_attach').length,1);
+});
+
+test('Storage 409 with server attachment denial is not reported as delivered',async()=>{
+  const f=fixture({uploadError:{statusCode:'409',code:'Duplicate'},attachError:{code:'42501',message:'not authorized'}});
+  const x=await f.send();
+  assert.equal(x.ok,true);
+  assert.equal(x.image_attached,false);
+  assert.equal(f.textCalls(),1);
+  assert.equal(f.events.filter(x=>x.name==='taphoa_manual_debt_image_attach').length,1);
+});
+
+test('existing-image ticket without a valid asset UUID cannot falsely acknowledge PNG',async()=>{
+  const f=fixture({ticketResponse:{ok:true,already_attached:true,message_id:message,asset_id:'invalid'}});
+  const x=await f.send();
+  assert.equal(x.image_attached,false);
+  assert.equal(f.captureCalls(),0);
+  assert.equal(f.events.filter(x=>x.name==='storage.upload').length,0);
+});
+
+test('mismatching attach acknowledgment leaves the text sent but PNG unverified',async()=>{
+  const f=fixture({attachResponse:{ok:true,message_id:'00000000-0000-4000-8000-000000000007',asset_id:asset}});
+  const x=await f.send();
+  assert.equal(x.ok,true);
+  assert.equal(x.image_attached,false);
+  assert.equal(f.textCalls(),1);
 });
 
 test('manual image SQL isolates permissions, owner, storage, and outbound from finance',()=>{
