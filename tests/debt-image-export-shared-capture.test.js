@@ -58,6 +58,32 @@ test('debt image lazy-loads through the same helper as order images',async()=>{
   assert.deepEqual(actions,['loading','host','capture','png','remove','hide']);
 });
 
+test('very long debt history is rejected before canvas allocation, preserving Chat text',async()=>{
+  const actions=[];
+  const clone={style:{},scrollHeight:19000,classList:{add(){}},prepend(){},querySelector(){return null;}};
+  const host={style:{},setAttribute(){},appendChild(){},remove(){actions.push('remove');}};
+  const context={
+    window:{TAPHOA_SHARE_CAPTURE:{
+      captureElement:async()=>{throw Error('canvas allocation must be blocked');},
+      canvasToPngBlob:async()=>{throw Error('PNG conversion must be blocked');}
+    }},
+    document:{
+      getElementById:id=>id==='customerDebtContentToShare'
+        ?{getBoundingClientRect:()=>({width:460}),cloneNode:()=>clone}
+        :{innerText:''},
+      createElement:()=>host,
+      body:{appendChild:()=>actions.push('host')}
+    },
+    requestAnimationFrame:cb=>cb(),
+    showLoading:()=>actions.push('loading'),
+    hideLoading:()=>actions.push('hide')
+  };
+  const create=vm.runInNewContext('('+generator+')',context);
+  await assert.rejects(create(),/Lịch sử công nợ quá dài/);
+  assert.deepEqual(actions,['loading','host','remove','hide']);
+  assert.match(generator,/captureHeight>14000/);
+});
+
 test('debt Save calls one direct PNG download even in installed iOS PWA',async()=>{
   const actions=[];
   const png={size:42,type:'image/png'};
