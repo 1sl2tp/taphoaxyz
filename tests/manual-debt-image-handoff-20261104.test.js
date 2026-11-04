@@ -216,3 +216,46 @@ test('manual image SQL isolates permissions, owner, storage, and outbound from f
   assert.match(ui,/ảnh chưa đính kèm/);
   assert.match(ui,/Chưa xác nhận gửi qua Zalo/);
 });
+
+
+test('manual debt already-attached ACK is gated by current message/recipient access',()=>{
+  const start=migration.indexOf('CREATE OR REPLACE FUNCTION public.taphoa_manual_debt_image_attach(');
+  assert.ok(start>0,'attach function must exist');
+  const attach=migration.slice(start);
+  const selectedTicket=attach.indexOf('WHERE request_id=p_request_id AND asset_id=p_asset_id AND sender_account_id=v_sender');
+  const readMessage=attach.indexOf('SELECT * INTO v_message FROM public.v21_messages WHERE id=v_ticket.message_id;');
+  const readRecipient=attach.indexOf('SELECT * INTO v_recipient FROM public.v21_accounts');
+  const recipientValidation=attach.indexOf("v_recipient.contact_group IS DISTINCT FROM 'customer'");
+  const deletedMessageValidation=attach.indexOf('v_message.deleted_at IS NOT NULL');
+  const wrongConversationValidation=attach.indexOf('c.id=v_ticket.conversation_id');
+  const deniedState=attach.indexOf("RAISE EXCEPTION 'manual_notice_no_longer_allowed'");
+  const alreadyAttached=attach.indexOf('IF v_ticket.attached_at IS NOT NULL');
+  assert.ok(selectedTicket>=0&&readMessage>selectedTicket&&readRecipient>readMessage);
+  assert.ok(deletedMessageValidation>readRecipient&&recipientValidation>deletedMessageValidation);
+  assert.ok(wrongConversationValidation>recipientValidation&&deniedState>wrongConversationValidation);
+  assert.ok(alreadyAttached>deniedState,
+    'Do not acknowledge a stored PNG after a message is deleted or recipient locked');
+  const ackBranch=attach.slice(alreadyAttached,attach.indexOf('IF v_ticket.created_at',alreadyAttached));
+  assert.match(ackBranch,/a\.storage_key=v_ticket\.storage_key/);
+  assert.match(ackBranch,/a\.message_id=v_ticket\.message_id/);
+  assert.match(ackBranch,/a\.owner_account_id=v_sender/);
+  assert.match(ackBranch,/JOIN storage\.objects o/);
+  assert.match(ackBranch,/o\.owner_id=auth\.uid\(\)::text/);
+  assert.match(ackBranch,/o\.archived_at IS NULL AND NOT o\.is_delete_marker/);
+  assert.match(ackBranch,/'attached_asset_missing'/);
+});
+
+test('existing PNG ticket requires actual media and the exact upload key before success',()=>{
+  const start=migration.indexOf('CREATE OR REPLACE FUNCTION public.taphoa_manual_debt_image_ticket(');
+  const end=migration.indexOf('CREATE OR REPLACE FUNCTION v21_storage_private.can_upload_taphoa_manual_debt_image(');
+  assert.ok(start>=0&&end>start);
+  const ticket=migration.slice(start,end);
+  const ack=ticket.slice(ticket.indexOf('IF v_ticket.attached_at IS NOT NULL'));
+  assert.match(ack,/a\.storage_key=v_ticket\.storage_key/);
+  assert.match(ack,/a\.message_id=v_ticket\.message_id/);
+  assert.match(ack,/o\.bucket_id='v21-media' AND o\.name=a\.storage_key/);
+  assert.match(ack,/a\.kind='image' AND a\.mime_type='image\/png'/);
+  assert.match(ack,/'attached_asset_missing'/);
+  assert.doesNotMatch(migration,/INSERT\s+INTO\s+public\.v21_messages/i);
+  assert.doesNotMatch(migration,/(?:UPDATE|DELETE\s+FROM)\s+public\.taphoa_debt_ledger/i);
+});
