@@ -638,6 +638,7 @@
                 <th style="text-align:left;min-width:240px">Tên sản phẩm</th>
                 <th style="width:82px">Giá vốn</th>
                 <th style="width:110px">Giá bán · Lãi</th>
+                <th style="min-width:155px">Đối chiếu Hàng thường ↔ Sữa</th>
                 <th style="width:82px">NPP ×1</th>
                 <th style="width:86px">NPP +1,5%</th>
                 <th style="width:82px">NPP +3%</th>
@@ -2431,6 +2432,32 @@
       }
     }
 
+    // Read-only comparison: exact normalized names only, with unique matches in both sources.
+    // Do not infer that near-identical names or different package sizes are the same product.
+    function crossSourceName(value){
+      return String(value||'').normalize('NFC').trim().toLocaleLowerCase('vi').replace(/\\s+/g,' ');
+    }
+    function crossSourceMatches(){
+      if(!['hang-thuong','sua'].includes(selectedSource))return new Map();
+      const otherSource=selectedSource==='sua'?'hang-thuong':'sua';
+      const current=new Map(),other=new Map();
+      for(const item of items){
+        const key=crossSourceName(item.product_name);
+        if(key)current.set(key,[...(current.get(key)||[]),item]);
+      }
+      for(const item of comparisonItems){
+        if(item.source_key!==otherSource)continue;
+        const key=crossSourceName(item.product_name);
+        if(key)other.set(key,[...(other.get(key)||[]),item]);
+      }
+      const matches=new Map();
+      for(const [key,entries] of other){
+        if(entries.length!==1||current.get(key)?.length!==1)continue;
+        matches.set(entries[0],current.get(key)[0]);
+      }
+      return matches;
+    }
+
     function renderComparison(){
       const panel=$('comparisonPanel');
       const query=$('searchInput').value.trim();
@@ -2441,7 +2468,8 @@
         $('comparisonText').textContent='';
         return;
       }
-      $('comparisonText').textContent=comparisonItems.length+' kết quả ngoài nguồn đang chọn';
+      const matched=crossSourceMatches();
+      $('comparisonText').textContent=comparisonItems.length+' kết quả ngoài nguồn đang chọn · '+matched.size+' trùng tên chính xác (trong trang)';
       $('comparisonBody').innerHTML=comparisonItems.map(item=>{
         const cost=num(item.cost),sale=num(item.price),profit=cost===null||sale===null?null:sale-cost;
         const pct=profit===null||!cost?null:profit/cost*100;
@@ -2450,11 +2478,20 @@
         const npp3=npp===null?null:Math.ceil(npp*1.03);
         const cost15=cost===null?null:Math.ceil(cost*1.015);
         const cost3=cost===null?null:Math.ceil(cost*1.03);
+        const peer=matched.get(item);
+        const peerCost=peer?num(peer.cost):null,peerSale=peer?num(peer.price):null;
+        const costDelta=peerCost===null||cost===null?null:cost-peerCost;
+        const saleDelta=peerSale===null||sale===null?null:sale-peerSale;
+        const signed=v=>v>0?'+'+pretty(v):pretty(v);
+        const deltaHtml=peer
+          ?`<span title="Chênh lệch = nguồn ở dòng này trừ nguồn đang chọn; chỉ khớp tên chính xác">Vốn: ${costDelta===null?'—':esc(signed(costDelta))} · Bán: ${saleDelta===null?'—':esc(signed(saleDelta))}</span>`
+          :'<span style="color:#64748b">Chưa xác nhận trùng</span>';
         return `<tr>
           <td class="compare-source">${esc(item.source_name||item.source_key||'')}</td>
           <td class="compare-name">${esc(item.product_name||'')}</td>
           <td class="compare-num">${esc(pretty(cost))}</td>
           <td class="compare-num compare-sale">${esc(pretty(sale))}${profit===null?'':`<span class="compare-profit">lãi ${profit>0?'+':''}${esc(pretty(profit))} · ${esc(pretty(pct))}%</span>`}</td>
+          <td class="compare-num" style="font-size:11px">${deltaHtml}</td>
           <td class="compare-num">${esc(pretty(npp))}</td>
           <td class="compare-num">${esc(pretty(npp15))}</td>
           <td class="compare-num">${esc(pretty(npp3))}</td>
