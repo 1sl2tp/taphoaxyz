@@ -326,7 +326,7 @@ openCustomerDebtModal = function(maKh,{preserveScroll=false}={}) {
     <div ${clickAttr} class="debt-ledger-row py-2.5 px-2 rounded-xl transition ${cursorStyle} border-b border-gray-100 text-xs">
       <div class="debt-ledger-info">
         <p class="debt-ledger-title font-bold text-gray-900 flex items-center gap-1.5"><i class="${iconClass} ${badgeColor} p-1 rounded"></i> <span class="debt-ledger-label">${escapeProductEditorValue(h.loaiGd)}</span> ${orderId ? '<i class="ph ph-caret-right text-gray-400"></i>' : ''}</p>
-        <p class="debt-ledger-meta text-[10px] text-gray-500 mt-0.5">${ledgerId ? `Sổ #${ledgerId} · ` : ''}Ghi sổ: ${escapeProductEditorValue(h.time)}${billRef ? ` · Mã GD: ${billRef}` : ''}</p>
+        <p class="debt-ledger-meta text-[10px] text-gray-500 mt-0.5 break-all">${ledgerId ? `Sổ #${ledgerId} · ` : ''}Ghi sổ: ${escapeProductEditorValue(h.time)}${billRef ? ` · Mã GD: ${billRef}` : ''}</p>
       </div>
       <div class="debt-ledger-side text-right">
         <p class="font-extrabold ${isThu ? 'text-success' : 'text-danger'}">${sign}${amountLabel}</p>
