@@ -459,6 +459,33 @@
     });
   };
 
+  // SPEC-DRAFT-DELETE-FRESH-20261104: a draft shown from a cached PWA
+  // snapshot might already have been removed by another device. Verify the
+  // canonical order UUID/status once at the user's confirmed click before
+  // issuing a destructive command. A missing draft is NOT a delete success.
+  async function verifyDraftBeforeDeletion(prod,displayId,owner){
+    if(typeof prod?.refresh!=='function'||typeof prod?.getState!=='function')
+      return {unverified:true};
+    const fresh=await prod.refresh(['orders']);
+    if(backend()!==prod||prod.getIdentity?.()!==owner.identity
+       ||prod.getAccessMode?.()!==owner.mode)return {obsolete:true};
+    const orders=Array.isArray(fresh?.orders)?fresh.orders:prod.getState()?.orders;
+    if(!Array.isArray(orders))throw Error('Không xác minh được danh sách đơn mới từ máy chủ.');
+    const id=String(displayId||'').trim();
+    const order=orders.find(o=>String(prod.orderDisplayCode?.(o)||
+      o.displayCode||o.display_code||o.maDon||'').trim()===id);
+    const backendId=String(order?(prod.backendOrderId?.(order)||
+      order.backendOrderId||order.order_id||order.id||''):'').trim();
+    if(!order||!backendId||String(order.status||order.trangThai||'').toLowerCase()!=='pending')
+      return {stale:true};
+    return {backendId};
+  }
+  async function updateDraftListAfterStale(){
+    // Refresh happens only after the user explicitly confirms deletion.
+    // It must not trigger a second write or pretend that a DB delete ran.
+    try{await refreshFixedSheets(['dontam','dongiao']);}
+    catch(error){console.warn('refresh stale draft list',error);}
+  }
   requestDeleteOrder=function(sheetName,orderId){
     if(currentAuthRole==='user'&&sheetName==='dongiao')return denyPermission('User không được xóa đơn đã giao.');
     const backendId=backendOrderIdFor(sheetName,orderId);
@@ -468,15 +495,48 @@
       if(orderMutationInFlight)return;
       orderMutationInFlight=true;
       closeOrderMobile();showLoading('Đang xóa đơn...');
+      const prod=backend(),owner={identity:prod?.getIdentity?.(),mode:prod?.getAccessMode?.()};
       try{
-        if(sheetName==='dongiao')await backend().reverseOrder(backendId,'Xóa đơn');
-        else await backend().deletePending(backendId);
-        if(orderId===editingOrderId||sheetName==='dontam')resetSaleSession();
+        let verifiedId=backendId;
+        if(sheetName==='dontam'){
+          const check=await verifyDraftBeforeDeletion(prod,orderId,owner);
+          if(check.obsolete)return;
+          if(check.stale){
+            await updateDraftListAfterStale();
+            showToast('Đơn tạm không còn trên máy chủ. Đã làm mới danh sách, chưa xóa thêm.','warning');
+            return;
+          }
+          if(!check.unverified)verifiedId=check.backendId;
+        }
+        if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(verifiedId||'')))
+          throw Error('Chưa xác minh được mã đơn gốc. Hãy tải lại danh sách trước khi xóa.');
+        const result=sheetName==='dongiao'
+          ?await prod.reverseOrder(verifiedId,'Xóa đơn')
+          :await prod.deletePending(verifiedId);
+        if(result?.ok!==true||(result?.deleted!=null&&String(result.deleted)!==verifiedId))
+          throw Error('Máy chủ chưa xác nhận xóa đúng đơn. Chưa thể báo thành công.');
+        if(orderId===editingOrderId)resetSaleSession();
         showToast('Đã xóa đơn '+orderId,'success');
-        try{await refreshFixedSheets(['dontam','dongiao','thuchi']);}
-        catch(refreshError){console.warn('refresh deleted order UI',refreshError);}
-      }catch(error){showAlertPopup('Lỗi',error?.message||'Không thể xử lý đơn.');}
-      finally{orderMutationInFlight=false;hideLoading();}
+        try{
+          // The backend already refreshes its order projection after commit.
+          // If that refresh failed, make ONE extra read rather than showing
+          // the already-deleted draft indefinitely.
+          if(sheetName==='dontam'&&typeof prod.getState==='function'
+             &&(prod.getState()?.orders||[]).some(o=>
+               String(prod.backendOrderId?.(o)||o.backendOrderId||o.order_id||o.id||'')===verifiedId))
+            await prod.refresh(['orders']);
+          await refreshFixedSheets(['dontam','dongiao','thuchi']);
+        }catch(refreshError){console.warn('refresh deleted order UI',refreshError);}
+      }catch(error){
+        const code=String(error?.message||'');
+        if(sheetName==='dontam'&&/\b(order_not_found|order_not_pending)\b/i.test(code)){
+          try{await prod.refresh?.(['orders']);}catch(refreshError){
+            console.warn('refresh stale deleted draft',refreshError);
+          }
+          await updateDraftListAfterStale();
+          showToast('Đơn tạm đã bị xóa hoặc đổi trạng thái. Danh sách đã được làm mới.','warning');
+        }else showAlertPopup('Lỗi',error?.message||'Không thể xử lý đơn.');
+      }finally{orderMutationInFlight=false;hideLoading();}
     });
   };
 
