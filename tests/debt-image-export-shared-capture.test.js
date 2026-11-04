@@ -130,24 +130,23 @@ test('linked customer sends verified manual debt directly into their conversatio
  assert.match(f.toasts[0][0],/Chat.*Zalo/);
 });
 
-test('unlinked Zalo contact retains the original PNG file share on web',async()=>{
- const f=debtSendFixture({response:{ok:false,reason:'zalo_not_linked'}});
+test('failed Chat delivery reports error rather than opening PNG share',async()=>{
+ const f=debtSendFixture({response:{ok:false,reason:'customer_not_found'}});
  await f.fn('send');
  assert.equal(f.calls.length,1);
- assert.equal(f.blobs.length,1);
- assert.equal(f.shares.length,1);
- assert.equal(f.shares[0].files[0].name,'congno.png');
- assert.equal(f.shares[0].files[0].type,'image/png');
- assert.equal(f.toasts.length,0,'no direct-send success toast for unlinked customers');
+ assert.equal(f.blobs.length,0);
+ assert.equal(f.shares.length,0);
+ assert.match(f.alerts[0][0],/Chưa gửi công nợ trực tiếp/);
 });
 
-test('user and public link never call admin-only linked-contact manual send',async()=>{
- for(const options of [{role:'user'}, {mode:'public-link'}, {connected:false}]){
+test('non-admin or missing bridge cannot silently send a PNG instead of Chat',async()=>{
+ for(const options of [{role:'user'},{mode:'public-link'},{connected:false}]){
   const f=debtSendFixture(options);
   await f.fn('send');
   assert.equal(f.calls.length,0);
-  assert.equal(f.shares.length,1);
-  assert.equal(f.toasts.length,0);
+  assert.equal(f.shares.length,0);
+  assert.equal(f.blobs.length,0);
+  assert.match(f.alerts[0][0],/Chưa thể gửi vào Chat/);
  }
 });
 
@@ -195,15 +194,14 @@ test('manual debt send is admin-only, bound to customer ID, and never mutates fi
 });
 
 
-test('unmigrated backend falls back to the existing PNG chooser, not a broken Send button',async()=>{
+test('unmigrated backend reports unavailable Chat instead of claiming PNG delivery',async()=>{
  const error=Object.assign(Error('Could not find the function'),{code:'PGRST202'});
  const f=debtSendFixture({throwError:error});
  await f.fn('send');
  assert.equal(f.calls.length,1);
- assert.equal(f.blobs.length,1);
- assert.equal(f.shares.length,1);
- assert.equal(f.alerts.length,0);
- assert.match(f.toasts[0][0],/Chưa kích hoạt gửi trực tiếp/);
+ assert.equal(f.blobs.length,0);
+ assert.equal(f.shares.length,0);
+ assert.match(f.alerts[0][0],/Chưa thể gửi vào Chat/);
 });
 
 test('unknown network failure does not retry or fall back because message delivery may have occurred',async()=>{
