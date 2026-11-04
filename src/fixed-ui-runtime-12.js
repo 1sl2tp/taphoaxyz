@@ -218,7 +218,7 @@
                         if (response?.ok === true) {
                             showToast(response.already_sent
                                 ? 'Công nợ đã được gửi vào cuộc trò chuyện của khách.'
-                                : 'Đã gửi tóm tắt công nợ và liên kết vào Chat của khách; Zalo nhận theo trạng thái kết nối.', 'success');
+                                : 'Đã gửi thông báo công nợ vào Chat của khách. Chưa xác nhận gửi qua Zalo.', 'success');
                             return;
                         }
                         if (response?.reason === 'recently_sent') {
