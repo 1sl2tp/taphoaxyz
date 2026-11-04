@@ -251,7 +251,9 @@
               ' · Mua thêm không gia hạn kỳ nợ'
             :'Có dư nợ, chưa xác định được hạn thanh toán'
           :'Đã tất toán công nợ; không còn kỳ nợ đang mở';
-        panel.dataset.warning=view.warning?'true':'';
+        const tone=paymentCycleTone(purchase,policy);
+        panel.dataset.tone=tone;
+        panel.dataset.warning=tone==='danger'?'true':'';
         continue;
       }
       if(!row){panel.textContent='';panel.title='';continue;}
