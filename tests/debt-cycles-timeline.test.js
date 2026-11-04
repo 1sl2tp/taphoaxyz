@@ -31,7 +31,8 @@ test('readonly cycle boundary and policy semantics protect financial ledger',()=
   assert.doesNotMatch(sql,/\bcreate\s+table\b/i);
   assert.match(api,/debtCycles:\(\)=>gateway\.rpc\('taphoa_debt_cycles',\{\}\)/);
   assert.match(bridge,/async function debtCycles\(\)/);
-  assert.match(bridge,/readSheet,debtLedger,debtCycles,ledgerToRows/);
+  assert.match(bridge,/readSheet,debtLedger,debtCycles,orderCycles,ledgerToRows/);
+  assert.match(api,/orderCycles:\(\)=>gateway\.rpc\('taphoa_order_cycles_view',\{\}\)/);
 });
 
 test('cycle UI hooks the original debt list and modal without touching finance actions',()=>{
