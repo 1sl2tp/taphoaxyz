@@ -2443,7 +2443,7 @@
     // Read-only comparison: exact normalized names only, with unique matches in both sources.
     // Do not infer that near-identical names or different package sizes are the same product.
     function crossSourceName(value){
-      return String(value||'').normalize('NFC').trim().toLocaleLowerCase('vi').replace(/\\s+/g,' ');
+      return String(value||'').normalize('NFC').trim().toLocaleLowerCase('vi').replace(/\s+/g,' ');
     }
     function crossSourceMatches(){
       if(!['hang-thuong','sua'].includes(selectedSource))return new Map();
