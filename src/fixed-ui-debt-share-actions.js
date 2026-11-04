@@ -41,7 +41,18 @@
     close();
     if(!['send','save','copy'].includes(action))return;
     inFlight=true;
-    Promise.resolve(window.shareCustomerDebtImage(action))
+    let pending;
+    try {
+      // Invoke within the user gesture for clipboard/native sharing.
+      pending=window.shareCustomerDebtImage(action);
+    } catch(error) {
+      // A synchronous failure must not permanently lock every menu action.
+      inFlight=false;
+      if(typeof window.showAlertPopup==='function')
+        window.showAlertPopup('Không chia sẻ được công nợ',String(error?.message||error));
+      return;
+    }
+    Promise.resolve(pending)
       .catch(error=>{
         if(typeof window.showAlertPopup==='function')
           window.showAlertPopup('Không chia sẻ được công nợ',String(error?.message||error));
