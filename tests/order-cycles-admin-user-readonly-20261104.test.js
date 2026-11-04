@@ -94,8 +94,8 @@ test('each delivered order has own D7 even two orders on one day',async()=>{
  assert.match(body,/CK2 · 03\/11\/2026/);
  assert.match(body,/CK3 · 05\/11\/2026/);
  assert.match(body,/Đã bù tạm tính/);
- assert.match(body,/Còn ước tính 200\.000đ/);
- assert.match(body,/Còn ước tính 300\.000đ/);
+ assert.match(body,/Còn ước tính 200/);
+ assert.match(body,/Còn ước tính 300/);
  const panel=f.modal.children.find(c=>c.id==='debtCyclePanel');
  const listing=panel.children.find(n=>n.tag==='details'&&text(n).includes('Xem 3 mốc D7'));
  const items=listing.children.find(n=>n.tag==='ol').children;
@@ -107,7 +107,7 @@ test('each delivered order has own D7 even two orders on one day',async()=>{
    const progress=item.children.find(n=>n.tag==='progress');
    assert.equal(progress.max,7);assert.equal(progress.value,expectedDay);
  }
- assert.match(body,/Số còn trả là tạm tính/);
+ assert.match(body,/Đơn vị: nghìn đồng/);
  assert.match(body,/D7 09\/11\/2026/);
  assert.match(body,/D7 11\/11\/2026/);
  assert.match(body,/Mốc 3 ngày 08\/11\/2026/);
