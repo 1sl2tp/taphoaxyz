@@ -1,5 +1,7 @@
 -- SPEC-BANK-MANUAL-ROUND-DOWN-20261104
--- SOURCE ONLY until an explicitly controlled production release.
+-- Released to Supabase production on 2026-11-04 via apply_migration
+-- taphoa_bank_manual_round_down_remainder_20261104. Existing ledger and
+-- bank notification rows were NOT touched during deployment.
 -- Admin explicitly chooses a customer for verified Agribank #198:
 -- 16,000,008 VND bank credit -> 16,000,000 VND customer ledger,
 -- 8 VND documented discrepancy. Do not modify bank evidence itself.
