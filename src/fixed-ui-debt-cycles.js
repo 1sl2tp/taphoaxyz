@@ -4,6 +4,7 @@
 (function(){
   'use strict';
   let byCustomer=new Map();
+  let orderByCustomer=new Map();
   let loadedAt=0;
   let pending=null;
   let stale=false;
@@ -23,7 +24,7 @@
   function syncCycleOwner(){
     const owner=cycleOwner();
     if(!ownerInitialized||cycleIdentity!==owner.identity||cycleMode!==owner.mode){
-      byCustomer=new Map();loadedAt=0;stale=true;previousBalanceSignature='';
+      byCustomer=new Map();orderByCustomer=new Map();loadedAt=0;stale=true;previousBalanceSignature='';
       pending=null;cycleIdentity=owner.identity;cycleMode=owner.mode;ownerInitialized=true;
     }
     return owner;
@@ -34,6 +35,27 @@
     const role=bridge?.getIdentity?.()?.role;
     const mode=bridge?.getAccessMode?.();
     return (!mode||mode==='account')&&(!role||role==='admin');
+  }
+  function canLoadOrderCycles(){
+    if(!hasPermission('canViewDebt'))return false;
+    const bridge=window.TAPHOA_PRODUCTION;
+    const role=bridge?.getIdentity?.()?.role;
+    const mode=bridge?.getAccessMode?.();
+    return (mode===undefined||mode==='account')
+      &&(role==='admin'||role==='user')
+      &&typeof bridge?.orderCycles==='function';
+  }
+  function displayOrderCycles(row){
+    const orders=Array.isArray(row?.orderCycles)?row.orderCycles:[];
+    const open=row?.isOpen===true;
+    const earliest=row?.earliestDueDay?dayLabel(row.earliestDueDay):'—';
+    const days=numeric(row?.idleDays);
+    if(!open)return {status:'Đã tất toán',context:' · Không có mốc D7 đang mở',warning:false};
+    if(!orders.length)return {status:'Đang nợ',context:' · Chưa có đơn giao ghi nhận',warning:false};
+    const overdue=numeric(row?.dueCount);
+    const status=overdue>0?'Đến hạn '+overdue+' đơn':'D7 sớm nhất '+earliest;
+    const context=' · '+orders.length+' chu kỳ đơn · '+days+' ngày chưa mua';
+    return {status,context,warning:overdue>0||row?.idleNeedsReview===true};
   }
   const summaryFormat=new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric'});
   const dayLabel=key=>{
@@ -118,27 +140,41 @@
   }
   async function load({force=false}={}){
     const owner=syncCycleOwner();
-    if(!canLoadCycles())return null;
+    const readOld=canLoadCycles(),readOrders=canLoadOrderCycles();
+    if(!readOld&&!readOrders)return null;
     if(pending)return pending;
-    if(!force&&!stale&&byCustomer.size&&Date.now()-loadedAt<TTL)return byCustomer;
+    if(!force&&!stale&&loadedAt&&Date.now()-loadedAt<TTL)return byCustomer;
     const bridge=window.TAPHOA_PRODUCTION;
-    if(typeof bridge?.debtCycles!=='function')return null;
     const request=(async()=>{
-      const data=await bridge.debtCycles();
-      if(!cycleOwnerCurrent(owner)||!canLoadCycles())return null;
-      if(!Array.isArray(data))throw Error('Invalid cycle response');
-      const map=new Map();
+      // One read per owner/refresh for each available display projection.
+      // Never request the Admin full-history RPC for a signed-in User.
+      const [legacy,orders]=await Promise.allSettled([
+        readOld?bridge.debtCycles():Promise.resolve([]),
+        readOrders?bridge.orderCycles():Promise.resolve([])
+      ]);
+      if(!cycleOwnerCurrent(owner)||(!canLoadCycles()&&!canLoadOrderCycles()))return null;
+      if(legacy.status==='rejected'&&orders.status==='rejected')throw legacy.reason;
+      const data=legacy.status==='fulfilled'?legacy.value:[];
+      const orderData=orders.status==='fulfilled'?orders.value:[];
+      if(!Array.isArray(data)||!Array.isArray(orderData))
+        throw Error('Invalid cycle response');
+      if(orders.status==='rejected')console.warn('[taphoa] order cycles read failed:',String(orders.reason?.message||orders.reason));
+      const map=new Map(),orderMap=new Map();
       for(const item of data){
         if(item?.customerId&&Array.isArray(item.cycles))map.set(String(item.customerId),item);
       }
-      byCustomer=map;loadedAt=Date.now();stale=false;
+      for(const item of orderData){
+        if(item?.customerId&&Array.isArray(item.orderCycles))
+          orderMap.set(String(item.customerId),item);
+      }
+      byCustomer=map;orderByCustomer=orderMap;loadedAt=Date.now();stale=false;
       decorateList();
       const selected=String(typeof activeDebtCustomerId==='undefined'?'':activeDebtCustomerId||'');
       if(selected&&document.getElementById('customerDebtModalWrapper')?.classList.contains('pointer-events-none')===false)
         decorateDetail(selected);
       return map;
     })().catch(err=>{
-      if(cycleOwnerCurrent(owner)&&canLoadCycles()){
+      if(cycleOwnerCurrent(owner)&&(canLoadCycles()||canLoadOrderCycles())){
         console.warn('[taphoa] debt cycles read failed:',String(err?.message||err));
         showCycleStatus('Không tải được nhịp mua. Công nợ gốc vẫn giữ nguyên.');
       }
@@ -160,11 +196,12 @@
   }
   function decorateList(){
     const container=document.getElementById('debtCustomerListContainer');
-    if(!container||!canLoadCycles())return;
+    if(!container||(!canLoadCycles()&&!canLoadOrderCycles()))return;
     const note=document.getElementById('debtCycleLoadStatus');
-    if(note&&byCustomer.size)note.remove();
+    if(note&&(byCustomer.size||orderByCustomer.size))note.remove();
     for(const card of container.querySelectorAll('.debt-customer-card[data-debt-customer-id]')){
       const id=String(card.dataset.debtCustomerId||'');
+      const purchase=orderByCustomer.get(id);
       const row=byCustomer.get(id);
       const cycle=activeCycle(row);
       const month=currentMonthStats(row);
@@ -173,6 +210,20 @@
       if(!body)continue;
       let panel=body.querySelector('.debt-cycle-card-meta');
       if(!panel){panel=document.createElement('div');panel.className='debt-cycle-card-meta';body.appendChild(panel);}
+      if(purchase){
+        const view=displayOrderCycles(purchase);
+        panel.replaceChildren(
+          makeText('span','debt-cycle-card-status',view.status),
+          makeText('span','debt-cycle-card-context',view.context)
+        );
+        panel.title=purchase.isOpen===true
+          ?'Mỗi đơn giao có mốc D7 riêng · Mốc sớm nhất '+dayLabel(purchase.earliestDueDay)+
+            ' · Mốc 3 ngày không mua: '+dayLabel(purchase.idleReviewDay)+
+            ' · Chỉ reset khi công nợ hết'
+          :'Đã tất toán công nợ; không còn mốc đơn đang mở';
+        panel.dataset.warning=view.warning?'true':'';
+        continue;
+      }
       if(!row){panel.textContent='';panel.title='';continue;}
       const last=cycles.length?cycles[cycles.length-1]:null;
       const monthSummary=briefMonthText(month);
@@ -207,17 +258,89 @@
     const holder=document.getElementById('customerDebtContentToShare');
     const history=document.getElementById('cDebtModalHistoryList');
     if(!holder||!history)return;
-    if(!canLoadCycles()){
+    if(!canLoadCycles()&&!canLoadOrderCycles()){
+      holder.querySelector('#debtCyclePanel')?.remove();
+      return;
+    }
+    const actor=window.TAPHOA_PRODUCTION?.getIdentity?.();
+    if(actor?.role==='user'&&String(actor.uid)!==String(customerId)){
       holder.querySelector('#debtCyclePanel')?.remove();
       return;
     }
     let panel=holder.querySelector('#debtCyclePanel');
     if(!panel){
       panel=document.createElement('section');panel.id='debtCyclePanel';
-      panel.className='debt-cycle-detail';panel.setAttribute('aria-label','Lịch sử chu kỳ công nợ');
+      panel.className='debt-cycle-detail';panel.setAttribute('aria-label','Theo dõi mốc từng đơn và đợt công nợ');
       holder.insertBefore(panel,history);
     }
     panel.replaceChildren();
+    const purchase=orderByCustomer.get(String(customerId));
+    if(purchase){
+      const orders=Array.isArray(purchase.orderCycles)?purchase.orderCycles:[];
+      panel.appendChild(makeText('strong','debt-cycle-detail-title',
+        purchase.isOpen?'Đợt nợ '+purchase.activePeriodNo+' · '+orders.length+' chu kỳ theo đơn':
+          'Đã tất toán · Các mốc theo đơn đã đóng'));
+      if(purchase.isOpen&&orders.length){
+        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
+          'D7 sớm nhất '+dayLabel(purchase.earliestDueDay)+
+          ' · '+numeric(purchase.dueCount)+' đơn đến hạn'));
+        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
+          'Lần mua gần nhất '+dayLabel(purchase.lastPurchaseDay)+
+          ' · '+numeric(purchase.idleDays)+' ngày chưa mua · Mốc 3 ngày '+dayLabel(purchase.idleReviewDay)));
+        const details=document.createElement('details');
+        details.className='debt-cycle-history';
+        details.appendChild(makeText('summary','debt-cycle-history-title',
+          'Xem '+orders.length+' mốc D7 theo từng đơn'));
+        const list=document.createElement('ol');
+        // Keep narrow/mobile modal scroll bounded; the summary still uses
+        // ALL qualifying orders for due dates and count.
+        for(const order of orders.slice(0,60)){
+          const li=document.createElement('li');li.className='debt-cycle-history-item';
+          li.append(
+            makeText('strong','', 'CK'+order.number+' · Mua '+dayLabel(order.purchaseDay)),
+            makeText('span','', 'D7 '+dayLabel(order.dueDay)+
+              (order.isDue?' · Đến hạn':' · Đang theo dõi'))
+          );
+          list.appendChild(li);
+        }
+        details.appendChild(list);
+        if(orders.length>60)details.appendChild(makeText('p','debt-cycle-detail-explanation',
+          'Hiển thị 60/'+orders.length+' đơn đầu tiên; mốc sớm nhất tính trên toàn bộ đơn.'));
+        panel.appendChild(details);
+      }else if(purchase.isOpen){
+        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
+          'Đang nợ nhưng chưa có đơn giao hợp lệ trong đợt này.'));
+      }else{
+        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
+          'Không còn công nợ phải thu. Đơn mua mới sẽ mở đợt nợ tiếp theo.'));
+      }
+      // Historical debt periods remain available only to Admin and are
+      // intentionally named "đợt nợ", never confused with order cycles.
+      const historic=byCustomer.get(String(customerId));
+      if(canLoadCycles()&&historic){
+        const months=Array.isArray(historic.monthly)?historic.monthly:[];
+        const periods=Array.isArray(historic.cycles)?historic.cycles:[];
+        if(months.length||periods.length){
+          const details=document.createElement('details');details.className='debt-cycle-history';
+          details.appendChild(makeText('summary','debt-cycle-history-title',
+            'Xem lịch sử tháng và đợt công nợ'));
+          const list=document.createElement('ol');
+          for(const month of months){
+            const li=document.createElement('li');li.className='debt-cycle-history-item';
+            li.textContent=monthCountText(month);list.appendChild(li);
+          }
+          for(const period of periods){
+            const li=document.createElement('li');li.className='debt-cycle-history-item';
+            li.textContent='Đợt nợ '+period.number+
+              (period.closedAt?' · Đã tất toán':' · Chưa tất toán')+
+              ' · '+dayLabel(period.startDay)+' → '+dayLabel(period.endDay);
+            list.appendChild(li);
+          }
+          details.appendChild(list);panel.appendChild(details);
+        }
+      }
+      return;
+    }
     const row=byCustomer.get(String(customerId));
     if(!row){
       panel.appendChild(makeText('p','debt-cycle-empty','Đang tải lịch sử chu kỳ…'));
@@ -297,7 +420,7 @@
   if(typeof oldRender==='function')window.renderCongNo=function(...args){
     const result=oldRender.apply(this,args);
     syncCycleOwner();
-    if(!canLoadCycles()){
+    if(!canLoadCycles()&&!canLoadOrderCycles()){
       // The canonical list normally re-renders, but clear any leftover
       // admin-only decorations if the role changes without rebuilding cards.
       document.getElementById('debtCustomerListContainer')
@@ -333,6 +456,13 @@
     list:customerId=>{
       syncCycleOwner();
       return canLoadCycles()?[...(byCustomer.get(String(customerId))?.cycles||[])]:[];
+    },
+    orders:customerId=>{
+      syncCycleOwner();
+      if(!canLoadOrderCycles())return [];
+      const actor=window.TAPHOA_PRODUCTION?.getIdentity?.();
+      if(actor?.role==='user'&&String(actor.uid)!==String(customerId))return [];
+      return [...(orderByCustomer.get(String(customerId))?.orderCycles||[])];
     }
   });
 })();
