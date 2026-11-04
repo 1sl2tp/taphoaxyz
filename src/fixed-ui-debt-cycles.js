@@ -310,7 +310,7 @@
           header.append(
             makeText('strong','', 'CK'+order.number+' · '+dayLabel(order.purchaseDay)),
             makeText('strong','debt-cycle-order-money',
-              !Number.isFinite(remaining)||remaining<0?'Chưa xác định':
+              order.estimatedRemainingThousands==null||!Number.isFinite(remaining)||remaining<0?'Chưa xác định':
               remaining>0?'Còn ước tính '+formatOrderVnd(remaining):'Đã bù tạm tính')
           );
           const progress=document.createElement('progress');
