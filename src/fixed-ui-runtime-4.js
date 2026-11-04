@@ -119,6 +119,13 @@
         }
         
         window.onload = function() {
+            // SPEC-BOOT-OWNER-20261104: this is the legacy preview initializer.
+            // Production startup belongs exclusively to the authenticated
+            // DOMContentLoaded owner in fixed-production-overrides.js.
+            // Otherwise this handler can show the app and invoke loadData()
+            // before the asynchronous session restore has established a user,
+            // producing a false offline/no-local-snapshot data-loss warning.
+            if (window.TAPHOA_PRODUCTION || SheetDB.API_URL === 'taphoa://production') return;
             loadUiPreferences();
             const apiInput = document.getElementById('inputScriptUrl');
             if (apiInput) apiInput.value = SheetDB.API_URL;
