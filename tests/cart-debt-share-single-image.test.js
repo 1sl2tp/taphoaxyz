@@ -42,3 +42,11 @@ test('legacy stock-check sharing cannot hijack ordinary cart/order icon',()=>{
   assert.doesNotMatch(legacy,/cart\.onclick=openSheet/);
   assert.match(legacy,/window\.openTaphoaShareSheet=openSheet/);
 });
+
+
+test('debt share menu releases in-flight guard on synchronous send failure without losing user gesture',()=>{
+  assert.match(debtMenu,/try\s*\{[\s\S]*?pending=window\.shareCustomerDebtImage\(action\)/);
+  assert.match(debtMenu,/catch\(error\)\s*\{\s*\/\/ A synchronous failure must not permanently lock every menu action\.\s*inFlight=false;/);
+  assert.match(debtMenu,/Promise\.resolve\(pending\)[\s\S]*?\.finally\(\(\)=>\{inFlight=false;\}\)/);
+  assert.doesNotMatch(debtMenu,/Promise\.resolve\(\)\.then\(\(\)=>window\.shareCustomerDebtImage/);
+});
