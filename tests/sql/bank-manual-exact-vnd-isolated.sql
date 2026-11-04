@@ -151,16 +151,12 @@ BEGIN
  IF r->>'status' IS DISTINCT FROM 'already_collected' THEN
    RAISE EXCEPTION 'duplicate notification charged again: %',r;
  END IF;
+ -- A separately verified bank credit can have the same amount:
+ -- a previous linked ledger is not available to link again.
  p:=public.chat_bank_manual_collection_prepare(
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd',204);
- IF jsonb_array_length(p->'possible_existing')<>1 THEN
-   RAISE EXCEPTION 'manual duplicate candidate hidden after rounding down: %',p;
- END IF;
- r:=public.chat_bank_manual_collect(
-  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',204,
-  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Giao dich khac trung so tien',null);
- IF r->>'status' IS DISTINCT FROM 'possible_manual_collection' THEN
-   RAISE EXCEPTION 'same-account manual duplicate not blocked: %',r;
+ IF jsonb_array_length(p->'possible_existing')<>0 THEN
+   RAISE EXCEPTION 'already linked receipt was offered again: %',p;
  END IF;
  r:=public.chat_bank_manual_collect(
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd',199,
