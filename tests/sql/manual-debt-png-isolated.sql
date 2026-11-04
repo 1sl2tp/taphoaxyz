@@ -121,6 +121,7 @@ FROM (
    '77777777-7777-4777-8777-777777777777') AS v
 ) t
 \gset
+SET test.png_asset = :'png_asset';
 DO $$
 DECLARE v jsonb;
 BEGIN
@@ -128,7 +129,7 @@ BEGIN
    '33333333-3333-4333-8333-333333333333',
    '77777777-7777-4777-8777-777777777777');
  IF v->>'message_id' IS DISTINCT FROM '66666666-6666-4666-8666-666666666666'
-    OR v->>'asset_id' IS DISTINCT FROM :'png_asset' THEN
+    OR v->>'asset_id' IS DISTINCT FROM current_setting('test.png_asset') THEN
   RAISE EXCEPTION 'ticket not idempotent: %',v;
  END IF;
 END $$;
@@ -150,7 +151,7 @@ DO $$
 BEGIN
  PERFORM public.taphoa_manual_debt_image_attach(
   '77777777-7777-4777-8777-777777777777',
-  :'png_asset'::uuid,321,700,1250);
+  current_setting('test.png_asset')::uuid,321,700,1250);
  RAISE EXCEPTION 'attachment without Storage was accepted';
 EXCEPTION WHEN OTHERS THEN
  IF SQLERRM IS DISTINCT FROM 'image_storage_missing_or_invalid' THEN RAISE; END IF;
@@ -164,7 +165,7 @@ VALUES('v21-media',:'png_key','11111111-1111-4111-8111-111111111111',
 DO $$
 BEGIN
  PERFORM public.taphoa_manual_debt_image_attach(
-   '77777777-7777-4777-8777-777777777777',:'png_asset'::uuid,
+   '77777777-7777-4777-8777-777777777777',current_setting('test.png_asset')::uuid,
    322,700,1250);
  RAISE EXCEPTION 'wrong PNG bytes were accepted';
 EXCEPTION WHEN OTHERS THEN
