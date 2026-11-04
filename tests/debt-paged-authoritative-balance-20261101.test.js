@@ -20,9 +20,10 @@ const end=runtime.indexOf('            let totalDebt = 0;',start);
 assert.ok(start>=0&&end>start,'debt owner found');
 const compute=runtime.slice(start,end)+'\n globalThis.result = {customerDebts,customerHistory};';
 
-function run(rows){
+function run(rows,officialSummary=null){
   const khRows=[['A','Khách A'],['B','Khách B'],['C','Khách C']];
   const env={
+    window:{TAPHOA_PRODUCTION:officialSummary===null?null:{getState:()=>({debtSummary:officialSummary})}},
     khRows,
     appData:{thuchi:[['id','customer','type','movement','time','balanceAfter'],...rows]},
     latestDeliveredDateKeyByCustomer:()=>({}),
@@ -66,6 +67,40 @@ test('zero, negative and missing snapshot balances retain correct semantics',()=
   assert.equal(invalid.customerDebts.A.debt,8,'invalid balance cannot become NaN or zero');
 });
 
+test('official current balance wins over a stale ledger page and reclassifies zero/credit',()=>{
+  const rows=[
+    row(10,'A',+500,500),
+    row(11,'B',+300,300),
+    row(12,'C',-100,-100)
+  ];
+  const current=[
+    {id:'A',soDu:0},
+    {id:'B',soDu:-200},
+    {id:'C',soDu:250}
+  ];
+  const out=run(rows,current);
+  assert.equal(out.customerDebts.A.debt,0,'paid customer must leave Còn nợ');
+  assert.equal(out.customerDebts.B.debt,-200,'overpaid customer must enter Đang dư tiền');
+  assert.equal(out.customerDebts.C.debt,250,'current debt must not be masked by an older credit page');
+  const owing=Object.values(out.customerDebts).filter(x=>x.debt>0);
+  const credit=Object.values(out.customerDebts).filter(x=>x.debt<0);
+  const paid=Object.values(out.customerDebts).filter(x=>x.debt===0);
+  assert.equal(owing.length,1);
+  assert.equal(credit.length,1);
+  assert.equal(paid.length,1);
+});
+test('zero balance from canonical summary is not dropped by nullish fallback',()=>{
+  const out=run([row(1,'A',500,500)],[{maKH:'A',balance:0}]);
+  assert.equal(out.customerDebts.A.debt,0);
+});
+test('invalid or absent server summary does not fabricate a settled balance',()=>{
+  const out=run([row(1,'A',500,500)],[
+    {id:'A',soDu:'not-a-number'},
+    {id:'B',soDu:null}
+  ]);
+  assert.equal(out.customerDebts.A.debt,500);
+  assert.equal(out.customerDebts.B.debt,0);
+});
 test('server supplies cumulative balances and behavior sorts rows by timestamp and stable ledger ID',()=>{
   assert.match(bridge,/const balanceAfter=first\(tx,\['balanceAfter','balance_after'\]/);
   assert.ok(bridge.includes("balanceAfter===''?'':"));
