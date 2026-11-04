@@ -107,8 +107,12 @@ test('Admin shows one payment deadline, independent of history order count',asyn
  assert.doesNotMatch(body,/CK\d+|Còn ước tính|Đã bù tạm tính|D7 sớm nhất/);
  const progress=panel.children.find(n=>n.tag==='progress');
  assert.equal(progress.max,7);assert.equal(progress.value,3);
- const history=panel.children.find(n=>n.tag==='details'&&text(n).includes('Xem 3 đơn nhập'));
- assert(history);
+ const more=panel.children.find(n=>n.className==='debt-cycle-more');
+ assert(more,'one primary disclosure avoids three equally loud links');
+ assert.equal(more.children[0].tag,'summary');
+ assert.match(text(more.children[0]),/Xem chi tiết chu kỳ/);
+ const history=more.children.find(n=>n.className==='debt-cycle-history'&&text(n).includes('Xem 3 đơn nhập'));
+ assert(history,'order history remains accessible under disclosure');
  const items=history.children.find(n=>n.tag==='ol').children;
  assert.equal(items.length,3);
  assert.match(text(items[0]),/Đơn 05\/11\/2026/,'newest purchase first');
@@ -162,9 +166,13 @@ test('green, amber and red match the canonical deadline and stay compact',async(
   assert.equal(f.bodies.a.children[0].dataset.tone,tone,'customer list status tone');
   assert.equal(panel.children.filter(c=>c.className==='debt-cycle-detail-explanation').length,0,
    'long policy explanation is collapsed to give transaction history space');
-  const explanatory=panel.children.find(c=>c.className==='debt-cycle-policy-details');
+  const more=panel.children.find(c=>c.className==='debt-cycle-more');
+  assert(more&&more.children[0]?.tag==='summary','primary detail disclosure exists');
+  const explanatory=more.children.find(c=>c.className==='debt-cycle-policy-details');
   assert(explanatory&&explanatory.children.some(c=>c.tag==='summary'),
-   'policy details remain accessible on demand');
+   'policy details remain accessible on demand within the main disclosure');
+  assert.equal(more.children.filter(c=>c.tag==='details').length,2,
+   'Admin keeps policy and purchases together; monthly debt history is separate when available');
  }
  for(const tone of ['success','warning','danger']){
   assert(css.includes('.debt-cycle-period-progress[data-tone="'+tone+'"]::-webkit-progress-value'));
@@ -173,6 +181,13 @@ test('green, amber and red match the canonical deadline and stay compact',async(
  }
  assert.match(html,/fixed-ui-debt-cycles\.js\?v=[^"]*debt-tone=20261104/);
  assert.match(html,/fixed-ui-debt-cycles\.css\?v=[^"]*debt-tone=20261104/);
+ assert.match(html,/fixed-ui-debt-cycles\.js\?v=[^"]*soft-palette=20261104/);
+ assert.match(html,/fixed-ui-debt-cycles\.css\?v=[^"]*soft-palette=20261104/);
+ assert.match(css,/#customerDebtContentToShare #cDebtModalTotal\.text-danger\{[\s\S]*?color:#334155/);
+ for(const [tone,col] of [['danger','#cb7777'],['warning','#c99a52'],['success','#66a68a']]){
+  assert(css.includes('.debt-cycle-period-progress[data-tone="'+tone+'"]::-webkit-progress-value{\n  background:'+col));
+ }
+ assert.match(css,/\.debt-cycle-more-summary\{[\s\S]*?color:#566579/);
 });
 test('signed-in User loads only own data, never Admin history or another customer',async()=>{
  const f=fixture('user');f.window.renderCongNo();
