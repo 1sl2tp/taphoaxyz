@@ -23,7 +23,8 @@ test('cart share button opens only send/save/copy and never native title+text',(
 });
 
 test('debt share is one PNG across web and PWA; image copy remains click-initiated',()=>{
-  assert.match(debt,/async function createCustomerDebtPngBlob\(\)/);
+  assert.match(debt,/async function createCustomerDebtPngBlob\(\{withDimensions=false\}=\{\}\)/);
+  assert.match(debt,/withDimensions\?\{blob,width:pngWidth,height:pngHeight\}:blob/);
   assert.match(debt,/async function shareCustomerDebtImage\(action = 'send'\)/);
   assert.match(debt,/new ClipboardItem\(\{'image\/png': pendingBlob\}\)/);
   assert.match(debt,/navigator\.share\(\{files:\[file\]\}\)/);
