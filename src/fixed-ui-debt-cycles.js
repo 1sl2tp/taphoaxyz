@@ -45,17 +45,22 @@
       &&(role==='admin'||role==='user')
       &&typeof bridge?.orderCycles==='function';
   }
+  // A PAYMENT cycle is one open debt period, not one D7 per order.
+  // Reuse the exact private policy also used by server payment-due logic.
   function displayOrderCycles(row){
-    const orders=Array.isArray(row?.orderCycles)?row.orderCycles:[];
-    const open=row?.isOpen===true;
-    const earliest=row?.earliestDueDay?dayLabel(row.earliestDueDay):'—';
-    const days=numeric(row?.idleDays);
-    if(!open)return {status:'Đã tất toán',context:' · Không có mốc D7 đang mở',warning:false};
-    if(!orders.length)return {status:'Đang nợ',context:' · Chưa có đơn giao ghi nhận',warning:false};
-    const overdue=numeric(row?.dueCount);
-    const status=overdue>0?'Đến hạn '+overdue+' đơn':'D7 sớm nhất '+earliest;
-    const context=' · '+orders.length+' chu kỳ đơn · '+days+' ngày chưa mua';
-    return {status,context,warning:overdue>0||row?.idleNeedsReview===true};
+    const open=row?.isOpen===true,policy=row?.paymentPolicy;
+    if(!open)return {status:'Đã tất toán',context:' · Không còn chu kỳ nợ mở',warning:false};
+    if(!policy?.dueDay)return {status:'Đang nợ',context:' · Chưa xác định hạn theo chính sách',warning:false};
+    const due=dayLabel(policy.dueDay);
+    const reason=policy.dueReason==='stopped_buying'?'ngừng nhập 3 ngày':'D7';
+    const late=numeric(policy.daysOverdue);
+    const status=policy.isDue===true?(late>0?'Quá hạn '+late+' ngày':'Đến hạn hôm nay'):
+      'Hạn tất toán '+due;
+    return {
+      status,
+      context:' · Đợt nợ '+numeric(policy.cycleNo)+' · '+numeric(row.orderCount)+' đơn · '+reason,
+      warning:policy.isDue===true
+    };
   }
   const summaryFormat=new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric'});
   const dayLabel=key=>{
@@ -223,11 +228,15 @@
           makeText('span','debt-cycle-card-status',view.status),
           makeText('span','debt-cycle-card-context',view.context)
         );
+        const policy=purchase.paymentPolicy;
         panel.title=purchase.isOpen===true
-          ?'Mỗi đơn giao có mốc D7 riêng · Mốc sớm nhất '+dayLabel(purchase.earliestDueDay)+
-            ' · Mốc 3 ngày không mua: '+dayLabel(purchase.idleReviewDay)+
-            ' · Chỉ reset khi công nợ hết'
-          :'Đã tất toán công nợ; không còn mốc đơn đang mở';
+          ?policy?.dueDay
+            ?'Một đợt nợ · Hạn tất toán '+dayLabel(policy.dueDay)+
+              ' · D7 tối đa '+dayLabel(policy.sevenDueDay)+
+              ' · Mốc nghỉ mua '+dayLabel(policy.stopDueDay)+
+              ' · Mua thêm không gia hạn kỳ nợ'
+            :'Có dư nợ, chưa xác định được hạn thanh toán'
+          :'Đã tất toán công nợ; không còn kỳ nợ đang mở';
         panel.dataset.warning=view.warning?'true':'';
         continue;
       }
@@ -277,73 +286,71 @@
     let panel=holder.querySelector('#debtCyclePanel');
     if(!panel){
       panel=document.createElement('section');panel.id='debtCyclePanel';
-      panel.className='debt-cycle-detail';panel.setAttribute('aria-label','Theo dõi mốc từng đơn và đợt công nợ');
+      panel.className='debt-cycle-detail';panel.setAttribute('aria-label','Chu kỳ thanh toán công nợ và lịch sử nhập hàng');
       holder.insertBefore(panel,history);
     }
     panel.replaceChildren();
     const purchase=orderByCustomer.get(String(customerId));
     if(purchase){
       const orders=Array.isArray(purchase.orderCycles)?purchase.orderCycles:[];
-      panel.appendChild(makeText('strong','debt-cycle-detail-title',
-        purchase.isOpen?'Đợt nợ '+purchase.activePeriodNo+' · '+orders.length+' chu kỳ theo đơn':
-          'Đã tất toán · Các mốc theo đơn đã đóng'));
-      if(purchase.isOpen&&orders.length){
+      const policy=purchase.paymentPolicy;
+      if(purchase.isOpen&&policy?.dueDay){
+        panel.appendChild(makeText('strong','debt-cycle-detail-title',
+          'Chu kỳ nợ '+numeric(policy.cycleNo)+' · '+numeric(purchase.orderCount)+' đơn nhập'));
+        const progress=document.createElement('progress');
+        progress.className='debt-cycle-order-progress debt-cycle-period-progress';
+        progress.max=7;
+        progress.value=Math.max(1,Math.min(7,numeric(policy.durationDays)||1));
+        progress.setAttribute('aria-label','Tiến trình chu kỳ nợ ngày '+progress.value+' trên 7');
+        panel.appendChild(progress);
         panel.appendChild(makeText('p','debt-cycle-detail-metrics',
-          'D7 sớm nhất '+dayLabel(purchase.earliestDueDay)+
-          ' · '+numeric(purchase.dueCount)+' đơn đến hạn'));
+          'Ngày '+numeric(policy.durationDays)+
+          ' của chu kỳ · D7 tối đa '+dayLabel(policy.sevenDueDay)));
+        const late=numeric(policy.daysOverdue);
+        const reason=policy.dueReason==='stopped_buying'?'ngừng nhập hàng 3 ngày':'đủ 7 ngày';
+        panel.appendChild(makeText('p','debt-cycle-detail-warning',
+          'Hạn tất toán toàn bộ: '+dayLabel(policy.dueDay)+
+          ' · '+reason+
+          (policy.isDue===true?(late>0?' · Quá hạn '+late+' ngày':' · Đến hạn hôm nay'):' · Chưa đến hạn')));
         panel.appendChild(makeText('p','debt-cycle-detail-metrics',
-          'Lần mua gần nhất '+dayLabel(purchase.lastPurchaseDay)+
-          ' · '+numeric(purchase.idleDays)+' ngày chưa mua · Mốc 3 ngày '+dayLabel(purchase.idleReviewDay)));
+          'Mua gần nhất '+dayLabel(policy.lastPurchaseDay)+
+          ' · '+numeric(policy.idleDays)+' ngày chưa nhập'+
+          ' · Mốc ngừng nhập '+dayLabel(policy.stopDueDay)));
+        panel.appendChild(makeText('p','debt-cycle-detail-explanation',
+          'Một chu kỳ tính từ lần mở nợ đến khi tất toán hết; mua thêm không kéo dài D7. Đạt hạn mức đã thỏa thuận cũng phải tất toán ngay.'));
+      }else if(purchase.isOpen){
+        panel.appendChild(makeText('strong','debt-cycle-detail-title','Đang nợ · Chưa xác định hạn chính sách'));
+        panel.appendChild(makeText('p','debt-cycle-detail-explanation',
+          'Không dùng hạn của từng đơn làm hạn tất toán. Vui lòng kiểm tra chính sách hoặc làm mới dữ liệu.'));
+      }else{
+        panel.appendChild(makeText('strong','debt-cycle-detail-title',
+          'Đã tất toán · Không còn chu kỳ nợ mở'));
+        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
+          'Chỉ mở chu kỳ mới khi lại phát sinh công nợ.'));
+      }
+      if(orders.length){
         const details=document.createElement('details');
         details.className='debt-cycle-history';
         details.appendChild(makeText('summary','debt-cycle-history-title',
-          'Xem '+orders.length+' mốc D7 theo từng đơn'));
+          'Xem '+orders.length+' đơn nhập trong đợt nợ'));
+        details.appendChild(makeText('p','debt-cycle-detail-explanation',
+          'Đơn vị: nghìn đồng. Lịch sử đơn chỉ để đối chiếu, không phải các hạn thanh toán riêng.'));
         const list=document.createElement('ol');
-        // Newest delivered order first for quick scanning; CK numbering and
-        // independent due dates never change. Only 60 newest rows are
-        // materialized so the iPhone debt sheet remains compact.
         for(const order of orders.slice(-60).reverse()){
           const li=document.createElement('li');
           li.className='debt-cycle-history-item debt-cycle-order-item';
-          const header=document.createElement('div');
-          header.className='debt-cycle-order-header';
-          const remaining=Number(order.estimatedRemainingThousands);
-          header.append(
-            makeText('strong','', 'CK'+order.number+' · '+dayLabel(order.purchaseDay)),
-            makeText('strong','debt-cycle-order-money',
-              order.estimatedRemainingThousands==null||!Number.isFinite(remaining)||remaining<0?'Chưa xác định':
-              remaining>0?'Còn ước tính '+formatOrderThousands(remaining):'Đã bù tạm tính')
-          );
-          const progress=document.createElement('progress');
-          progress.className='debt-cycle-order-progress';
-          progress.max=7;
-          progress.value=Math.max(1,Math.min(7,numeric(order.progressDays)||1));
-          progress.setAttribute('aria-label','Tiến trình ngày '+progress.value+' trên 7');
           li.append(
-            header,progress,
-            makeText('span','debt-cycle-order-sub',
-              'D'+Math.max(1,numeric(order.elapsedDays))+'/7 · D7 '+
-                dayLabel(order.dueDay)+
-                (order.isDue?' · Đến mốc D7':'')+
-                ' · Đơn '+formatOrderThousands(order.amountThousands))
+            makeText('strong','', 'Đơn '+dayLabel(order.purchaseDay)),
+            makeText('span','debt-cycle-order-sub','Giá trị '+formatOrderThousands(order.amountThousands))
           );
           list.appendChild(li);
         }
-        details.appendChild(makeText('p','debt-cycle-detail-explanation',
-          'Đơn vị: nghìn đồng. Số còn trả chỉ tạm tính theo đơn cũ trước; không ghi phân bổ vào sổ.'));
         details.appendChild(list);
         if(orders.length>60)details.appendChild(makeText('p','debt-cycle-detail-explanation',
-          'Hiển thị 60/'+orders.length+' đơn mới nhất; tổng và hạn sớm nhất vẫn tính toàn bộ.'));
+          'Hiển thị 60/'+orders.length+' đơn gần nhất.'));
         panel.appendChild(details);
-      }else if(purchase.isOpen){
-        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
-          'Đang nợ nhưng chưa có đơn giao hợp lệ trong đợt này.'));
-      }else{
-        panel.appendChild(makeText('p','debt-cycle-detail-metrics',
-          'Không còn công nợ phải thu. Đơn mua mới sẽ mở đợt nợ tiếp theo.'));
       }
-      // Historical debt periods remain available only to Admin and are
-      // intentionally named "đợt nợ", never confused with order cycles.
+      // Historical debt periods are separate, read-only and Admin-only.
       const historic=byCustomer.get(String(customerId));
       if(canLoadCycles()&&historic){
         const months=Array.isArray(historic.monthly)?historic.monthly:[];
