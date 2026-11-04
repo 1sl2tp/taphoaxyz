@@ -41,3 +41,11 @@ test('report resets previous account rows and ignores inflight response after lo
  assert.match(module,/if\(generation!==requestGeneration\|\|getIdentity\(\)\?\.uid!==identity\.uid\|\|reloadQueued\)return/);
  assert.match(page,/customerCare\.reset\(\);\s*identity=null;client=null;\s*resetAdminSessionDisplays\(\);\s*const nextIdentity=info\?\.identity/);
 });
+
+test('incomplete cost data never appears as reliable profit or margin',()=>{
+ assert.match(module,/costComplete\?amount\(r\.gross_profit\):'Chưa đủ giá vốn'/);
+ assert.match(module,/costComplete\?percent\(r\.gross_margin_percent\)/);
+ assert.match(module,/Number\(r\.missing_cost_lines\)>0\?'Chưa đủ giá vốn':amount\(r\.gross_profit\)/);
+ assert.match(module,/Number\(totals\.missing_cost_lines\)>0\?'Chưa đủ giá vốn':amount\(totals\.gross_profit\)/);
+ assert.match(module,/Number\(totals\.missing_cost_lines\)>0\?'—':percent\(totals\.gross_margin_percent\)/);
+});
