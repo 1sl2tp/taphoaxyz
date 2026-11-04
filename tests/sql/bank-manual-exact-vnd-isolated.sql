@@ -3,7 +3,15 @@
 -- no production project credentials or network-based banking/Zalo sends.
 \set ON_ERROR_STOP on
 
-CREATE ROLE authenticated NOLOGIN;
+-- Roles are cluster-wide: the debt-PNG test may already create this role
+-- in a different disposable database within the same PostgreSQL service.
+DO $bank_role$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+   CREATE ROLE authenticated NOLOGIN;
+ END IF;
+END;
+$bank_role$;
 CREATE SCHEMA v21_private;
 GRANT USAGE ON SCHEMA public,v21_private TO authenticated;
 
