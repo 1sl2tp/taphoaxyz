@@ -38,6 +38,7 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
       p_customer_id:String(id||''),p_request_id:String(requestId||'')
     }),
     debtCycles:()=>gateway.rpc('taphoa_debt_cycles',{}),
+    orderCycles:()=>gateway.rpc('taphoa_order_cycles_view',{}),
     debtLedger:(maKH,{beforeAt=null,beforeId=null,limit=50}={})=>gateway.rpc('taphoa_debt_ledger_page',{
       p_customer_id:String(maKH||''),p_before_at:beforeAt||null,p_before_id:beforeId??null,p_limit:Math.max(1,Math.min(100,num(limit)||50))
     }),
