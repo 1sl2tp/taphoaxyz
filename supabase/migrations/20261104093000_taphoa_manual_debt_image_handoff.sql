@@ -76,7 +76,7 @@ BEGIN
   ) THEN
     RETURN jsonb_build_object('ok',false,'reason','image_already_attached');
   END IF;
-  IF NOT FOUND THEN
+  IF v_ticket.message_id IS NULL THEN
     v_asset:=gen_random_uuid();
     INSERT INTO v21_private.taphoa_manual_debt_image_uploads(
       message_id,request_id,customer_account_id,sender_account_id,
@@ -130,6 +130,7 @@ REVOKE ALL ON FUNCTION v21_storage_private.can_upload_taphoa_manual_debt_image(t
 GRANT EXECUTE ON FUNCTION v21_storage_private.can_upload_taphoa_manual_debt_image(text)
   TO authenticated;
 
+DROP POLICY IF EXISTS v21_taphoa_manual_debt_image_upload ON storage.objects;
 CREATE POLICY v21_taphoa_manual_debt_image_upload
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK(
