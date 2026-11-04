@@ -27,8 +27,9 @@
 - Unit/mocks Chat: `tests/test_chat_debt_png_zalo_ack_20261104.cjs` kiểm ACK text/media riêng, trường hợp PNG thất bại.
 - Negative: wrong recipient, stale modal, chuyển user, response message mismatch, expired/denied ticket, lỗi upload, duplicate/timeout, missing migration, quyền Admin.
 - Verify TAPHOA / Chat: luôn tra GitHub Actions **đúng SHA**. `npm test` thất bại ⇒ GitHub Pages publish phải BLOCK, không bỏ qua lỗi.
-- **E2 integration thật:** PENDING — cần Supabase migration ở môi trường test và RLS/Storage integration test, tuyệt đối không dùng production để thử.
-- **E3 release:** PENDING — không deploy thủ công, không coi CI PASS là đã phát hành.
+- **E2a PostgreSQL 17 cô lập: PASS (2026-11-04)** — chạy nguyên migration SQL qua `.github/workflows/verify-manual-debt-png-postgres.yml` trên database tạm, với dữ liệu giả tại `tests/sql/manual-debt-png-isolated.sql`. Bao gồm Admin/non-Admin, đúng/sai khách, Storage RLS, wrong-owner, missing file, sai MIME/size, chống trùng ảnh, object bị đánh dấu xóa, khách bị khóa và tin đã xóa. CI đúng SHA `4687a3933d4882efc9dae275d57a34cc8c9789c4`: https://github.com/1sl2tp/taphoaxyz/actions/runs/41820731104.
+- **E2b Supabase staging integration thật: PENDING** — PostgreSQL test thay thế `storage.objects` bằng bảng mô phỏng và giả lập `auth.uid()` / `taphoa_access_context()`. Chưa kiểm tra HTTP Storage API, Supabase JWT/roles, PostgREST RPC hoặc Zalo connector trên môi trường staging. Tuyệt đối không dùng production để thử.
+- **E3 release:** Runtime JS đã được GitHub tự publish thành công trên SHA `e5c3b2a84a6d03c1fedc4a44fa34b8bf1d4fd221`, nhưng **luồng PNG vẫn PENDING** vì SQL migration chưa có trên production; không coi CI PASS là đã phát hành toàn bộ tính năng.
 - **E4 production/browser:** PENDING — cần xác minh click trên account test, tin Chat media thật và trạng thái Zalo; chưa có bằng chứng iOS PWA.
 - **E5 resource/user acceptance:** PENDING — chưa đo trước/sau (RPC, storage bytes, outbound/egress), chưa nghiệm thu cuối.
 
