@@ -63,6 +63,12 @@
     const [y,m,d]=key.split('-');return d+'/'+m+'/'+y;
   };
   const numeric=value=>Math.max(0,Number(value)||0);
+  const formatOrderVnd=thousands=>{
+    const value=Number(thousands);
+    if(!Number.isFinite(value)||value<0||!Number.isSafeInteger(Math.round(value*1000)))return '—';
+    return new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0})
+      .format(Math.round(value*1000))+'đ';
+  };
   const compactDays=cycle=>{
     const d=numeric(cycle.durationDays);
     return d+' ngày';
@@ -292,20 +298,41 @@
         details.appendChild(makeText('summary','debt-cycle-history-title',
           'Xem '+orders.length+' mốc D7 theo từng đơn'));
         const list=document.createElement('ol');
-        // Keep narrow/mobile modal scroll bounded; the summary still uses
-        // ALL qualifying orders for due dates and count.
-        for(const order of orders.slice(0,60)){
-          const li=document.createElement('li');li.className='debt-cycle-history-item';
+        // Newest delivered order first for quick scanning; CK numbering and
+        // independent due dates never change. Only 60 newest rows are
+        // materialized so the iPhone debt sheet remains compact.
+        for(const order of orders.slice(-60).reverse()){
+          const li=document.createElement('li');
+          li.className='debt-cycle-history-item debt-cycle-order-item';
+          const header=document.createElement('div');
+          header.className='debt-cycle-order-header';
+          const remaining=Number(order.estimatedRemainingThousands);
+          header.append(
+            makeText('strong','', 'CK'+order.number+' · '+dayLabel(order.purchaseDay)),
+            makeText('strong','debt-cycle-order-money',
+              !Number.isFinite(remaining)||remaining<0?'Chưa xác định':
+              remaining>0?'Còn ước tính '+formatOrderVnd(remaining):'Đã bù tạm tính')
+          );
+          const progress=document.createElement('progress');
+          progress.className='debt-cycle-order-progress';
+          progress.max=7;
+          progress.value=Math.max(1,Math.min(7,numeric(order.progressDays)||1));
+          progress.setAttribute('aria-label','Tiến trình ngày '+progress.value+' trên 7');
           li.append(
-            makeText('strong','', 'CK'+order.number+' · Mua '+dayLabel(order.purchaseDay)),
-            makeText('span','', 'D7 '+dayLabel(order.dueDay)+
-              (order.isDue?' · Đến hạn':' · Đang theo dõi'))
+            header,progress,
+            makeText('span','debt-cycle-order-sub',
+              'D'+Math.max(1,numeric(order.elapsedDays))+'/7 · D7 '+
+                dayLabel(order.dueDay)+
+                (order.isDue?' · Đến mốc D7':'')+
+                ' · Đơn '+formatOrderVnd(order.amountThousands))
           );
           list.appendChild(li);
         }
+        details.appendChild(makeText('p','debt-cycle-detail-explanation',
+          'Số còn trả là tạm tính: khoản đã thu được đối chiếu vào đơn cũ trước, không ghi phân bổ vào sổ.'));
         details.appendChild(list);
         if(orders.length>60)details.appendChild(makeText('p','debt-cycle-detail-explanation',
-          'Hiển thị 60/'+orders.length+' đơn đầu tiên; mốc sớm nhất tính trên toàn bộ đơn.'));
+          'Hiển thị 60/'+orders.length+' đơn mới nhất; tổng và hạn sớm nhất vẫn tính toàn bộ.'));
         panel.appendChild(details);
       }else if(purchase.isOpen){
         panel.appendChild(makeText('p','debt-cycle-detail-metrics',
