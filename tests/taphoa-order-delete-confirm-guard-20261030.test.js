@@ -87,6 +87,7 @@ test('bulk delete and single delete share checkout mutation guard',async()=>{
  f.writes[0].resolve({ok:true});
  await Promise.all([pendingBulk,skippedSingle]);
  const nextSingle=f.confirmations[1]();
+ await Promise.resolve(); // draft preflight is async even in the mock
  assert.equal(f.writes.length,2);
  assert.equal(f.writes[1].name,'delete');
  f.writes[1].resolve({ok:true});
@@ -99,11 +100,13 @@ test('backend deletion failure shows error and releases lock for retry',async()=
  f.remove('dontam','DT001');
  const confirm=f.confirmations[0];
  const first=confirm();
+ await Promise.resolve(); // allow the canonical-draft preflight to settle
  f.writes[0].reject(Error('DB unavailable'));
  await first;
  assert.equal(f.alerts.length,1);
  assert.equal(f.toasts.length,0);
  const retry=confirm();
+ await Promise.resolve();
  assert.equal(f.writes.length,2);
  f.writes[1].resolve({ok:true});
  await retry;
