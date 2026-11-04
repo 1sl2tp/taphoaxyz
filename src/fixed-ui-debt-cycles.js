@@ -311,6 +311,11 @@
     if(purchase){
       const orders=Array.isArray(purchase.orderCycles)?purchase.orderCycles:[];
       const policy=purchase.paymentPolicy;
+      // One disclosure for policy, order history and prior debt periods:
+      // preserve all three explanations without three competing blue links.
+      const more=document.createElement('details');
+      more.className='debt-cycle-more';
+      more.appendChild(makeText('summary','debt-cycle-more-summary','Xem chi tiết chu kỳ'));
       if(purchase.isOpen&&policy?.dueDay){
         const tone=paymentCycleTone(purchase,policy);
         panel.dataset.tone=tone;
@@ -353,7 +358,7 @@
           ' · Mốc ngừng nhập '+dayLabel(policy.stopDueDay)));
         policyDetails.appendChild(makeText('p','debt-cycle-detail-explanation',
           'Hạn sớm nhất được giữ nguyên dù mua thêm. Phải tất toán toàn bộ khi ngừng nhập 3 ngày, đến D7 hoặc đạt hạn mức đã thỏa thuận.'));
-        panel.appendChild(policyDetails);
+        more.appendChild(policyDetails);
       }else if(purchase.isOpen){
         panel.appendChild(makeText('strong','debt-cycle-detail-title','Đang nợ · Chưa xác định hạn chính sách'));
         panel.appendChild(makeText('p','debt-cycle-detail-explanation',
@@ -384,7 +389,7 @@
         details.appendChild(list);
         if(orders.length>60)details.appendChild(makeText('p','debt-cycle-detail-explanation',
           'Hiển thị 60/'+orders.length+' đơn gần nhất.'));
-        panel.appendChild(details);
+        more.appendChild(details);
       }
       // Historical debt periods are separate, read-only and Admin-only.
       const historic=byCustomer.get(String(customerId));
@@ -407,9 +412,10 @@
               ' · '+dayLabel(period.startDay)+' → '+dayLabel(period.endDay);
             list.appendChild(li);
           }
-          details.appendChild(list);panel.appendChild(details);
+          details.appendChild(list);more.appendChild(details);
         }
       }
+      if(more.children.length>1)panel.appendChild(more);
       return;
     }
     const row=byCustomer.get(String(customerId));
