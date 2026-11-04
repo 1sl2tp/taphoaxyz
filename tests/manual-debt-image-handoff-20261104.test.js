@@ -197,6 +197,11 @@ test('manual image SQL isolates permissions, owner, storage, and outbound from f
   assert.match(migration,/v_mime IS DISTINCT FROM 'image\/png'/);
   assert.match(migration,/v_size IS DISTINCT FROM p_size_bytes/);
   assert.equal((migration.match(/'attached_asset_missing'/g)||[]).length,2);
+  assert.equal((migration.match(/JOIN storage\\.objects o\\s+ON o\\.bucket_id='v21-media' AND o\\.name=a\\.storage_key/g)||[]).length,2);
+  assert.match(migration,/o\\.owner_id=auth\\.uid\\(\\)::text/);
+  assert.match(migration,/o\\.archived_at IS NULL AND NOT o\\.is_delete_marker/);
+  assert.match(migration,/o\\.metadata->>'mimetype'/);
+  assert.match(migration,/o\\.metadata->>'size'/);
   assert.match(migration,/a\.id=v_ticket\.asset_id AND a\.message_id=v_ticket\.message_id/);
   assert.match(migration,/a\.owner_account_id=v_sender AND a\.kind='image'/);
   assert.match(migration,/a\.mime_type='image\/png' AND a\.storage_key=v_ticket\.storage_key/);
