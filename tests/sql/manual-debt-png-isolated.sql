@@ -137,14 +137,14 @@ END $$;
 
 -- A non-Admin must not get a ticket, even when the request ID is valid.
 SET request.jwt.claim.sub='99999999-9999-4999-8999-999999999999';
-DO $
+DO $$
 BEGIN
   PERFORM public.taphoa_manual_debt_image_ticket(
     '33333333-3333-4333-8333-333333333333',
     '77777777-7777-4777-8777-777777777777');
   RAISE EXCEPTION 'non-Admin unexpectedly obtained a PNG ticket';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
-END $;
+END $$;
 
 -- Wrong auth owner must be denied for BOTH an invented key and the real key.
 DO $$
@@ -154,15 +154,15 @@ BEGIN
     '99999999-9999-4999-8999-999999999999','{"mimetype":"image/png","size":321}');
   RAISE EXCEPTION 'wrong owner inserted Storage object unexpectedly';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
-END $;
-DO $
+END $$;
+DO $$
 BEGIN
   INSERT INTO storage.objects(bucket_id,name,owner_id,metadata)
   VALUES('v21-media',current_setting('test.png_key'),
     '99999999-9999-4999-8999-999999999999','{"mimetype":"image/png","size":321}');
   RAISE EXCEPTION 'non-Admin inserted object into real ticket path';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
-END $;
+END $$;
 
 SET request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
 -- Attachment without a file must fail closed, not create a media row.
@@ -186,7 +186,7 @@ RESET ROLE;
 UPDATE storage.objects SET metadata='{"mimetype":"image/jpeg","size":321}'::jsonb
 WHERE name=:'png_key';
 SET ROLE authenticated;
-DO $
+DO $$
 BEGIN
  PERFORM public.taphoa_manual_debt_image_attach(
   '77777777-7777-4777-8777-777777777777',
@@ -194,12 +194,12 @@ BEGIN
  RAISE EXCEPTION 'wrong MIME was accepted';
 EXCEPTION WHEN OTHERS THEN
  IF SQLERRM IS DISTINCT FROM 'image_storage_missing_or_invalid' THEN RAISE; END IF;
-END $;
+END $$;
 RESET ROLE;
 UPDATE storage.objects SET metadata='{"mimetype":"image/png","size":321}'::jsonb
 WHERE name=:'png_key';
 SET ROLE authenticated;
-DO $
+DO $$
 BEGIN
  PERFORM public.taphoa_manual_debt_image_attach(
    '77777777-7777-4777-8777-777777777777',current_setting('test.png_asset')::uuid,
@@ -260,7 +260,7 @@ RESET ROLE;
 UPDATE public.v21_accounts SET locked_at=now()
 WHERE id='33333333-3333-4333-8333-333333333333';
 SET ROLE authenticated;
-DO $
+DO $$
 DECLARE v jsonb;
 BEGIN
   v:=public.taphoa_manual_debt_image_ticket(
@@ -277,7 +277,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM IS DISTINCT FROM 'manual_notice_no_longer_allowed' THEN RAISE; END IF;
   END;
-END $;
+END $$;
 
 -- A deleted message invalidates the ticket and attached media ACK.
 RESET ROLE;
@@ -286,7 +286,7 @@ WHERE id='33333333-3333-4333-8333-333333333333';
 UPDATE public.v21_messages SET deleted_at=now()
 WHERE id='66666666-6666-4666-8666-666666666666';
 SET ROLE authenticated;
-DO $
+DO $$
 DECLARE v jsonb;
 BEGIN
   v:=public.taphoa_manual_debt_image_ticket(
@@ -303,6 +303,6 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM IS DISTINCT FROM 'manual_notice_no_longer_allowed' THEN RAISE; END IF;
   END;
-END $;
+END $$;
 
 \echo 'PASS: disposable PostgreSQL migration, RLS, exact-recipient, MIME, locked/deleted state, media-ACK and idempotency'
