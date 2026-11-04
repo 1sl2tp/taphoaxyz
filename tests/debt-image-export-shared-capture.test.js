@@ -216,3 +216,11 @@ test('unknown network failure does not retry or fall back because message delive
  assert.equal(f.toasts.length,0);
  assert.equal(f.alerts.length,1);
 });
+
+test('debt PNG clone retains scoped IDs required for cycle and history layout',()=>{
+  assert.doesNotMatch(generator,/clone\.removeAttribute\(['"]id['"]\)/);
+  assert.doesNotMatch(generator,/cloneHistory\.removeAttribute\(['"]id['"]\)/);
+  const css=fs.readFileSync('src/fixed-ui-debt-cycles.css','utf8');
+  assert.match(css,/#customerDebtContentToShare \.debt-cycle-detail/);
+  assert.match(css,/#customerDebtContentToShare \.debt-cycle-history ol/);
+});
