@@ -76,6 +76,42 @@
     await Promise.all([...new Set(names)].map(name=>SheetDB.read(name)));
   }
 
+  // SPEC-DEBT-FILTER-AUTHORITATIVE-20261104: switching into the debt tab
+  // is an explicit user action. Refresh the server summary ONCE on entry;
+  // reading SheetDB alone only repaints cached appState and may show customers
+  // as owing after a separate Chat/bank collection has already settled them.
+  // No new timer, polling, mutation, or ledger-page fetch is involved.
+  let debtTabReadInFlight=null;
+  async function refreshDebtSummaryOnTabEntry(){
+    const prod=backend();
+    const owner=prod?.getIdentity?.();
+    const mode=prod?.getAccessMode?.();
+    if(!owner||mode!=='account'||debtTabReadInFlight)return;
+    const isSameOwner=()=>backend()===prod
+      &&prod.getIdentity?.()===owner
+      &&prod.getAccessMode?.()===mode;
+    let task;
+    task=(async()=>{
+      await prod.refresh(['debt']);
+      if(!isSameOwner())return;
+      if(document.querySelector('.tab-content.active')?.id!=='tab-cong-no')return;
+      await refreshFixedSheets(['thuchi']);
+    })().finally(()=>{if(debtTabReadInFlight===task)debtTabReadInFlight=null;});
+    debtTabReadInFlight=task;
+    return task;
+  }
+  const originalDebtTabSwitch=switchTab;
+  switchTab=function(tabId,element){
+    const wasOnDebt=document.querySelector('.tab-content.active')?.id==='tab-cong-no';
+    const result=originalDebtTabSwitch.apply(this,arguments);
+    if(tabId==='tab-cong-no'&&!wasOnDebt
+      &&document.querySelector('.tab-content.active')?.id==='tab-cong-no'){
+      void refreshDebtSummaryOnTabEntry().catch(error=>
+        console.warn('[taphoa] debt summary refresh on entry:',String(error?.message||error)));
+    }
+    return result;
+  };
+
   async function refreshOrderUiAfterMutation(){
     // Keep the scroll owner of each order tab at its pre-edit position.
     // Do not change scroll behavior when switching filters or tabs normally.
