@@ -679,7 +679,9 @@
       tab:String(p.get('tab')||'hang').trim().toLowerCase(),
       muc:String(p.get('muc')||'').trim().toLowerCase(),
       nguon:String(p.get('nguon')||'').trim().toLowerCase(),
-      don:String(p.get('don')||'').trim().toUpperCase()
+      don:String(p.get('don')||'').trim().toUpperCase(),
+      oid:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(String(p.get('oid')||'').trim().toLowerCase())
+        ?String(p.get('oid')).trim().toLowerCase():''
     };
   }
 
@@ -1012,35 +1014,69 @@
       ownProductRenderKey='';
       renderProductList();
     }
-    if(/^(DT|DG)[0-9]+$/.test(q.don)){
+    if(/^(DT|DG)[0-9]+$/.test(q.don)||q.oid){
       const linkOwner=sharedCartOwner();
-      const sheetName=q.don.startsWith('DT')?'dontam':'dongiao';
-      const orderIsLoaded=()=>Array.isArray(appData?.[sheetName])
-        &&appData[sheetName].slice(1).some(row=>
-          String(row?.[0]||'').trim().toUpperCase()===q.don);
-      const openSavedOrder=()=>{
+      const sheetFor=code=>code.startsWith('DT')?'dontam':'dongiao';
+      const loaded=(code,stableId='')=>{
+        const sheet=sheetFor(code);
+        return Array.isArray(appData?.[sheet])&&appData[sheet].slice(1).some(row=>
+          String(row?.[0]||'').trim().toUpperCase()===code
+          &&(!stableId||String(row?.[7]||'').toLowerCase()===stableId));
+      };
+      const openSavedOrder=(code,stableId='')=>{
         if(!sharedCartOwnerCurrent(linkOwner))return;
-        // A shared customer link opens the ORIGINAL saved-order detail, not
-        // the sales cart. The existing detail renderer owns layout/image mode.
-        if(typeof showOrderDetailMobile==='function')showOrderDetailMobile(q.don,sheetName);
+        const sheet=sheetFor(code);
+        const tab=sheet==='dontam'?'tab-don-tam':'tab-da-giao';
+        if(publicTabId!==tab){
+          const tabButton=document.querySelector('.tab-btn[onclick*="'+tab+'"]');
+          if(tabButton)switchTab(tab,tabButton);
+          publicTabId=tab;
+        }
+        // Update only the current address; keep the original share URL usable.
+        // No PIN or access key is ever placed in the URL.
+        if((code!==q.don||stableId&&!q.oid)&&window.history?.replaceState){
+          const url=new URL(window.location.href);
+          url.searchParams.set('don',code);
+          if(stableId)url.searchParams.set('oid',stableId);
+          window.history.replaceState(window.history.state,'',url.toString());
+        }
+        // Use the existing order-detail component, never the editable cart.
+        if(typeof showOrderDetailMobile==='function')showOrderDetailMobile(code,sheet);
       };
       setTimeout(()=>{
         if(!sharedCartOwnerCurrent(linkOwner))return;
-        if(orderIsLoaded()){openSavedOrder();return;}
-        // The linked order may be newer than the initial snapshot. One
-        // bounded domain refresh resolves it without adding polling/retries.
+        if(/^(DT|DG)[0-9]+$/.test(q.don)&&loaded(q.don,q.oid)){
+          openSavedOrder(q.don,q.oid);
+          return;
+        }
+        // Resolve historical DT codes and immutable UUIDs against this
+        // customer's already-authorized public session. One targeted retry
+        // of the orders domain is sufficient for a recently created order.
         void (async()=>{
           try{
-            await backend().refresh(['orders']);
+            const response=await backend().resolvePublicOrderLink(q.don,q.oid||null);
             if(!sharedCartOwnerCurrent(linkOwner))return;
-            await refreshFixedSheets([sheetName]);
+            const code=String(response?.display_code||'').trim().toUpperCase();
+            const stableId=String(response?.order_id||'').trim().toLowerCase();
+            if(response?.ok!==true||!(/^(DT|DG)[0-9]+$/.test(code))){
+              showToast('Không tìm thấy đơn '+(q.don||'')+' thuộc tài khoản này. Vui lòng kiểm tra liên kết.','error');
+              return;
+            }
+            if(!loaded(code,stableId)){
+              await backend().refresh(['orders']);
+              if(!sharedCartOwnerCurrent(linkOwner))return;
+              await refreshFixedSheets([sheetFor(code)]);
+            }
             if(!sharedCartOwnerCurrent(linkOwner))return;
-            if(orderIsLoaded()){openSavedOrder();return;}
-            showToast('Không tìm thấy đơn '+q.don+' của tài khoản này. Vui lòng kiểm tra lại liên kết.','error');
+            if(loaded(code,stableId)){
+              openSavedOrder(code,stableId);
+              return;
+            }
+            showToast('Chưa tải được chi tiết đơn '+code+'. Hãy mở lại liên kết hoặc liên hệ cửa hàng.','error');
           }catch(error){
             if(sharedCartOwnerCurrent(linkOwner)){
               console.warn('public order deep link',String(error?.message||error));
-              showToast('Chưa tải được đơn '+q.don+'. Kiểm tra kết nối và mở lại liên kết.','error');
+              showToast('Không tải được đơn từ liên kết. Kiểm tra mạng hoặc mã PIN rồi thử lại.','error');
             }
           }
         })();
