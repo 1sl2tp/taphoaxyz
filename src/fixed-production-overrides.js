@@ -1012,13 +1012,38 @@
       ownProductRenderKey='';
       renderProductList();
     }
-    if(q.don&&typeof clickOrder==='function'){
+    if(/^(DT|DG)[0-9]+$/.test(q.don)){
       const linkOwner=sharedCartOwner();
+      const sheetName=q.don.startsWith('DT')?'dontam':'dongiao';
+      const orderIsLoaded=()=>Array.isArray(appData?.[sheetName])
+        &&appData[sheetName].slice(1).some(row=>
+          String(row?.[0]||'').trim().toUpperCase()===q.don);
+      const openSavedOrder=()=>{
+        if(!sharedCartOwnerCurrent(linkOwner))return;
+        // A shared customer link opens the ORIGINAL saved-order detail, not
+        // the sales cart. The existing detail renderer owns layout/image mode.
+        if(typeof showOrderDetailMobile==='function')showOrderDetailMobile(q.don,sheetName);
+      };
       setTimeout(()=>{
-        // The deep-link timer must not open an order under another link/session.
-        if(sharedCartOwnerCurrent(linkOwner)){
-          clickOrder(q.don,q.don.startsWith('DT')?'dontam':'dongiao');
-        }
+        if(!sharedCartOwnerCurrent(linkOwner))return;
+        if(orderIsLoaded()){openSavedOrder();return;}
+        // The linked order may be newer than the initial snapshot. One
+        // bounded domain refresh resolves it without adding polling/retries.
+        void (async()=>{
+          try{
+            await backend().refresh(['orders']);
+            if(!sharedCartOwnerCurrent(linkOwner))return;
+            await refreshFixedSheets([sheetName]);
+            if(!sharedCartOwnerCurrent(linkOwner))return;
+            if(orderIsLoaded()){openSavedOrder();return;}
+            showToast('Không tìm thấy đơn '+q.don+' của tài khoản này. Vui lòng kiểm tra lại liên kết.','error');
+          }catch(error){
+            if(sharedCartOwnerCurrent(linkOwner)){
+              console.warn('public order deep link',String(error?.message||error));
+              showToast('Chưa tải được đơn '+q.don+'. Kiểm tra kết nối và mở lại liên kết.','error');
+            }
+          }
+        })();
       },0);
     }
     renderPublicTools();
