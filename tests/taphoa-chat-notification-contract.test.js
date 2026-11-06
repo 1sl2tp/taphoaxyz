@@ -13,9 +13,13 @@ function latestFunction(name){
   const lower=sql.toLowerCase();
   const start=lower.lastIndexOf(marker.toLowerCase());
   assert.notEqual(start,-1,`missing function ${name}`);
-  const end=sql.indexOf('$$;',start);
-  assert.notEqual(end,-1,`unterminated function ${name}`);
-  return sql.slice(start,end+3);
+  const part=sql.slice(start);
+  const match=part.match(/\bas\s+(\$[a-z0-9_]*\$)/i);
+  assert.ok(match,`SQL delimiter for ${name}`);
+  const opening=start+match.index+match[0].length;
+  const end=sql.indexOf(match[1]+';',opening);
+  assert.notEqual(end,-1,`SQL terminator for ${name}`);
+  return sql.slice(start,end+match[1].length+1);
 }
 
 test('TAPHOA chat helper writes canonical idempotent V21 messages only for admin-to-customer',()=>{
@@ -45,7 +49,7 @@ test('admin only notifies delivered order creation, promotion or meaningful deli
 test('dedicated delivery mutation emits exactly one detailed delivered receipt',()=>{
   const fn=latestFunction('taphoa_deliver_order');
   assert.match(fn,/customer_account_id\s+is\s+not\s+null/i);
-  assert.match(fn,/taphoa_chat_order_receipt\([\s\S]*?'Đơn '\s*\|\|\s*v_display_code\s*\|\|\s*' đã giao'/);
+  assert.match(fn,/'Chuyển đơn tạm → đã giao'/);
   assert.match(fn,/taphoa_chat_customer_balance_value\(o\.customer_account_id\)/);
   assert.equal((fn.match(/taphoa_chat_notify_customer/g)||[]).length,1);
   assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':deliver'/);
@@ -55,13 +59,15 @@ test('cash collection and manual debt payment each emit one canonical customer r
   const fn=latestFunction('taphoa_debt_transaction');
 
   assert.match(fn,/if\s+v_entry_type='collection'\s+then[\s\S]*?taphoa_chat_notify_customer/i);
-  assert.match(fn,/v_notice\s*:=\s*'✅ Đã thu · '\s*\|\|\s*public\.taphoa_chat_money\(v_amount_vnd\)/);
+  assert.match(fn,/taphoa_chat_finance_notice\(/);
   assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':collection'/);
 
   assert.match(fn,/elsif\s+v_entry_type='payment'\s+then[\s\S]*?taphoa_chat_notify_customer/i);
-  assert.match(fn,/v_notice\s*:=\s*'🧾 Ghi nợ · '\s*\|\|\s*public\.taphoa_chat_money\(v_amount_vnd\)/);
-  assert.match(fn,/taphoa_chat_balance_label\(v_balance_before,true\)/);
-  assert.match(fn,/taphoa_chat_balance_label\(v_balance_after,false\)/);
+  const formatter=latestFunction('taphoa_chat_finance_notice');
+  assert.match(formatter,/THÔNG BÁO GHI NỢ/);
+  assert.match(formatter,/taphoa_chat_money\(p_amount\)/);
+  assert.match(formatter,/taphoa_chat_balance_label\(p_before,true\)/);
+  assert.match(formatter,/taphoa_chat_balance_label\(p_after,false\)/);
   assert.doesNotMatch(fn,/taphoa_chat_when\(now\(\)\)/);
   assert.match(fn,/taphoa_customer_mini_link\([\s\S]*?'no'/i);
   assert.match(fn,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':debt'/);
