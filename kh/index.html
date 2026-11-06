@@ -19,7 +19,7 @@ input:focus{border-color:#171717}
 .pin-grid[data-complete="true"] .pin-digit{border-color:#98a2b3}
 button{width:100%;height:48px;margin-top:12px;border:0;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer}
 button:disabled{opacity:.42;cursor:default}.primary{background:#171717;color:#fff}.secondary{background:#f3f4f6;color:#171717}.login{background:#fff;color:#344054;border:1px solid #d0d5dd}
-.error{min-height:18px;margin-top:10px;color:#b42318;font-size:12px;text-align:center}.warning{margin:0 0 14px;padding:11px 12px;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px;line-height:1.45}
+.target-order{display:block;margin:0 0 14px;font-size:13px;font-weight:650;color:#344054;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px}.error{min-height:18px;margin-top:10px;color:#b42318;font-size:12px;text-align:center}.warning{margin:0 0 14px;padding:11px 12px;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px;line-height:1.45}
 .divider{display:flex;align-items:center;gap:10px;margin:17px 0 2px;color:#98a2b3;font-size:11px}.divider:before,.divider:after{content:"";height:1px;background:#eaecf0;flex:1}
 .login-panel{margin-top:12px;padding-top:4px}.login-panel input+input{margin-top:10px}.hidden{display:none!important}
 .back{height:auto;margin-top:10px;background:transparent;color:#667085;font-weight:650}
@@ -31,6 +31,7 @@ button:disabled{opacity:.42;cursor:default}.primary{background:#171717;color:#ff
 <section class="card" aria-live="polite">
   <h1 id="title">TAPHOA</h1>
   <p id="description">Đang kiểm tra liên kết…</p>
+  <div class="target-order hidden" id="targetOrder"></div>
   <div class="warning hidden" id="warning">Liên kết của bạn chưa được bảo vệ bằng PIN. Nên tạo PIN để người chỉ có link không thể xem thông tin.</div>
 
   <div id="pinPanel">
@@ -56,6 +57,7 @@ button:disabled{opacity:.42;cursor:default}.primary{background:#171717;color:#ff
     <button id="backButton" class="back" type="button">Quay lại</button>
   </div>
 
+  <button id="retry" class="secondary hidden" type="button">Thử mở lại liên kết</button>
   <div class="error" id="error"></div>
 </section>
 
@@ -73,6 +75,13 @@ const client=createClient(SUPABASE,KEY,{auth:{persistSession:true,autoRefreshTok
 
 const title=document.getElementById('title');
 const description=document.getElementById('description');
+const targetOrder=document.getElementById('targetOrder');
+const retry=document.getElementById('retry');
+const intendedOrder=String(params.get('don')||'').trim().toUpperCase();
+if(/^(DT|DG)[0-9]+$/.test(intendedOrder)){
+  targetOrder.textContent='Đang mở đơn '+intendedOrder;
+  targetOrder.classList.remove('hidden');
+}
 const warning=document.getElementById('warning');
 const pinPanel=document.getElementById('pinPanel');
 const pinGrid=document.getElementById('pinGrid');
@@ -202,6 +211,7 @@ function renderGate(state){
   focusPin();
 }
 async function loadGate(){
+  retry.classList.add('hidden');
   if(!kh){
     title.textContent='Liên kết không hợp lệ';
     description.textContent='Không tìm thấy thông tin khách hàng.';
@@ -213,14 +223,25 @@ async function loadGate(){
     const state=await rpc('taphoa_public_gate_state',{p_public_slug:kh});
     if(state?.ok!==true)throw new Error('not_found');
     if(state?.authenticated_bypass===true){enter();return;}
+    pinPanel.classList.remove('hidden');
+    showLogin.classList.remove('hidden');
     renderGate(state);
-  }catch{
-    title.textContent='Không mở được liên kết';
-    description.textContent='Liên kết không hợp lệ hoặc đã hết hiệu lực.';
+  }catch(failure){
+    const notFound=String(failure?.message||'').includes('not_found');
+    title.textContent=notFound?'Liên kết không hợp lệ':'Chưa tải được liên kết';
+    description.textContent=notFound
+      ?'Liên kết không tồn tại hoặc đã hết hiệu lực. Vui lòng yêu cầu cửa hàng gửi lại.'
+      :'Không kết nối được đến hệ thống. Kiểm tra mạng và chọn Thử mở lại liên kết.';
     pinPanel.classList.add('hidden');
     showLogin.classList.add('hidden');
+    retry.classList.toggle('hidden',notFound);
   }
 }
+retry.addEventListener('click',()=>{
+  if(retry.disabled)return;
+  retry.disabled=true;
+  void loadGate().finally(()=>{retry.disabled=false;});
+});
 
 wirePinInputs();
 submit.addEventListener('click',async()=>{
