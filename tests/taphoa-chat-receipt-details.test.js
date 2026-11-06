@@ -13,9 +13,14 @@ function latestFunction(name){
   const lower=sql.toLowerCase();
   const start=lower.lastIndexOf(marker.toLowerCase());
   assert.notEqual(start,-1,`missing function ${name}`);
-  const end=sql.indexOf('$$;',start);
+  // Accept the exact dollar-quote delimiter on the latest function body.
+  const fragment=sql.slice(start);
+  const quoted=fragment.match(/\bAS\s+(\$[A-Za-z_0-9]*\$)/i);
+  assert.ok(quoted,`missing body delimiter for ${name}`);
+  const opening=start+quoted.index+quoted[0].length;
+  const end=sql.indexOf(quoted[1]+';',opening);
   assert.notEqual(end,-1,`unterminated function ${name}`);
-  return sql.slice(start,end+3);
+  return sql.slice(start,end+quoted[1].length+1);
 }
 
 test('order receipt shows code and both counts, total and direct mini app link without duplicate details',()=>{
@@ -23,7 +28,7 @@ test('order receipt shows code and both counts, total and direct mini app link w
   for(const pattern of [
     /tongMa/,
     /tongSL/,
-    /' sản phẩm · '/,
+    /' sản phẩm'/,
     /taphoa_chat_money\(v_total_vnd\)/,
     /taphoa_customer_mini_link\(v_customer,'don',null,null,v_code\)/,
     /Xem đơn:/,
@@ -51,11 +56,13 @@ test('edit notification is normalized to the single word Cập nhật and skips 
 test('cash collection preserves before and after balances, note and customer debt link',()=>{
   const receipt=latestFunction('taphoa_debt_transaction');
   const send=latestFunction('taphoa_chat_notify_customer');
-  assert.match(receipt,/taphoa_chat_money\(v_amount_vnd\)/);
-  assert.match(receipt,/taphoa_chat_balance_label\(v_balance_before,true\)/);
-  assert.match(receipt,/taphoa_chat_balance_label\(v_balance_after,false\)/);
+  const template=latestFunction('taphoa_chat_finance_notice');
+  assert.match(receipt,/taphoa_chat_finance_notice\(/);
+  assert.match(template,/taphoa_chat_money\(p_amount\)/);
+  assert.match(template,/taphoa_chat_balance_label\(p_before,true\)/);
+  assert.match(template,/taphoa_chat_balance_label\(p_after,false\)/);
   assert.match(receipt,/taphoa_customer_mini_link\(p_customer_id,'no',null,null,null\)/);
-  assert.match(receipt,/Xem công nợ:/);
+  assert.match(template,/Xem công nợ:/);
   assert.match(receipt,/'taphoa:'\s*\|\|\s*p_command_id::text\s*\|\|\s*':collection'/);
   assert.doesNotMatch(send,/if v_client_id like 'taphoa:%:collection' then/);
 });

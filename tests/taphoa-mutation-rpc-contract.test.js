@@ -13,9 +13,14 @@ function latestFunction(name){
   const lower=sql.toLowerCase();
   const start=lower.lastIndexOf(marker.toLowerCase());
   assert.notEqual(start,-1,`missing function ${name}`);
-  const end=sql.indexOf('$$;',start);
+  // Accept the exact dollar-quote delimiter on the latest function body.
+  const fragment=sql.slice(start);
+  const quoted=fragment.match(/\bAS\s+(\$[A-Za-z_0-9]*\$)/i);
+  assert.ok(quoted,`missing body delimiter for ${name}`);
+  const opening=start+quoted.index+quoted[0].length;
+  const end=sql.indexOf(quoted[1]+';',opening);
   assert.notEqual(end,-1,`unterminated function ${name}`);
-  return sql.slice(start,end+3);
+  return sql.slice(start,end+quoted[1].length+1);
 }
 
 test('all TAPHOA mutations are namespaced and command-idempotent',()=>{
