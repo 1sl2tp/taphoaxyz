@@ -17,7 +17,7 @@ revoke all on v21_private.taphoa_order_public_codes from public,anon,authenticat
 create or replace function v21_private.taphoa_capture_order_public_code()
 returns trigger language plpgsql security definer
 set search_path='public','v21_private','pg_temp'
-as $func$
+as $function$
 declare v_previous text;v_next text;
 begin
  if TG_OP='UPDATE' and old.customer_account_id is not null then
@@ -40,7 +40,7 @@ begin
  end if;
  return new;
 end;
-$func$;
+$function$;
 drop trigger if exists taphoa_capture_order_public_code_trg on public.taphoa_orders;
 create trigger taphoa_capture_order_public_code_trg
 after insert or update of display_prefix,display_no,customer_account_id
@@ -76,7 +76,7 @@ create or replace function public.taphoa_public_resolve_order_access(
 returns jsonb
 language plpgsql security definer
 set search_path='public','v21_private','pg_temp'
-as $func$
+as $function$
 declare v_customer uuid;v_order public.taphoa_orders%rowtype;v_code text;
 begin
  v_customer:=public.taphoa_public_customer_id_for_access(p_public_slug,p_pin);
@@ -102,7 +102,7 @@ begin
   'status',v_order.status
  );
 end;
-$func$;
+$function$;
 
 revoke all on function public.taphoa_public_resolve_order_access(text,text,text,uuid)
 from public,anon,authenticated;
@@ -117,7 +117,7 @@ create or replace function public.taphoa_customer_mini_link(
 )
 returns text language plpgsql security definer
 set search_path='public','v21_private','pg_temp'
-as $func$
+as $function$
 declare
  v_link jsonb;v_slug text;v_tab text:=lower(btrim(coalesce(p_tab,'hang')));
  v_source text:=lower(btrim(coalesce(p_source_key,'')));
@@ -154,6 +154,6 @@ begin
  end if;
  return v_url;
 end;
-$func$;
+$function$;
 revoke all on function v21_private.taphoa_capture_order_public_code()
 from public,anon,authenticated;
