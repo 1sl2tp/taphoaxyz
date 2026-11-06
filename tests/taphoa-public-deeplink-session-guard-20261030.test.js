@@ -12,7 +12,7 @@ assert.ok(a>=0&&b>a);
 const section=raw.slice(a,b);
 const ORDER_ID='11111111-2222-4333-8444-555555555555';
 const row=(code)=>[code,null,null,null,null,null,null,ORDER_ID];
-function fixture({loaded=true,code='DT0042',resolvedCode=code,oid='',resolveOk=true}={}){
+function fixture({loaded=true,code='DT0042',resolvedCode=code,oid='',resolveOk=true,materializeOnRefresh=false}={}){
   let identity={uid:'customer-A'};
   const delayed=[],opened=[],switched=[],toasts=[],refreshes=[],resolves=[];
   const appData={dontam:[['header']],dongiao:[['header']]};
@@ -25,7 +25,13 @@ function fixture({loaded=true,code='DT0042',resolvedCode=code,oid='',resolveOk=t
     setTimeout:fn=>{delayed.push(fn);return delayed.length;},
     appData,
     backend:()=>({
-      refresh:async domains=>{refreshes.push(domains);},
+      refresh:async domains=>{
+        refreshes.push(domains);
+        if(materializeOnRefresh){
+          const sheet=resolvedCode.startsWith('DT')?'dontam':'dongiao';
+          appData[sheet].push(row(resolvedCode));
+        }
+      },
       resolvePublicOrderLink:async(don,ref)=>{
         resolves.push({don,ref});
         return resolveOk?{ok:true,display_code:resolvedCode,order_id:ORDER_ID}:{ok:false,error:'order_not_found'};
@@ -67,8 +73,8 @@ test('live customer link opens the original detail without touching the editable
 });
 
 test('missing order resolves once, then refreshes orders before opening',async()=>{
-  const f=fixture({loaded:false});
-  f.schedule();f.flush();f.setOrderLoaded();
+  const f=fixture({loaded:false,materializeOnRefresh:true});
+  f.schedule();f.flush();
   await settled();
   assert.deepEqual(f.opened,[{id:'DT0042',sheet:'dontam'}]);
   assert.equal(f.refreshes.length,1);
