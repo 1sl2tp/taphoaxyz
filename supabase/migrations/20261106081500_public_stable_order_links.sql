@@ -117,7 +117,7 @@ create or replace function public.taphoa_customer_mini_link(
 )
 returns text language plpgsql security definer
 set search_path='public','v21_private','pg_temp'
-as $
+as $$
 declare
  v_link jsonb;v_slug text;v_tab text:=lower(btrim(coalesce(p_tab,'hang')));
  v_source text:=lower(btrim(coalesce(p_source_key,'')));
@@ -154,6 +154,6 @@ begin
  end if;
  return v_url;
 end;
-$;
+$$;
 revoke all on function v21_private.taphoa_capture_order_public_code()
 from public,anon,authenticated;
