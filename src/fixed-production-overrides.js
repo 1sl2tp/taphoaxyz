@@ -723,7 +723,15 @@
       if(sourceKey)p.set('nguon',sourceKey);
     }
     if((publicTabId==='tab-da-giao'||publicTabId==='tab-don-tam')&&editingOrderId){
-      p.set('don',String(editingOrderId).toUpperCase());
+      const code=String(editingOrderId).toUpperCase();
+      p.set('don',code);
+      const sheet=publicTabId==='tab-don-tam'?'dontam':'dongiao';
+      const row=Array.isArray(appData?.[sheet])?appData[sheet].slice(1).find(
+        item=>String(item?.[0]||'').trim().toUpperCase()===code):null;
+      const stableId=String(row?.[7]||'').trim().toLowerCase();
+      if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(stableId)){
+        p.set('oid',stableId);
+      }
     }
     return location.origin+'/kh/?'+p.toString();
   }
