@@ -16,11 +16,16 @@
             let modalWrap = document.getElementById('orderDetailModalWrapper');
             if(!modalWrap) return; // Thêm check an toàn
             
+            // A stale/mismatched deep link must never show an empty order popup.
+            const orderSheet = Array.isArray(appData?.[sheetName]) ? appData[sheetName] : [];
+            let items = orderSheet.slice(1).filter(r =>
+                String(r?.[0] || '').trim().toUpperCase() === String(orderId || '').trim().toUpperCase());
+            if(!items.length){
+                if(typeof showToast === 'function') showToast('Không tìm thấy đơn '+orderId+' trong danh sách.','error');
+                return;
+            }
             modalWrap.classList.remove('hidden');
             document.getElementById('detailModalTitle').innerText = orderId;
-            
-            let items = appData[sheetName].slice(1).filter(r => String(r[0]).trim() === orderId);
-            if(items.length === 0) return;
 
             let maKh = items[0][1]; let timeStr = items[0][6] || '';
             let spDict = {}; appData.sanpham.slice(1).forEach(sp => { spDict[sp[0]] = sp[1]; });
@@ -28,6 +33,7 @@
             let html = ''; let total = 0; let totalQty = 0;
             items.forEach((r, idx) => {
                 let tenSp = spDict[r[2]] || r[2];
+                const tenSpSafe = escapeProductEditorValue(tenSp);
                 let donGia = Number(r[4]) || 0;
                 let sl = Number(r[3]) || 0;
                 let tTien = Number(r[5]) || 0;
@@ -38,7 +44,7 @@
                 <div class="order-detail-compact-grid py-2 border-b border-gray-50 text-[12px]">
                     <div class="order-stt font-bold text-gray-400">${idx+1}</div>
                     <div class="min-w-0">
-                        <div class="order-name font-bold text-gray-900 leading-tight">${tenSp}</div>
+                        <div class="order-name font-bold text-gray-900 leading-tight">${tenSpSafe}</div>
                         ${note ? `<div class="order-line-note text-[10px] text-gray-400 mt-0.5 truncate">${escapeProductEditorValue(note)}</div>` : ''}
                     </div>
                     <div class="order-qty font-bold text-gray-700">${sl}</div>
