@@ -48,8 +48,13 @@ test('backend rejects fractional debt amounts from stale formatted clients',()=>
   const marker='create or replace function public.taphoa_debt_transaction';
   const start=sql.lastIndexOf(marker);
   assert.notEqual(start,-1);
-  const end=sql.indexOf('$$;',start);
-  const fn=sql.slice(start,end+3);
+  const part=sql.slice(start);
+  const match=part.match(/\bas\s+(\$[a-z0-9_]*\$)/i);
+  assert.ok(match,'SQL body delimiter');
+  const opening=start+match.index+match[0].length;
+  const end=sql.indexOf(match[1]+';',opening);
+  assert.notEqual(end,-1,'SQL body terminator');
+  const fn=sql.slice(start,end+match[1].length+1);
   assert.match(fn,/p_amount<>trunc\(p_amount\)/);
   assert.match(fn,/amount_must_be_whole_number/);
 });
