@@ -1104,6 +1104,13 @@ async function orderDetail(id){
   if(publicAccess)return publicRpc('taphoa_public_order_detail_access',{p_order_id:String(id||'')});
   return business.orderDetail(id);
 }
+async function resolvePublicOrderLink(code,orderId=null){
+  if(!publicAccess)throw new Error('public_access_required');
+  return publicRpc('taphoa_public_resolve_order_access',{
+    p_code:String(code||'').trim().toUpperCase(),
+    p_order_id:orderId||null
+  });
+}
 async function productMediaCandidates(query,limit=12){return business.productMediaCandidates(query,limit);}
 async function marketSearch(query,limit=60,source='',offset=0){return business.marketSearch(query,limit,source,offset);}
 async function setProductMedia(productCode,canonicalProductId){
@@ -1144,7 +1151,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,orderCycles,ledgerToRows,
-  saveOrder,deliverOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,
+  saveOrder,deliverOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,resolvePublicOrderLink,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
