@@ -96,10 +96,21 @@
     .feedback-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--grid);background:#f8fafc}
     .feedback-head strong{font-size:14px}.feedback-body{max-height:58vh;overflow:auto}
     .feedback-table{width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0}
-    .feedback-table th{position:sticky;top:0;z-index:2}.feedback-table td{padding:7px 8px;height:34px}
+    .feedback-table th{position:sticky;top:0;z-index:2}.feedback-table td{padding:6px 8px;height:50px}
     .feedback-name{text-align:left;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .feedback-price{text-align:right;font-variant-numeric:tabular-nums}
+    .feedback-price-stack{display:flex;min-width:0;flex-direction:column;align-items:flex-end;justify-content:center;gap:3px}
+    .feedback-price-value{font-size:13px;line-height:18px;font-weight:800;color:#111827}
+    .feedback-price-time{font-size:11px;line-height:15px;color:#64748b;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .feedback-price-time.feedback-time-missing{color:#94a3b8}
+    .feedback-head-note{display:block;margin-top:2px;font-size:10px;line-height:12px;font-weight:500;color:#64748b}
     .feedback-remove{border:0;background:transparent;color:#dc2626;font-weight:900;padding:4px 7px}
+    @media(max-width:540px){
+      .feedback-table td{padding:5px 5px}
+      .feedback-table th{padding:6px 4px;font-size:10px}
+      .feedback-name{white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+      .feedback-price-time{font-size:10px}
+    }
     .feedback-empty{padding:24px;text-align:center;color:var(--muted);font-size:12px}
     .hist-delta.same{color:#64748b}
     .history-btn,.delete-btn{border:0;background:transparent;height:32px;padding:0 8px;font-weight:800;color:#475569}
@@ -665,7 +676,7 @@
         </div>
         <div class="feedback-body">
           <table class="feedback-table">
-            <thead><tr><th style="text-align:left">Tên sản phẩm</th><th>Giá cũ</th><th>Giá mới</th><th style="width:42px"></th></tr></thead>
+            <thead><tr><th style="text-align:left">Tên sản phẩm</th><th>Giá cũ<span class="feedback-head-note">Thời điểm</span></th><th>Giá mới<span class="feedback-head-note">Thời điểm</span></th><th style="width:42px"></th></tr></thead>
             <tbody id="supplierFeedbackBody"></tbody>
           </table>
           <div id="supplierFeedbackEmpty" class="feedback-empty hidden">Chưa có giá nào cần phản hồi NCC.</div>
@@ -3088,6 +3099,30 @@
       }
     }
 
+    // SPEC-ADMIN-NCC-PRICE-TIMELINE-20261108: recorded VN times, never invented.
+    // Existing feedback data stores created_at; an older price-effective timestamp
+    // appears only when the read RPC explicitly supplies old_price_at/old_changed_at.
+    // A missing timestamp stays unknown instead of reusing the new price timestamp.
+    function supplierFeedbackTimeMarkup(raw,label){
+      const value=typeof raw==='string'?raw.trim():'';
+      const candidate=/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)
+        ?new Date(value.replace(/^(\d{4}-\d{2}-\d{2}) /,'$1T'))
+        :new Date(NaN);
+      if(!Number.isFinite(candidate.getTime())){
+        return '<span class="feedback-price-time feedback-time-missing" title="'+esc(label+': chưa có mốc lịch sử')+'">—</span>';
+      }
+      const when=new Intl.DateTimeFormat('vi-VN',{
+        timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'2-digit',
+        hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+      }).format(candidate);
+      const exact=new Intl.DateTimeFormat('vi-VN',{
+        timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric',
+        hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
+      }).format(candidate);
+      return '<time class="feedback-price-time" datetime="'+esc(candidate.toISOString())+
+        '" title="'+esc(label+': '+exact)+'">'+esc(when)+'</time>';
+    }
+
     // SPEC-ADMIN-SECONDARY-PANEL-RACES-20261101: only latest request can paint.
     async function loadSupplierFeedback(){
       const generation=++feedbackGeneration,adminUid=identity?.uid;
@@ -3099,8 +3134,14 @@
         const rows=Array.isArray(data)?data:[];
         $('supplierFeedbackBody').innerHTML=rows.map(x=>`<tr data-feedback-id="${esc(x.id)}">
           <td class="feedback-name" title="${esc(x.product_name)}">${esc(x.product_name)}</td>
-          <td class="feedback-price">${esc(pretty(x.old_price))}</td>
-          <td class="feedback-price">${esc(pretty(x.new_price))}</td>
+          <td class="feedback-price"><div class="feedback-price-stack">
+            <strong class="feedback-price-value">${esc(pretty(x.old_price))}</strong>
+            ${supplierFeedbackTimeMarkup(x.old_price_at??x.old_changed_at,'Giá cũ')}
+          </div></td>
+          <td class="feedback-price"><div class="feedback-price-stack">
+            <strong class="feedback-price-value">${esc(pretty(x.new_price))}</strong>
+            ${supplierFeedbackTimeMarkup(x.new_price_at??x.created_at??x.changed_at,'Giá mới')}
+          </div></td>
           <td><button class="feedback-remove" type="button" title="Đã phản hồi xong">×</button></td>
         </tr>`).join('');
         $('supplierFeedbackEmpty').classList.toggle('hidden',rows.length!==0);
