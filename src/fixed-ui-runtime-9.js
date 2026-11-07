@@ -71,8 +71,10 @@
                 sheetName,
                 source: sourceName,
                 tab: 'detail',
+                groupSort: 'product',
                 detailRows: built.detailRows,
                 groupedRows: built.groupedRows,
+                customerRows: built.customerRows,
                 totalQty: built.totalQty,
                 timeLabel: built.timeLabel
             };
@@ -225,6 +227,7 @@
                     tab: activeTab,
                     detailRows: built.detailRows,
                     groupedRows: built.groupedRows,
+                    customerRows: built.customerRows,
                     totalQty: built.totalQty,
                     timeLabel: built.timeLabel
                 };
@@ -279,10 +282,41 @@
                 </div>`;
         }
 
+        // SPEC-SOURCE-SUPPLIER-PICK-SORT-20261108: sorting never changes
+        // saved orders, quantities, per-customer notes, or supplier totals.
+        function changeSourceDetailGroupSort(value) {
+            activeSourceDetailState.groupSort = value === 'customer' ? 'customer' : 'product';
+            renderSourceDetailCaptureGrouped();
+        }
+
+        function sourceGroupedNoteHtml(entry) {
+            const note = String(entry?.note || '').trim();
+            if (!note) return '';
+            const buyer = String(entry?.buyerName || '').trim() || 'Khách chưa rõ';
+            const qty = Number(entry?.qty) || 0;
+            return `<div class="source-detail-note-context">
+                <span class="source-detail-note-owner">${escapeProductEditorValue(buyer)} · SL ${qty.toLocaleString('vi-VN')}</span>
+                ${sourceLineNoteEditorHtml(entry)}
+            </div>`;
+        }
+
+        function sourceSortByName(a,b) {
+            return String(a || '').localeCompare(String(b || ''),'vi',{sensitivity:'base',numeric:true});
+        }
+
         function renderSourceDetailCaptureGrouped() {
             const owner = document.getElementById('sourceDetailCaptureGrouped');
             if (!owner) return;
-            const rows = activeSourceDetailState.groupedRows;
+            const byCustomer = activeSourceDetailState.groupSort === 'customer';
+            const rows = (byCustomer
+                ? activeSourceDetailState.customerRows || []
+                : activeSourceDetailState.groupedRows || []).slice().sort((a,b) =>
+                    byCustomer
+                        ? sourceSortByName(a.buyerName,b.buyerName) || sourceSortByName(a.productName,b.productName)
+                        : sourceSortByName(a.productName,b.productName)
+                );
+            const selector = document.getElementById('sourceDetailGroupSortSelect');
+            if (selector) selector.value = byCustomer ? 'customer' : 'product';
             if (!rows.length) {
                 owner.innerHTML = '<div class="source-detail-empty">Không có dữ liệu.</div>';
                 return;
@@ -291,22 +325,23 @@
                 <div class="source-detail-grid source-detail-data-row" data-source-share-row>
                     <div class="source-detail-stt">${index + 1}</div>
                     <div class="min-w-0">
+                        ${byCustomer ? '<div class="source-detail-group-buyer">'+escapeProductEditorValue(row.buyerName || 'Khách chưa rõ')+'</div>' : ''}
                         <div class="source-detail-name">${escapeProductEditorValue(row.productName)}</div>
                         ${(() => {
                             const notes = (row.noteEntries || []).filter(entry => String(entry?.note || '').trim());
                             if (!notes.length) return '';
-                            return `<div class="mt-1 space-y-0.5">${notes.map(entry => sourceLineNoteEditorHtml(entry)).join('')}</div>`;
+                            return '<div class="source-detail-group-notes">'+notes.map(sourceGroupedNoteHtml).join('')+'</div>';
                         })()}
                     </div>
                     <div class="source-detail-qty">${row.qty.toLocaleString('vi-VN')}</div>
                 </div>`).join('');
             owner.innerHTML = `
                 <div class="source-detail-grid source-detail-table-head" data-source-share-table-head>
-                    <div class="text-right">STT</div><div>Tên sản phẩm</div><div class="text-right">SL</div>
+                    <div class="text-right">STT</div><div>${byCustomer ? 'Tên KH / tên hàng' : 'Tên sản phẩm'}</div><div class="text-right">SL</div>
                 </div>
                 <div data-source-share-rows>${rowHtml}</div>
                 <div class="source-detail-grid source-detail-total" data-source-share-footer>
-                    <div class="source-detail-total-label">TỔNG · ${rows.length} mã</div>
+                    <div class="source-detail-total-label">TỔNG · ${rows.length} ${byCustomer ? 'dòng KH/hàng' : 'mã'}</div>
                     <div class="source-detail-total-qty">${activeSourceDetailState.totalQty.toLocaleString('vi-VN')}</div>
                 </div>`;
         }

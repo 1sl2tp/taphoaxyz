@@ -208,6 +208,8 @@
             tab: 'detail',
             detailRows: [],
             groupedRows: [],
+            customerRows: [],
+            groupSort: 'product',
             totalQty: 0,
             timeLabel: ''
         };
@@ -267,6 +269,37 @@
             ));
         }
 
+        // SPEC-SOURCE-SUPPLIER-PICK-SORT-20261108: same saved order rows,
+        // grouped by buyer + product, never merge different customers.
+        function groupSourceRowsByCustomer(detailRows) {
+            const map = new Map();
+            (detailRows || []).forEach(row => {
+                const buyerKey = String(row.buyerCode || row.buyerName || '').trim();
+                const productKey = String(row.productCode || row.productName || '').trim();
+                if (!buyerKey || !productKey) return;
+                const key = JSON.stringify([buyerKey,productKey]);
+                if (!map.has(key)) map.set(key,{
+                    buyerName:row.buyerName,
+                    buyerCode:row.buyerCode,
+                    productName:row.productName,
+                    productCode:row.productCode,
+                    qty:0,
+                    noteEntries:[]
+                });
+                const item = map.get(key);
+                item.qty += Number(row.qty) || 0;
+                item.noteEntries.push({
+                    orderId:row.orderId,
+                    backendOrderId:row.backendOrderId,
+                    productCode:row.productCode,
+                    buyerName:row.buyerName,
+                    qty:Number(row.qty) || 0,
+                    note:String(row.note || '').trim()
+                });
+            });
+            return Array.from(map.values());
+        }
+
         function buildSourceDetailData(sheetName, sourceName) {
             const rows = getRowsVisibleForOrderTab(sheetName);
             const spDict = {};
@@ -289,6 +322,7 @@
                     productCode: String(r[2] || ''),
                     productName: product.productName,
                     buyerName: customerDict[String(r[1])] || String(r[1] || ''),
+                    buyerCode: String(r[1] || ''),
                     qty: Number(r[3]) || 0,
                     time: String(r[6] || ''),
                     note: String(r[9] || '').trim()
@@ -299,9 +333,11 @@
                 sortTobaccoBySupplierRows(detailRows);
             }
             const groupedRows = groupSourceRowsForSupplier(detailRows,sourceName);
+            const customerRows = groupSourceRowsByCustomer(detailRows);
             return {
                 detailRows,
                 groupedRows,
+                customerRows,
                 totalQty: detailRows.reduce((sum,row) => sum + (Number(row.qty) || 0), 0),
                 timeLabel: getOrderTimeRange(sheetName).detail || getOrderTimeRange(sheetName).label || ''
             };

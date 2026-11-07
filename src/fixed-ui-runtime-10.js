@@ -66,12 +66,16 @@
             if (!source) return null;
             const safeSource = sanitizeSourceShareFileName(activeSourceDetailState.source);
             const mode = grouped ? 'gop' : 'chitiet';
-            const modeLabel = grouped ? 'Gộp để gửi NCC' : 'Chi tiết';
+            const sortMode = grouped && activeSourceDetailState.groupSort === 'customer' ? 'customer' : 'product';
+            const modeLabel = grouped
+                ? (sortMode === 'customer' ? 'Gộp theo tên khách hàng' : 'Gộp theo tên hàng')
+                : 'Chi tiết';
             const signature = sourceShareHash([
                 activeSourceDetailState.sheetName || '',
                 activeSourceDetailState.source || '',
                 activeSourceDetailState.timeLabel || '',
                 grouped ? 'grouped' : 'detail',
+                sortMode,
                 source.innerText || source.textContent || ''
             ].join('|'));
             return {
