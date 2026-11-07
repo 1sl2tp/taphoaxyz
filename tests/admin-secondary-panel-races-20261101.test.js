@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../admin-gia.html',import.meta.url),'utf8');
-const start=source.indexOf('    // SPEC-ADMIN-SECONDARY-PANEL-RACES-20261101:');
+const start=source.indexOf('    // SPEC-ADMIN-NCC-PRICE-TIMELINE-20261108:');
 const end=source.indexOf("\n\n    $('goodsTabBtn').addEventListener",start);
 assert.ok(start>=0&&end>start);
 const functions=source.slice(start,end);

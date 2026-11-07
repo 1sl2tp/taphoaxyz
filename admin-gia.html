@@ -3120,7 +3120,7 @@
         hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
       }).format(candidate);
       return '<time class="feedback-price-time" datetime="'+esc(candidate.toISOString())+
-        '" title="'+esc(label+': '+exact)+'">'+esc(when)+'</time>';
+        '" title="'+esc(label+': '+exact)+'" aria-label="'+esc(label+': '+exact)+'">'+esc(when)+'</time>';
     }
 
     // SPEC-ADMIN-SECONDARY-PANEL-RACES-20261101: only latest request can paint.
