@@ -3109,7 +3109,7 @@
         ?new Date(value.replace(/^(\d{4}-\d{2}-\d{2}) /,'$1T'))
         :new Date(NaN);
       if(!Number.isFinite(candidate.getTime())){
-        return '<span class="feedback-price-time feedback-time-missing" title="'+esc(label+': chưa có mốc lịch sử')+'">—</span>';
+        return '<span class="feedback-price-time feedback-time-missing" title="'+esc(label+': chưa có mốc lịch sử')+'" aria-label="'+esc(label+': chưa có mốc lịch sử')+'">—</span>';
       }
       const when=new Intl.DateTimeFormat('vi-VN',{
         timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'2-digit',

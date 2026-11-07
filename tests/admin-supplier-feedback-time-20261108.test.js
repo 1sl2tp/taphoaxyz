@@ -87,7 +87,9 @@ test('table retains four columns, readable dual-line prices and compact mobile l
   assert.match(html,/<th>Giá mới<span class="feedback-head-note">Thời điểm<\/span>/);
   assert.match(html,/\.feedback-price-stack\{display:flex;min-width:0;flex-direction:column/);
   assert.match(html,/\.feedback-price-time\{font-size:11px;/);
-  assert.ok(html.includes('@media(max-width:540px){\n      .feedback-table td{padding:5px 5px}'));\n  assert.ok(html.includes('.feedback-price-time{font-size:10px}'));
+  assert.ok(html.includes('@media(max-width:540px){'));
+  assert.ok(html.includes('.feedback-table td{padding:5px 5px}'));
+  assert.ok(html.includes('.feedback-price-time{font-size:10px}'));
   assert.match(html,/\$\{supplierFeedbackTimeMarkup\(x\.old_price_at\?\?x\.old_changed_at,'Giá cũ'\)\}/);
   assert.match(html,/\$\{supplierFeedbackTimeMarkup\(x\.new_price_at\?\?x\.created_at\?\?x\.changed_at,'Giá mới'\)\}/);
 });
