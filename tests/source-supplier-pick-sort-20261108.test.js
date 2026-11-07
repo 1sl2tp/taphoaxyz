@@ -67,7 +67,7 @@ test('product mode totals remain exact and notes identify customer with per-orde
   assert.equal(built.groupedRows.find(x=>x.productCode==='P1').noteEntries.length,3);
   context.renderSourceDetailCaptureGrouped();
   const html=capture.innerHTML;
-  assert.equal((html.match(/data-source-share-row/g)||[]).length,2);
+  assert.equal((html.match(/data-source-share-row>/g)||[]).length,2);
   assert.ok(html.indexOf('Bạc hà')<html.indexOf('Đỏ'),'A-Z product sorting');
   assert.match(html,/C Sâm · SL 5/);
   assert.match(html,/A Bình · SL 3/);
@@ -82,7 +82,7 @@ test('customer mode groups buyer+product, sorts by buyer A-Z and keeps notes and
   const f=fixture();f.context.changeSourceDetailGroupSort('customer');
   const html=f.capture.innerHTML;
   assert.equal(f.selector.value,'customer');
-  assert.equal((html.match(/data-source-share-row/g)||[]).length,3);
+  assert.equal((html.match(/data-source-share-row>/g)||[]).length,3);
   assert.ok(html.indexOf('A Bình')<html.indexOf('C Sâm'),'customers sorted A-Z');
   assert.match(html,/Tên KH \/ tên hàng/);
   assert.match(html,/TỔNG · 3 dòng KH\/hàng/);
@@ -94,7 +94,7 @@ test('customer mode groups buyer+product, sorts by buyer A-Z and keeps notes and
   assert.deepEqual(f.rows.map(r=>r[3]),[5,3,2,1],'sorting is read-only');
   f.context.changeSourceDetailGroupSort('product');
   assert.equal(f.selector.value,'product');
-  assert.equal((f.capture.innerHTML.match(/data-source-share-row/g)||[]).length,2);
+  assert.equal((f.capture.innerHTML.match(/data-source-share-row>/g)||[]).length,2);
   assert.match(f.capture.innerHTML,/source-detail-total-qty">11/);
 });
 

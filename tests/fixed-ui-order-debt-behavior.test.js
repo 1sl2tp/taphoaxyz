@@ -456,7 +456,9 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.match(runtime9,/filter\(entry => String\(entry\?\.note \|\| ''\)\.trim\(\)\)/);
   assert.match(runtime9,/if \(!notes\.length\) return ''/);
   assert.doesNotMatch(runtime9,/Ghi chú \$\{noteIndex \+ 1\}/);
-  assert.match(runtime9,/notes\.map\(entry => sourceLineNoteEditorHtml\(entry\)\)\.join\(''\)/);
+  assert.match(runtime9,/notes\.map\(sourceGroupedNoteHtml\)\.join\(''\)/);
+   assert.match(runtime9,/source-detail-note-owner/);
+   assert.match(runtime9,/escapeProductEditorValue\(buyer\)/);
   assert.match(runtime9,/const chip = `<span class="note-chip">/);
   assert.match(runtime9,/note-chip-bullet">•<\/span>/);
   assert.match(runtime9,/if \(!note\) return ''/);
