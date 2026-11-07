@@ -2522,8 +2522,8 @@
         const npp=num(item.supplier_price);
         const npp15=npp===null?null:Math.ceil(npp*1.015);
         const npp3=npp===null?null:Math.ceil(npp*1.03);
-        const cost15=cost===null?null:Math.ceil(cost*1.015);
-        const cost3=cost===null?null:Math.ceil(cost*1.03);
+        const cost15=cost===null||cost<=0?null:Math.ceil(cost*1.015);
+        const cost3=cost===null||cost<=0?null:Math.ceil(cost*1.03);
         const peer=matched.get(item);
         const peerCost=peer?num(peer.cost):null,peerSale=peer?num(peer.price):null;
         const costDelta=peerCost===null||cost===null?null:cost-peerCost;
@@ -2647,12 +2647,12 @@
     }
 
     function referenceSalePrice(cost,oldProfit){
-      if(cost===null)return null;
+      if(cost===null||cost<=0)return null;
       return cost+Math.max(num(oldProfit)??0,0);
     }
 
     function calculatedSalePrice(cost,oldProfit){
-      if(cost===null)return null;
+      if(cost===null||cost<=0)return null;
       const profit=balancedProfit(cost,oldProfit);
       return profit===null?null:cost+profit;
     }
@@ -2676,7 +2676,8 @@
     }
 
     function autoSaleBasis(cost,supplier,sourceKey,oldProfit){
-      if(cost===null)return supplier!==null?'supplier_1':'calculated_profit';
+      // SPEC-PRICE-NO-COST-20261108: NPP/reference must never create a sale.
+      if(cost===null||cost<=0)return 'calculated_profit';
       if(supplier===null)return 'calculated_profit';
       if(supplier!==null&&supplier>cost)return 'supplier_1';
 
@@ -2694,6 +2695,8 @@
     }
 
     function selectedSalePrice(cost,supplier,basis,sourceKey,oldProfit){
+      // Auto and manually selected bases require a positive known cost.
+      if(cost===null||cost<=0)return null;
       const calculated=calculatedSalePrice(cost,oldProfit);
       const selected=normalizeSaleBasis(basis,supplier);
       if(selected==='reference')return referenceSalePrice(cost,oldProfit);
@@ -2719,8 +2722,8 @@
       row.querySelector('.auto-price-btn')?.classList.toggle('active',mode==='auto');
       row.querySelectorAll('.price-choice').forEach(cell=>{
         const needsSupplier=String(cell.dataset.basis||'').startsWith('supplier_');
-        cell.classList.toggle('disabled',needsSupplier&&supplier===null);
-        cell.classList.toggle('selected',cell.dataset.basis===basis);
+        cell.classList.toggle('disabled',cost===null||cost<=0||(needsSupplier&&supplier===null));
+        cell.classList.toggle('selected',cost!==null&&cost>0&&cell.dataset.basis===basis);
       });
     }
 
@@ -2737,7 +2740,9 @@
       const sale=selectedSalePrice(cost,supplier,basis,item.source_key,legacyProfit);
       const profit=cost===null||sale===null?null:sale-cost;
       const pct=profit===null||!cost?null:(profit/cost*100);
-      row.querySelector('.sale-price-value').textContent=pretty(sale);
+      const saleValue=row.querySelector('.sale-price-value');
+      saleValue.textContent=sale===null?'—':pretty(sale);
+      saleValue.title=sale===null?'Chưa có giá vốn hợp lệ (giá vốn phải lớn hơn 0)':'';
       const saleProfitEl=row.querySelector('.sale-profit');
       saleProfitEl.innerHTML=profit===null?'':`lãi ${profit>0?'+':''}${pretty(profit)}<span class="subpct">· ${pretty(pct)}%</span>`;
       saleProfitEl.classList.toggle('neg',profit!==null&&profit<0);
@@ -2762,22 +2767,22 @@
         el.classList.toggle('neg',profit<0);
       };
 
-      const supplierProfit=supplier===null||cost===null?null:supplier-cost;
+      const supplierProfit=supplier===null||cost===null||cost<=0?null:supplier-cost;
       setProfitText(row.querySelector('.supplier-profit'),supplierProfit,supplier);
 
-      const supplier15=supplier===null?null:Math.ceil(supplier*1.015);
+      const supplier15=supplier===null||cost===null||cost<=0?null:Math.ceil(supplier*1.015);
       row.querySelector('.supplier15 .candidate-price').textContent=pretty(supplier15);
       setProfitText(row.querySelector('.supplier15 .candidate-profit'),supplier15===null||cost===null?null:supplier15-cost,supplier15);
 
-      const supplier3=supplier===null?null:Math.ceil(supplier*1.03);
+      const supplier3=supplier===null||cost===null||cost<=0?null:Math.ceil(supplier*1.03);
       row.querySelector('.supplier3 .candidate-price').textContent=pretty(supplier3);
       setProfitText(row.querySelector('.supplier3 .candidate-profit'),supplier3===null||cost===null?null:supplier3-cost,supplier3);
 
-      const cost15=cost===null?null:Math.ceil(cost*1.015);
+      const cost15=cost===null||cost<=0?null:Math.ceil(cost*1.015);
       row.querySelector('.cost15 .candidate-price').textContent=pretty(cost15);
       setProfitText(row.querySelector('.cost15 .candidate-profit'),cost15===null||cost===null?null:cost15-cost,cost15);
 
-      const cost3=cost===null?null:Math.ceil(cost*1.03);
+      const cost3=cost===null||cost<=0?null:Math.ceil(cost*1.03);
       row.querySelector('.cost3 .candidate-price').textContent=pretty(cost3);
       setProfitText(row.querySelector('.cost3 .candidate-profit'),cost3===null||cost===null?null:cost3-cost,cost3);
 
@@ -2791,7 +2796,8 @@
         retailInput.dataset.mode=override===null?'auto':'manual';
         retailInput.title=override===null?'Tự tính = Giá bán / SL':'Giá lẻ nhập tay';
       }
-      item.retail_price=retail;
+      // Keep the manual override as configuration, not an effective price.
+      item.retail_price=sale===null?null:retail;
 
       updateChoiceState(row,item);
       const h=Array.isArray(item.cost_history)?item.cost_history:[];
@@ -2916,12 +2922,12 @@
         item.standard_profit_percent=payload.standard_profit_percent;item.units_per_carton=payload.units_per_carton;
         item.retail_unit=payload.retail_unit;
         item.retail_price_override=result?.retail_price_override??payload.retail_price_override;
-        item.retail_price=result?.retail_price??(
+        item.retail_price=payload.cost===null||payload.cost<=0?null:(result?.retail_price??(
           item.retail_price_override!==null&&item.retail_price_override!==undefined
             ?item.retail_price_override
             :(item.price!==null&&payload.units_per_carton!==null&&payload.units_per_carton>0
               ?Math.round((item.price/payload.units_per_carton)*10)/10:null)
-        );
+        ));
         item.admin_state=payload.admin_state;
         if(oldCost!==null&&!same(oldCost,payload.cost)){
           item.cost_history=[{

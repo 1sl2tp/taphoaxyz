@@ -235,13 +235,28 @@ function ownPackInfo(p){
   if(attrs.color)parts.push('Màu '+attrs.color);
   return parts.join(' · ');
 }
+// SPEC-PRICE-NO-COST-20261108: a public quote cannot treat missing/zero
+// cost as a priced item. Cost may be omitted from the public RPC for privacy;
+// the server invariant must then guarantee that price is null.
+function hasQuotedSalePrice(p){
+  const sale=Number(p&&p.price);
+  if(!Number.isFinite(sale)||sale<=0)return false;
+  for(const key of ['cost','input_price_vnd']){
+    if(Object.prototype.hasOwnProperty.call(p,key)){
+      const cost=Number(p[key]);
+      if(p[key]===null||!Number.isFinite(cost)||cost<=0)return false;
+    }
+  }
+  return true;
+}
 function ownSaleText(p){
   const sale=Number(p.price);
-  if(!Number.isFinite(sale)||sale<=0)return 'Liên hệ';
+  if(!hasQuotedSalePrice(p))return 'Chưa có giá';
   const units=Number(p.units_per_carton);
   return fmt(sale)+(Number.isFinite(units)&&units>1?'/thùng':'');
 }
 function retailOwnText(p){
+  if(!hasQuotedSalePrice(p))return '';
   const retail=Number(p.retail_price);
   const unit=String(p.retail_unit||'').trim();
   if(Number.isFinite(retail)&&retail>0)return fmt(retail)+(unit?'/'+unit:'');
@@ -271,6 +286,7 @@ function productVariantInfo(p){
   };
 }
 function marketRefHtml(p){
+  if(!hasQuotedSalePrice(p))return '';
   const refs=Array.isArray(p.market_refs)?p.market_refs:[];
   const ownUnit=String(p.retail_unit||'').trim().toLocaleLowerCase('vi');
   const normalized=refs.map(ref=>{
@@ -434,7 +450,8 @@ function displayName(value,source=''){
 }
 
 function isChanged(p){
-  return p.old_price!==null&&p.old_price!==undefined&&Number(p.old_price)!==Number(p.price);
+  return hasQuotedSalePrice(p)&&p.old_price!==null&&p.old_price!==undefined&&
+    Number.isFinite(Number(p.old_price))&&Number(p.old_price)>0&&Number(p.old_price)!==Number(p.price);
 }
 function median(values){
   const nums=values.filter(Number.isFinite).sort((a,b)=>a-b);
@@ -455,7 +472,7 @@ function marketInsightText(source){
   const vnmCarton=[];
 
   for(const p of products){
-    if(p.source!==source)continue;
+    if(p.source!==source||!hasQuotedSalePrice(p))continue;
     const ownCarton=Number(p.price)*1000;
     const ownRetail=Number(p.retail_price)*1000;
     const ownUnit=String(p.retail_unit||'').trim().toLocaleLowerCase('vi');
