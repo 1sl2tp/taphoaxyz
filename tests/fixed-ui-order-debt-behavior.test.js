@@ -457,12 +457,13 @@ test('source summary keeps one product row and customer-owned editable notes',as
   assert.match(runtime9,/if \(!notes\.length\) return ''/);
   assert.doesNotMatch(runtime9,/Ghi chú \$\{noteIndex \+ 1\}/);
   assert.match(runtime9,/notes\.map\(sourceGroupedNoteHtml\)\.join\(''\)/);
-   assert.match(runtime9,/source-detail-note-owner/);
-   assert.match(runtime9,/escapeProductEditorValue\(buyer\)/);
+  assert.match(runtime9,/source-detail-note-owner/);
+  assert.match(runtime9,/escapeProductEditorValue\(buyer\)/);
   assert.match(runtime9,/const chip = `<span class="note-chip">/);
   assert.match(runtime9,/note-chip-bullet">•<\/span>/);
   assert.match(runtime9,/if \(!note\) return ''/);
-  assert.match(runtime9,/TỔNG · \$\{rows\.length\} mã/);
+  assert.match(runtime9,/TỔNG · \$\{rows\.length\}/);
+  assert.match(runtime9,/byCustomer \? 'dòng KH\/hàng' : 'mã'/);
   assert.match(runtime9,/source-detail-grid source-detail-grid-detail source-detail-data-row/);
   assert.match(runtime9,/Tên hàng<\/div><div>Tên KH<\/div><div class="text-right">SL/);
   assert.match(runtime9,/source-detail-product-cell/);
