@@ -100,15 +100,38 @@ jobs:
               ;;
           esac
 
-          for attempt in 1 2 3 4 5 6; do
-            CODE="$(curl -L -sS -o /tmp/pages-domain.html -w '%{http_code}' --max-time 20 "https://$DOMAIN/" || true)"
-            if [ "$CODE" = "200" ]; then
-              echo "HTTPS OK: https://$DOMAIN/"
+          # SPEC-TAPHOA-LIVE-BUILD-GATE-20261108
+          # HTTP 200 can still be the previous app. Verify the exact immutable
+          # build identity from the *deployed* root and uncached manifest.
+          # The /kh/ PIN gate redirects to / with the original query intact.
+          EXPECTED_BUILD="$(node -e 'process.stdout.write(require("./dist/version.json").build_id || "")')"
+          test -n "$EXPECTED_BUILD"
+          test "$EXPECTED_BUILD" != "source-main"
+          echo "Expected deployed build: $EXPECTED_BUILD"
+
+          for attempt in 1 2 3 4 5 6 7 8; do
+            ROOT_CODE="$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/pages-domain.html -w '%{http_code}' --max-time 20 "https://$DOMAIN/?__taphoa_verify=$GITHUB_SHA" || true)"
+            VERSION_CODE="$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/pages-version.json -w '%{http_code}' --max-time 20 "https://$DOMAIN/version.json?__taphoa_verify=$GITHUB_SHA" || true)"
+            GATE_CODE="$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/pages-customer-gate.html -w '%{http_code}' --max-time 20 "https://$DOMAIN/kh/?__taphoa_verify=$GITHUB_SHA" || true)"
+
+            LIVE_VERSION=""
+            LIVE_META=""
+            if [ "$VERSION_CODE" = "200" ]; then
+              LIVE_VERSION="$(node -e 'try { process.stdout.write(JSON.parse(require("fs").readFileSync("/tmp/pages-version.json","utf8")).build_id || "") } catch (_) {}')"
+            fi
+            if [ "$ROOT_CODE" = "200" ]; then
+              LIVE_META="$(node -e 'const html=require("fs").readFileSync("/tmp/pages-domain.html","utf8"); process.stdout.write(html.match(/<meta\\s+name=["\x27]app-build-id["\x27]\\s+content=["\x27]([^"\x27]+)/i)?.[1] || "")')"
+            fi
+
+            echo "Attempt $attempt: root=$ROOT_CODE meta=$LIVE_META manifest=$VERSION_CODE build=$LIVE_VERSION kh=$GATE_CODE"
+            if [ "$ROOT_CODE" = "200" ] && [ "$VERSION_CODE" = "200" ] && [ "$GATE_CODE" = "200" ] \
+              && [ "$LIVE_VERSION" = "$EXPECTED_BUILD" ] && [ "$LIVE_META" = "$EXPECTED_BUILD" ] \
+              && grep -F -q 'function rootUrl(){return' /tmp/pages-customer-gate.html; then
+              echo "LIVE VERIFIED: https://$DOMAIN/ + /kh/ use build $EXPECTED_BUILD"
               exit 0
             fi
-            echo "Attempt $attempt: HTTP $CODE; retrying..."
-            sleep 10
+            if [ "$attempt" -lt 8 ]; then sleep 10; fi
           done
 
-          echo "::error::https://$DOMAIN/ did not return HTTP 200 after deployment."
+          echo "::error::Live Pages does not serve expected build $EXPECTED_BUILD on app root and /kh/."
           exit 1
