@@ -18,7 +18,7 @@ test('draft create/edit/delete stays silent; delivered order notifies only after
   assert.match(sql,/':deliver'/);
   assert.match(sql,/':order-edit'/);
   assert.match(bridge,/async function saveOrder\(payload\)/);
-  assert.match(bridge,/void attachOrderNoticePortrait\(result\?\.order\)/);
+  assert.match(bridge,/result\.image_attached=await attachOrderNoticePortrait\(result\.order\)===true/);
   assert.match(bridge,/manual===true&&state==='pending'/);
   assert.match(bridge,/\['done','delivered'\]\.includes\(state\)/);
 });

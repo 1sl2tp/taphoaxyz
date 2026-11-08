@@ -661,7 +661,10 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
     if(!ticket?.ok)return false;
     const portrait=window.TAPHOA_ORDER_PORTRAIT;
     const capture=window.TAPHOA_SHARE_CAPTURE;
-    if(!portrait?.createPage||!capture?.captureElement||!capture?.canvasToPngBlob)throw Error('portrait_renderer_unavailable');
+    // ORD-266: Canvas2D is the primary renderer, entirely offline and safe
+    // in Android WebView/PWA; html2canvas remains a legacy fallback.
+    if(!portrait?.renderCanvas && (!portrait?.createPage||!capture?.captureElement))
+      throw Error('portrait_renderer_unavailable');
     const items=Array.isArray(order.items)?order.items:[];
     if(!items.length||items.length>130)return false;
     const format=v=>(Number(v)||0).toLocaleString('vi-VN');
@@ -678,20 +681,33 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
       };
     });
     const totals=orderNoticeTotals(order,items);
-    built=portrait.createPage({
+    const portraitOptions={
       isDraft:state==='pending',orderId:displayCode,customer:String(order.tenKH||'Khách hàng'),
       time:stampText,items:mapped,lineCount:mapped.length,
       totalQty:totals.totalQty,
       totalPriceText:format(Math.sign(totals.totalPrice)*Math.round(Math.abs(totals.totalPrice)))
-    });
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    if(!productionOwnerCurrent(noticeOwner))return false;
-    const width=Math.ceil(built.page.scrollWidth);
-    const height=Math.ceil(built.page.scrollHeight)+2;
-    if(height>19500)throw Error('portrait_exceeds_canvas_limit');
-    const canvas=await capture.captureElement(built.page,{
-      width,height,scale:1.2,renderTimeout:12000,libraryTimeout:6000
-    });
+    };
+    let canvas=null;
+    let primaryError=null;
+    if(typeof portrait.renderCanvas==='function'){
+      try{canvas=portrait.renderCanvas(portraitOptions,1.2);}
+      catch(error){primaryError=error;}
+    }
+    if(!canvas && portrait.createPage && capture?.captureElement){
+      // Legacy fallback is retained for browser-specific Canvas2D failures.
+      built=portrait.createPage(portraitOptions);
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(!productionOwnerCurrent(noticeOwner))return false;
+      const width=Math.ceil(built.page.scrollWidth);
+      const height=Math.ceil(built.page.scrollHeight)+2;
+      if(height>19500)throw Error('portrait_exceeds_canvas_limit');
+      canvas=await capture.captureElement(built.page,{
+        width,height,scale:1.2,renderTimeout:12000,libraryTimeout:6000
+      });
+    }
+    if(!canvas){
+      throw primaryError||Error('portrait_canvas_unavailable');
+    }
     // Canonical saved-order PNG for create/edit/deliver notices; capture actual dimensions first.
     // canvasToPngBlob() releases canvas memory by resetting dimensions to 1×1.
     // Preserve the REAL PNG dimensions first, or the Chat media will be
@@ -699,7 +715,10 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
     if(!productionOwnerCurrent(noticeOwner))return false;
     const pngWidth=canvas.width;
     const pngHeight=canvas.height;
-    const blob=await capture.canvasToPngBlob(canvas,'Không tạo được ảnh đơn hàng.');
+    const blob=capture?.canvasToPngBlob
+      ?await capture.canvasToPngBlob(canvas,'Không tạo được ảnh đơn hàng.')
+      :await new Promise((resolve,reject)=>canvas.toBlob(value=>
+        value?resolve(value):reject(Error('order_png_encode_failed')),'image/png'));
     if(!productionOwnerCurrent(noticeOwner))return false;
     if(blob.size<1||blob.size>15728640)throw Error('portrait_exceeds_media_limit');
     const object=await client.storage.from('v21-media').upload(ticket.storage_key,blob,{
@@ -845,7 +864,12 @@ async function saveOrder(payload){
   // SPEC-MUTATION-SESSION-CONTINUATION-20261101: a committed write from A
   // cannot refresh or attach Chat media using B's newly authenticated session.
   if(!productionOwnerCurrent(mutationOwner))return result;
-  if(!publicAccess&&!employeeAccess)void attachOrderNoticePortrait(result?.order);
+  const savedStatus=String(result?.order?.status||'').toLowerCase();
+  if(!publicAccess&&!employeeAccess&&['done','delivered'].includes(savedStatus)){
+    // Wait for the one already-sent notice's PNG before completing the UI flow.
+    // Failure never rolls back or replays a committed order.
+    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+  }
   // F-181: A confirmed pending draft (new or edited) never changes the
   // sale ledger. The DB prevents delivered → pending downgrades. Avoid
   // rebuilding debtSummary for each draft edit. Delivered sales still
@@ -861,7 +885,10 @@ async function deliverOrder(id){
   const mutationOwner=captureProductionOwner();
   const result=await business.deliverOrder(id);
   if(!productionOwnerCurrent(mutationOwner))return result;
-  void attachOrderNoticePortrait(result?.order);
+  if(['done','delivered'].includes(String(result?.order?.status||'').toLowerCase())){
+    // One transaction -> one canonical Chat text -> at most one attached PNG.
+    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+  }
   try{await refresh(['orders','debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
