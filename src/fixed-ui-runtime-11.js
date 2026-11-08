@@ -74,6 +74,7 @@
                 });
             }
             let previousDay = null;
+            let isDayGroupOpen = false;
             document.getElementById('completedCountBadge').innerText = orderKeys.length;
 
             visibleOrderKeys.forEach((k, idx) => {
@@ -81,7 +82,11 @@
                 if (currentAuthRole === 'user') {
                     const dayKey = parseOrderDateKey(o.thoiGian);
                     if (dayKey !== previousDay) {
-                        orderHtml += renderUserOrderDayHeading(dayKey, dayCounts[dayKey]);
+                        // Group cards inside their own day's DOM section.
+                        if (isDayGroupOpen) orderHtml += '</section>';
+                        orderHtml += '<section class="order-timeline-day-group">' +
+                            renderUserOrderDayHeading(dayKey, dayCounts[dayKey]);
+                        isDayGroupOpen = true;
                         previousDay = dayKey;
                     }
                 }
@@ -106,6 +111,7 @@
                         </div>
                     </div>`;
             });
+            if (isDayGroupOpen) orderHtml += '</section>';
             orderHtml += renderUserTimelineMoreButton('dongiao', visibleOrderKeys.length, orderKeys.length);
             document.getElementById('completedOrderListContainer').innerHTML = orderHtml;
         }
