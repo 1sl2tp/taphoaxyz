@@ -38,7 +38,12 @@
       // status row instead of rendering a second, floating button on mobile.
       // Public/employee link mode owns this row for its three action buttons.
       var statusBar = document.getElementById('statusBar');
-      if (statusBar && statusBar.dataset.publicUserTools !== 'true') {
+      if (statusBar && statusBar.dataset.publicUserTools === 'true' && statusBar.dataset.publicToolView === 'policy') {
+        statusBar.replaceChildren();
+        reopen.classList.remove('tp-policy-reopen--home');
+        reopen.classList.add('tp-policy-reopen--bar');
+        statusBar.appendChild(reopen);
+      } else if (statusBar && statusBar.dataset.publicUserTools !== 'true') {
         reopen.classList.remove('tp-policy-reopen--home');
         reopen.classList.add('tp-policy-reopen--bar');
         statusBar.appendChild(reopen);
