@@ -49,7 +49,7 @@ test('share-cart and public-order image use the same read-only portrait renderer
   assert.match(portrait,/>SL<\/div>/);
   assert.match(portrait,/title="Đơn giá" aria-label="Đơn giá"/);
   assert.match(portrait,/title="Thành tiền"/);
-  assert.match(portrait,/Object\.freeze\(\{WIDTH,MIN_HEIGHT,createPage\}\)/);
+  assert.match(portrait,/Object\.freeze\(\{WIDTH,MIN_HEIGHT,createPage,renderCanvas\}\)/);
   for(const f of ['src/fixed-ui-cart-share-v3.js','src/fixed-ui-public-order-image.js']){
     const share=read(f);
     assert.match(share,/TAPHOA_ORDER_PORTRAIT/);
