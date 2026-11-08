@@ -120,7 +120,7 @@ jobs:
               LIVE_VERSION="$(node -e 'try { process.stdout.write(JSON.parse(require("fs").readFileSync("/tmp/pages-version.json","utf8")).build_id || "") } catch (_) {}')"
             fi
             if [ "$ROOT_CODE" = "200" ]; then
-              LIVE_META="$(node -e 'const html=require("fs").readFileSync("/tmp/pages-domain.html","utf8"); process.stdout.write(html.match(/<meta\\s+name=["\x27]app-build-id["\x27]\\s+content=["\x27]([^"\x27]+)/i)?.[1] || "")')"
+              LIVE_META="$(node -e 'const html=require("fs").readFileSync("/tmp/pages-domain.html","utf8"); process.stdout.write(html.match(/<meta[^>]*name="app-build-id"[^>]*content="([^"]+)"/i)?.[1] || "")')"
             fi
 
             echo "Attempt $attempt: root=$ROOT_CODE meta=$LIVE_META manifest=$VERSION_CODE build=$LIVE_VERSION kh=$GATE_CODE"
