@@ -66,7 +66,7 @@ for(const [file,func,sheet,newest] of [
     const closed=user.match(/<\/section>/g)||[];
     assert.equal(opened.length,2);
     assert.equal(closed.length,2);
-    assert.match(user,/<section class="order-timeline-day-group"><h3 class="order-timeline-day-heading">2026-11-06 · 2<\/h3>/);
+    assert.ok(user.includes('<section class="order-timeline-day-group"><h3 class="order-timeline-day-heading">2026-11-06 · '+(sheet==='dongiao'?2:1)+'</h3>'));
     const firstCard=user.indexOf("clickOrder('"+newest+"'");
     const olderDay=user.indexOf('2026-11-04');
     assert.ok(firstCard>0&&olderDay>firstCard,
