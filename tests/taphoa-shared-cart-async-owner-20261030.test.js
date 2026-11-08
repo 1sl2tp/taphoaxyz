@@ -10,7 +10,7 @@ import vm from 'node:vm';
 const source=readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
 const saveStart=source.indexOf('  function sharedCartItems(){');
 const saveEnd=source.indexOf('  function installSharedCartQuantitySync(){',saveStart);
-const pollStart=source.indexOf('  function applySharedCartSnapshot(');
+const pollStart=source.indexOf('  function isSavedOrderCartActive(');
 const pollEnd=source.indexOf('  async function enterEmployeeLink(',pollStart);
 assert.ok(saveStart>0&&saveEnd>saveStart&&pollStart>saveEnd&&pollEnd>pollStart);
 const code=source.slice(saveStart,saveEnd)+'\n'+source.slice(pollStart,pollEnd);
