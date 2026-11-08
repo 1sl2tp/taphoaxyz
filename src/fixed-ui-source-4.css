@@ -1032,3 +1032,41 @@ body[data-auth-role="user"] #tab-don-tam #pendingTimeFilterButton{
   text-align:center;
 }
 .order-timeline-more:hover{background:#f8fafc;}
+
+/* SPEC-TAPHOA-PWA-UPDATE-ACTION-20261108: visible for logged-in users and PIN. */
+#taphoa-update-notice{
+  position:fixed;
+  right:max(12px,env(safe-area-inset-right));
+  bottom:calc(56px + env(safe-area-inset-bottom));
+  z-index:190;
+  padding:11px 15px;
+  max-width:min(310px,calc(100vw - 24px));
+  border:1px solid #fed7aa;
+  border-radius:12px;
+  background:#fff7ed;
+  color:#9a3412;
+  box-shadow:0 4px 18px rgba(15,23,42,.15);
+  font-size:13px;
+  font-weight:750;
+  line-height:1.3;
+  cursor:pointer;
+}
+#taphoa-update-notice[hidden]{display:none!important;}
+#taphoa-update-notice:focus-visible{outline:2px solid #ea580c;outline-offset:2px;}
+/* UI-185: public order/debt tabs use one full-width, readable policy rail. */
+#statusBar[data-public-user-tools="true"][data-public-tool-view="policy"]{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#statusBar[data-public-user-tools="true"] > .tp-policy-reopen--bar{
+  color:#e2e8f0;
+  font-size:12px;
+  font-weight:700;
+  width:100%;
+  min-height:44px;
+  flex:1;
+}
+body[data-auth-role="user"] > .tp-policy-reopen--home:not(.tp-policy-reopen--quote){
+  bottom:calc(52px + env(safe-area-inset-bottom));
+}
