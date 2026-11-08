@@ -134,15 +134,22 @@ test('sales policy is a single accessible click target INSIDE the fixed status b
  assert.equal(popup.hidden,false,'tap opens the existing policy dialog');
 });
 
-test('quote page and public-link tools keep their own independent policy placement',()=>{
+test('quote policy remains independent; public order and debt tabs reuse the fixed policy rail',()=>{
  const quote=policyHarness('/bao-gia/');
  assert.equal(quote.opener.parent,quote.hero);
  assert.equal(quote.bar.dataset.policyInline,undefined);
  const pub=policyHarness('/',true);
+ // The gate mounts before the asynchronous public identity becomes active:
+ // initial opener is floating, but renderPublicTools moves it into the rail
+ // when viewing an order/debt tab. No duplicate opener is created.
  assert.equal(pub.opener.parent,pub.body);
  assert.equal(pub.bar.dataset.policyInline,undefined);
- assert.match(publicTools,/inlinePolicy\.classList\.remove\('tp-policy-reopen--bar'\)/);
- assert.match(publicTools,/document\.body\.appendChild\(inlinePolicy\)/);
+ assert.match(publicTools,/const policyButton=document\.querySelector\('\.tp-policy-reopen/);
+ assert.match(publicTools,/if\(!onHang\)/);
+ assert.match(publicTools,/policyButton\.classList\.remove\('tp-policy-reopen--home'\)/);
+ assert.match(publicTools,/policyButton\.classList\.add\('tp-policy-reopen--bar'\)/);
+ assert.match(publicTools,/bar\.replaceChildren\(policyButton\)/);
+ assert.match(publicTools,/document\.body\.appendChild\(policyButton\)/);
 });
 
 test('policy, messages and progress use the SAME 40px footer with explicit states',()=>{
