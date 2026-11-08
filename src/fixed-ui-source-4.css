@@ -986,3 +986,49 @@ body[data-auth-role="user"] .summary-compact-table{
     grid-template-columns:28px minmax(0,1fr) minmax(0,.75fr) max-content;
   }
 }
+
+/* SPEC-TAPHOA-USER-PIN-ORDER-TIMELINE-20261108: distinct status tabs */
+#appContainer #topNav .tab-btn[onclick*="tab-da-giao"].text-primary{
+  color:#289e57 !important;
+  border-bottom-color:#289e57 !important;
+}
+#appContainer #topNav .tab-btn[onclick*="tab-don-tam"].text-primary{
+  color:#c98529 !important;
+  border-bottom-color:#c98529 !important;
+}
+body[data-auth-role="user"] #tab-da-giao #completedTimeFilterButton,
+body[data-auth-role="user"] #tab-don-tam #pendingTimeFilterButton{
+  display:none !important;
+}
+.order-timeline-day-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin:18px 0 10px;
+  padding:0 2px 8px;
+  border-bottom:1px solid #e2e8f0;
+  color:#64748b;
+  font-size:12px;
+  line-height:1.4;
+  font-weight:750;
+}
+.order-timeline-day-count{
+  color:#94a3b8;
+  font-weight:600;
+  white-space:nowrap;
+}
+.order-timeline-more{
+  display:block;
+  width:100%;
+  margin:12px auto 20px;
+  padding:13px 16px;
+  background:#fff;
+  color:#475569;
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+}
+.order-timeline-more:hover{background:#f8fafc;}
