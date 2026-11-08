@@ -10,6 +10,7 @@
   let lastCheckAt=0;
   let controllerReloading=false;
   let userHasInteracted=false;
+  let availableBuild='';
   // Reading a quote/order or viewing media is an active user task even with
   // an empty cart or no unfinished form input.
   for(const eventType of ['pointerdown','keydown','input','touchstart']){
@@ -53,10 +54,40 @@
     }catch(_){}
   }
 
-  function freshNavigate(targetBuild){
+  // A visible update action is mandatory when authenticated/active sessions
+  // cannot be safely reloaded automatically. No forced reload of live work.
+  function showUpdateAction(targetBuild){
+    availableBuild=targetBuild;
+    if(!targetBuild || controllerReloading)return;
+    let action=document.getElementById('taphoa-update-notice');
+    if(!action){
+      action=document.createElement('button');
+      action.id='taphoa-update-notice';
+      action.type='button';
+      action.setAttribute('aria-label','Có phiên bản mới, cập nhật ứng dụng');
+      action.addEventListener('click',()=>{
+        if(editingInput()||hasLiveCart()){
+          action.textContent='Lưu giỏ hàng trước khi cập nhật';
+          return;
+        }
+        freshNavigate(availableBuild,{explicit:true});
+      });
+      document.body.appendChild(action);
+    }
+    action.textContent='Có bản mới · Cập nhật';
+    action.hidden=false;
+  }
+
+  function hideUpdateAction(){
+    availableBuild='';
+    document.getElementById('taphoa-update-notice')?.remove();
+  }
+
+  function freshNavigate(targetBuild,{explicit=false}={}){
     if(!targetBuild||controllerReloading)return false;
-    if(!safeToReload()){
+    if(explicit ? (editingInput()||hasLiveCart()) : !safeToReload()){
       sessionStorage.setItem('taphoa-pwa-update-pending',targetBuild);
+      showUpdateAction(targetBuild);
       return false;
     }
 
@@ -118,12 +149,16 @@
         if(!serverBuild||!runningBuild)return null;
 
         if(serverBuild===runningBuild){
+          hideUpdateAction();
           sessionStorage.removeItem('taphoa-pwa-update-pending');
           sessionStorage.removeItem('taphoa-pwa-reload-'+serverBuild);
           cleanBuildQuery();
           return {updated:false,build:serverBuild};
         }
 
+        // Safe idle anonymous pages may update; active/authenticated pages
+        // must see a clear opt-in instead of keeping an invisible stale build.
+        showUpdateAction(serverBuild);
         freshNavigate(serverBuild);
         return {updated:true,from:runningBuild,to:serverBuild};
       }catch(error){
@@ -145,14 +180,13 @@
 
       registration.addEventListener('updatefound',()=>watchInstallingWorker(registration));
       activateWaitingWorker(registration);
-
-      await checkForUpdate({force:true});
-    }catch(_){}
+    }catch(_){
+      // Version checks still work when the embedded browser blocks SW.
+    }
+    await checkForUpdate({force:true});
   }
 
-  if(!('serviceWorker' in navigator))return;
-
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(controllerReloading)return;
     const pending=String(sessionStorage.getItem('taphoa-pwa-update-pending')||'').trim();
     if(pending){
@@ -167,7 +201,8 @@
     }
   });
 
-  registerAndCheck();
+  if('serviceWorker' in navigator)void registerAndCheck();
+  else void checkForUpdate({force:true});
 
   window.addEventListener('pageshow',()=>{
     void checkForUpdate();
@@ -176,6 +211,12 @@
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible')void checkForUpdate();
   });
+  window.addEventListener('focus',()=>{void checkForUpdate();});
+  window.addEventListener('online',()=>{void checkForUpdate({force:true});});
+  // Bounded checks while the page stays open; never force reload active work.
+  setInterval(()=>{
+    if(!document.hidden)void checkForUpdate();
+  },5*60*1000);
 
   window.TAPHOA_PWA_UPDATE=Object.freeze({
     check:()=>checkForUpdate({force:true}),
