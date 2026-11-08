@@ -957,14 +957,9 @@
     const bar=document.getElementById('statusBar');
     const mode=backend()?.getAccessMode?.();
     if(!bar||(mode!=='public-link'&&mode!=='employee-link'))return;
-    // UI-185: in public/employee link mode the footer contains action tools,
-    // not our ordinary policy rail. Keep its existing policy opener accessible.
-    const inlinePolicy=bar.querySelector('.tp-policy-reopen--bar');
-    if(inlinePolicy){
-      inlinePolicy.classList.remove('tp-policy-reopen--bar');
-      inlinePolicy.classList.add('tp-policy-reopen--home');
-      document.body.appendChild(inlinePolicy);
-    }
+    // On order/debt tabs, the policy must share the single footer rail,
+    // never overlap the system-status text as a floating pill.
+    const policyButton=document.querySelector('.tp-policy-reopen:not(.tp-policy-reopen--quote)');
     delete bar.dataset.policyInline;
     delete bar.dataset.statusView;
     const onHang=publicTabId==='tab-ban-hang';
@@ -974,11 +969,23 @@
     bar.className='public-user-tools shrink-0 z-40';
 
     if(!onHang){
-      if(bar.dataset.publicToolView!=='status'){
+      if(bar.dataset.publicToolView!=='policy'){
+        bar.replaceChildren();
+        bar.dataset.publicToolView='policy';
+      }
+      if(policyButton){
+        policyButton.classList.remove('tp-policy-reopen--home');
+        policyButton.classList.add('tp-policy-reopen--bar');
+        if(policyButton.parentElement!==bar)bar.replaceChildren(policyButton);
+      }else if(!bar.children.length){
         bar.innerHTML='<div class="public-user-tool-status"><i class="ph-fill ph-check-circle"></i><span>Hệ thống sẵn sàng</span></div>';
-        bar.dataset.publicToolView='status';
       }
       return;
+    }
+    if(policyButton&&policyButton.parentElement===bar){
+      policyButton.classList.remove('tp-policy-reopen--bar');
+      policyButton.classList.add('tp-policy-reopen--home');
+      document.body.appendChild(policyButton);
     }
 
     const view=employeeLink?'employee-hang':'owner-hang';
