@@ -1288,12 +1288,17 @@
   }
 
   function scheduleSharedCartSave({retry=false}={}){
-    if(!isSharedCartMode()||sharedCartRestoreBlocked())return;
+    // A saved order is rendered in the same legacy cart variable. It must
+    // never be published as the customer's editable shared quantity snapshot.
+    if(!isSharedCartMode()||sharedCartRestoreBlocked()||isSavedOrderCartActive())return;
     const owner=sharedCartOwner();
     const editSeq=retry?sharedCartLocalEditSeq:++sharedCartLocalEditSeq;
+    // Capture quantities at the actual edit, not when the debounced timer
+    // runs: a saved-order preview can replace cart during those 100ms.
+    const items=sharedCartItems();
     if(!retry){
       sharedCartRetryCount=0;
-      savePendingSharedCartDraft(owner,sharedCartItems());
+      savePendingSharedCartDraft(owner,items);
     }
     sharedCartRetryReady=false;
     clearTimeout(sharedCartRetryTimer);
@@ -1302,7 +1307,6 @@
     clearTimeout(sharedCartSaveTimer);
     sharedCartSaveTimer=setTimeout(()=>{
       if(!sharedCartOwnerCurrent(owner)||editSeq!==sharedCartLocalEditSeq)return;
-      const items=sharedCartItems();
       sharedCartSaveChain=sharedCartSaveChain
         .catch(()=>{})
         .then(()=>{
@@ -1490,7 +1494,18 @@
     };
   }
 
+  // SPEC-PUBLIC-ORDER-CART-ISOLATION-20261108: opening a saved draft or
+  // delivered order reuses cart for a read-only/editing order preview.
+  // Only the plain shopping/stock-count cart may accept shared snapshots.
+  function isSavedOrderCartActive(){
+    return Boolean(typeof editingOrderId!=='undefined'&&editingOrderId
+      &&typeof editingOrderSheet!=='undefined'&&editingOrderSheet);
+  }
+
   function applySharedCartSnapshot(snapshot,{force=false}={}){
+    // This guard covers initial snapshots and reads started before the user
+    // opened an order. Empty shared counts are not empty saved orders.
+    if(isSavedOrderCartActive())return;
     if(!force&&Date.now()-sharedCartLocalWriteAt<500)return;
     // Missing, failed or partially malformed snapshots are not an empty
     // stock count. Reject the entire response rather than clearing good rows.
@@ -1567,7 +1582,7 @@
         restorePendingSharedCartDraft();
         return;
       }
-      if(document.hidden||!isSharedCartMode()
+      if(document.hidden||!isSharedCartMode()||isSavedOrderCartActive()
          ||(typeof navigator!=='undefined'&&navigator.onLine===false)
          ||sharedCartCommittedEditSeq!==sharedCartLocalEditSeq
          ||Date.now()-sharedCartLocalWriteAt<500)return;
