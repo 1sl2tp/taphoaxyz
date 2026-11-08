@@ -306,23 +306,35 @@
 
             // Keep an edited order at its original DG/DT position. Backend refresh
             // may return updated rows first; the issued display number never changes.
-            let orderHtml = ''; let orderKeys = Object.keys(orders).reverse();
-            orderKeys.sort((a,b) => {
-                const left = /^D[GT]([0-9]+)$/i.exec(a);
-                const right = /^D[GT]([0-9]+)$/i.exec(b);
-                return left && right ? Number(right[1]) - Number(left[1]) : 0;
-            });
+            let orderHtml = '';
+            const orderKeys = sortOrderKeysForDisplay(orders);
+            const visibleOrderKeys = getUserTimelineVisibleKeys('dontam', orderKeys);
+            const dayCounts = {};
+            if (currentAuthRole === 'user') {
+                orderKeys.forEach(key => {
+                    const day = parseOrderDateKey(orders[key]?.thoiGian);
+                    dayCounts[day] = (dayCounts[day] || 0) + 1;
+                });
+            }
+            let previousDay = null;
             document.getElementById('pendingCountBadge').innerText = orderKeys.length;
 
-            orderKeys.forEach((k, idx) => {
+            visibleOrderKeys.forEach((k, idx) => {
                 let o = orders[k];
+                if (currentAuthRole === 'user') {
+                    const dayKey = parseOrderDateKey(o.thoiGian);
+                    if (dayKey !== previousDay) {
+                        orderHtml += renderUserOrderDayHeading(dayKey, dayCounts[dayKey]);
+                        previousDay = dayKey;
+                    }
+                }
                 const shortTime = formatOrderCardTime(o.thoiGian);
                 const productPreview = buildOrderProductPreview(o.items, 2);
 
                 orderHtml += `
                     <div onclick="clickOrder('${k}', 'dontam')" class="allow-fast-click bg-white rounded-[16px] p-3.5 shadow-sm border border-gray-100 hover:border-primary/50 cursor-pointer transition mb-3">
                         <div class="pointer-events-none flex items-start gap-3 min-w-0 w-full">
-                            <div style="width: 36px; height: 36px;" class="order-rank-dot order-rank-dot-pending rounded-full font-extrabold text-sm flex items-center justify-center shrink-0">${orderKeys.length - idx}</div>
+                            <div style="width: 36px; height: 36px;" class="order-rank-dot order-rank-dot-pending rounded-full font-extrabold text-sm flex items-center justify-center shrink-0">${getTimelineOrderDisplayNumber(k, orderKeys.length - idx)}</div>
                             <div class="min-w-0 flex-1">
                                 <div class="order-card-title-row">
                                     <p class="font-bold text-[14px] text-gray-700 truncate min-w-0">${escapeProductEditorValue(o.tenKh)}</p>
@@ -337,5 +349,6 @@
                         </div>
                     </div>`;
             });
+            orderHtml += renderUserTimelineMoreButton('dontam', visibleOrderKeys.length, orderKeys.length);
             document.getElementById('pendingOrderListContainer').innerHTML = orderHtml;
         }
