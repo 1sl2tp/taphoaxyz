@@ -28,6 +28,7 @@ function fixture(storage=new Map()){
  let clockNow=Date.now();
  const ctx={
   cart:{P1:{qty:1,price:0,name:'Prod 1'}},
+  editingOrderId:null,editingOrderSheet:null,editingOrderInSaleMode:false,
   appData:{sanpham:[['id','name'],['P1','Prod 1'],['P2','Prod 2']]},
   backend:()=>({
    getIdentity:()=>identity,
@@ -217,6 +218,58 @@ test('server ok:false does not mark a cart edit as synced or permit stale pollin
  assert.equal(f.pendingReads.length,0);
  assert.equal(f.ctx.cart.P1.qty,12);
  assert.equal(f.warns.length,1);
+});
+
+// SPEC-PUBLIC-ORDER-CART-ISOLATION-20261108: saved orders reuse the
+// legacy cart variable. A background empty shared-stock snapshot is not
+// evidence that a saved draft/delivered order has zero lines.
+test('public saved-order preview cannot be emptied by shared cart snapshot or poll',async()=>{
+ const f=fixture();f.switchTo('A','public-link');
+ f.ctx.cart={P1:{name:'Saved order line',qty:7,price:120,note:'Keep note'}};
+ f.ctx.editingOrderId='DT0042';
+ f.ctx.editingOrderSheet='dontam';
+ f.ctx.editingOrderInSaleMode=false;
+ f.ctx.api.applySharedCartSnapshot({items:[]},{force:true});
+ assert.equal(f.ctx.cart.P1.qty,7,'first empty snapshot must not erase saved order');
+ assert.equal(f.ctx.cart.P1.price,120);
+ assert.equal(f.renders.length,0);
+ f.start();f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,0,'no shared-cart GET while viewing saved order');
+ f.ctx.editingOrderId=null;f.ctx.editingOrderSheet=null;
+ const resumed=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,1,'normal shared cart resumes on leaving order');
+ f.pendingReads[0].resolve(items('P2',3));await resumed;
+ assert.equal(f.ctx.cart.P2.qty,3);
+ assert.equal(f.ctx.cart.P1,undefined);
+});
+
+test('in-flight shared-cart read cannot erase an order opened before response',async()=>{
+ const f=fixture();f.switchTo('A','public-link');f.start();
+ const pending=f.firePoll();await tick();
+ assert.equal(f.pendingReads.length,1);
+ f.ctx.cart={P1:{name:'Delivered order line',qty:5,price:93}};
+ f.ctx.editingOrderId='DG0062';
+ f.ctx.editingOrderSheet='dongiao';
+ f.pendingReads[0].resolve({items:[]});
+ await pending;
+ assert.equal(f.ctx.cart.P1.qty,5);
+ assert.equal(f.ctx.cart.P1.price,93);
+ assert.equal(f.renders.length,0,'late GET must not render blank order');
+});
+
+test('debounced shared-cart save retains its original edit if order opens before send',async()=>{
+ const f=fixture();f.switchTo('A','public-link');
+ f.ctx.cart={P1:{name:'Editable shared count',qty:4,price:100}};
+ f.schedule();
+ f.ctx.cart={P2:{name:'Saved order',qty:8,price:200}};
+ f.ctx.editingOrderId='DT0044';f.ctx.editingOrderSheet='dontam';
+ await f.flush();
+ assert.equal(f.requests.length,1);
+ assert.deepEqual(Array.from(f.requests[0].items,row=>({...row})),
+  [{product_code:'P1',qty:4}],'do not publish unrelated saved order quantities');
+ f.schedule();await f.flush();
+ assert.equal(f.requests.length,1,'saved order edits must not send shared cart writes');
+ assert.equal(f.ctx.cart.P2.qty,8);
 });
 
 test('invalid or absent shared-cart snapshots cannot erase the current quantities',()=>{
