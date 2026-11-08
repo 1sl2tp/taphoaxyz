@@ -237,6 +237,11 @@
         }
 
         function getOrderTimeRange(sheetName) {
+            // SPEC-TAPHOA-USER-PIN-ORDER-TIMELINE-20261108:
+            // User/PIN see all authorized orders; admin date filters stay intact.
+            if (currentAuthRole === 'user') {
+                return { from:'', to:'', label:'Tất cả', detail:'Tất cả thời gian' };
+            }
             const state = orderTimeFilters[sheetName] || orderTimeFilters.dontam;
             const today = getTodayKeyInAppTimezone();
             if (state.mode === 'all') return { from:'', to:'', label:'Tất cả', detail:'Tất cả thời gian' };
@@ -274,6 +279,71 @@
         function getRowsVisibleForOrderTab(sheetName) {
             const source = appData[sheetName];
             return getRowsVisibleToCurrentRole(source).filter(row => orderRowMatchesTimeFilter(row, sheetName));
+        }
+
+        // SPEC-TAPHOA-USER-PIN-ORDER-TIMELINE-20261108:
+        // Limit DOM work while preserving the full authorized order count.
+        const userOrderTimelineVisibleSize = { dongiao:40, dontam:40 };
+
+        function orderTimelineStamp(value) {
+            const dateKey = parseOrderDateKey(value);
+            if (!dateKey) return '';
+            const match = String(value || '').match(/(?:^|\s)(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+            const time = match
+                ? [match[1].padStart(2,'0'), match[2], match[3] || '00'].join(':')
+                : '00:00:00';
+            return dateKey + 'T' + time;
+        }
+
+        function getTimelineOrderDisplayNumber(orderId, fallback) {
+            const match = /^D[GT](\d+)$/i.exec(String(orderId || ''));
+            return match ? Number(match[1]) : fallback;
+        }
+
+        function sortOrderKeysForDisplay(orders) {
+            const keys = Object.keys(orders).reverse();
+            keys.sort((a,b) => {
+                if (currentAuthRole === 'user') {
+                    const leftTime = orderTimelineStamp(orders[a]?.thoiGian);
+                    const rightTime = orderTimelineStamp(orders[b]?.thoiGian);
+                    if (leftTime !== rightTime) return leftTime < rightTime ? 1 : -1;
+                }
+                return getTimelineOrderDisplayNumber(b,0) - getTimelineOrderDisplayNumber(a,0);
+            });
+            return keys;
+        }
+
+        function getUserTimelineVisibleKeys(sheetName, keys) {
+            if (currentAuthRole !== 'user') return keys;
+            return keys.slice(0, userOrderTimelineVisibleSize[sheetName] || 40);
+        }
+
+        function renderUserOrderDayHeading(dateKey, count) {
+            const today = getTodayKeyInAppTimezone();
+            const yesterday = addDaysToDateKey(today,-1);
+            const title = !dateKey ? 'Không rõ ngày'
+                : dateKey === today ? 'Hôm nay'
+                : dateKey === yesterday ? 'Hôm qua'
+                : getWeekdayLabelVi(dateKey);
+            const label = dateKey ? title + ' · ' + formatDateKeyVi(dateKey) : title;
+            return '<div class="order-timeline-day-heading" role="heading" aria-level="3">' +
+                '<span>' + label + '</span><span class="order-timeline-day-count">' +
+                count + ' đơn</span></div>';
+        }
+
+        function renderUserTimelineMoreButton(sheetName, visibleCount, totalCount) {
+            if (currentAuthRole !== 'user' || visibleCount >= totalCount) return '';
+            const remaining = totalCount - visibleCount;
+            return '<button type="button" class="order-timeline-more allow-fast-click" data-sheet="' +
+                sheetName + '" onclick="showMoreUserOrderTimeline(this.dataset.sheet)">' +
+                'Xem thêm ' + Math.min(40,remaining) + ' đơn cũ</button>';
+        }
+
+        function showMoreUserOrderTimeline(sheetName) {
+            if (currentAuthRole !== 'user' || !['dongiao','dontam'].includes(sheetName)) return;
+            userOrderTimelineVisibleSize[sheetName] += 40;
+            if (sheetName === 'dongiao') renderDaGiao();
+            else renderDonTam();
         }
 
         function renderOrderTimeFilterUI(sheetName) {
