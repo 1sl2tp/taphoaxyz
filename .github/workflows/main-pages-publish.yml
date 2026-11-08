@@ -22,6 +22,8 @@ on:
       - 'ncc/**'
       - 'ghi-chu/**'
       - 'scripts/**'
+      # Re-run a previously blocked publish when a contract regression test is fixed.
+      - 'tests/**'
       - '.github/workflows/main-pages-publish.yml'
   workflow_dispatch:
 
