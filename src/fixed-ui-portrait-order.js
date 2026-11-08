@@ -114,5 +114,124 @@
     document.body.appendChild(host);
     return {host,page,capture:page,clone:page,width:WIDTH};
   }
-  window.TAPHOA_ORDER_PORTRAIT=Object.freeze({WIDTH,MIN_HEIGHT,createPage});
+  // BANK/ORDER-266: offline Canvas2D renderer for order notices. The old
+  // html2canvas CDN can fail/timeout in Web, installed PWA, and APK WebView.
+  // Render from the same immutable, server-confirmed order lines; never draw
+  // an image of the editable cart or rely on an external script.
+  function renderCanvas(options={},scale=1.2){
+    const items=Array.isArray(options.items)?options.items:[];
+    if(!items.length||items.length>130)throw Error('order_png_items_invalid');
+    const ratio=Math.max(1,Math.min(1.5,Number(scale)||1.2));
+    const paper=document.createElement('canvas');
+    const paint=paper.getContext?.('2d');
+    if(!paint)throw Error('order_canvas_unavailable');
+    const family='"Be Vietnam Pro",Arial,sans-serif';
+    const font=(size,weight=600)=>weight+' '+size+'px '+family;
+    const width=WIDTH,margin=22,contentWidth=width-margin*2,gap=7;
+    const measure=(value,style)=>{
+      paint.font=style;
+      return paint.measureText(String(value??'')).width;
+    };
+    const wrap=(value,maxWidth,style)=>{
+      const source=String(value??'').trim().replace(/\s+/g,' ');
+      if(!source)return [''];
+      const words=source.split(' '), lines=[];
+      let line='';
+      const emit=word=>{
+        let remainder=Array.from(word);
+        while(remainder.length){
+          let count=remainder.length;
+          while(count>1&&measure(remainder.slice(0,count).join(''),style)>maxWidth)count--;
+          const part=remainder.splice(0,count).join('');
+          lines.push(part);
+        }
+      };
+      for(const word of words){
+        const combined=line?line+' '+word:word;
+        if(measure(combined,style)<=maxWidth){line=combined;continue;}
+        if(line){lines.push(line);line='';}
+        if(measure(word,style)<=maxWidth){line=word;continue;}
+        emit(word);
+      }
+      if(line)lines.push(line);
+      return lines.length?lines:[''];
+    };
+    const numberStyle=font(12,700),nameStyle=font(12,700),noteStyle=font(10,500);
+    const qtyWidth=Math.max(27,Math.ceil(Math.max(...items.map(x=>measure(x.qtyText,numberStyle))))+3);
+    const priceWidth=Math.max(55,Math.ceil(Math.max(...items.map(x=>measure(x.priceText,numberStyle))))+3);
+    const totalWidth=Math.max(57,Math.ceil(Math.max(...items.map(x=>measure(x.totalText,font(12,800)))))+3);
+    const indexWidth=24;
+    const nameWidth=contentWidth-indexWidth-qtyWidth-priceWidth-totalWidth-gap*4;
+    if(nameWidth<64)throw Error('order_png_columns_overflow');
+    const customerStyle=font(19,800);
+    const customerLines=wrap(options.customer||'Khách hàng',contentWidth,customerStyle);
+    const headerHeight=81+customerLines.length*25;
+    const rows=items.map((item,index)=>{
+      const names=wrap(item.name,nameWidth,nameStyle);
+      const notes=String(item.note||'').trim()?wrap(item.note,nameWidth,noteStyle):[];
+      const height=Math.max(44,18+names.length*17+notes.length*14);
+      return {item,index,names,notes,height};
+    });
+    const tableTop=headerHeight+10,bodyTop=tableTop+40;
+    const bodyHeight=rows.reduce((total,row)=>total+row.height,0);
+    const footerTop=bodyTop+bodyHeight+18;
+    const logicalHeight=Math.max(MIN_HEIGHT,footerTop+90);
+    if(!Number.isSafeInteger(Math.ceil(logicalHeight*ratio))
+      ||logicalHeight*ratio>19500)throw Error('order_png_height_limit');
+    paper.width=Math.ceil(width*ratio);
+    paper.height=Math.ceil(logicalHeight*ratio);
+    const ctx=paper.getContext('2d');
+    if(!ctx)throw Error('order_canvas_unavailable');
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    ctx.textBaseline='top';
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,logicalHeight);
+    const line=(x1,y1,x2,y2,color='#e5e7eb')=>{
+      ctx.fillStyle=color;ctx.fillRect(x1,y1,Math.max(1,x2-x1),Math.max(1,y2-y1));
+    };
+    const label=(value,x,y,style,color,align='left')=>{
+      ctx.font=style;ctx.fillStyle=color;ctx.textAlign=align;
+      ctx.fillText(String(value??''),x,y);
+    };
+    ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,width,headerHeight);
+    const code=String(options.orderId||'').trim();
+    label(options.isDraft?(code?'Đơn tạm: '+code:'Đơn đang tạo'):'Mã đơn: '+(code||'--'),
+      margin,23,font(12,750),'#64748b');
+    customerLines.forEach((part,i)=>label(part,margin,47+i*25,customerStyle,'#111827'));
+    label('Thời gian: '+String(options.time||'--'),margin,51+customerLines.length*25,
+      font(11,600),'#64748b');
+    const xIndex=margin,xName=xIndex+indexWidth+gap;
+    const xQty=xName+nameWidth+gap+qtyWidth;
+    const xPrice=xQty+gap+priceWidth;
+    const xTotal=xPrice+gap+totalWidth;
+    const captionY=tableTop+11;
+    label('STT',xIndex,captionY,font(10,800),'#64748b');
+    label('TÊN',xName,captionY,font(10,800),'#64748b');
+    label('SL',xQty,captionY,font(10,800),'#64748b','right');
+    label('ĐG',xPrice,captionY,font(10,800),'#64748b','right');
+    label('TIỀN',xTotal,captionY,font(10,800),'#64748b','right');
+    line(margin,tableTop+35,width-margin,tableTop+36);
+    let y=bodyTop;
+    for(const row of rows){
+      const item=row.item;
+      label(item.index??row.index+1,xIndex+2,y+11,font(11,700),'#64748b');
+      row.names.forEach((part,i)=>label(part,xName,y+9+i*17,nameStyle,'#111827'));
+      row.notes.forEach((part,i)=>label(part,xName,y+9+row.names.length*17+i*14,
+        noteStyle,'#64748b'));
+      label(item.qtyText,xQty,y+11,numberStyle,'#111827','right');
+      label(item.priceText,xPrice,y+11,numberStyle,'#111827','right');
+      label(item.totalText,xTotal,y+11,font(12,800),'#111827','right');
+      y+=row.height;line(margin,y-1,width-margin,y,'#eef2f7');
+    }
+    line(0,footerTop,width,footerTop+1);
+    label('Số lượng',margin,footerTop+17,font(10,600),'#64748b');
+    label(String(options.lineCount??items.length)+' mã · '+String(options.totalQty??0)+' sản phẩm',
+      margin,footerTop+35,font(12,800),'#111827');
+    label('Tổng thanh toán',width-margin,footerTop+17,font(10,600),'#64748b','right');
+    const total=String(options.totalPriceText??'0');
+    const totalStyle=font(measure(total,font(21,800))>contentWidth/2?16:21,800);
+    label(total,width-margin,footerTop+33,totalStyle,'#16a34a','right');
+    return paper;
+  }
+
+  window.TAPHOA_ORDER_PORTRAIT=Object.freeze({WIDTH,MIN_HEIGHT,createPage,renderCanvas});
 })();
