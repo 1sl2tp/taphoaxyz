@@ -59,6 +59,9 @@
   function showUpdateAction(targetBuild){
     availableBuild=targetBuild;
     if(!targetBuild || controllerReloading)return;
+    // Some native/WebView runtimes and VM contracts have no body yet.
+    // Remember the pending update without breaking the version check.
+    if(!document.body || typeof document.createElement !== 'function')return;
     let action=document.getElementById('taphoa-update-notice');
     if(!action){
       action=document.createElement('button');
@@ -85,7 +88,13 @@
 
   function freshNavigate(targetBuild,{explicit=false}={}){
     if(!targetBuild||controllerReloading)return false;
-    if(explicit ? (editingInput()||hasLiveCart()) : !safeToReload()){
+    if(!explicit){
+      if(!safeToReload()){
+        sessionStorage.setItem('taphoa-pwa-update-pending',targetBuild);
+        showUpdateAction(targetBuild);
+        return false;
+      }
+    } else if(editingInput()||hasLiveCart()){
       sessionStorage.setItem('taphoa-pwa-update-pending',targetBuild);
       showUpdateAction(targetBuild);
       return false;
@@ -214,9 +223,11 @@
   window.addEventListener('focus',()=>{void checkForUpdate();});
   window.addEventListener('online',()=>{void checkForUpdate({force:true});});
   // Bounded checks while the page stays open; never force reload active work.
-  setInterval(()=>{
-    if(!document.hidden)void checkForUpdate();
-  },5*60*1000);
+  if(typeof setInterval === 'function'){
+    setInterval(()=>{
+      if(!document.hidden)void checkForUpdate();
+    },5*60*1000);
+  }
 
   window.TAPHOA_PWA_UPDATE=Object.freeze({
     check:()=>checkForUpdate({force:true}),
