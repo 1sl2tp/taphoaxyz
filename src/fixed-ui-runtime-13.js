@@ -54,7 +54,7 @@
             });
 
             let kh = appData.khachhang.find(r => r[0] == maKh);
-            document.getElementById('detailModalKH').innerText = kh ? kh[1] : maKh;
+            document.getElementById('detailModalKH').innerText = resolveSavedOrderCustomerName(items[0], kh?.[1]);
             document.getElementById('detailModalTime').innerText = "Thời gian: " + timeStr;
 
             document.getElementById('detailModalItems').innerHTML = html;
