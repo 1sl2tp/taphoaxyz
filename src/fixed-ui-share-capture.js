@@ -74,7 +74,20 @@
     );
     const width=Math.max(1,Math.ceil(Number(options.width)||target.scrollWidth||target.getBoundingClientRect().width||1));
     const height=Math.max(1,Math.ceil(Number(options.height)||target.scrollHeight||target.getBoundingClientRect().height||1));
-    const scale=Math.max(1,Math.min(1.5,Number(options.scale)||1.4));
+    // SPEC-PNG-ZOOM-QUALITY-20261110: older exports used 1.25–1.4x and
+    // were globally capped at 1.5x (only 550–660px for a 440px document).
+    // Render text at genuine higher pixel resolution, without stretching
+    // low-res PNGs after capture. Bound the output for iOS/WebView/Chat.
+    const requestedScale=Math.max(1,Math.min(2.5,Number(options.scale)||2.4));
+    const scale=Math.min(
+      requestedScale,
+      8192/width,
+      20000/height,
+      Math.sqrt(16000000/(width*height))
+    );
+    if(!Number.isFinite(scale)||scale<1){
+      throw new Error('Nội dung quá dài để xuất ảnh rõ nét. Hãy xem chi tiết trên ứng dụng.');
+    }
     return withTimeout(
       renderer(target,{
         scale,
@@ -103,7 +116,7 @@
         new Promise((resolve,reject)=>{
           canvas.toBlob(blob=>blob?resolve(blob):reject(new Error(errorMessage)),'image/png');
         }),
-        4000,
+        8000,
         errorMessage
       );
     }finally{
