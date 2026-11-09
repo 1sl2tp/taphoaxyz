@@ -227,13 +227,17 @@ function displayCodeForBackendId(id,state=appState.get()){
 
 function mapOrderRows(kind,state=appState.get()){
   const expected=kind==='dongiao'?'done':'pending';
-  const rows=[['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú','Giá vốn snapshot']];
+  // SPEC-ORDER-CUSTOMER-NAME-FALLBACK-20261110: retain the order's trusted
+  // frontend customer name as a read-only final column. This is not an
+  // account lookup or mutation; older 11-column rows remain valid.
+  const rows=[['Mã đơn','Mã KH','Mã SP','SL','Đơn giá','Thành tiền','Thời gian','Mã đơn DB','Số đơn','Ghi chú','Giá vốn snapshot','Tên KH theo đơn']];
   for(const order of state.orders||[]){
     if(orderStatus(order)!==expected)continue;
     const displayId=orderDisplayCode(order);
     const backendId=backendOrderId(order);
     const displayNo=text(first(order,['displayNo','display_no'],''));
     const customerId=orderCustomer(order);
+    const customerName=text(first(order,['tenKH','customer_name','customerName','display_name'],'')).trim();
     const time=orderTime(order);
     for(const item of order.items||[]){
       const productId=text(first(item,['maSP','product_id','id']));
@@ -241,7 +245,7 @@ function mapOrderRows(kind,state=appState.get()){
       const price=num(first(item,['gia','unit_price','price'],0));
       const note=text(first(item,['ghiChu','note'],''));
       const costSnapshot=num(first(item,['unit_cost','von'],0));
-      rows.push([displayId,customerId,productId,String(qty),String(price),String(qty*price),time,backendId,displayNo,note,String(costSnapshot)]);
+      rows.push([displayId,customerId,productId,String(qty),String(price),String(qty*price),time,backendId,displayNo,note,String(costSnapshot),customerName]);
     }
   }
   return rows;
