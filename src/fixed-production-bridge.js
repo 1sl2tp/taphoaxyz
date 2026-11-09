@@ -27,11 +27,19 @@ const first=(obj,keys,fallback='')=>{
   return fallback;
 };
 
+// SPEC-DELIVERED-VN-CALENDAR-20261110: the orders date picker already uses
+// Asia/Ho_Chi_Minh. Projected sheet rows must use that SAME calendar day
+// regardless of desktop timezone, installed PWA or Android WebView locale.
 function viTime(value){
   const d=value?new Date(value):new Date();
   if(Number.isNaN(d.getTime()))return text(value);
-  const p=n=>String(n).padStart(2,'0');
-  return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  const parts=new Intl.DateTimeFormat('en-GB',{
+    timeZone:'Asia/Ho_Chi_Minh',
+    year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
+  }).formatToParts(d);
+  const fields=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+  return `${fields.day}/${fields.month}/${fields.year} ${fields.hour}:${fields.minute}:${fields.second}`;
 }
 
 function currentUid(){return text(identity?.uid);}
@@ -192,7 +200,14 @@ function mapCustomerRows(state=appState.get()){
 
 function orderStatus(order){return text(first(order,['trangThai','status'])).toLowerCase();}
 function orderCustomer(order){return text(first(order,['maKH','customer_id','customerId'],'le'))||'le';}
-function orderTime(order){return viTime(first(order,['ngay','ordered_at','created_at','updated_at'],new Date()));}
+function orderTime(order){
+  // A delivered order belongs to its actual delivery day, not the earlier
+  // draft creation day. "ngay" is retained for old/public projections.
+  const keys=['done','delivered'].includes(orderStatus(order))
+    ? ['delivered_at','ngay','ordered_at','created_at','updated_at']
+    : ['ngay','ordered_at','created_at','updated_at'];
+  return viTime(first(order,keys,new Date()));
+}
 function backendOrderId(order){return text(first(order,['backendOrderId','order_id','id']));}
 function orderDisplayCode(order){
   const explicit=text(first(order,['displayCode','display_code','maDon'],''));
