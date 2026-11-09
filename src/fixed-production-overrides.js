@@ -100,14 +100,45 @@
     debtTabReadInFlight=task;
     return task;
   }
+  // SPEC-DELIVERED-VN-CALENDAR-20261110: a PWA/WebView can resume with
+  // yesterday's cached order projection while server DG orders already exist.
+  // Refresh only on explicit entry to Đã giao, not on every render/filter
+  // change or background timer; never modify orders or permissions.
+  let deliveredTabReadInFlight=null;
+  async function refreshDeliveredOrdersOnTabEntry(){
+    const prod=backend();
+    const owner=prod?.getIdentity?.();
+    const mode=prod?.getAccessMode?.();
+    if(!owner||mode!=='account'||deliveredTabReadInFlight)return;
+    const isSameOwner=()=>backend()===prod
+      && prod.getIdentity?.()===owner
+      && prod.getAccessMode?.()===mode;
+    let task;
+    task=(async()=>{
+      await prod.refresh(['orders']);
+      if(!isSameOwner())return;
+      if(document.querySelector('.tab-content.active')?.id!=='tab-da-giao')return;
+      await refreshFixedSheets(['dongiao']);
+    })().finally(()=>{if(deliveredTabReadInFlight===task)deliveredTabReadInFlight=null;});
+    deliveredTabReadInFlight=task;
+    return task;
+  }
+
   const originalDebtTabSwitch=switchTab;
   switchTab=function(tabId,element){
-    const wasOnDebt=document.querySelector('.tab-content.active')?.id==='tab-cong-no';
+    const activeTab=document.querySelector('.tab-content.active')?.id;
+    const wasOnDebt=activeTab==='tab-cong-no';
+    const wasOnDelivered=activeTab==='tab-da-giao';
     const result=originalDebtTabSwitch.apply(this,arguments);
     if(tabId==='tab-cong-no'&&!wasOnDebt
       &&document.querySelector('.tab-content.active')?.id==='tab-cong-no'){
       void refreshDebtSummaryOnTabEntry().catch(error=>
         console.warn('[taphoa] debt summary refresh on entry:',String(error?.message||error)));
+    }
+    if(tabId==='tab-da-giao'&&!wasOnDelivered
+      &&document.querySelector('.tab-content.active')?.id==='tab-da-giao'){
+      void refreshDeliveredOrdersOnTabEntry().catch(error=>
+        console.warn('[taphoa] delivered orders refresh on entry:',String(error?.message||error)));
     }
     return result;
   };
