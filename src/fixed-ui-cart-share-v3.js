@@ -346,8 +346,8 @@
     const canvas=await capture.captureElement(target,{
       width,
       height,
-      scale:1.4,
-      renderTimeout:10000,
+      scale:2.5,
+      renderTimeout:16000,
       libraryTimeout:5000
     });
     return capture.canvasToPngBlob(canvas,errorMessage);
