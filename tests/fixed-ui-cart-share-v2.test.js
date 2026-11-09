@@ -19,7 +19,7 @@ test('cart share v3 supports a live sale draft before it becomes a saved order',
 });
 
 
-test('share image capture is on-demand bounded and lighter on Safari-sized pages',async()=>{
+test('share image capture is on-demand high-DPI yet bounded for Safari-sized pages',async()=>{
   const [html,helper,cartShare,sourceShare]=await Promise.all([
     readFile('index.html','utf8'),
     readFile('src/fixed-ui-share-capture.js','utf8'),
@@ -35,17 +35,19 @@ test('share image capture is on-demand bounded and lighter on Safari-sized pages
   assert.match(helper,/cdn\.jsdelivr\.net\/npm\/html2canvas@1\.4\.1\/dist\/html2canvas\.min\.js/);
   assert.match(helper,/withTimeout/);
   assert.match(helper,/renderTimeout/);
-  assert.match(helper,/scale=Math\.max\(1,Math\.min\(1\.5/);
+  assert.match(helper,/const requestedScale=Math\.max\(1,Math\.min\(2\.5/);
+  assert.match(helper,/Math\.sqrt\(16000000\/\(width\*height\)\)/);
+  assert.match(helper,/20000\/height/);
 
   assert.match(cartShare,/window\.TAPHOA_SHARE_CAPTURE/);
-  assert.match(cartShare,/scale:1\.4/);
-  assert.doesNotMatch(cartShare,/scale:2/);
+  assert.match(cartShare,/scale:2\.5/);
+  assert.doesNotMatch(cartShare,/scale:1\.4/);
 
   assert.match(sourceShare,/buildSourceSharePageElements\(source, width, modeLabel, 1800\)/);
   assert.match(sourceShare,/capture\.captureElement/);
-  assert.match(sourceShare,/scale:1\.4/);
+  assert.match(sourceShare,/scale:2\.5/);
   assert.match(sourceShare,/Đang tạo ảnh \$\{i \+ 1\}\/\$\{pageElements\.length\}/);
-  assert.doesNotMatch(sourceShare,/scale:2/);
+  assert.doesNotMatch(sourceShare,/scale:1\.4/);
 
   // iOS Web Share requires navigator.share() to run from the original tap.
   // Images are therefore prepared ahead of time and the cached File(s) are shared synchronously on tap.
