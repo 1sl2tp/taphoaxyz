@@ -277,7 +277,7 @@
                 sourceSummary[nguon].sl += sl; sourceSummary[nguon].chi += chi; sourceSummary[nguon].thu += thu; sourceSummary[nguon].lai += lai;
 
                 if (!orders[idTam]) {
-                    orders[idTam] = { maKh: maKh, tenKh: khDict[maKh] || maKh, thoiGian: thoiGian, tongSl: 0, tongThu: 0, tongLai: 0, countSp: 0, items: [] };
+                    orders[idTam] = { maKh: maKh, tenKh: resolveSavedOrderCustomerName(r, khDict[maKh]), thoiGian: thoiGian, tongSl: 0, tongThu: 0, tongLai: 0, countSp: 0, items: [] };
                 }
                 orders[idTam].tongSl += sl; orders[idTam].tongThu += thu; orders[idTam].tongLai += lai; orders[idTam].countSp += 1;
                 orders[idTam].items.push({ code: maSp, name: spInfo.ten || maSp, qty: sl });
