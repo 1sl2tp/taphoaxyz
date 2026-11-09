@@ -32,8 +32,8 @@
                     const canvas = await capture.captureElement(pageEl, {
                         width,
                         height,
-                        scale:1.4,
-                        renderTimeout:10000,
+                        scale:2.5,
+                        renderTimeout:16000,
                         libraryTimeout:5000
                     });
                     if (!canvas.width || !canvas.height) throw new Error(`Ảnh phần ${i+1} không hợp lệ.`);
