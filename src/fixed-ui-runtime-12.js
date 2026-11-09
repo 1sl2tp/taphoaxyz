@@ -431,7 +431,7 @@
             if (items.length === 0) return;
 
             let maKh = items[0][1]; let kh = appData.khachhang.find(r => r[0] == maKh);
-            selectedCustomer = { id: maKh, name: kh ? kh[1] : maKh };
+            selectedCustomer = { id: maKh, name: resolveSavedOrderCustomerName(items[0], kh?.[1]) };
             document.getElementById('selectedCustomerDisplay').innerText = selectedCustomer.name;
 
             let spDict = {}; appData.sanpham.slice(1).forEach(sp => { spDict[sp[0]] = sp[1]; });
