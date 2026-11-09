@@ -38,6 +38,9 @@ function renderFixture(source,name,sheet,role){
     escapeProductEditorValue:value=>String(value),
     buildOrderProductPreview:items=>({items:items.map(item=>item.name).slice(0,2),remaining:0}),
     formatOrderCardTime:value=>value,
+    // This fixture isolates day grouping; the production name helper has
+    // separate executable coverage in order-customer-name-snapshot-20261110.
+    resolveSavedOrderCustomerName:(row,current)=>current||row?.[11]||row?.[1]||'Khách hàng',
     parseOrderDateKey:value=>{
       const m=String(value).match(/^(\d\d)\/(\d\d)\/(\d{4})/);
       return m?m[3]+'-'+m[2]+'-'+m[1]:'';
