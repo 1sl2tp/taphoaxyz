@@ -211,8 +211,8 @@
                 const canvas = await capture.captureElement(clone, {
                     width,
                     height: captureHeight,
-                    scale: 1.4,
-                    renderTimeout: 12000,
+                    scale: 2.5,
+                    renderTimeout: 16000,
                     libraryTimeout: 6500
                 });
 
