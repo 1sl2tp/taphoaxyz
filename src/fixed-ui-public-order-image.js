@@ -248,8 +248,8 @@
           const canvas=await capture.captureElement(built.page,{
             width:PUBLIC_ORDER_IMAGE_WIDTH,
             height,
-            scale:1.25,
-            renderTimeout:12000,
+            scale:2.5,
+            renderTimeout:16000,
             libraryTimeout:5500
           });
           const blob=await capture.canvasToPngBlob(canvas,'Không tạo được ảnh đơn hàng.');
