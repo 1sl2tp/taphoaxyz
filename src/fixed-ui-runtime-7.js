@@ -281,6 +281,21 @@
             return getRowsVisibleToCurrentRole(source).filter(row => orderRowMatchesTimeFilter(row, sheetName));
         }
 
+        // SPEC-ORDER-CUSTOMER-NAME-FALLBACK-20261110: a newly created buyer may
+        // appear in an order before the contact domain finishes refreshing.
+        // Prefer the current contact name, then the authoritative name already
+        // attached to this *authorized* saved order. Never display a raw UUID
+        // as a person's name or guess a different buyer.
+        function resolveSavedOrderCustomerName(row, contactName = '') {
+            const isUuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+            for (const candidate of [contactName, row?.[11]]) {
+                const name = String(candidate || '').trim();
+                if (name && !isUuid(name)) return name;
+            }
+            const id = String(row?.[1] || '').trim();
+            return id && !isUuid(id) ? id : 'Khách hàng chưa có tên';
+        }
+
         // SPEC-TAPHOA-USER-PIN-ORDER-TIMELINE-20261108:
         // Limit DOM work while preserving the full authorized order count.
         const userOrderTimelineVisibleSize = { dongiao:40, dontam:40 };
