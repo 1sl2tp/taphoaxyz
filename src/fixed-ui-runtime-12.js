@@ -194,9 +194,9 @@
                 if(!isSameDebtModal())throw new Error('Đã chuyển công nợ khi chuẩn bị ảnh. Ảnh chưa được gửi.');
 
                 const captureHeight = Math.ceil(clone.scrollHeight) + 4;
-                // SPEC-DEBT-PNG-BOUNDED-CANVAS-20261104: 1.4x capture must fit
-                // the Chat media metadata ceiling (20,000 px), without
-                // allocating a giant browser canvas for a long debt history.
+                // SPEC-DEBT-PNG-BOUNDED-CANVAS-20261104: dynamic high-DPI
+                // capture stays inside Chat's 20,000px height ceiling and a
+                // 16 MP budget even for long debt history.
                 // Fail closed: keep the confirmed Chat text/link, never upload
                 // a cropped or low-resolution partial debt statement.
                 if(!Number.isFinite(captureHeight)||captureHeight<1||captureHeight>14000)
