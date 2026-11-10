@@ -689,7 +689,7 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
     const format=v=>(Number(v)||0).toLocaleString('vi-VN');
     const displayCode=String(order.displayCode||order.display_code||order.maDon||'').trim();
     const stamp=order.delivered_at||order.ngay||order.created_at;
-    const stampText=stamp?new Date(stamp).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}):'';
+    const stampText=stamp?new Date(stamp).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric',hourCycle:'h23'}):'';
     const mapped=items.map((item,i)=>{
       const qty=Number(item.qty??item.sl)||0;
       const price=Number(item.unit_price??item.gia)||0;
