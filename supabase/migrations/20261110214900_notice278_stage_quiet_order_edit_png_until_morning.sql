@@ -41,8 +41,7 @@ select auth.uid() is not null and (exists(
    AND (c.member_a=q.customer_account_id OR c.member_b=q.customer_account_id)
    AND v21_private.chat_outbound_allowed(q.customer_account_id,q.client_id)
  ));
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_order_notice_image_ticket(p_order_id uuid)
  RETURNS jsonb
@@ -161,8 +160,7 @@ begin
  return jsonb_build_object('ok',true,'order_id',v_ticket.order_id,'message_id',v_ticket.message_id,
   'asset_id',v_ticket.asset_id,'storage_key',v_ticket.storage_key);
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.taphoa_order_notice_image_attach(p_order_id uuid, p_asset_id uuid, p_size_bytes bigint, p_width_px integer, p_height_px integer)
  RETURNS jsonb
@@ -261,5 +259,4 @@ begin
  set attached_at=now() where message_id=v_ticket.message_id;
  return jsonb_build_object('ok',true,'message_id',v_ticket.message_id,'asset_id',v_ticket.asset_id);
 end;
-$function$
-;
+$function$;
