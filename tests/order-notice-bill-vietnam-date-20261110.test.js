@@ -21,6 +21,6 @@ test('bill PNG uses delivery instant in Vietnam on browser/PWA hosts regardless 
   }
 });
 test('bill source never formats order notice image using host timezone implicitly',()=>{
-  assert.match(project,/timeZone:'Asia\\/Ho_Chi_Minh'/);
+  assert.ok(project.includes("timeZone:'Asia/Ho_Chi_Minh'"));
   assert.match(project,/hourCycle:'h23'/);
 });
