@@ -184,5 +184,4 @@ begin
 
   return v_message_id;
 end;
-$function$
-;
+$function$;
