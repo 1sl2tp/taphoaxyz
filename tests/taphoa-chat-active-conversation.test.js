@@ -14,9 +14,9 @@ function latestFunction(name){
   const start=lower.lastIndexOf(marker.toLowerCase());
   assert.notEqual(start,-1,`missing function ${name}`);
   // The canonical pg_get_functiondef format uses $function$; rather than
-  // always $;. Match the latest function's own quoted-body delimiter.
+  // always the default $ delimiter. Match the latest function's own quoted-body delimiter.
   const fragment=sql.slice(start);
-  const quoted=fragment.match(/\\bAS\\s+(\\$[A-Za-z_0-9]*\\$)/i);
+  const quoted=fragment.match(/\bAS\s+(\$[A-Za-z_0-9]*\$)/i);
   assert.ok(quoted,`missing body delimiter for ${name}`);
   const opening=start+quoted.index+quoted[0].length;
   const end=sql.indexOf(quoted[1]+';',opening);
