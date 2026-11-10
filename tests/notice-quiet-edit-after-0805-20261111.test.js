@@ -7,6 +7,7 @@ const foundation=fs.readFileSync(root+'20261110214709_notice276_edit_order_quiet
 const gate=fs.readFileSync(root+'20261110214757_notice277_queue_overnight_order_edits_before_message_insert.sql','utf8');
 const image=fs.readFileSync(root+'20261110214900_notice278_stage_quiet_order_edit_png_until_morning.sql','utf8');
 const dispatch=fs.readFileSync(root+'20261110215006_notice279_daylight_dispatch_quiet_order_edits_and_staged_png.sql','utf8');
+const safeguards=fs.readFileSync(root+'20261110215433_notice280_preserve_queue_identity_wait_for_order_png.sql','utf8');
 
 test('NOTICE-276 timezone boundaries apply ONLY to edited orders from 20:00 to 07:59',()=>{
   assert.match(foundation,/AT TIME ZONE 'Asia\/Ho_Chi_Minh'/);
@@ -78,3 +79,13 @@ test('NOTICE-279 dispatch after 08:05 only, recheck opt-in and release text+PNG 
 });
 
 console.log('NOTICE-276/279: quiet hours, single latest edit, staged portrait, Zalo-ready daylight dispatch PASS');
+
+test('NOTICE-280 latest-command idempotency and waiting for slow PNGs',()=>{
+ assert.match(safeguards,/q\.client_id IS DISTINCT FROM v_client_id/,
+   'morning dispatcher must not cancel its own queued client_id');
+ assert.match(safeguards,/q\.staged_asset_id IS NULL OR q\.staged_ready_at IS NOT NULL/);
+ assert.match(safeguards,/q\.updated_at<=now\(\)-interval '15 minutes'/,
+   'staged PNG is awaited but must not block the text message forever');
+ assert.match(safeguards,/LIMIT 25 FOR UPDATE SKIP LOCKED/);
+ assert.match(safeguards,/NOT v21_private\.chat_outbound_allowed/);
+});
