@@ -186,8 +186,7 @@ begin
 
   return v_message_id;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION v21_private.taphoa_order_edit_quiet_dispatch()
  RETURNS jsonb
@@ -306,5 +305,4 @@ BEGIN
    'sent',v_sent,'skipped',v_skipped,'errors',v_failed,
    'images_attached',v_images,'images_missing',v_images_missing);
 END;
-$function$
-;
+$function$;
