@@ -1,0 +1,9 @@
+# SPEC-CARE-ALL-PURCHASES-20261113
+
+E0 · Owner: admin customer report \`src/admin-customer-care-report.js\` and read-only helper \`src/admin-customer-products.js\`. View: \`/admin-gia.html\` → Báo cáo KH → select customer. Read: existing authenticated admin \`taphoa_app_domains(['orders'])\` response. Write: **none** (no DB mutation, no messages, no cron). No changes to order/payment semantics.
+
+Given any customer and orders including delivered, pending and reversed, when admin opens customer report, then display (1) frequently purchased products with a 7/30/all-days filter and sorting by distinct delivered order, quantity, or last delivery; (2) ALL products ever purchased from delivered orders, including one-off, old and inactive catalog products returned by the canonical orders RPC, searchable by name/code, with no hard cap (first 40 until "Xem tất cả"). The lifetime catalog must not be limited by the finance period.
+
+Must stay: deduplicate multiple rows of same code inside one order for purchase frequency, accumulate all quantities; join by customer ID; exclude draft/reversed orders; use VN calendar day for delivery; customer-switch and logout reject stale data; preserve existing finance period/cost logic and admin-only access; no generated assets edited. Backend compatibility: only the existing RPC is used; if it is unavailable, show a visible failure rather than fabricated zero.
+
+E1: pure aggregation and integration regression tests. E2: verify GitHub Actions tests + canonical build. E3: inspect main Pages publish. E4: production/browser/PWA validation remains PENDING until actually verified. E5: user approval remains PENDING. Rollback: revert the single code commit and release through existing main workflow. Resource impact: one lazy admin-only all-orders request per report session, no polling.

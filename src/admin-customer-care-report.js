@@ -1,4 +1,5 @@
 // Admin customer care report: single, explicit read-only RPC; no auto-send or background refresh.
+import {createCustomerPurchasesReport} from './admin-customer-products.js';
 export function createCustomerCareReport({rpc,getIdentity}){
   const $=id=>document.getElementById(id);
   // SPEC-ADMIN-CARE-ROUND-TOTALS-20261101:
@@ -15,6 +16,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
   const percent=v=>v===null||v===undefined?'—':number(v)+'%';
   const day=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
   let rows=[],loaded=false,loading=false,selected='',generation=0,reloadQueued=false;
+  const purchases=createCustomerPurchasesReport({rpc,getIdentity});
   // "Hỗ trợ" is a shared Admin account: choose voice explicitly.
   let youngSpeaker='anh',savingVoice=false,voiceSessionGeneration=0;
   function address(row){
@@ -105,6 +107,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
     }
     add('h3',address(r).name);
     add('p',group(r)+' · '+payment(r));
+    const productHost=add('section','','care-product-history');
     const stats=add('div','','care-stats');
     const buyGap=Number(r.purchase_days)>=2?number(r.avg_purchase_gap_days)+' ngày':'Chưa đủ dữ liệu';
     const payGap=Number(r.collection_days)>=2?number(r.avg_collection_gap_days)+' ngày':'Chưa đủ dữ liệu';
@@ -153,6 +156,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
     const area=add('textarea',message(r));area.id='careSuggestedMessage';area.readOnly=true;
     const button=add('button','Sao chép lời nhắn','btn primary');button.type='button';button.id='careCopySuggestion';
     add('p','Chỉ sao chép, không tự gửi Chat/Zalo.').id='careCopyStatus';
+    purchases.show(productHost,r.id);
   }
   // SPEC-ADMIN-CARE-PERIOD-COHORT-20261101:
   // Per-customer period_delivered_count belongs to the selected time range.
@@ -290,6 +294,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
   }
   function reset(){
     generation++;loading=false;reloadQueued=false;rows=[];loaded=false;selected='';
+    purchases.reset();
     voiceSessionGeneration++;savingVoice=false;
     $('careBody').replaceChildren();
     $('careDetail').textContent='Chọn khách để xem báo cáo.';
@@ -300,6 +305,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
     periodVisibility();
   }
   function refreshPeriod(){
+    purchases.reset();
     loaded=false;
     invalidatePeriodFigures();
     if(loading){reloadQueued=true;return;}

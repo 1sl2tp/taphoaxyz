@@ -531,6 +531,31 @@
       }
       #customerCarePane .care-list table{min-width:1080px}
     }
+    /* SPEC-CARE-ALL-PURCHASES-20261113: narrow, admin-only product purchase report. */
+    #customerCarePane .care-product-history{margin:12px 0;padding:12px;border:1px solid #d9e4ee;border-radius:12px;background:#f8fbff}
+    #customerCarePane .care-product-history h3{font-size:16px;margin:0 0 5px;color:#0f172a}
+    #customerCarePane .care-purchase-summary,#customerCarePane .care-purchase-caption{font-size:11px;color:#64748b;line-height:1.5;margin:5px 0 10px}
+    #customerCarePane .care-purchase-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:9px 0}
+    #customerCarePane .care-purchase-select,#customerCarePane .care-purchase-search{width:100%;min-width:0;min-height:44px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;padding:8px;font-size:14px}
+    #customerCarePane .care-purchase-search{font-size:16px;margin:0 0 8px}
+    #customerCarePane .care-purchase-subtitle{font-size:13px;font-weight:800;color:#1e293b;margin:14px 0 8px}
+    #customerCarePane .care-purchase-table{border:1px solid #e2e8f0;border-radius:8px;background:#fff;overflow:hidden}
+    #customerCarePane .care-purchase-grid,#customerCarePane .care-purchase-row{display:grid;grid-template-columns:minmax(0,1fr) 52px 65px;gap:8px;align-items:center;padding:8px 10px}
+    #customerCarePane .care-purchase-grid-head{background:#eff6ff;color:#475569;font-size:11px;font-weight:800}
+    #customerCarePane .care-purchase-grid-head span:not(:first-child){text-align:right}
+    #customerCarePane .care-purchase-row{border-top:1px solid #f1f5f9;font-size:12px}
+    #customerCarePane .care-purchase-name{min-width:0;overflow-wrap:anywhere}
+    #customerCarePane .care-purchase-name strong{display:block;font-size:12px;line-height:1.35}
+    #customerCarePane .care-purchase-name small{display:block;color:#64748b;font-size:10px;line-height:1.35}
+    #customerCarePane .care-purchase-number{text-align:right;font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum" 1}
+    #customerCarePane .care-purchase-more{display:block;width:100%;margin-top:8px;min-height:44px}
+    #customerCarePane .care-purchase-more[hidden]{display:none}
+    #customerCarePane .care-purchase-empty{padding:10px;color:#64748b;font-size:12px}
+    @media(max-width:520px){
+      #customerCarePane .care-product-history{padding:9px}
+      #customerCarePane .care-purchase-grid,#customerCarePane .care-purchase-row{grid-template-columns:minmax(0,1fr) 43px 58px;gap:5px;padding:7px}
+      #customerCarePane .care-purchase-select{font-size:13px;padding:7px 5px}
+    }
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
