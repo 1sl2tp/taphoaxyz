@@ -20,6 +20,40 @@ function periodStart(today,days){
   d.setUTCDate(d.getUTCDate()-(days-1));
   return d.toISOString().slice(0,10);
 }
+// Canonical product group comes from the source key saved in each order item.
+// Prefix fallback supports legacy rows, while unknown sources remain visible
+// under their own names rather than being silently folded into "Khác".
+export function purchaseGroup(item={}){
+  const raw=String(item?.nhom??item?.product_group??item?.source_key??'').trim();
+  const normalized=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const prefix=String(item?.maSP??item?.product_code??item?.product_id??'').split('-')[0].toUpperCase();
+  const known={
+    'sua':['sua','Sữa'],
+    'hang-thuong':['hang-thuong','Hàng thường'],
+    'hang-u':['hang-u','Hàng U'],
+    'thuoc-la':['thuoc-la','Thuốc lá']
+  };
+  const key=normalized||({SUA:'sua',HT:'hang-thuong',HU:'hang-u',TL:'thuoc-la'}[prefix]||'chua-phan-nhom');
+  const found=Object.values(known).find(([k])=>k===key);
+  return found?{key:found[0],label:found[1],fromSource:Boolean(normalized)}
+    :{key,label:raw.replace(/[-_]+/g,' ')||'Chưa phân nhóm',fromSource:Boolean(normalized)};
+}
+const groupOrder=['sua','hang-thuong','hang-u','thuoc-la'];
+export function groupCustomerPurchases(rows,{group='all',sort='frequency'}={}){
+  const byGroup=new Map();
+  for(const row of rows||[]){
+    const key=row.groupKey||'chua-phan-nhom';
+    if(group!=='all'&&group!==key)continue;
+    if(!byGroup.has(key))byGroup.set(key,{key,label:row.groupName||'Chưa phân nhóm',rows:[]});
+    byGroup.get(key).rows.push(row);
+  }
+  return [...byGroup.values()].sort((a,b)=>{
+    const ai=groupOrder.indexOf(a.key),bi=groupOrder.indexOf(b.key);
+    const ax=ai<0?999:ai,bx=bi<0?999:bi;
+    return ax-bx||a.label.localeCompare(b.label,'vi');
+  }).map(g=>({...g,rows:sortCustomerPurchases(g.rows,sort)}));
+}
 export function summarizeCustomerPurchases(orders,customerId,{days=0,today=vnToday()}={}){
   const start=periodStart(today,days);
   const products=new Map();
@@ -35,10 +69,15 @@ export function summarizeCustomerPurchases(orders,customerId,{days=0,today=vnTod
       const code=String(item?.maSP??item?.product_id??item?.product_code??'').trim();
       if(!code)continue;
       const name=String(item?.tenSP??item?.product_name??item?.ten??'').trim();
+      const category=purchaseGroup(item);
       let row=products.get(code);
       if(!row){
-        row={code,name:name||code,orders:0,qty:0,lastDay:'',firstDay:'',ids:new Set()};
+        row={code,name:name||code,groupKey:category.key,groupName:category.label,
+          groupFromSource:category.fromSource,orders:0,qty:0,lastDay:'',firstDay:'',ids:new Set()};
         products.set(code,row);
+      }
+      if(category.fromSource&&!row.groupFromSource){
+        row.groupKey=category.key;row.groupName=category.label;row.groupFromSource=true;
       }
       if(!row.ids.has(orderId)){row.ids.add(orderId);row.orders++;}
       const qty=Number(item?.sl??item?.qty);
@@ -63,11 +102,11 @@ export function sortCustomerPurchases(rows,sort='frequency'){
 
 export function createCustomerPurchasesReport({rpc,getIdentity}){
   let cachedOrders=null,pending=null,sessionEpoch=0,viewEpoch=0;
-  let host=null,selectedId='',period='all',sort='frequency',query='',expanded=false;
-  let repeatedArea=null,allArea=null,summaryArea=null,showAllBtn=null;
+  let host=null,selectedId='',period='all',sort='frequency',group='all',query='',expanded=false;
+  let repeatedArea=null,allArea=null,summaryArea=null,groupSummaryArea=null,showAllBtn=null,groupControl=null;
   function reset(){
     ++sessionEpoch;++viewEpoch;cachedOrders=null;pending=null;host=null;
-    selectedId='';period='all';sort='frequency';query='';expanded=false;
+    selectedId='';period='all';sort='frequency';group='all';query='';expanded=false;
   }
   function loadOrders(){
     if(cachedOrders)return Promise.resolve(cachedOrders);
@@ -94,15 +133,26 @@ export function createCustomerPurchasesReport({rpc,getIdentity}){
     (parent||host).append(node);
     return node;
   }
-  function rowsInto(parent,rows){
+  function rowsInto(parent,groups,limit=Infinity){
     parent.replaceChildren();
-    for(const row of rows){
-      const line=make('div','','care-purchase-row',parent);
-      const name=make('div','','care-purchase-name',line);
-      make('strong',row.name,'',name);
-      make('small',row.code+' · Gần nhất: '+dateText(row.lastDay),'',name);
-      make('span',fmt(row.orders),'care-purchase-number',line);
-      make('span',fmt(row.qty),'care-purchase-number',line);
+    let displayed=0;
+    for(const category of groups){
+      const remaining=limit-displayed;
+      if(remaining<=0)break;
+      const visible=category.rows.slice(0,remaining);
+      if(!visible.length)continue;
+      const heading=make('div','','care-purchase-group-heading',parent);
+      make('strong',category.label,'',heading);
+      make('span',fmt(category.rows.length)+' mặt hàng','',heading);
+      for(const row of visible){
+        const line=make('div','','care-purchase-row',parent);
+        const name=make('div','','care-purchase-name',line);
+        make('strong',row.name,'',name);
+        make('small',row.code+' · Gần nhất: '+dateText(row.lastDay),'',name);
+        make('span',fmt(row.orders),'care-purchase-number',line);
+        make('span',fmt(row.qty),'care-purchase-number',line);
+      }
+      displayed+=visible.length;
     }
   }
   function productHeading(parent){
@@ -114,30 +164,45 @@ export function createCustomerPurchasesReport({rpc,getIdentity}){
   }
   function update(){
     if(!host||!cachedOrders||getIdentity()?.role!=='admin')return;
-    const all=sortCustomerPurchases(summarizeCustomerPurchases(cachedOrders,selectedId),sort);
-    const selectedDays=period==='7'?7:period==='30'?30:0;
-    const periodRows=sortCustomerPurchases(
-      summarizeCustomerPurchases(cachedOrders,selectedId,{days:selectedDays}),sort);
-    const repeat=periodRows.filter(row=>row.orders>=2);
-    const once=all.filter(row=>row.orders===1).length;
-    summaryArea.textContent=fmt(all.length)+' mặt hàng đã từng mua · '+fmt(once)+
-      ' mặt hàng chỉ mua 1 lần. Đơn tạm và đơn hoàn không tính.';
-    rowsInto(repeatedArea,repeat.slice(0,15));
-    if(!repeat.length)make('p','Chưa có mặt hàng nào được mua trong từ 2 đơn đã giao trở lên ở kỳ này.','care-purchase-empty',repeatedArea);
+    const lifetime=summarizeCustomerPurchases(cachedOrders,selectedId);
+    const allGroups=groupCustomerPurchases(lifetime,{sort});
+    if(group!=='all'&&!allGroups.some(g=>g.key===group))group='all';
+    // Always include all lifetime groups, even when a period or search is active.
+    groupControl.replaceChildren();
+    for(const [value,label] of [['all','Tất cả nhóm ('+fmt(lifetime.length)+')'],
+      ...allGroups.map(g=>[g.key,g.label+' ('+fmt(g.rows.length)+')'])]){
+      const option=make('option',label,'',groupControl);option.value=value;
+    }
+    groupControl.value=group;
+    summaryArea.textContent=fmt(lifetime.length)+' mặt hàng đã từng mua · '+
+      fmt(lifetime.filter(r=>r.orders===1).length)+' mặt hàng chỉ mua 1 lần · '+
+      fmt(allGroups.length)+' nhóm. Không tính đơn tạm/hoàn.';
+    groupSummaryArea.textContent=allGroups.map(g=>g.label+': '+fmt(g.rows.length)).join(' · ')||
+      'Chưa có nhóm hàng đã mua.';
+    const days=period==='7'?7:period==='30'?30:0;
+    const repeat=groupCustomerPurchases(
+      summarizeCustomerPurchases(cachedOrders,selectedId,{days}).filter(r=>r.orders>=2),
+      {group,sort});
+    rowsInto(repeatedArea,repeat,15);
+    if(!repeat.length)make('p','Chưa có mặt hàng mua từ 2 đơn đã giao trở lên trong kỳ và nhóm đã chọn.','care-purchase-empty',repeatedArea);
     const q=query.trim().toLocaleLowerCase('vi-VN');
-    const matches=q?all.filter(row=>(row.name+' '+row.code).toLocaleLowerCase('vi-VN').includes(q)):all;
-    rowsInto(allArea,expanded?matches:matches.slice(0,40));
-    if(!matches.length)make('p',all.length?'Không có mặt hàng phù hợp tìm kiếm.':'Khách chưa có sản phẩm đã giao.','care-purchase-empty',allArea);
-    showAllBtn.hidden=expanded||matches.length<=40;
-    showAllBtn.textContent='Xem tất cả '+fmt(matches.length)+' sản phẩm';
+    const filtered=lifetime.filter(r=>group==='all'||r.groupKey===group)
+      .filter(r=>!q||(r.name+' '+r.code).toLocaleLowerCase('vi-VN').includes(q));
+    const matches=groupCustomerPurchases(filtered,{sort});
+    rowsInto(allArea,matches,expanded?Infinity:40);
+    if(!matches.length)make('p',lifetime.length?'Không có sản phẩm phù hợp nhóm hoặc tìm kiếm.':
+      'Khách chưa có sản phẩm đã giao.','care-purchase-empty',allArea);
+    showAllBtn.hidden=expanded||filtered.length<=40;
+    showAllBtn.textContent='Xem tất cả '+fmt(filtered.length)+' sản phẩm';
   }
   function show(container,customerId){
     const view=++viewEpoch;
     const changed=String(customerId)!==String(selectedId);
-    if(changed){period='all';sort='frequency';query='';expanded=false;}
+    if(changed){period='all';sort='frequency';group='all';query='';expanded=false;}
     selectedId=String(customerId);host=container;host.replaceChildren();
     make('h3','Mặt hàng khách đã mua','care-purchase-title');
     summaryArea=make('p','Đang đọc lịch sử đơn đã giao…','care-purchase-summary');
+    groupSummaryArea=make('p','','care-purchase-group-summary');
     const tools=make('div','','care-purchase-tools');
     const periodControl=make('select','','care-purchase-select',tools);
     periodControl.setAttribute('aria-label','Kỳ xem mặt hàng mua lặp lại');
@@ -153,6 +218,12 @@ export function createCustomerPurchasesReport({rpc,getIdentity}){
     }
     sortControl.value=sort;
     sortControl.addEventListener('change',()=>{sort=sortControl.value;update();});
+    groupControl=make('select','','care-purchase-select care-purchase-group-select',tools);
+    groupControl.setAttribute('aria-label','Lọc nhóm hàng đã mua');
+    const first=make('option','Tất cả nhóm','',groupControl);first.value='all';
+    groupControl.addEventListener('change',()=>{
+      group=groupControl.value;expanded=false;update();
+    });
     make('h4','Hàng thường mua (từ 2 đơn trở lên)','care-purchase-subtitle');
     repeatedArea=productHeading(make('div','','care-purchase-table'));
     make('h4','Tất cả sản phẩm đã mua · toàn thời gian','care-purchase-subtitle');
@@ -165,7 +236,7 @@ export function createCustomerPurchasesReport({rpc,getIdentity}){
     showAllBtn=make('button','Xem tất cả','btn care-purchase-more');
     showAllBtn.type='button';
     showAllBtn.addEventListener('click',()=>{expanded=true;update();});
-    make('p','Chỉ đọc đơn đã giao, gộp theo mã hàng; mỗi đơn chỉ tính một lần cho một sản phẩm.','care-purchase-caption');
+    make('p','Phân nhóm theo nguồn hàng trên đơn; các mã cũ thiếu nhóm dùng tiền tố mã. Gộp theo mã hàng, mỗi đơn chỉ tính một lần.','care-purchase-caption');
     if(cachedOrders){update();return;}
     void loadOrders().then(()=>{
       if(view!==viewEpoch||host!==container||getIdentity()?.role!=='admin')return;

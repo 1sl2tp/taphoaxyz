@@ -556,6 +556,19 @@
       #customerCarePane .care-purchase-grid,#customerCarePane .care-purchase-row{grid-template-columns:minmax(0,1fr) 43px 58px;gap:5px;padding:7px}
       #customerCarePane .care-purchase-select{font-size:13px;padding:7px 5px}
     }
+
+    /* SPEC-CARE-PURCHASE-GROUPS-20261113: readable group sections on mobile. */
+    #customerCarePane .care-purchase-group-select{grid-column:1/-1}
+    #customerCarePane .care-purchase-group-summary{
+      margin:0 0 8px;color:#475569;font-size:11px;line-height:1.55;overflow-wrap:anywhere
+    }
+    #customerCarePane .care-purchase-group-heading{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;
+      padding:8px 10px;background:#f1f5f9;border-top:1px solid #e2e8f0;color:#1e293b;
+      font-size:12px;line-height:1.35
+    }
+    #customerCarePane .care-purchase-group-heading strong{font-weight:800}
+    #customerCarePane .care-purchase-group-heading span{color:#64748b;font-size:11px;white-space:nowrap}
   </style>
   <script defer src="./src/fixed-ui-no-hints.js?v=ui123-20261009&select-search=20261009&voice-search=20261009&voice-one-tap=20261009&voice-typing-safe=20261009&ime-caret=20261010"></script>
 </head>
