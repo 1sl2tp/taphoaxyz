@@ -33,6 +33,7 @@ test('group names follow original source and legacy prefix; unknown sources rema
  assert.equal(purchaseGroup({product_group:'hang-thuong'}).label,'Hàng thường');
  assert.equal(purchaseGroup({nhom:'hang-u'}).label,'Hàng U');
  assert.equal(purchaseGroup({nhom:'thuoc-la'}).label,'Thuốc lá');
+ assert.equal(purchaseGroup({nhom:'masan'}).label,'Hàng Masan');
  assert.equal(purchaseGroup({maSP:'TL-010'}).key,'thuoc-la');
  assert.equal(purchaseGroup({maSP:'SUA-010'}).key,'sua');
  assert.equal(purchaseGroup({maSP:'HU-010'}).key,'hang-u');

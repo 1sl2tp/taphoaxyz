@@ -32,14 +32,15 @@ export function purchaseGroup(item={}){
     'sua':['sua','Sữa'],
     'hang-thuong':['hang-thuong','Hàng thường'],
     'hang-u':['hang-u','Hàng U'],
-    'thuoc-la':['thuoc-la','Thuốc lá']
+    'thuoc-la':['thuoc-la','Thuốc lá'],
+    'masan':['masan','Hàng Masan']
   };
   const key=normalized||({SUA:'sua',HT:'hang-thuong',HU:'hang-u',TL:'thuoc-la'}[prefix]||'chua-phan-nhom');
   const found=Object.values(known).find(([k])=>k===key);
   return found?{key:found[0],label:found[1],fromSource:Boolean(normalized)}
     :{key,label:raw.replace(/[-_]+/g,' ')||'Chưa phân nhóm',fromSource:Boolean(normalized)};
 }
-const groupOrder=['sua','hang-thuong','hang-u','thuoc-la'];
+const groupOrder=['sua','hang-thuong','hang-u','thuoc-la','masan'];
 export function groupCustomerPurchases(rows,{group='all',sort='frequency'}={}){
   const byGroup=new Map();
   for(const row of rows||[]){
