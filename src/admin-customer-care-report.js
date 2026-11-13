@@ -16,7 +16,6 @@ export function createCustomerCareReport({rpc,getIdentity}){
   const percent=v=>v===null||v===undefined?'—':number(v)+'%';
   const day=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
   let rows=[],loaded=false,loading=false,selected='',generation=0,reloadQueued=false;
-  const purchases=createCustomerPurchasesReport({rpc,getIdentity});
   // "Hỗ trợ" is a shared Admin account: choose voice explicitly.
   let youngSpeaker='anh',savingVoice=false,voiceSessionGeneration=0;
   function address(row){
@@ -70,6 +69,7 @@ export function createCustomerCareReport({rpc,getIdentity}){
     $('carePeriodStart').classList.toggle('hidden',!custom);
     $('carePeriodEnd').classList.toggle('hidden',!custom);
   }
+  const purchases=createCustomerPurchasesReport({rpc,getIdentity});
   function group(r){
     if(r.segment==='demo')return 'Dữ liệu thử';
     if(Number(r.pending_count)>0)return 'Đơn tạm chưa giao';
