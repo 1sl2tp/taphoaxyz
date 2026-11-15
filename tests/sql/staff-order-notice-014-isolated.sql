@@ -298,3 +298,139 @@ BEGIN
 END $$;
 SET test.admin='yes';
 \echo 'PASS STAFF-ORDER-014: SQL compile, employee-only target, no customer leak, no-op, edit, retry, delivery, lock, ACL'
+
+-- STAFF-IMAGE-015: same disposable database, same original staff message.
+-- Minimal Storage/Chat tables used by the canonical image ticket.
+CREATE SCHEMA auth;
+CREATE SCHEMA storage;
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
+ SELECT nullif(current_setting('test.auth.uid',true),'')::uuid;
+$$;
+CREATE TABLE storage.objects(
+ bucket_id text NOT NULL,name text NOT NULL,owner_id text,metadata jsonb,
+ archived_at timestamptz,is_delete_marker boolean NOT NULL DEFAULT false,
+ PRIMARY KEY(bucket_id,name)
+);
+CREATE TABLE v21_private.taphoa_order_notice_image_uploads(
+ message_id uuid PRIMARY KEY REFERENCES public.v21_messages(id),
+ order_id uuid NOT NULL REFERENCES public.taphoa_orders(id),
+ sender_account_id uuid NOT NULL REFERENCES public.v21_accounts(id),
+ conversation_id uuid NOT NULL REFERENCES public.v21_conversations(id),
+ asset_id uuid NOT NULL UNIQUE,storage_key text NOT NULL UNIQUE,
+ created_at timestamptz NOT NULL DEFAULT now(),attached_at timestamptz
+);
+CREATE TABLE public.v21_media_assets (
+ id uuid PRIMARY KEY,conversation_id uuid NOT NULL, message_id uuid,
+ owner_account_id uuid NOT NULL,kind text NOT NULL,mime_type text NOT NULL,
+ size_bytes bigint NOT NULL,storage_key text,width_px integer,height_px integer,
+ sort_index integer NOT NULL DEFAULT 0,deleted_at timestamptz
+);
+-- The previous ACL case intentionally locked staff; restore only in sandbox.
+UPDATE public.v21_accounts SET locked_at=NULL
+ WHERE id='57fc1306-7030-4955-b174-afffeee2c3d2';
+SET test.auth.uid='77777777-7777-4777-8777-777777777777';
+SET test.admin='yes';
+
+\i supabase/migrations/20261115154000_staff_order_notice_png_original.sql
+DO $$
+BEGIN
+ IF has_function_privilege('anon',
+    'public.taphoa_staff_order_image_ticket(uuid,uuid)','EXECUTE')
+ OR NOT has_function_privilege('authenticated',
+    'public.taphoa_staff_order_image_ticket(uuid,uuid)','EXECUTE')
+ THEN RAISE EXCEPTION 'staff media ticket ACL incorrect'; END IF;
+ IF has_function_privilege('anon',
+    'public.taphoa_staff_order_image_attach(uuid,uuid,uuid,bigint,integer,integer)','EXECUTE')
+ THEN RAISE EXCEPTION 'anon can attach staff image'; END IF;
+END $$;
+
+-- DG601 was already committed and staff-notified in the 014 fixture.
+SELECT
+ (v->>'asset_id') AS staff_asset_id,
+ (v->>'storage_key') AS staff_storage_key,
+ (v->>'message_id') AS staff_message_id,
+ (v->>'ok') AS staff_ticket_ok
+FROM (SELECT public.taphoa_staff_order_image_ticket(
+ 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+ 'aaaa0006-0000-4000-8000-000000000006'::uuid
+) v) x
+\gset
+\if :staff_ticket_ok
+\else
+ \echo 'FAIL: existing staff notice did not receive a ticket'
+ \quit 1
+\endif
+
+-- Capture ticket ID in session for exception branch tests.
+SET test.staff_asset_id=:'staff_asset_id';
+-- Reject storage that has not been uploaded.
+DO $
+BEGIN
+ BEGIN
+  PERFORM public.taphoa_staff_order_image_attach(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    'aaaa0006-0000-4000-8000-000000000006',
+    current_setting('test.staff_asset_id',true)::uuid,1000,528,800);
+  RAISE EXCEPTION 'missing PNG storage accepted';
+ EXCEPTION WHEN insufficient_privilege THEN
+  IF SQLERRM IS DISTINCT FROM 'staff_image_storage_invalid' THEN RAISE; END IF;
+ END;
+END $$;
+-- Storage upload from the exact authenticated owner.
+INSERT INTO storage.objects(bucket_id,name,owner_id,metadata)
+VALUES('v21-media',:'staff_storage_key',
+ '77777777-7777-4777-8777-777777777777',
+ '{"mimetype":"image/png","size":1000}'::jsonb);
+-- Wrong client-side command never points to another order's staff message.
+DO $$
+BEGIN
+ BEGIN
+  PERFORM public.taphoa_staff_order_image_attach(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    'aaaa0003-0000-4000-8000-000000000003',
+    current_setting('test.staff_asset_id')::uuid,1000,528,800);
+  RAISE EXCEPTION 'cross-command PNG attachment accepted';
+ EXCEPTION WHEN insufficient_privilege THEN
+  IF SQLERRM IS DISTINCT FROM 'staff_image_event_invalid' THEN RAISE; END IF;
+ END;
+END $$;
+
+SELECT (public.taphoa_staff_order_image_attach(
+ 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+ 'aaaa0006-0000-4000-8000-000000000006'::uuid,
+ :'staff_asset_id'::uuid,1000,528,800)->>'ok') AS staff_attached_ok
+\gset
+\if :staff_attached_ok
+\else
+ \echo 'FAIL: staff PNG did not attach'
+ \quit 1
+\endif
+-- Idempotent same-asset replay; no second image.
+SELECT public.taphoa_staff_order_image_attach(
+ 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+ 'aaaa0006-0000-4000-8000-000000000006',
+ :'staff_asset_id'::uuid,1000,528,800
+);
+DO $$
+BEGIN
+ IF (SELECT count(*) FROM public.v21_media_assets)<>1
+ OR (SELECT count(*) FROM v21_private.taphoa_order_notice_image_uploads WHERE attached_at IS NOT NULL)<>1
+ THEN RAISE EXCEPTION 'staff duplicate image or ticket'; END IF;
+ IF (SELECT count(*) FROM public.v21_messages)<>4
+ THEN RAISE EXCEPTION 'PNG unexpectedly created another chat message'; END IF;
+END $$;
+-- Simulate role without admin context while bypassing SQL permissions:
+-- even a grant must not expose another staff media ticket.
+SET test.admin='no';
+DO $$
+BEGIN
+ BEGIN
+  PERFORM public.taphoa_staff_order_image_ticket(
+   'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+   'aaaa0006-0000-4000-8000-000000000006');
+  RAISE EXCEPTION 'non-admin obtained staff PNG ticket';
+ EXCEPTION WHEN insufficient_privilege THEN
+  IF SQLERRM IS DISTINCT FROM 'staff_image_admin_only' THEN RAISE; END IF;
+ END;
+END $$;
+\echo 'PASS STAFF-IMAGE-015: exact command, staff target, strict storage, no extra message, idempotency, ACL'
