@@ -1,0 +1,12 @@
+# ORDER-IMAGE-016 — one image to selected customer and gd me yeu
+
+User clarification (15/11/2026): **Tạo đơn / sửa đơn → khách đã chọn + gd me yeu; chỉ gửi phiếu ảnh, không kèm bubble chữ**. Deliver promotions use same rule. For unselected customer, only gd me yeu. No-op edits never notify.
+
+- Database migration `supabase/migrations/20261115163000_order_notification_image_only_both_recipients.sql` adds ONE narrow BEFORE INSERT trigger on `v21_messages` affecting only canonical auto order events `taphoa:<UUID>:(order|order-edit|deliver|staff-order)` from a valid admin. `body=''` allows the pre-existing Zalo text outbox trigger to skip and Chat to render the media-only message after upload. No global Chat body changes: manual messages, finance receipts, product advice remain unchanged.
+- The existing customer ticket is preserved with all checks and extended to find the blank message by **exact command_log ID → order ID**, not by text or nearest timestamp alone.
+- `taphoa_save_order` now also adds image-only envelopes for selected customers for newly created/edited **pending** orders with real changes, using the same existing `chat_outbound_allowed` gate. Delivered events stay within original rules. No customer selected → no customer notification. A customer who disabled automatic notices is not overridden.
+- `src/fixed-production-bridge.js` uses the existing Canvas2D portrait renderer and same media upload for a selected pending customer and staff; delivered customer image remains unchanged. Up to one PNG per qualifying recipient per command, tied to exact existing message.
+- Image failure: no misleading “sent image” claim; no text fallback should be broadcast, no order resubmission. Retain committed order and return flags `image_attached` / `staff_image_attached` for visibility.
+- Existing text + image messages created *before* migration remain untouched (no delete/backfill); only future committed orders use the image-only envelope.
+- E0 this spec. E1 repository contract + disposable PostgreSQL tests required; E2 production migration status independent of frontend Pages release; E3 CI and Pages exact SHA; E4 validate actual customer and staff media assets and outbound Zalo *media* state after naturally occurring order, with no real test send; E5 no extra cron/new route/no access broadening.
+- Rollback: forward remove this narrow trigger, revert ticket lookup and pending hook via audited forward migration, revert frontend; preserve existing media and customer preferences.
