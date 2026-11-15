@@ -29,7 +29,7 @@ Giữ toàn bộ tiền/giá/vốn/thu nợ, phân quyền khách, order ID/line
 ## Acceptance E0–E5
 - E0: metadata live + spec này.
 - E1: migration source/contract tests và GitHub CI. Chưa là hành vi production.
-- E2: SQL migration cần chạy trên DB thử nghiệm tách biệt và kiểm ACL, idempotent, no-op, không ảnh hưởng save_order; chưa được khẳng định cho tới khi có bằng chứng.
+- E2: có test thực thi migration nguyên văn trên PostgreSQL 17 tách biệt tại `tests/sql/staff-order-notice-014-isolated.sql` (không thông tin thật). Kiểm: khách lẻ, khách đã chọn, sửa có/không thay đổi, retry, chuyển đơn giao, tài khoản nhận khoá, quyền `authenticated` và ngữ cảnh admin giả. PASS chỉ khi GitHub Actions báo thành công trên commit tương ứng.
 - E3: GitHub source commit không tự áp dụng migration; phải qua rollout DB được duyệt riêng, không dùng Pages deployment để thay thế.
 - E4: chưa có tin thật kiểm chứng Chat/Zalo; sau rollout quan sát tự nhiên, không gửi test khách.
 - E5: resource impact mỗi lệnh admin có thay đổi tối đa 1 message Chat thêm cho đúng một staff target (Zalo relay có sẵn), không cron/poller mới. Nếu target không hợp lệ helper trả null. Rollback bằng forward migration gỡ đúng hai lời gọi STAFF-ORDER-014 và helper sau kiểm tra; không xoá message lịch sử.

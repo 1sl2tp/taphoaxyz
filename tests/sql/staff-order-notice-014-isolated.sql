@@ -282,4 +282,19 @@ BEGIN
  IF (SELECT count(*) FROM public.v21_messages)<>4 THEN
   RAISE EXCEPTION 'non-admin emitted staff message'; END IF;
 END $$;
+-- A privileged SQL caller with a forged non-admin application context
+-- must also be denied by the helper's own guard, not just SQL grants.
+SET test.admin='no';
+DO $
+BEGIN
+ BEGIN
+  PERFORM v21_private.taphoa_staff_order_notify(
+   '11111111-1111-4111-8111-111111111111',
+   'aaaa0011-0000-4000-8000-000000000011',
+   '{"id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}'::jsonb);
+  RAISE EXCEPTION 'forged non-admin app context reached internal staff route';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $;
+SET test.admin='yes';
 \echo 'PASS STAFF-ORDER-014: SQL compile, employee-only target, no customer leak, no-op, edit, retry, delivery, lock, ACL'
