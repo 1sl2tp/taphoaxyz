@@ -19,3 +19,12 @@
 **E0** spec. **E1** contract + SQL PostgreSQL disposable tests. **E2** migration mới chưa tự chạy khi cập nhật GitHub; cần phê duyệt rollout DB riêng. **E3** GitHub Actions/Pages chứng minh code live chứ không chứng minh media gửi. **E4** kiểm chứng 1 đơn phát sinh *tự nhiên* sau rollout, bảng v21_media_assets và zalo_message_links. **E5** mỗi đơn admin tối đa 1 PNG upload staff cộng đường ảnh KH hợp lệ có sẵn; không poller/API renderer khác.
 
 Rollback: revert client commit, forward DROP hai RPC staff-image-015; không xóa lịch sử đơn/tin/ảnh đã gửi.
+
+## STAFF-MEDIA-018 · 15/11/2026 · correction
+
+Evidence from DG361 (C Hoa Mễ, delivered 15:20:41; 24.275; 25 units):
+- Staff message `taphoa:6744a79f-938d-41c5-88b7-232b98b377da:staff-order` existed but was blank, no image. Ticket existed since 15:20:42, `attached_at` null, Storage object absent.
+- Source of failure: `storage.objects` RLS allowed `can_upload_taphoa_order_notice`, which required a selected customer, but never allowed staff message with fixed peer. The generic Chat policy required a separate active Chat session not available in the TAPHOA admin app.
+- New narrowly scoped Storage INSERT policy checks only a valid staff ticket, exact sender auth, exact peer, delivered order, committed command, blank message, TTL, no existing image. Customer and manual policies stay unchanged. No migration sends or replays orders.
+- One manually sent PNG in the employee chat at 15:22:39 already has Zalo `media:sent`. Its visible content is not independently verified; **never blindly resend DG361** without confirming this media is the same order.
+- E0 diagnosis; E1 test `tests/staff-order-storage-018.test.js` plus disposable PostgreSQL; E2 post-migration inspect policy; E3 pipeline; E4 real image of a newly delivered order required; E5 no new shared storage access.

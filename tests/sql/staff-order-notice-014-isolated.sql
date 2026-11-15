@@ -643,3 +643,68 @@ BEGIN
  THEN RAISE EXCEPTION 'PENDING STAFF HELPER WAS NOT SUPPRESSED'; END IF;
 END $$;
 \echo 'PASS ORDER-NOTIFY-017: pending create/edit silent to both; delivered still sends'
+
+
+-- STAFF-MEDIA-018: test the missing production Storage permission on a fully
+-- disposable PostgreSQL schema, never on real customer messages or files.
+CREATE SCHEMA IF NOT EXISTS v21_storage_private;
+ALTER TABLE public.v21_accounts ADD COLUMN IF NOT EXISTS auth_user_id uuid;
+UPDATE public.v21_accounts
+SET auth_user_id='77777777-7777-4777-8777-777777777777'::uuid
+WHERE id='11111111-1111-4111-8111-111111111111'::uuid;
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+\i supabase/migrations/20261115173500_staff_order_png_storage_permission.sql
+SET test.admin='yes';
+SET test.auth.uid='77777777-7777-4777-8777-777777777777';
+
+SELECT public.taphoa_staff_order_image_ticket(
+ 'ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid,
+ 'aaaa0021-0000-4000-8000-000000000021'::uuid
+);
+DO $$
+DECLARE key text;
+BEGIN
+ SELECT u.storage_key INTO key
+ FROM v21_private.taphoa_order_notice_image_uploads u
+ JOIN public.v21_messages m ON m.id=u.message_id
+ WHERE m.client_id='taphoa:aaaa0021-0000-4000-8000-000000000021:staff-order';
+ IF key IS NULL OR NOT v21_storage_private.can_upload_taphoa_staff_order_notice(key) THEN
+  RAISE EXCEPTION 'staff PNG upload still rejected by storage RLS';
+ END IF;
+ IF v21_storage_private.can_upload_taphoa_staff_order_notice(
+   '11111111-1111-4111-8111-111111111111/other-conversation/random') THEN
+  RAISE EXCEPTION 'arbitrary storage object allowed';
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_policies WHERE schemaname='storage'
+  AND tablename='objects' AND policyname='v21_taphoa_staff_order_png_upload'
+  AND cmd='INSERT' AND 'authenticated'=ANY(roles)) THEN
+  RAISE EXCEPTION 'authenticated image upload policy missing';
+ END IF;
+END $$;
+SET test.auth.uid='66666666-6666-4666-8666-666666666666';
+DO $$
+DECLARE key text;
+BEGIN
+ SELECT u.storage_key INTO key FROM v21_private.taphoa_order_notice_image_uploads u
+ JOIN public.v21_messages m ON m.id=u.message_id
+ WHERE m.client_id='taphoa:aaaa0021-0000-4000-8000-000000000021:staff-order';
+ IF v21_storage_private.can_upload_taphoa_staff_order_notice(key) THEN
+  RAISE EXCEPTION 'wrong authenticated owner may upload employee image';
+ END IF;
+END $$;
+SET test.auth.uid='77777777-7777-4777-8777-777777777777';
+UPDATE public.v21_accounts SET locked_at=now()
+WHERE id='57fc1306-7030-4955-b174-afffeee2c3d2'::uuid;
+DO $$
+DECLARE key text;
+BEGIN
+ SELECT u.storage_key INTO key FROM v21_private.taphoa_order_notice_image_uploads u
+ JOIN public.v21_messages m ON m.id=u.message_id
+ WHERE m.client_id='taphoa:aaaa0021-0000-4000-8000-000000000021:staff-order';
+ IF v21_storage_private.can_upload_taphoa_staff_order_notice(key) THEN
+  RAISE EXCEPTION 'locked staff recipient still allowed upload';
+ END IF;
+END $$;
+UPDATE public.v21_accounts SET locked_at=NULL
+WHERE id='57fc1306-7030-4955-b174-afffeee2c3d2'::uuid;
+\echo 'PASS STAFF-MEDIA-018: ticket-bound staff Storage INSERT; no cross-owner or inactive peer'

@@ -19,6 +19,7 @@ on:
       - "tests/sql/staff-order-notice-014-isolated.sql"
       - "supabase/migrations/20261115163000_order_notification_image_only_both_recipients.sql"
       - "supabase/migrations/20261115170000_disable_pending_order_auto_notice.sql"
+      - "supabase/migrations/20261115173500_staff_order_png_storage_permission.sql"
       - "tests/sql/order-cycles-readonly-isolated-20261104.sql"
   workflow_dispatch:
 
