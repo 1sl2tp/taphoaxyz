@@ -120,3 +120,63 @@ test('UI-PORTRAIT-019: names and money are legible in a short five-column receip
   assert.equal(words.find(w=>w.value==='TIỀN').x,
     words.find(w=>w.value==='4775').x,'amount header/body must align');
 });
+
+test('UI-PORTRAIT-020: ordinary DG header is exactly two visual rows with full timestamp',()=>{
+  const rendered=[];
+  const paint={
+    font:'',textBaseline:'',textAlign:'',fillStyle:'',
+    setTransform(){},fillRect(){},
+    fillText(value,x,y){rendered.push({value:String(value),x,y,align:this.textAlign});},
+    measureText(value){
+      const px=Number(this.font.match(/(\\d+(?:\\.\\d+)?)px/)?.[1]||14);
+      return {width:Array.from(String(value)).length*px*.53};
+    }
+  };
+  const document={createElement:()=>({width:0,height:0,getContext:()=>paint})};
+  const window={};
+  vm.runInNewContext(portrait,{document,window});
+  const fullTime='15/11/2026 15:39:16';
+  const image=window.TAPHOA_ORDER_PORTRAIT.renderCanvas({
+    orderId:'DG363',customer:'Bác Thơm Lễ',time:fullTime,
+    items:[row('Sua ensua re *',50,980),row('Bat 1kg *',8,955)],
+    lineCount:2,totalQty:58,totalPriceText:'56.640'
+  },1.2);
+  const code=rendered.find(x=>x.value==='Mã đơn: DG363');
+  const time=rendered.find(x=>x.value===fullTime);
+  const customer=rendered.find(x=>x.value==='Bác Thơm Lễ');
+  assert(code&&time&&customer);
+  assert.equal(code.y,time.y,'code and timestamp should share the first header row');
+  assert(customer.y>code.y,'customer should occupy the second header row');
+  assert(customer.y<68,'avoid old third line and large header');
+  assert.equal(time.align,'right');
+  assert(image.height<520,'short two-line receipt should not waste height');
+  assert.equal(rendered.filter(x=>x.value.startsWith('Thời gian:')).length,0,
+    'date is kept but verbose label should not take another line');
+});
+
+test('UI-PORTRAIT-020: oversized metadata stacks deliberately without clipping',()=>{
+  const rendered=[];
+  const ctx={
+    font:'',textAlign:'',textBaseline:'',fillStyle:'',
+    setTransform(){},fillRect(){},
+    fillText(value,x,y){rendered.push({value:String(value),x,y});},
+    measureText(value){
+      const px=Number(this.font.match(/(\\d+(?:\\.\\d+)?)px/)?.[1]||14);
+      return {width:Array.from(String(value)).length*px*.65};
+    }
+  };
+  const window={};
+  const document={createElement:()=>({width:0,height:0,getContext:()=>ctx})};
+  vm.runInNewContext(portrait,{document,window});
+  window.TAPHOA_ORDER_PORTRAIT.renderCanvas({
+    orderId:'DG-2026-11-15-EXTENDED',time:'15/11/2026 15:39:16',
+    customer:'Chị Khách Hàng Có Tên Dài Nhiều Từ Ở Hà Nội',
+    items:[row('Sữa hộp',2,350)],lineCount:1,totalQty:2,totalPriceText:'700'
+  });
+  const meta=rendered.find(x=>x.value.startsWith('Mã đơn:'));
+  const time=rendered.find(x=>x.value==='15/11/2026 15:39:16');
+  assert(meta&&time);
+  assert(time.y>meta.y,'very long codes must not collide with the timestamp');
+  assert(rendered.some(x=>x.value.includes('Khách Hàng')),
+    'long customer names must still be visible');
+});

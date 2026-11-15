@@ -79,9 +79,12 @@
     const title=isDraft?(orderId?'Đơn tạm: '+orderId:'Đơn đang tạo'):'Mã đơn: '+(orderId||'--');
     const pageIndex=Number(options.pageIndex)||0;
     const pageCount=Math.max(1,Number(options.pageCount)||1);
-    const pageNumber=pageCount>1
-      ?`<div style="font-size:12px;color:#64748b;font-weight:750;white-space:nowrap;">Trang ${pageIndex+1}/${pageCount}</div>`
-      :'';
+    // UI-PORTRAIT-020: code + complete timestamp share the first line;
+    // customer is the second line. Only long metadata wraps by necessity.
+    const metaTitle=title+(pageCount>1?` · Trang ${pageIndex+1}/${pageCount}`:'');
+    const metaTime=String(options.time||'--');
+    const metaStacked=textWidth(metaTitle,`800 14px ${fontFamily}`)
+      +textWidth(metaTime,`700 13px ${fontFamily}`)+12>contentWidth;
     const summary=isLast?`
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:18px 22px 21px;border-top:1px solid #dfe7ef;background:#f7fbf8;">
         <div style="min-width:0;">
@@ -106,13 +109,12 @@
     const page=document.createElement('div');
     page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:#1f2937;font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;`;
     page.innerHTML=`
-      <div style="padding:22px 22px 20px;background:#f5f9fc;border-bottom:1px solid #dfe7ef;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-          <div style="font-size:14px;color:#64748b;font-weight:800;line-height:1.4;">${escapeHtml(title)}</div>
-          ${pageNumber}
+      <div style="padding:18px 22px 17px;background:#f5f9fc;border-bottom:1px solid #dfe7ef;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:0 12px;flex-wrap:${metaStacked?'wrap':'nowrap'};line-height:20px;">
+          <div style="min-width:0;flex:${metaStacked?'1 1 100%':'0 1 auto'};font-size:14px;color:#53677d;font-weight:800;overflow-wrap:break-word;">${escapeHtml(metaTitle)}</div>
+          <div style="min-width:0;flex:${metaStacked?'1 1 100%':'0 0 auto'};font-size:13px;color:#586b82;font-weight:700;text-align:right;white-space:nowrap;">${escapeHtml(metaTime)}</div>
         </div>
-        <div style="margin-top:10px;font-size:24px;line-height:1.28;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
-        <div style="margin-top:8px;font-size:14px;line-height:1.4;color:#586b82;font-weight:600;">Thời gian: ${escapeHtml(options.time||'--')}</div>
+        <div style="margin-top:9px;font-size:24px;line-height:1.28;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
       </div>
       <div style="padding:0 22px;flex:0 0 auto;">
         <div style="${gridStyle}height:46px;border-bottom:1px solid #dfe7ef;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
@@ -197,7 +199,21 @@
     const noteStyle=font(13,550);
     const customerStyle=font(24,800);
     const customerLines=wrap(options.customer||'Khách hàng',contentWidth,customerStyle);
-    const headerHeight=90+customerLines.length*31;
+    const code=String(options.orderId||'').trim();
+    const pages=Math.max(1,Number(options.pageCount)||1);
+    const pageNo=Number(options.pageIndex)||0;
+    const metaTitle=(options.isDraft?(code?'Đơn tạm: '+code:'Đơn đang tạo')
+      :'Mã đơn: '+(code||'--'))
+      +(pages>1?' · Trang '+(pageNo+1)+'/'+pages:'');
+    const metaTime=String(options.time||'--');
+    const codeStyle=font(14,800),timeStyle=font(13,700);
+    const metaCodeLines=wrap(metaTitle,contentWidth,codeStyle);
+    const inlineTime=metaCodeLines.length===1
+      &&measure(metaTitle,codeStyle)+measure(metaTime,timeStyle)+12<=contentWidth;
+    const timeLines=inlineTime?[]:wrap(metaTime,contentWidth,timeStyle);
+    const metaRows=metaCodeLines.length+timeLines.length;
+    const nameTop=18+metaRows*20+9;
+    const headerHeight=nameTop+customerLines.length*31+16;
     const rows=items.map((item,index)=>{
       const names=wrap(item.name,columns.name,nameStyle);
       const notes=String(item.note||'').trim()?wrap(item.note,columns.name,noteStyle):[];
@@ -225,15 +241,20 @@
       ctx.font=style;ctx.fillStyle=color;ctx.textAlign=align;
       ctx.fillText(String(value??''),x,y);
     };
-    // Clearly separated document metadata instead of compressed 10-12px text.
+    // Compact two-line header. Preserve the full timestamp but don't
+    // repeat its label; long codes/time add a row instead of overlapping.
     ctx.fillStyle='#f5f9fc';ctx.fillRect(0,0,width,headerHeight);
-    const code=String(options.orderId||'').trim();
-    label(options.isDraft?(code?'Đơn tạm: '+code:'Đơn đang tạo'):'Mã đơn: '+(code||'--'),
-      margin,21,font(14,800),'#53677d');
+    metaCodeLines.forEach((part,i)=>
+      label(part,margin,18+i*20,codeStyle,'#53677d'));
+    if(inlineTime){
+      label(metaTime,width-margin,18,timeStyle,'#586b82','right');
+    }else{
+      timeLines.forEach((part,i)=>
+        label(part,width-margin,18+(metaCodeLines.length+i)*20,
+          timeStyle,'#586b82','right'));
+    }
     customerLines.forEach((part,i)=>
-      label(part,margin,49+i*31,customerStyle,'#142238'));
-    label('Thời gian: '+String(options.time||'--'),
-      margin,54+customerLines.length*31,font(14,650),'#586b82');
+      label(part,margin,nameTop+i*31,customerStyle,'#142238'));
     const xIndex=margin+indexWidth/2;
     const xName=margin+indexWidth+gap;
     const xQty=xName+columns.name+gap+columns.qty;
