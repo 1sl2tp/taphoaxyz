@@ -52,6 +52,7 @@
     .readonly{padding:0 7px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     .peer-cost{color:#334155;background:#f8fafc;font-weight:700}
     .peer-cost.pending{color:#94a3b8;font-weight:500}
+    .peer-cost.approximate{color:#9a6700;font-weight:700}
     .price-choice{cursor:pointer;transition:background .12s ease,box-shadow .12s ease,color .12s ease;position:relative}
     .price-choice:hover{background:#eff6ff}
     .price-choice.selected{background:#dbeafe!important;color:#1d4ed8;font-weight:900;box-shadow:inset 0 0 0 2px #60a5fa}
@@ -2543,9 +2544,40 @@
         if(!key)continue;
         const existing=byName.get(key);
         if(existing)existing.count++;
-        else byName.set(key,{count:1,cost:num(entry.cost)});
+        else byName.set(key,{count:1,cost:num(entry.cost),name:entry.product_name});
       }
       return byName;
+    }
+
+    // SPEC-ADMIN-PEER-COST-PREFIX-20261116 (E0):
+    // Keep exact name wins; for non-exact names accept a unique 2–3 word
+    // prefix shared by a shorter/longer name (e.g. "sua su lo" ↔ "sua su lo cam").
+    // Variants that both extend the prefix ("cam" vs "dau") do NOT match.
+    // Numeric/packaging variants cannot be inferred from a shortened name.
+    function peerNameTokens(value){
+      return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[đĐ]/g,'d').toLocaleLowerCase('vi')
+        .replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/).filter(Boolean);
+    }
+    function peerNamePrefixMatch(left,right){
+      const a=peerNameTokens(left),b=peerNameTokens(right);
+      if(a.length<2||b.length<2)return false;
+      // Any number may encode volume/weight/pack count. Do not approximate.
+      if(a.some(x=>/\d/.test(x))||b.some(x=>/\d/.test(x)))return false;
+      const short=Math.min(a.length,b.length);
+      const common=a.findIndex((x,i)=>i>=b.length||x!==b[i]);
+      const shared=common<0?Math.min(a.length,b.length):common;
+      return shared>=Math.min(short,3)&&shared===short;
+    }
+    function peerCostMatch(name,index,peers,source){
+      const exact=index.get(crossSourceName(name));
+      if(exact)return exact.count===1
+        ?{kind:'exact',cost:exact.cost,name:exact.name||name}
+        :{kind:'ambiguous'};
+      const candidates=peers.filter(item=>item.source_key===source
+        &&peerNamePrefixMatch(name,item.product_name));
+      if(candidates.length!==1)return {kind:candidates.length?'ambiguous':'missing'};
+      return {kind:'approximate',cost:num(candidates[0].cost),name:String(candidates[0].product_name||'')};
     }
 
     // Read the whole matching peer-source result, not just its first 100
@@ -2579,7 +2611,9 @@
         &&items===displayedItems;
       const cells=()=>[...$('productBody').querySelectorAll('tr[data-code]')];
       try{
-        const peers=await fetchPeerCostProducts(otherSource,query,active);
+        // Use an unfiltered peer catalog: a full search string can omit shorter
+        // counterparts (e.g. "sua su lo cam" would exclude "sua su lo").
+        const peers=await fetchPeerCostProducts(otherSource,'',active);
         if(!active()||!peers)return;
         const index=uniquePeerCostIndex(peers,otherSource);
         const ownNames=new Map();
@@ -2592,14 +2626,19 @@
           const cell=row.querySelector('[data-col="peer_cost"]');
           if(!item||!cell||row.dataset.code!==item.product_code)continue;
           const key=crossSourceName(item.product_name);
-          const match=index.get(key);
-          const duplicate=Boolean(key&&(ownNames.get(key)>1||match?.count>1));
-          const cost=duplicate?null:match?.cost;
-          cell.textContent=cost!==null&&cost!==undefined&&cost>0?pretty(cost):'—';
-          cell.title=duplicate?'Có tên trùng nhiều lần · không tự chọn giá vốn'
-            :!match?'Không có tên trùng chính xác ở nguồn đối chiếu'
-            :cost===null||cost<=0?'Nguồn đối chiếu chưa có giá vốn hợp lệ'
-            :'Giá vốn '+(otherSource==='sua'?'Sữa':'Hàng thường')+' · chỉ đọc';
+          const duplicate=Boolean(key&&ownNames.get(key)>1);
+          const match=duplicate?{kind:'ambiguous'}:peerCostMatch(item.product_name,index,peers,otherSource);
+          const cost=match.cost;
+          const usable=cost!==null&&cost!==undefined&&cost>0;
+          const approximate=usable&&match.kind==='approximate';
+          cell.textContent=usable?(approximate?'≈ ':'')+pretty(cost):'—';
+          cell.title=match.kind==='ambiguous'?'Nhiều tên có thể trùng · không tự chọn giá vốn'
+            :match.kind==='missing'?'Không có tên trùng hoặc tiền tố chung đủ rõ ràng'
+            :!usable?'Nguồn đối chiếu chưa có giá vốn hợp lệ'
+            :'Giá vốn '+(otherSource==='sua'?'Sữa':'Hàng thường')+
+              (approximate?' · gần giống: '+match.name+' · kiểm tra trước khi áp dụng'
+                :' · trùng tên chính xác')+' · chỉ đọc';
+          cell.classList.toggle('approximate',approximate);
           cell.classList.remove('pending');
         }
       }catch(error){
