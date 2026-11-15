@@ -179,7 +179,10 @@ BEGIN
  -- No customer mini-app link or PIN is shared to staff. Keep the message
  -- bounded for the existing Chat/Zalo relay; the footer always has total.
  IF char_length(v_body)>4400 THEN
-   v_body:=left(v_body,4200)||E'\n'||'[Nội dung dài; xem đơn trong TAPHOA]';
+   -- Preserve the total footer even when line descriptions are shortened.
+   v_body:=left(v_body,3900)||E'\n'||'[Còn chi tiết khác trong TAPHOA]'
+     ||E'\n'||'Tổng đơn: '
+     ||public.taphoa_chat_money(coalesce(nullif(p_order->>'tongTien','')::numeric,0));
  END IF;
 
  -- Same active-conversation rule as customer helper; never create a group.

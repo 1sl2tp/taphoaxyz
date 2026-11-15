@@ -11,7 +11,7 @@ test('employee mirror is pinned to exactly one verified personal Chat contact',(
  assert.doesNotMatch(sql,/zalo_id\s*=/i);
  assert.match(sql,/staff_order_notice_admin_only/);
  assert.match(sql,/v_ctx->>'taphoa_role' IS DISTINCT FROM 'admin'/);
- assert.match(sql,/v_ctx->>'account_id' IS DISTINCT FROM p_sender_account_id::text/);
+ assert.match(sql,/nullif\(v_ctx->>'account_id',''\) IS DISTINCT FROM p_sender_account_id::text/);
  assert.match(sql,/REVOKE ALL ON FUNCTION v21_private\.taphoa_staff_order_notify\(/);
  assert.match(sql,/FROM PUBLIC, anon, authenticated/);
 });
@@ -41,6 +41,7 @@ test('staff notice does not leak customer private links and includes actionable 
  assert.match(sql,/public\.taphoa_chat_qty\(v_qty\)/);
  assert.match(sql,/public\.taphoa_chat_money\(v_qty\*v_unit_price\)/);
  assert.match(sql,/v_total_count>18/);
+ assert.match(sql,/Preserve the total footer even when line descriptions are shortened/);
  assert.match(sql,/No customer mini-app link or PIN/);
  assert.doesNotMatch(sql,/taphoa_customer_mini_link\(/);
  assert.doesNotMatch(sql,/service_role|authorization: bearer|http[s]?:\/\//i);
