@@ -418,6 +418,12 @@ BEGIN
  THEN RAISE EXCEPTION 'staff duplicate image or ticket'; END IF;
  IF (SELECT count(*) FROM public.v21_messages)<>4
  THEN RAISE EXCEPTION 'PNG unexpectedly created another chat message'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.v21_messages
+   WHERE client_id='taphoa:aaaa0006-0000-4000-8000-000000000006:staff-order'
+     AND body LIKE '📋 PHIẾU ĐƠN%'
+     AND body LIKE '%DG601%' AND body LIKE '%Khách được chọn%'
+     AND body LIKE '%Tổng đơn:%') THEN
+   RAISE EXCEPTION 'staff picture caption not compacted after attach'; END IF;
 END $$;
 -- Simulate role without admin context while bypassing SQL permissions:
 -- even a grant must not expose another staff media ticket.
