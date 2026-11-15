@@ -16,3 +16,11 @@ User clarification (15/11/2026): **Tạo đơn / sửa đơn → khách đã ch�
 The user explicitly corrected the previous interpretation: **“đơn tạm không gửi gì cả”**. This supersedes the draft-notification section above. Final automatic matrix: pending created/edited => **NO** Chat/Zalo notice to customer OR staff; delivered created, promoted or meaningfully edited => image-only to permitted selected customer and pinned staff. Walk-in delivered => staff only. Existing unrelated manual explicit share remains a separate opt-in user action, not an automatic order notification.
 
 The forward migration `supabase/migrations/20261115170000_disable_pending_order_auto_notice.sql` removes the pending customer branch, gates the staff hook by delivered state and adds a defense-in-depth pending check in the helper. The frontend does not request auto PNG for pending. No backfill, delete or historical message changes.
+
+### ORDER-NOTIFY-017 deployed — 15/11/2026
+
+- User correction: **đơn tạm không tự gửi**. Only delivered create, delivery transition and delivered edits produce image notices (selected, opted-in customer + gd me yeu).
+- Source `src/fixed-production-bridge.js` no longer uploads automatic PNG for pending; frontend entry version `order-image=20261115-017`, service worker cache v41.
+- Production migration `disable_pending_order_auto_notice_20261115` applied successfully, logged in Supabase migration history. Read-only verification: pending customer hook absent, staff save guard requires `v_status='delivered'`, staff helper rejects statuses other than done/delivered, existing customer delivered and standalone delivery paths retained, image-only trigger still active and staff account valid.
+- Isolated PostgreSQL regression PASS (run `43693635542`) for pending create/edit silent and delivered notifications. GitHub application CI + publish PASS on final release SHA `7ab794e` (runs `43693879055`, `43693879127`).
+- Do **not** backfill or delete older messages. E4 media delivery on a naturally occurring future delivered order still requires provider observation. No real test messages sent.
