@@ -8,6 +8,22 @@
   const escapeHtml=value=>String(value??'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  // UI-PORTRAIT-021: One consistent header identity in captured HTML and Canvas PNG.
+  // Keep the full date and clock, but use compact separate labels rather
+  // than putting two long phrases above the customer's name.
+  const HEADER_META_WIDTH=154;
+  const HEADER_GAP=14;
+  const HEADER_NAME_WIDTH=WIDTH-44-HEADER_META_WIDTH-HEADER_GAP;
+  const headerPalette=isDraft=>isDraft
+    ?{background:'#fff5e9',accent:'#d28b44',code:'#925b20'}
+    :{background:'#eaf3fc',accent:'#3b7cba',code:'#285e91'};
+  function splitReceiptTimestamp(value){
+    const raw=String(value??'').trim()||'--';
+    const date=raw.match(/\b\d{1,2}\/\d{1,2}\/\d{4}\b/);
+    const clock=raw.match(/\b\d{1,2}:\d{2}(?::\d{2})?\b/);
+    if(date&&clock)return {clock:clock[0],date:date[0]};
+    return {clock:raw,date:''};
+  }
   function createPage(options={}){
     const items=Array.isArray(options.items)?options.items:[];
     const fontFamily='"Be Vietnam Pro",-apple-system,BlinkMacSystemFont,Arial,sans-serif';
@@ -79,12 +95,13 @@
     const title=isDraft?(orderId?'Đơn tạm: '+orderId:'Đơn đang tạo'):'Mã đơn: '+(orderId||'--');
     const pageIndex=Number(options.pageIndex)||0;
     const pageCount=Math.max(1,Number(options.pageCount)||1);
-    // UI-PORTRAIT-020: code + complete timestamp share the first line;
-    // customer is the second line. Only long metadata wraps by necessity.
-    const metaTitle=title+(pageCount>1?` · Trang ${pageIndex+1}/${pageCount}`:'');
-    const metaTime=String(options.time||'--');
-    const metaStacked=textWidth(metaTitle,`800 14px ${fontFamily}`)
-      +textWidth(metaTime,`700 13px ${fontFamily}`)+12>contentWidth;
+    // UI-PORTRAIT-021: customer on the left; code and full timestamp
+    // in a separate right-hand card. All pages follow the same layout.
+    const palette=headerPalette(isDraft);
+    const stamp=splitReceiptTimestamp(options.time);
+    const metaLabel=isDraft?'ĐƠN TẠM':'MÃ ĐƠN';
+    const pageMarker=pageCount>1?`Trang ${pageIndex+1}/${pageCount}`:'';
+    const metaCode=orderId||'--';
     const summary=isLast?`
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:18px 22px 21px;border-top:1px solid #dfe7ef;background:#f7fbf8;">
         <div style="min-width:0;">
@@ -109,12 +126,18 @@
     const page=document.createElement('div');
     page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:#1f2937;font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;`;
     page.innerHTML=`
-      <div style="padding:18px 22px 17px;background:#f5f9fc;border-bottom:1px solid #dfe7ef;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:0 12px;flex-wrap:${metaStacked?'wrap':'nowrap'};line-height:20px;">
-          <div style="min-width:0;flex:${metaStacked?'1 1 100%':'0 1 auto'};font-size:14px;color:#53677d;font-weight:800;overflow-wrap:break-word;">${escapeHtml(metaTitle)}</div>
-          <div style="min-width:0;flex:${metaStacked?'1 1 100%':'0 0 auto'};font-size:13px;color:#586b82;font-weight:700;text-align:right;white-space:nowrap;">${escapeHtml(metaTime)}</div>
+      <div style="box-sizing:border-box;min-height:116px;padding:12px 22px;display:grid;grid-template-columns:minmax(0,1fr) ${HEADER_META_WIDTH}px;gap:${HEADER_GAP}px;align-items:stretch;background:${palette.background};box-shadow:inset 4px 0 0 ${palette.accent};border-bottom:1px solid #dbe6f1;">
+        <div style="min-width:0;padding:7px 0 5px;align-self:start;">
+          <div style="font-size:11px;line-height:1.3;letter-spacing:.065em;color:#607890;font-weight:800;">KHÁCH HÀNG</div>
+          <div style="margin-top:8px;font-size:22px;line-height:1.24;letter-spacing:-.02em;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
         </div>
-        <div style="margin-top:9px;font-size:24px;line-height:1.28;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
+        <div style="min-width:0;box-sizing:border-box;background:#fff;border:1px solid #dbe6f1;border-radius:13px;padding:10px 12px 11px;align-self:stretch;text-align:right;">
+          <div style="font-size:10.5px;line-height:1.2;letter-spacing:.05em;color:#718397;font-weight:800;">${metaLabel}</div>
+          <div style="margin-top:4px;font-size:18px;line-height:1.2;font-weight:800;color:${palette.code};overflow-wrap:anywhere;">${escapeHtml(metaCode)}</div>
+          <div style="margin-top:6px;font-size:12px;line-height:1.3;font-weight:750;color:#415c75;overflow-wrap:anywhere;">${escapeHtml(stamp.clock)}</div>
+          ${stamp.date?`<div style="font-size:12px;line-height:1.3;color:#60758a;font-weight:650;">${escapeHtml(stamp.date)}</div>`:''}
+          ${pageMarker?`<div style="margin-top:5px;font-size:11px;line-height:1.3;color:#60758a;font-weight:700;">${escapeHtml(pageMarker)}</div>`:''}
+        </div>
       </div>
       <div style="padding:0 22px;flex:0 0 auto;">
         <div style="${gridStyle}height:46px;border-bottom:1px solid #dfe7ef;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
@@ -197,23 +220,31 @@
     const totalNumberStyle=font(numberSize,800);
     const nameStyle=font(columns.name<124?15:17,800);
     const noteStyle=font(13,550);
-    const customerStyle=font(24,800);
-    const customerLines=wrap(options.customer||'Khách hàng',contentWidth,customerStyle);
-    const code=String(options.orderId||'').trim();
+    const isDraft=!!options.isDraft;
+    const palette=headerPalette(isDraft);
+    const customerStyle=font(22,800);
+    const customerLines=wrap(options.customer||'Khách hàng',
+      HEADER_NAME_WIDTH,customerStyle);
+    const code=String(options.orderId||'').trim()||'--';
     const pages=Math.max(1,Number(options.pageCount)||1);
     const pageNo=Number(options.pageIndex)||0;
-    const metaTitle=(options.isDraft?(code?'Đơn tạm: '+code:'Đơn đang tạo')
-      :'Mã đơn: '+(code||'--'))
-      +(pages>1?' · Trang '+(pageNo+1)+'/'+pages:'');
-    const metaTime=String(options.time||'--');
-    const codeStyle=font(14,800),timeStyle=font(13,700);
-    const metaCodeLines=wrap(metaTitle,contentWidth,codeStyle);
-    const inlineTime=metaCodeLines.length===1
-      &&measure(metaTitle,codeStyle)+measure(metaTime,timeStyle)+12<=contentWidth;
-    const timeLines=inlineTime?[]:wrap(metaTime,contentWidth,timeStyle);
-    const metaRows=metaCodeLines.length+timeLines.length;
-    const nameTop=18+metaRows*20+9;
-    const headerHeight=nameTop+customerLines.length*31+16;
+    const stamp=splitReceiptTimestamp(options.time);
+    const metaLabel=isDraft?'ĐƠN TẠM':'MÃ ĐƠN';
+    const metaWidth=HEADER_META_WIDTH-24;
+    const codeStyle=font(18,800),timeStyle=font(12,750);
+    const dateStyle=font(12,650),pageStyle=font(11,700);
+    const codeLines=wrap(code,metaWidth,codeStyle);
+    const timeLines=wrap(stamp.clock,metaWidth,timeStyle);
+    const dateLines=stamp.date?wrap(stamp.date,metaWidth,dateStyle):[];
+    const pageLines=pages>1
+      ?wrap('Trang '+(pageNo+1)+'/'+pages,metaWidth,pageStyle):[];
+    const codeY=35;
+    const clockY=codeY+codeLines.length*22+3;
+    const dateY=clockY+timeLines.length*17;
+    const pageY=dateY+dateLines.length*17;
+    const cardBottom=pageY+pageLines.length*17+12;
+    const headerHeight=Math.max(116,cardBottom+10,
+      42+customerLines.length*28+16);
     const rows=items.map((item,index)=>{
       const names=wrap(item.name,columns.name,nameStyle);
       const notes=String(item.note||'').trim()?wrap(item.note,columns.name,noteStyle):[];
@@ -241,20 +272,26 @@
       ctx.font=style;ctx.fillStyle=color;ctx.textAlign=align;
       ctx.fillText(String(value??''),x,y);
     };
-    // Compact two-line header. Preserve the full timestamp but don't
-    // repeat its label; long codes/time add a row instead of overlapping.
-    ctx.fillStyle='#f5f9fc';ctx.fillRect(0,0,width,headerHeight);
-    metaCodeLines.forEach((part,i)=>
-      label(part,margin,18+i*20,codeStyle,'#53677d'));
-    if(inlineTime){
-      label(metaTime,width-margin,18,timeStyle,'#586b82','right');
-    }else{
-      timeLines.forEach((part,i)=>
-        label(part,width-margin,18+(metaCodeLines.length+i)*20,
-          timeStyle,'#586b82','right'));
-    }
+    // UI-PORTRAIT-021: two fixed horizontal zones, same content as HTML.
+    // No overlay for a long customer name or unusually long order code.
+    ctx.fillStyle=palette.background;ctx.fillRect(0,0,width,headerHeight);
+    ctx.fillStyle=palette.accent;ctx.fillRect(0,0,4,headerHeight);
+    const cardX=width-margin-HEADER_META_WIDTH;
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(cardX,10,HEADER_META_WIDTH,headerHeight-20);
+    label('KHÁCH HÀNG',margin,18,font(11,800),'#607890');
     customerLines.forEach((part,i)=>
-      label(part,margin,nameTop+i*31,customerStyle,'#142238'));
+      label(part,margin,42+i*28,customerStyle,'#142238'));
+    const metaRight=width-margin-12;
+    label(metaLabel,metaRight,19,font(11,800),'#718397','right');
+    codeLines.forEach((part,i)=>
+      label(part,metaRight,codeY+i*22,codeStyle,palette.code,'right'));
+    timeLines.forEach((part,i)=>
+      label(part,metaRight,clockY+i*17,timeStyle,'#415c75','right'));
+    dateLines.forEach((part,i)=>
+      label(part,metaRight,dateY+i*17,dateStyle,'#60758a','right'));
+    pageLines.forEach((part,i)=>
+      label(part,metaRight,pageY+i*17,pageStyle,'#60758a','right'));
     const xIndex=margin+indexWidth/2;
     const xName=margin+indexWidth+gap;
     const xQty=xName+columns.name+gap+columns.qty;
