@@ -23,3 +23,10 @@ test('non-draft customer opt-in, staff recipient and image-only flow are preserv
  assert(bridge.includes('staffCommandId:result.staff_notice_command_id'));
  assert(!/DROP\s+TABLE|DELETE\s+FROM\s+public\.v21_messages/i.test(sql));
 });
+
+test('mobile/PWA picks up the delivered-only notification code',()=>{
+ const html=readFileSync('index.html','utf8');
+ const sw=readFileSync('sw.js','utf8');
+ assert(html.includes('order-image=20261115-017'));
+ assert(sw.includes('taphoa-runtime-v41'));
+});
