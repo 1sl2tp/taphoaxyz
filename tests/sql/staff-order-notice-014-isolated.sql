@@ -441,6 +441,7 @@ BEGIN
 END $$;
 \echo 'PASS STAFF-IMAGE-015: exact command, staff target, strict storage, no extra message, idempotency, ACL'
 
+SET test.admin='yes';
 -- ORDER-IMAGE-016: exercise the NEW migration in the same disposable PG 17.
 -- This minimal customer ticket has the same legacy message lookup anchors as
 -- the production helper; all test IDs are fake, no outbound provider exists.

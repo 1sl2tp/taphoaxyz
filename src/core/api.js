@@ -1,5 +1,5 @@
 import {createSupabaseGateway} from './supabase.js';
-import {createBusinessService} from './business.js?v=order-cycle-readonly-20261104';
+import {createBusinessService} from './business.js?v=order-image-016';
 
 export function createApi({clientProvider}={}) {
   const gateway=createSupabaseGateway({clientProvider});
