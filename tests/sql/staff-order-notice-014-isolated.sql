@@ -1,8 +1,15 @@
 -- STAFF-ORDER-014: executable contract against a throwaway Postgres 17 database.
 -- No production data, no real messaging/Zalo, no network. Run only via isolated CI.
 \set ON_ERROR_STOP on
-CREATE ROLE anon NOLOGIN;
-CREATE ROLE authenticated NOLOGIN;
+DO $roles$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+   CREATE ROLE anon NOLOGIN;
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+   CREATE ROLE authenticated NOLOGIN;
+ END IF;
+END $roles$;
 CREATE SCHEMA v21_private;
 
 CREATE TABLE public.v21_accounts (
@@ -56,7 +63,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.taphoa_chat_qty(n numeric) RETURNS text
 LANGUAGE sql IMMUTABLE AS $$ SELECT n::text $$;
 CREATE OR REPLACE FUNCTION public.taphoa_chat_money(n numeric) RETURNS text
-LANGUAGE sql IMMUTABLE AS $$ SELECT to_char(coalesce(n,0),'FM999G999G990')||'đ' $$;
+LANGUAGE sql IMMUTABLE AS $$ SELECT replace(to_char(coalesce(n,0),'FM999G999G990'),',','.')||'đ' $$;
 CREATE OR REPLACE FUNCTION public.taphoa_chat_order_diff(a jsonb,b jsonb,n integer)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
  SELECT CASE WHEN a->'items' IS DISTINCT FROM b->'items' THEN 'Đổi mặt hàng hoặc SL' ELSE '' END
