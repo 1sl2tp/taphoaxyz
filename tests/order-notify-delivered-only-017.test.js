@@ -28,5 +28,5 @@ test('mobile/PWA picks up the delivered-only notification code',()=>{
  const html=readFileSync('index.html','utf8');
  const sw=readFileSync('sw.js','utf8');
  assert(html.includes('order-image=20261115-017'));
- assert(sw.includes('taphoa-runtime-v41'));
+ assert(sw.includes('taphoa-runtime-v42'));
 });
