@@ -440,3 +440,122 @@ BEGIN
  END;
 END $$;
 \echo 'PASS STAFF-IMAGE-015: exact command, staff target, strict storage, no extra message, idempotency, ACL'
+
+-- ORDER-IMAGE-016: exercise the NEW migration in the same disposable PG 17.
+-- This minimal customer ticket has the same legacy message lookup anchors as
+-- the production helper; all test IDs are fake, no outbound provider exists.
+CREATE OR REPLACE FUNCTION v21_private.chat_outbound_allowed(uuid,text)
+RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT true $$;
+CREATE OR REPLACE FUNCTION public.taphoa_order_notice_image_ticket(p_order_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SET search_path TO 'public','v21_private' AS $customer_ticket$
+DECLARE
+ v_code text;
+ v_msg public.v21_messages%ROWTYPE;
+BEGIN
+ SELECT payload->>'displayCode' INTO v_code
+ FROM public.test_order_snapshots WHERE id=p_order_id;
+ SELECT m.* INTO v_msg
+ FROM public.v21_messages m
+ JOIN public.v21_conversations c ON c.id=m.conversation_id
+ WHERE m.sender_account_id='11111111-1111-4111-8111-111111111111'
+  AND (c.member_a='22222222-2222-4222-8222-222222222222'
+    OR c.member_b='22222222-2222-4222-8222-222222222222')
+  AND (m.client_id like 'taphoa:%:order' OR m.client_id like 'taphoa:%:order-edit'
+    OR m.client_id like 'taphoa:%:deliver' OR m.client_id like 'manual:order:%')
+  and (
+    position(' · '||v_code||' · ' in m.body)>0
+    or position(' · '||v_code||E'\n' in m.body)>0
+  )
+  and m.created_at>=greatest(now()-interval '90 seconds',now()-interval '20 minutes')
+  AND v21_private.chat_outbound_allowed('22222222-2222-4222-8222-222222222222',m.client_id)
+ ORDER BY m.created_at DESC LIMIT 1;
+ IF EXISTS(SELECT 1 FROM v21_private.taphoa_order_notice_image_uploads u
+   WHERE u.message_id=v_msg.id) THEN
+   RETURN jsonb_build_object('ok',false,'reason','already_ticketed');
+ END IF;
+ RETURN jsonb_build_object('ok',v_msg.id IS NOT NULL,'message_id',v_msg.id);
+END;
+$customer_ticket$;
+
+\i supabase/migrations/20261115163000_order_notification_image_only_both_recipients.sql
+
+-- New pending order with selected customer: canonical save generates one
+-- staff envelope and invokes the customer helper (mocked to audit dispatch).
+SELECT public.taphoa_save_order(jsonb_build_object(
+ 'id','dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+ 'displayCode','DT604','status','pending',
+ 'customer_id','22222222-2222-4222-8222-222222222222',
+ 'tenKH','Khách nhận tin','tongTien',44000,'note','',
+ 'items',jsonb_build_array(jsonb_build_object(
+ 'product_id','PX01','tenSP','Hàng mới','qty',4,'unit_price',11000,
+ 'line_no',1,'note',''))
+), 'aaaa0016-0000-4000-8000-000000000016'::uuid);
+DO $$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.test_customer_notices
+  WHERE command_id='taphoa:aaaa0016-0000-4000-8000-000000000016:order')
+ THEN RAISE EXCEPTION 'selected pending customer was not notified'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.v21_messages
+  WHERE client_id='taphoa:aaaa0016-0000-4000-8000-000000000016:staff-order'
+   AND body='')
+ THEN RAISE EXCEPTION 'staff notice still has text body'; END IF;
+END $$;
+-- Prove that actual customer envelopes become image-only, while finance
+-- notifications are unmodified. This stands in for the mock helper insert.
+INSERT INTO public.v21_conversations(member_a,member_b)
+VALUES ('11111111-1111-4111-8111-111111111111',
+ '22222222-2222-4222-8222-222222222222')
+ON CONFLICT(member_a,member_b) DO NOTHING;
+INSERT INTO public.v21_messages(conversation_id,sender_account_id,client_id,body)
+SELECT c.id,'11111111-1111-4111-8111-111111111111',
+ 'taphoa:aaaa0016-0000-4000-8000-000000000016:order',
+ 'Đơn tạm DT604 chi tiết 4 sản phẩm'
+FROM public.v21_conversations c
+WHERE c.member_a='11111111-1111-4111-8111-111111111111'
+ AND c.member_b='22222222-2222-4222-8222-222222222222';
+INSERT INTO public.v21_messages(conversation_id,sender_account_id,client_id,body)
+SELECT c.id,'11111111-1111-4111-8111-111111111111',
+ 'taphoa:aaaa0017-0000-4000-8000-000000000017:collection',
+ 'Đã nhận thanh toán 44.000đ'
+FROM public.v21_conversations c
+WHERE c.member_a='11111111-1111-4111-8111-111111111111'
+ AND c.member_b='22222222-2222-4222-8222-222222222222';
+DO $$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.v21_messages
+  WHERE client_id='taphoa:aaaa0016-0000-4000-8000-000000000016:order'
+   AND body='')
+ THEN RAISE EXCEPTION 'selected customer message not image-only'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.v21_messages
+  WHERE client_id='taphoa:aaaa0017-0000-4000-8000-000000000017:collection'
+   AND body='Đã nhận thanh toán 44.000đ')
+ THEN RAISE EXCEPTION 'non-order finance notification unexpectedly stripped'; END IF;
+END $$;
+SELECT (public.taphoa_order_notice_image_ticket(
+ 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+)->>'ok') as customer_png_ticket_ok \gset
+\if :customer_png_ticket_ok
+\else
+ \echo 'FAIL: blank customer order message did not match its exact command'
+ \quit 1
+\endif
+-- No-op pending edit must not create another recipient notification.
+SELECT public.taphoa_save_order(jsonb_build_object(
+ 'id','dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+ 'edit_order_id','dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+ 'displayCode','DT604','status','pending',
+ 'customer_id','22222222-2222-4222-8222-222222222222',
+ 'tenKH','Khách nhận tin','tongTien',44000,'note','',
+ 'items',jsonb_build_array(jsonb_build_object(
+ 'product_id','PX01','tenSP','Hàng mới','qty',4,'unit_price',11000,
+ 'line_no',1,'note',''))
+), 'aaaa0018-0000-4000-8000-000000000018'::uuid);
+DO $$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.test_customer_notices
+  WHERE command_id='taphoa:aaaa0018-0000-4000-8000-000000000018:order-edit')
+ OR EXISTS(SELECT 1 FROM public.v21_messages
+  WHERE client_id='taphoa:aaaa0018-0000-4000-8000-000000000018:staff-order')
+ THEN RAISE EXCEPTION 'no-op pending edit emitted notification'; END IF;
+END $$;
+\echo 'PASS ORDER-IMAGE-016: selected customer, staff, image-only, preserved finance, exact ticket, no-op'
