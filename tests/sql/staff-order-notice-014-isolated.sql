@@ -233,7 +233,7 @@ SELECT public.taphoa_save_order(jsonb_build_object(
     'product_id','P002','tenSP','Sữa hộp','qty',3,'unit_price',15000,
     'line_no',1,'note',''))
 ), 'aaaa0006-0000-4000-8000-000000000006'::uuid);
-DO $
+DO $$
 BEGIN
  IF (SELECT count(*) FROM public.v21_messages)<>4 THEN
   RAISE EXCEPTION 'customer-linked order did not also send staff copy'; END IF;
@@ -242,7 +242,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.v21_messages WHERE body LIKE '%DG601%'
     AND body LIKE '%Khách được chọn%') THEN
   RAISE EXCEPTION 'staff was not told which customer has a delivered order'; END IF;
-END $;
+END $$;
 
 -- Invalid staff account: no silent replacement, but order save remains valid.
 UPDATE public.v21_accounts SET locked_at=now()
