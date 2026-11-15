@@ -364,7 +364,7 @@ FROM (SELECT public.taphoa_staff_order_image_ticket(
 -- Capture ticket ID in session for exception branch tests.
 SET test.staff_asset_id=:'staff_asset_id';
 -- Reject storage that has not been uploaded.
-DO $
+DO $$
 BEGIN
  BEGIN
   PERFORM public.taphoa_staff_order_image_attach(
