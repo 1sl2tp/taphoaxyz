@@ -92,6 +92,7 @@ DECLARE
  v_edit_id uuid:=nullif(p_order->>'edit_order_id','')::uuid;
  v_old_order_json jsonb:=null;
  v_order_json jsonb:=p_order;
+ v_display_code text:=p_order->>'displayCode';
  v_result jsonb:=jsonb_build_object('ok',true,'order',p_order);
  v_prior jsonb;
 BEGIN
