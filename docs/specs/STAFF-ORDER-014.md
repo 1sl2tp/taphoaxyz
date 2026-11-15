@@ -33,3 +33,13 @@ Giữ toàn bộ tiền/giá/vốn/thu nợ, phân quyền khách, order ID/line
 - E3: GitHub source commit không tự áp dụng migration; phải qua rollout DB được duyệt riêng, không dùng Pages deployment để thay thế.
 - E4: chưa có tin thật kiểm chứng Chat/Zalo; sau rollout quan sát tự nhiên, không gửi test khách.
 - E5: resource impact mỗi lệnh admin có thay đổi tối đa 1 message Chat thêm cho đúng một staff target (Zalo relay có sẵn), không cron/poller mới. Nếu target không hợp lệ helper trả null. Rollback bằng forward migration gỡ đúng hai lời gọi STAFF-ORDER-014 và helper sau kiểm tra; không xoá message lịch sử.
+
+## E4 field evidence — 15/11/2026 (read-only)
+
+- Người dùng tạo **DG355** (Đã giao) lúc **14:09:11 giờ Việt Nam**; ảnh danh sách Chat lúc 14:11 vẫn hiển thị cuộc trò chuyện **gd me yeu** gần nhất 10:41. Read-only SQL xác nhận DG355 tồn tại và có command log save_order (1 lệnh), **không có** tin Chat chứa DG355.
+- Production Supabase kiểm tra cùng thời điểm: `v21_private.taphoa_staff_order_notify` absent; `taphoa_staff_order_changed` absent; các hook STAFF-ORDER-014 trong `taphoa_save_order` và `taphoa_deliver_order` đều absent. **Đây là blocker triển khai database, không phải lỗi CSS/PWA và không thể sửa bằng Pages publish.**
+- Tài khoản nhân viên vẫn active, có một Chat thread và một Zalo link. Không có staff outbound mới kể từ 10:41.
+- Đơn DG355 có customer_id, nhưng cài đặt nhận tin riêng của khách này `chat_outbound_recipients.enabled=false`; `chat_outbound_allowed(..., ':order')=false`. **Không thay đổi lựa chọn này.** Luồng nhân viên phải độc lập với lựa chọn nhận của khách.
+- Migration đã vượt kiểm thử PostgreSQL 17 tách biệt trên GitHub Actions: `43688613503`, PASS. **Không thể suy ra production đã cài**. Bước E3 DB rollout vẫn **PENDING**; E4 Chat + trạng thái outbound Zalo sau rollout vẫn **PENDING**.
+- Tránh gửi bù DG355 khi cài migration: hành vi được phép là chỉ nhận đơn **phát sinh sau khi cài**; nếu muốn bù đơn quá khứ phải có một yêu cầu riêng, chống gửi trùng và kiểm tra lại người nhận.
+- Guardrail: không tự thay đổi production DB, không deploy thủ công hoặc gửi tin thật khi chưa có quyền thay đổi DB được phê duyệt. Rollout phải áp dụng chính migration source `20261115143000_taphoa_staff_order_copy_gd_me_yeu.sql`, ghi lịch sử migration, kiểm 4 hàm/hook, sau đó quan sát đơn tự nhiên; không kích hoạt lại các lịch gửi quảng bá cũ.
