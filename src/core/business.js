@@ -42,8 +42,16 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
     debtLedger:(maKH,{beforeAt=null,beforeId=null,limit=50}={})=>gateway.rpc('taphoa_debt_ledger_page',{
       p_customer_id:String(maKH||''),p_before_at:beforeAt||null,p_before_id:beforeId??null,p_limit:Math.max(1,Math.min(100,num(limit)||50))
     }),
-    saveOrder:payload=>gateway.rpc('taphoa_save_order',{p_order:orderRpcPayload(payload),p_command_id:commandId()}),
-    deliverOrder:id=>gateway.rpc('taphoa_deliver_order',{p_order_id:String(id||''),p_command_id:commandId()}),
+    saveOrder:async payload=>{
+      const id=commandId();
+      const result=await gateway.rpc('taphoa_save_order',{p_order:orderRpcPayload(payload),p_command_id:id});
+      return {...result,staff_notice_command_id:id};
+    },
+    deliverOrder:async id=>{
+      const command=commandId();
+      const result=await gateway.rpc('taphoa_deliver_order',{p_order_id:String(id||''),p_command_id:command});
+      return {...result,staff_notice_command_id:command};
+    },
     reverseOrder:(id,reason='Hoàn đơn')=>gateway.rpc('taphoa_reverse_order',{p_order_id:String(id||''),p_reason:String(reason||'Hoàn đơn'),p_command_id:commandId()}),
     deletePending:id=>gateway.rpc('taphoa_delete_pending_order',{p_order_id:String(id||''),p_command_id:commandId()}),
     batchOrders:(action,ids)=>gateway.rpc('taphoa_batch_orders',{p_action:String(action||''),p_ids:(ids||[]).map(String),p_command_id:commandId()}),

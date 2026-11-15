@@ -655,7 +655,7 @@ function orderNoticeTotals(order,items){
     totalPrice:present(order?.tongTien)?numeric(order.tongTien):amount
   };
 }
-async function attachOrderNoticePortrait(order,{manual=false}={}){
+async function attachOrderNoticePortrait(order,{manual=false,staffCommandId=null}={}){
   // SPEC-MEDIA-UPLOAD-SESSION-20261101: an old notice must not start or
   // continue uploading/attaching images using a new account's credentials.
   const noticeOwner=captureProductionOwner();
@@ -663,17 +663,21 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
   const state=String(order?.status||order?.trangThai||'').toLowerCase();
   // Automatic images are ONLY for delivered orders (DG).
   // A draft can have an image solely after an EXPLICIT manual "Gửi đơn" click.
-  const eligible=['done','delivered'].includes(state)
+  const staff=typeof staffCommandId==='string' && /^[0-9a-f-]{36}$/i.test(staffCommandId);
+  const eligible=staff||['done','delivered'].includes(state)
     ||(manual===true&&state==='pending');
-  if(!id||!eligible||!order?.customer_id||publicAccess||employeeAccess)return false;
-  const eventKey=id+'|'+String(order?.updated_at||order?.delivered_at||'');
+  if(!id||!eligible||(!staff&&!order?.customer_id)||publicAccess||employeeAccess)return false;
+  const eventKey=id+'|'+String(order?.updated_at||order?.delivered_at||'')
+    +(staff?'|staff:'+staffCommandId:'|customer');
   if(orderImageUploadsInFlight.has(eventKey))return;
   orderImageUploadsInFlight.add(eventKey);
   let built=null;
   try{
     const client=await auth.getClient();
     if(!productionOwnerCurrent(noticeOwner))return false;
-    const {data:ticket,error:ticketError}=await client.rpc('taphoa_order_notice_image_ticket',{p_order_id:id});
+    const {data:ticket,error:ticketError}=await client.rpc(
+      staff?'taphoa_staff_order_image_ticket':'taphoa_order_notice_image_ticket',
+      staff?{p_order_id:id,p_command_id:staffCommandId}:{p_order_id:id});
     if(!productionOwnerCurrent(noticeOwner))return false;
     if(ticketError)throw ticketError;
     // No eligible sent message = no image rendering / upload / extra network.
@@ -745,16 +749,20 @@ async function attachOrderNoticePortrait(order,{manual=false}={}){
     });
     if(!productionOwnerCurrent(noticeOwner))return false;
     if(object.error)throw object.error;
-    const {data:attached,error:attachError}=await client.rpc('taphoa_order_notice_image_attach',{
+    const attachArgs={
       p_order_id:id,p_asset_id:ticket.asset_id,p_size_bytes:blob.size,
       p_width_px:pngWidth,p_height_px:pngHeight
-    });
+    };
+    if(staff)attachArgs.p_command_id=staffCommandId;
+    const {data:attached,error:attachError}=await client.rpc(
+      staff?'taphoa_staff_order_image_attach':'taphoa_order_notice_image_attach',
+      attachArgs);
     if(attachError)throw attachError;
     if(!attached?.ok)throw Error('order_image_attach_failed');
     return true;
   }catch(error){
     // Existing text + customer order link remains available on image failure.
-    console.warn('[taphoa] order notice image not attached:',String(error?.message||error));
+    console.warn('[taphoa] '+(staff?'staff':'customer')+' order notice image not attached:',String(error?.message||error));
     return false;
   }finally{
     built?.host?.remove?.();
@@ -884,10 +892,18 @@ async function saveOrder(payload){
   // cannot refresh or attach Chat media using B's newly authenticated session.
   if(!productionOwnerCurrent(mutationOwner))return result;
   const savedStatus=String(result?.order?.status||'').toLowerCase();
-  if(!publicAccess&&!employeeAccess&&['done','delivered'].includes(savedStatus)){
-    // Wait for the one already-sent notice's PNG before completing the UI flow.
-    // Failure never rolls back or replays a committed order.
-    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+  if(!publicAccess&&!employeeAccess&&result?.order){
+    // PNG of the exact committed order attaches to the EXISTING staff message.
+    // Staff receives pending and walk-in orders independent of customer opt-in.
+    if(result.staff_notice_command_id){
+      result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
+        staffCommandId:result.staff_notice_command_id
+      })===true;
+    }
+    if(['done','delivered'].includes(savedStatus)){
+      // Customer's original consent-gated ticket stays unchanged.
+      result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+    }
   }
   // F-181: A confirmed pending draft (new or edited) never changes the
   // sale ledger. The DB prevents delivered → pending downgrades. Avoid
@@ -905,7 +921,11 @@ async function deliverOrder(id){
   const result=await business.deliverOrder(id);
   if(!productionOwnerCurrent(mutationOwner))return result;
   if(['done','delivered'].includes(String(result?.order?.status||'').toLowerCase())){
-    // One transaction -> one canonical Chat text -> at most one attached PNG.
+    if(result.staff_notice_command_id){
+      result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
+        staffCommandId:result.staff_notice_command_id
+      })===true;
+    }
     result.image_attached=await attachOrderNoticePortrait(result.order)===true;
   }
   try{await refresh(['orders','debt']);}
