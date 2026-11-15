@@ -43,3 +43,12 @@ Giữ toàn bộ tiền/giá/vốn/thu nợ, phân quyền khách, order ID/line
 - Migration đã vượt kiểm thử PostgreSQL 17 tách biệt trên GitHub Actions: `43688613503`, PASS. **Không thể suy ra production đã cài**. Bước E3 DB rollout vẫn **PENDING**; E4 Chat + trạng thái outbound Zalo sau rollout vẫn **PENDING**.
 - Tránh gửi bù DG355 khi cài migration: hành vi được phép là chỉ nhận đơn **phát sinh sau khi cài**; nếu muốn bù đơn quá khứ phải có một yêu cầu riêng, chống gửi trùng và kiểm tra lại người nhận.
 - Guardrail: không tự thay đổi production DB, không deploy thủ công hoặc gửi tin thật khi chưa có quyền thay đổi DB được phê duyệt. Rollout phải áp dụng chính migration source `20261115143000_taphoa_staff_order_copy_gd_me_yeu.sql`, ghi lịch sử migration, kiểm 4 hàm/hook, sau đó quan sát đơn tự nhiên; không kích hoạt lại các lịch gửi quảng bá cũ.
+
+## E3 — Production activation (authorized 15/11/2026)
+
+- User explicitly approved applying **only STAFF-ORDER-014** to production after diagnosing missing DG355 staff notification. Applied the exact reviewed migration from `supabase/migrations/20261115143000_taphoa_staff_order_copy_gd_me_yeu.sql` through Supabase `apply_migration` (no manual business-data edits, no message backfill).
+- Supabase migration history: `20261115071858 / taphoa_staff_order_copy_gd_me_yeu`, success.
+- Read-only post-apply verification: `taphoa_staff_order_notify`, `taphoa_staff_order_changed`, `taphoa_save_order` hook, and `taphoa_deliver_order` hook **present**; `anon` and `authenticated` have **no direct EXECUTE** on the private staff helper; correct active staff Zalo link remains present.
+- Staff notice messages created by migration: **0**; DG355 retroactive staff messages: **0**. Existing customer opt-in flags left unchanged.
+- **E4 PENDING**: No naturally occurring order **after** migration has yet been observed end-to-end in the relevant Chat conversation and Zalo outbound delivery status. SQL installation success alone is not proof that the staff saw the message; check next real order without creating a synthetic transaction.
+- Rollback remains a separate approved forward migration removing only the two STAFF-ORDER-014 hooks and helper functions, without deleting message history.
