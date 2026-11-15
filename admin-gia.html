@@ -50,6 +50,8 @@
     .num-input{text-align:right;font-variant-numeric:tabular-nums}
     .w-price{width:82px;min-width:82px}.w-small{width:68px;min-width:68px}.w-qc{width:76px;min-width:76px}.w-state{width:112px;min-width:112px}
     .readonly{padding:0 7px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .peer-cost{color:#334155;background:#f8fafc;font-weight:700}
+    .peer-cost.pending{color:#94a3b8;font-weight:500}
     .price-choice{cursor:pointer;transition:background .12s ease,box-shadow .12s ease,color .12s ease;position:relative}
     .price-choice:hover{background:#eff6ff}
     .price-choice.selected{background:#dbeafe!important;color:#1d4ed8;font-weight:900;box-shadow:inset 0 0 0 2px #60a5fa}
@@ -643,6 +645,7 @@
               <tr>
                 <th data-col="name" style="text-align:left">Tên sản phẩm</th>
                 <th data-col="cost">Giá vốn</th>
+                <th data-col="peer_cost" id="peerCostHeader" title="Chỉ đọc · giá vốn nguồn còn lại khi trùng tên chính xác">Vốn đối chiếu</th>
                 <th data-col="price">Giá bán · Lãi</th>
                 <th data-col="legacy_profit">Lãi tham chiếu</th>
                 <th data-col="calculated_profit">Lãi tính</th>
@@ -950,6 +953,7 @@
     const auth=createAuthService();
     const PAGE_SIZE=100;
     let identity=null,client=null,items=[],comparisonItems=[],sources=[],total=0,offset=0,loading=false,searchTimer=0;
+    let peerCostLoadGeneration=0;
     let selectedSource='';
     let lastRenderedCatalog={offset:0,source:'',query:''};
     let pageRefreshQueued=false,pageRefreshReset=false,productEditRevision=0,catalogSessionGeneration=0;
@@ -968,6 +972,7 @@
     const COLUMN_DEFS=[
       {id:'name',label:'Tên sản phẩm',width:280,min:150},
       {id:'cost',label:'Giá vốn',width:82,min:58},
+      {id:'peer_cost',label:'Vốn đối chiếu',width:100,min:78},
       {id:'price',label:'Giá bán · Lãi',width:112,min:92},
       {id:'legacy_profit',label:'Lãi tham chiếu',width:100,min:82},
       {id:'calculated_profit',label:'Lãi tính',width:78,min:62},
@@ -986,7 +991,7 @@
       {id:'history',label:'Nhật ký',width:70,min:58},
       {id:'delete',label:'Xóa',width:48,min:42}
     ];
-    const QUICK_COLUMN_IDS=['name','cost','price','legacy_profit','units_per_carton','retail_unit','retail_price'];
+    const QUICK_COLUMN_IDS=['name','cost','peer_cost','price','legacy_profit','units_per_carton','retail_unit','retail_price'];
     const defaultColumnPrefs=()=>({
       order:COLUMN_DEFS.map(c=>c.id),
       hidden:['standard_profit_percent'],
@@ -1033,7 +1038,12 @@
         const valid=new Set(COLUMN_DEFS.map(c=>c.id));
         // SPEC-ADMIN-COLUMN-DUPLICATE-20261101: corrupted saved orders cannot move the same column twice.
         const order=Array.isArray(raw.order)?[...new Set(raw.order.filter(id=>valid.has(id)))]:[];
-        for(const id of fallback.order)if(!order.includes(id))order.push(id);
+        // Place a newly introduced comparison column next to the original
+        // cost even for administrators with an older saved custom order.
+        for(const id of fallback.order)if(!order.includes(id)){
+          if(id==='peer_cost'&&order.includes('cost'))order.splice(order.indexOf('cost')+1,0,id);
+          else order.push(id);
+        }
         // SPEC-ADMIN-COLUMN-SOURCE-USABILITY-20261101: even saved corrupt
         // preferences must never hide every editable column.
         const hidden=Array.isArray(raw.hidden)?[...new Set(raw.hidden.filter(id=>valid.has(id)))]:[];
@@ -1060,7 +1070,8 @@
         }
       }
       for(const col of COLUMN_DEFS){
-        const hidden=columnPrefs.hidden.includes(col.id);
+        const compareSourceVisible=['hang-thuong','sua'].includes(selectedSource);
+        const hidden=columnPrefs.hidden.includes(col.id)||(col.id==='peer_cost'&&!compareSourceVisible);
         const savedWidth=columnPrefs.widths[col.id]||col.width;
         const width=window.matchMedia('(max-width:540px)').matches&&col.id==='name'
           ?Math.min(savedWidth,186):savedWidth;
@@ -1154,6 +1165,7 @@
       searchTimer=0;marketSearchTimer=0;marketCandidateTimer=0;
       catalogSessionGeneration++;marketSessionGeneration++;analyticsSessionGeneration++;
       feedbackGeneration++;historyGeneration++;marketCandidateGeneration++;
+      ++peerCostLoadGeneration; // Old session may not repaint peer prices.
       if($('historyDialog').open)$('historyDialog').close();
       for(const id of ['sourceDialog','productDialog','columnDialog']){
         const dialog=$(id);if(dialog?.open)dialog.close();
@@ -2462,6 +2474,12 @@
           :[];
         renderSources();renderProducts();renderComparison();fillProductSources();$('statusText').textContent='Supabase trực tiếp';
         lastRenderedCatalog={offset,source:selectedSource,query};
+        // Extra read-only lookup is deliberately asynchronous; main price
+        // editing remains usable immediately and never waits for comparison.
+        const peerGeneration=++peerCostLoadGeneration;
+        void loadPeerCostColumn({generation:peerGeneration,sessionGeneration,
+          adminUid:identity?.uid,source:requestedSource,query,pageOffset:offset,
+          displayedItems:items});
       }catch(error){
         if(sessionGeneration!==catalogSessionGeneration)return;
         // SPEC-ADMIN-FAILED-CATALOG-ROLLBACK-20261101: keep the prior
@@ -2513,6 +2531,87 @@
         matches.set(entries[0],current.get(key)[0]);
       }
       return matches;
+    }
+
+    // SPEC-ADMIN-PEER-COST-20261116 (E0): exact NFC/case/whitespace match
+    // of Sữa ↔ Hàng thường. This column is display-only; NEVER a save basis.
+    function uniquePeerCostIndex(records,source){
+      const byName=new Map();
+      for(const entry of records){
+        if(entry.source_key!==source)continue;
+        const key=crossSourceName(entry.product_name);
+        if(!key)continue;
+        const existing=byName.get(key);
+        if(existing)existing.count++;
+        else byName.set(key,{count:1,cost:num(entry.cost)});
+      }
+      return byName;
+    }
+
+    // Read the whole matching peer-source result, not just its first 100
+    // products. An incomplete snapshot must never be presented as verified.
+    async function fetchPeerCostProducts(source,query,isCurrent){
+      const matches=[];
+      for(let page=0;page<30;page++){
+        if(!isCurrent())return null;
+        const offset=page*PAGE_SIZE;
+        const data=await rpc('taphoa_admin_price_catalog',{
+          p_query:query,p_source:source,p_limit:PAGE_SIZE,p_offset:offset
+        });
+        if(!isCurrent())return null;
+        const batch=Array.isArray(data?.items)?data.items:[];
+        const totalCount=Number(data?.total);
+        if(!Number.isFinite(totalCount)||totalCount<0)throw new Error('Thiếu tổng số sản phẩm đối chiếu');
+        matches.push(...batch);
+        if(offset+batch.length>=totalCount)return matches;
+        if(batch.length!==PAGE_SIZE)throw new Error('Danh sách đối chiếu không đầy đủ');
+      }
+      throw new Error('Quá giới hạn dữ liệu đối chiếu');
+    }
+
+    async function loadPeerCostColumn({generation,sessionGeneration,adminUid,source,query,pageOffset,displayedItems}){
+      const otherSource=source==='sua'?'hang-thuong':source==='hang-thuong'?'sua':'';
+      if(!otherSource)return;
+      const active=()=>generation===peerCostLoadGeneration
+        &&sessionGeneration===catalogSessionGeneration
+        &&identity?.uid===adminUid&&selectedSource===source
+        &&$('searchInput').value.trim()===query&&offset===pageOffset
+        &&items===displayedItems;
+      const cells=()=>[...$('productBody').querySelectorAll('tr[data-code]')];
+      try{
+        const peers=await fetchPeerCostProducts(otherSource,query,active);
+        if(!active()||!peers)return;
+        const index=uniquePeerCostIndex(peers,otherSource);
+        const ownNames=new Map();
+        for(const entry of displayedItems){
+          const key=crossSourceName(entry.product_name);
+          if(entry.source_key===source&&key)ownNames.set(key,(ownNames.get(key)||0)+1);
+        }
+        for(const row of cells()){
+          const item=displayedItems[Number(row.dataset.index)];
+          const cell=row.querySelector('[data-col="peer_cost"]');
+          if(!item||!cell||row.dataset.code!==item.product_code)continue;
+          const key=crossSourceName(item.product_name);
+          const match=index.get(key);
+          const duplicate=Boolean(key&&(ownNames.get(key)>1||match?.count>1));
+          const cost=duplicate?null:match?.cost;
+          cell.textContent=cost!==null&&cost!==undefined&&cost>0?pretty(cost):'—';
+          cell.title=duplicate?'Có tên trùng nhiều lần · không tự chọn giá vốn'
+            :!match?'Không có tên trùng chính xác ở nguồn đối chiếu'
+            :cost===null||cost<=0?'Nguồn đối chiếu chưa có giá vốn hợp lệ'
+            :'Giá vốn '+(otherSource==='sua'?'Sữa':'Hàng thường')+' · chỉ đọc';
+          cell.classList.remove('pending');
+        }
+      }catch(error){
+        if(!active())return;
+        console.error('Đối chiếu giá vốn',error);
+        for(const row of cells()){
+          const cell=row.querySelector('[data-col="peer_cost"]');
+          if(!cell)continue;
+          cell.textContent='—';cell.title='Chưa tải được giá vốn nguồn đối chiếu';
+          cell.classList.remove('pending');
+        }
+      }
     }
 
     function renderCrossSource(){
@@ -2627,6 +2726,8 @@
 
     function renderProducts(){
       $('emptyState').classList.toggle('hidden',items.length!==0);
+      $('peerCostHeader').textContent=selectedSource==='sua'?'Vốn Hàng thường'
+        :selectedSource==='hang-thuong'?'Vốn Sữa':'Vốn đối chiếu';
       $('productBody').innerHTML=items.map((item,index)=>{
         const hist=Array.isArray(item.cost_history)?item.cost_history:[];
         const stateClass=item.admin_state==='hidden'?'state-hidden':item.admin_state==='discontinued'?'state-discontinued':'state-active';
@@ -2636,6 +2737,7 @@
             <input class="cell-input num-input" data-field="cost" inputmode="decimal" value="${esc(plain(item.cost))}">
             <span class="cost-current-meta"></span>
           </td>
+          <td data-col="peer_cost" class="readonly peer-cost pending" title="Đang đối chiếu giá vốn · chỉ đọc">…</td>
           <td data-col="price" class="readonly sale-price"><button class="auto-price-btn" type="button" title="Bật lại giá tự động">AUTO</button><div class="sale-stack"><span class="sale-price-value"></span><span class="sale-profit"></span></div></td>
           <td data-col="legacy_profit" class="legacy-profit price-choice" data-basis="reference" title="Sửa lãi tại ô số; bấm dòng giá để chọn Lãi tham chiếu">
             <input class="cell-input num-input reference-profit-input" data-field="legacy_profit" inputmode="decimal" value="${esc(plain(item.legacy_profit_vnd))}">

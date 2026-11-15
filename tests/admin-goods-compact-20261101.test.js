@@ -14,7 +14,7 @@ test('goods admin shows frequent tools in one responsive row and secondary sourc
 });
 test('goods admin offers an optional compact column preset without altering pricing logic',()=>{
   assert.match(html,/id="quickColumnsBtn"/);
-  assert.match(html,/const QUICK_COLUMN_IDS=\['name','cost','price','legacy_profit','units_per_carton','retail_unit','retail_price'\]/);
+  assert.match(html,/const QUICK_COLUMN_IDS=\['name','cost','peer_cost','price','legacy_profit','units_per_carton','retail_unit','retail_price'\]/);
   assert.match(html,/columnPrefs\.hidden=COLUMN_DEFS\.map\(col=>col\.id\)\.filter\(id=>!QUICK_COLUMN_IDS\.includes\(id\)\)/);
   assert.match(html,/table\.classList\.toggle\('name-sticky',columnPrefs\.order\.find/);
   assert.match(html,/pageRefreshQueued=true;pageRefreshReset=pageRefreshReset\|\|reset/);
