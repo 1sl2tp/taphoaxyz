@@ -27,5 +27,5 @@ test('authorization, exact recipient, TTL, idempotent media, no extra message',(
  assert.match(sql,/REVOKE ALL ON FUNCTION public.taphoa_staff_order_image_attach/);
  assert.doesNotMatch(sql,/INSERT INTO public\.v21_messages|taphoa_customer_mini_link|cron\.schedule|net\.http_post/i);
  assert(client.includes("(!staff&&!order?.customer_id)"));
- assert(client.includes("staff||['done','delivered'].includes(state)"));
+ assert(client.includes("const eligible=delivered||(manual===true&&state==='pending'&&!staff)"));
 });
