@@ -141,6 +141,18 @@ BEGIN
   sender,'image','image/png',p_size_bytes,ticket.storage_key,
   p_width_px,p_height_px,0)
  ON CONFLICT(id) DO NOTHING;
+ -- Only once a valid PNG is attached do we condense the Chat bubble to
+ -- a legible caption. Full staff details remain as fallback if PNG fails;
+ -- media is on the SAME message, and the Zalo text queue is unaffected.
+ IF msg.body LIKE '📋 THÔNG BÁO ĐƠN CHO NHÂN VIÊN%' THEN
+   UPDATE public.v21_messages m
+   SET body = '📋 PHIẾU ĐƠN' || E'\n'
+     || split_part(msg.body,E'\n',2) || E'\n'
+     || split_part(msg.body,E'\n',3) || E'\n'
+     || split_part(msg.body,E'\n',4) || E'\n'
+     || (string_to_array(msg.body,E'\n'))[cardinality(string_to_array(msg.body,E'\n'))]
+   WHERE m.id=msg.id;
+ END IF;
  UPDATE v21_private.taphoa_order_notice_image_uploads
  SET attached_at=now() WHERE message_id=ticket.message_id;
  RETURN jsonb_build_object('ok',true,'message_id',ticket.message_id,
