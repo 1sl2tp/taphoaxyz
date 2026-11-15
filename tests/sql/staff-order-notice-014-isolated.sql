@@ -131,9 +131,11 @@ BEGIN
  UPDATE public.taphoa_orders SET status='delivered' WHERE id=p_order_id;
  UPDATE public.test_order_snapshots SET payload=v_order_json WHERE id=p_order_id;
  PERFORM public.taphoa_order_frontend_json(o) FROM public.taphoa_orders o WHERE id=p_order_id;
- PERFORM public.taphoa_chat_notify_customer(
-   nullif(v_order_json->>'customer_id','')::uuid,(ctx->>'account_id')::uuid,
-   'taphoa:'||p_command_id::text||':deliver','delivered');
+ IF nullif(v_order_json->>'customer_id','') IS NOT NULL THEN
+   PERFORM public.taphoa_chat_notify_customer(
+     nullif(v_order_json->>'customer_id','')::uuid,(ctx->>'account_id')::uuid,
+     'taphoa:'||p_command_id::text||':deliver','delivered');
+ END IF;
  v_result:=jsonb_build_object('ok',true,'order',v_order_json);
   insert into public.taphoa_command_log(command_id,operation,result) values(p_command_id,'deliver_order',v_result);
  RETURN v_result;
@@ -221,6 +223,27 @@ DO $$
 BEGIN IF (SELECT count(*) FROM public.v21_messages)<>3
  THEN RAISE EXCEPTION 'deliver path missing staff notice'; END IF; END $$;
 
+-- Customer-linked delivered order: original customer notice + independent staff copy.
+SELECT public.taphoa_save_order(jsonb_build_object(
+  'id','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  'displayCode','DG601','status','done',
+  'customer_id','22222222-2222-4222-8222-222222222222',
+  'tenKH','Khách được chọn','tongTien',45000,'note','Giao sáng',
+  'items',jsonb_build_array(jsonb_build_object(
+    'product_id','P002','tenSP','Sữa hộp','qty',3,'unit_price',15000,
+    'line_no',1,'note',''))
+), 'aaaa0006-0000-4000-8000-000000000006'::uuid);
+DO $
+BEGIN
+ IF (SELECT count(*) FROM public.v21_messages)<>4 THEN
+  RAISE EXCEPTION 'customer-linked order did not also send staff copy'; END IF;
+ IF (SELECT count(*) FROM public.test_customer_notices)<>1 THEN
+  RAISE EXCEPTION 'customer-linked original notice was changed or duplicated'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.v21_messages WHERE body LIKE '%DG601%'
+    AND body LIKE '%Khách được chọn%') THEN
+  RAISE EXCEPTION 'staff was not told which customer has a delivered order'; END IF;
+END $;
+
 -- Invalid staff account: no silent replacement, but order save remains valid.
 UPDATE public.v21_accounts SET locked_at=now()
 WHERE id='57fc1306-7030-4955-b174-afffeee2c3d2';
@@ -232,9 +255,9 @@ SELECT public.taphoa_save_order(jsonb_build_object(
 ), 'aaaa0005-0000-4000-8000-000000000005'::uuid);
 DO $$
 BEGIN
- IF (SELECT count(*) FROM public.v21_messages)<>3 THEN
+ IF (SELECT count(*) FROM public.v21_messages)<>4 THEN
   RAISE EXCEPTION 'locked staff wrongly received a notice'; END IF;
- IF (SELECT count(*) FROM public.taphoa_command_log)<>5 THEN
+ IF (SELECT count(*) FROM public.taphoa_command_log)<>6 THEN
   RAISE EXCEPTION 'locked staff blocked business save'; END IF;
 END $$;
 
@@ -256,7 +279,7 @@ END $$;
 RESET ROLE;
 DO $$
 BEGIN
- IF (SELECT count(*) FROM public.v21_messages)<>3 THEN
+ IF (SELECT count(*) FROM public.v21_messages)<>4 THEN
   RAISE EXCEPTION 'non-admin emitted staff message'; END IF;
 END $$;
 \echo 'PASS STAFF-ORDER-014: SQL compile, employee-only target, no customer leak, no-op, edit, retry, delivery, lock, ACL'
