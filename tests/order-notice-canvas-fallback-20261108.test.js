@@ -45,7 +45,7 @@ test('offline renderer includes every order row and customer-visible totals',()=
   assert.ok(order.height>=450&&order.height<=720,
     'two or three rows must remain compact without huge blank footer');
   const text=h.words.join(' | ');
-  for(const piece of ['Mã đơn: DG296','C Toan ts','Sữa tươi Vinamilk','Mì gói bò',
+  for(const piece of ['MÃ ĐƠN','DG296','C Toan ts','Sữa tươi Vinamilk','Mì gói bò',
     'Khách nhận trước 17h','Bánh gạo','3 mã · 13 sản phẩm','615']){
     assert.ok(text.includes(piece),piece);
   }
@@ -55,7 +55,8 @@ test('saved draft uses DT label and does not use external image/CDN',()=>{
   const h=canvasHarness();
   h.api.renderCanvas({orderId:'DT42',isDraft:true,customer:'C Sam',
     items:[row('Thùng sữa',2,350)],lineCount:1,totalQty:2,totalPriceText:'700'});
-  assert.ok(h.words.includes('Đơn tạm: DT42'));
+  assert.ok(h.words.includes('ĐƠN TẠM'));
+  assert.ok(h.words.includes('DT42'));
   const method=portrait.slice(portrait.indexOf('function renderCanvas('));
   assert.doesNotMatch(method,/fetch\s*\(|import\s*\(|https?:\/\//);
 });
@@ -111,8 +112,9 @@ test('UI-PORTRAIT-019: names and money are legible in a short five-column receip
   assert(amount&&/2[0-8]px/.test(amount.font),'grand total must be prominent');
   const price=words.find(w=>w.value==='975');
   assert(price&&/1[2-6]px/.test(price.font),'unit prices must be readable');
-  const header=words.find(w=>w.value==='Mã đơn: DG361');
-  assert(header&&header.font.includes('14px'));
+  const header=words.find(w=>w.value==='DG361');
+  assert(header&&header.font.includes('18px'));
+  assert(words.some(w=>w.value==='KHÁCH HÀNG'));
   for(const val of ['STT','TÊN','SL','ĐG','TIỀN','Bat 1kg *','Sua ensua re *'])
     assert(words.some(w=>w.value===val),'lost required receipt text '+val);
   assert.equal(words.find(w=>w.value==='ĐG').x,
@@ -121,62 +123,117 @@ test('UI-PORTRAIT-019: names and money are legible in a short five-column receip
     words.find(w=>w.value==='4775').x,'amount header/body must align');
 });
 
-test('UI-PORTRAIT-020: ordinary DG header is exactly two visual rows with full timestamp',()=>{
-  const rendered=[];
+test('UI-PORTRAIT-021: customer left; order code and split time on the right',()=>{
+  const rendered=[],backgrounds=[];
   const paint={
     font:'',textBaseline:'',textAlign:'',fillStyle:'',
-    setTransform(){},fillRect(){},
-    fillText(value,x,y){rendered.push({value:String(value),x,y,align:this.textAlign});},
+    setTransform(){},
+    fillRect(x,y,w,h){backgrounds.push({x,y,w,h,color:this.fillStyle});},
+    fillText(value,x,y){rendered.push({value:String(value),x,y,align:this.textAlign,font:this.font});},
     measureText(value){
-      const px=Number(this.font.match(/(\\d+(?:\\.\\d+)?)px/)?.[1]||14);
+      const px=Number(this.font.match(/(\d+(?:\.\d+)?)px/)?.[1]||14);
       return {width:Array.from(String(value)).length*px*.53};
     }
   };
   const document={createElement:()=>({width:0,height:0,getContext:()=>paint})};
   const window={};
   vm.runInNewContext(portrait,{document,window});
-  const fullTime='15/11/2026 15:39:16';
   const image=window.TAPHOA_ORDER_PORTRAIT.renderCanvas({
-    orderId:'DG363',customer:'Bác Thơm Lễ',time:fullTime,
+    orderId:'DG363',customer:'Bác Thơm Lễ',time:'15/11/2026 15:39:16',
     items:[row('Sua ensua re *',50,980),row('Bat 1kg *',8,955)],
     lineCount:2,totalQty:58,totalPriceText:'56.640'
   },1.2);
-  const code=rendered.find(x=>x.value==='Mã đơn: DG363');
-  const time=rendered.find(x=>x.value===fullTime);
+  const code=rendered.find(x=>x.value==='DG363');
+  const date=rendered.find(x=>x.value==='15/11/2026');
+  const clock=rendered.find(x=>x.value==='15:39:16');
   const customer=rendered.find(x=>x.value==='Bác Thơm Lễ');
-  assert(code&&time&&customer);
-  assert.equal(code.y,time.y,'code and timestamp should share the first header row');
-  assert(customer.y>code.y,'customer should occupy the second header row');
-  assert(customer.y<68,'avoid old third line and large header');
-  assert.equal(time.align,'right');
-  assert(image.height<520,'short two-line receipt should not waste height');
-  assert.equal(rendered.filter(x=>x.value.startsWith('Thời gian:')).length,0,
-    'date is kept but verbose label should not take another line');
+  const leftLabel=rendered.find(x=>x.value==='KHÁCH HÀNG');
+  const rightLabel=rendered.find(x=>x.value==='MÃ ĐƠN');
+  assert(code&&date&&clock&&customer&&leftLabel&&rightLabel);
+  assert(customer.x<code.x,'customer belongs in the left column');
+  assert.equal(code.x,clock.x,'order ID and time must share the right ruler');
+  assert.equal(clock.x,date.x,'date must align with clock');
+  assert.equal(code.align,'right');
+  assert(customer.y<clock.y,'left and right columns start together, not stacked full-width');
+  assert(image.height<550,'short receipt should remain compact');
+  assert(backgrounds.some(r=>r.color==='#eaf3fc'&&r.x===0&&r.y===0),
+    'use a soft tinted header background');
+  assert(backgrounds.some(r=>r.color==='#ffffff'&&r.x>200&&r.y===10),
+    'the right metadata panel should be white');
+  assert(!rendered.some(x=>x.value.startsWith('Thời gian:')),
+    'do not waste a separate line on verbose time labels');
 });
 
-test('UI-PORTRAIT-020: oversized metadata stacks deliberately without clipping',()=>{
+test('UI-PORTRAIT-021: long customer and code wrap inside their own columns',()=>{
   const rendered=[];
   const ctx={
     font:'',textAlign:'',textBaseline:'',fillStyle:'',
     setTransform(){},fillRect(){},
     fillText(value,x,y){rendered.push({value:String(value),x,y});},
     measureText(value){
-      const px=Number(this.font.match(/(\\d+(?:\\.\\d+)?)px/)?.[1]||14);
+      const px=Number(this.font.match(/(\d+(?:\.\d+)?)px/)?.[1]||14);
       return {width:Array.from(String(value)).length*px*.65};
     }
   };
   const window={};
   const document={createElement:()=>({width:0,height:0,getContext:()=>ctx})};
   vm.runInNewContext(portrait,{document,window});
-  window.TAPHOA_ORDER_PORTRAIT.renderCanvas({
+  const image=window.TAPHOA_ORDER_PORTRAIT.renderCanvas({
     orderId:'DG-2026-11-15-EXTENDED',time:'15/11/2026 15:39:16',
     customer:'Chị Khách Hàng Có Tên Dài Nhiều Từ Ở Hà Nội',
     items:[row('Sữa hộp',2,350)],lineCount:1,totalQty:2,totalPriceText:'700'
   });
-  const meta=rendered.find(x=>x.value.startsWith('Mã đơn:'));
-  const time=rendered.find(x=>x.value==='15/11/2026 15:39:16');
-  assert(meta&&time);
-  assert(time.y>meta.y,'very long codes must not collide with the timestamp');
-  assert(rendered.some(x=>x.value.includes('Khách Hàng')),
-    'long customer names must still be visible');
+  const code=rendered.find(x=>x.value.startsWith('DG-'));
+  const clock=rendered.find(x=>x.value==='15:39:16');
+  const nameLines=rendered.filter(x=>x.x===22&&x.y>=42&&x.y<200);
+  assert(code&&clock&&nameLines.length>=2);
+  assert(clock.y>code.y,'long order ID must not overlap the time');
+  assert(nameLines.some(x=>x.value.includes('Khách Hàng')));
+  assert(image.height>380,'large content expands header height rather than clipping');
+});
+
+test('UI-PORTRAIT-021: HTML capture matches Canvas header and escapes customer text',()=>{
+  const ctx={font:'',measureText(value){return {width:String(value).length*8};}};
+  const node=()=>({style:{},setAttribute(){},appendChild(child){this.child=child},innerHTML:''});
+  const document={createElement(name){
+    return name==='canvas'?{getContext:()=>ctx}:node();
+  },body:{appendChild(){}}};
+  const window={};
+  vm.runInNewContext(portrait,{document,window});
+  const page=window.TAPHOA_ORDER_PORTRAIT.createPage({
+    orderId:'DG365',customer:'E Quyên <dv>',time:'17:20 15/11/2026',
+    items:[row('Sua ensua re *',20,980)],lineCount:1,totalQty:20,totalPriceText:'19.600'
+  });
+  const html=page.page.innerHTML;
+  assert(html.includes('grid-template-columns:minmax(0,1fr) 154px'));
+  assert(html.includes('background:#eaf3fc'));
+  assert(html.includes('KHÁCH HÀNG'));
+  assert(html.includes('MÃ ĐƠN'));
+  assert(html.includes('DG365'));
+  assert(html.includes('17:20'));
+  assert(html.includes('15/11/2026'));
+  assert(html.includes('E Quyên &lt;dv&gt;'));
+  assert(!html.includes('E Quyên <dv>'));
+  assert(!html.includes('Thời gian:'));
+});
+
+test('UI-PORTRAIT-021: draft uses warm differentiated header, not delivered blue',()=>{
+  const rects=[],words=[];
+  const ctx={
+    font:'',fillStyle:'',textAlign:'',setTransform(){},
+    fillRect(x,y,w,h){rects.push({x,y,color:this.fillStyle});},
+    fillText(value){words.push(String(value));},
+    measureText(v){return {width:String(v).length*7}}
+  };
+  const document={createElement:()=>({width:0,height:0,getContext:()=>ctx})};
+  const window={};
+  vm.runInNewContext(portrait,{document,window});
+  window.TAPHOA_ORDER_PORTRAIT.renderCanvas({
+    isDraft:true,orderId:'DT42',customer:'C Hà Trang',
+    time:'17:52 15/11/2026',items:[row('Bánh',2,350)],
+    lineCount:1,totalQty:2,totalPriceText:'700'
+  });
+  assert(rects.some(r=>r.x===0&&r.y===0&&r.color==='#fff5e9'));
+  assert(words.includes('ĐƠN TẠM')&&words.includes('DT42'));
+  assert(words.includes('C Hà Trang'));
 });
