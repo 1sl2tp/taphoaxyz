@@ -285,7 +285,7 @@ END $$;
 -- A privileged SQL caller with a forged non-admin application context
 -- must also be denied by the helper's own guard, not just SQL grants.
 SET test.admin='no';
-DO $
+DO $$
 BEGIN
  BEGIN
   PERFORM v21_private.taphoa_staff_order_notify(
@@ -295,6 +295,6 @@ BEGIN
   RAISE EXCEPTION 'forged non-admin app context reached internal staff route';
  EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
-END $;
+END $$;
 SET test.admin='yes';
 \echo 'PASS STAFF-ORDER-014: SQL compile, employee-only target, no customer leak, no-op, edit, retry, delivery, lock, ACL'
