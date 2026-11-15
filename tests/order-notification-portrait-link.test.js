@@ -11,7 +11,7 @@ test('order notifications attach a real PNG to the same message and link',()=>{
   assert.match(bridge,/storage\.from\('v21-media'\)\.upload/);
   assert.match(bridge,/taphoa_order_notice_image_attach/);
   assert.match(bridge,/result\.image_attached=await attachOrderNoticePortrait\(result\.order\)===true/);
-  assert.match(bridge,/if\(!publicAccess&&!employeeAccess&&result\?\.order\)/);
+  assert.match(bridge,/if\(!publicAccess&&!employeeAccess&&\['done','delivered'\]\.includes\(savedStatus\)&&result\?\.order\)/);
   assert.match(bridge,/portrait\.renderCanvas\(portraitOptions,1\.2\)/);
   assert.match(bridge,/\['done','delivered'\]/);
   assert.match(bridge,/manual===true&&state==='pending'/);
