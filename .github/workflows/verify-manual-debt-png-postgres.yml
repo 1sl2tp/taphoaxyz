@@ -15,6 +15,8 @@ on:
       - "supabase/migrations/20261104220000_taphoa_order_cycles_unpaid_due_readonly.sql"
       - "supabase/migrations/20261104224500_taphoa_payment_period_policy_projection.sql"
       - "supabase/migrations/20261024073000_cycle196_policy_snapshot.sql"
+      - "supabase/migrations/20261115143000_taphoa_staff_order_copy_gd_me_yeu.sql"
+      - "tests/sql/staff-order-notice-014-isolated.sql"
       - "tests/sql/order-cycles-readonly-isolated-20261104.sql"
   workflow_dispatch:
 
@@ -68,6 +70,13 @@ jobs:
           set -euo pipefail
           psql -X -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE taphoa_order_cycle_test'
           PGDATABASE=taphoa_order_cycle_test psql -X -v ON_ERROR_STOP=1 -f tests/sql/order-cycles-readonly-isolated-20261104.sql
+      - name: Verify staff order copy in a fully disposable Postgres database
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE taphoa_staff_notice_test'
+          PGDATABASE=taphoa_staff_notice_test psql -X -v ON_ERROR_STOP=1 -f tests/sql/staff-order-notice-014-isolated.sql
+
       - name: Confirm no production credentials are used
         shell: bash
         run: |

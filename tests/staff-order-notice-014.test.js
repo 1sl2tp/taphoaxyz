@@ -59,3 +59,15 @@ test('one message per saved command; unchanged edits are suppressed',()=>{
  assert.match(sql,/IF position\('STAFF-ORDER-014: independent staff copy' IN v_src\)>0 THEN RETURN;/);
  assert.match(sql,/IF length\(v_src\)-length\(replace\(v_src,v_anchor,''\)\)<>length\(v_anchor\)/);
 });
+
+test('postgres integration suite is isolated and runs the migration verbatim',()=>{
+ const isolated=fs.readFileSync('tests/sql/staff-order-notice-014-isolated.sql','utf8');
+ const workflow=fs.readFileSync('.github/workflows/verify-manual-debt-png-postgres.yml','utf8');
+ assert(isolated.includes('\\i supabase/migrations/20261115143000_taphoa_staff_order_copy_gd_me_yeu.sql'));
+ for(const marker of ['walk-in draft','no-op edit','meaningful edit','retry generated','deliver path','locked staff','unauthorized client']){
+  assert(isolated.includes(marker),marker);
+ }
+ assert(workflow.includes('PGDATABASE=taphoa_staff_notice_test psql'));
+ assert(workflow.includes('CREATE DATABASE taphoa_staff_notice_test'));
+ assert(!isolated.includes('supabase.co'));
+});
