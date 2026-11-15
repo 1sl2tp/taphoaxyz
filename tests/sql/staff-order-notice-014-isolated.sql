@@ -561,3 +561,85 @@ BEGIN
  THEN RAISE EXCEPTION 'no-op pending edit emitted notification'; END IF;
 END $$;
 \echo 'PASS ORDER-IMAGE-016: selected customer, staff, image-only, preserved finance, exact ticket, no-op'
+
+
+-- ORDER-NOTIFY-017: final user policy overrides the temporary 016 draft rule.
+-- Earlier tests verify that older migrations compose; tests below assert
+-- the FINAL effective policy after this forward-only correction.
+\i supabase/migrations/20261115170000_disable_pending_order_auto_notice.sql
+SET test.admin='yes';
+
+-- A new selected-customer draft generates no customer OR staff notice.
+SELECT public.taphoa_save_order(jsonb_build_object(
+ 'id','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+ 'displayCode','DT701','status','pending',
+ 'customer_id','22222222-2222-4222-8222-222222222222',
+ 'tenKH','Khách đã chọn','tongTien',18000,'note','',
+ 'items',jsonb_build_array(jsonb_build_object(
+ 'product_id','PX03','tenSP','Hàng tạm','qty',2,
+ 'unit_price',9000,'line_no',1,'note',''))
+), 'aaaa0019-0000-4000-8000-000000000019'::uuid);
+
+DO $$
+BEGIN
+ IF EXISTS (SELECT 1 FROM public.test_customer_notices
+   WHERE command_id='taphoa:aaaa0019-0000-4000-8000-000000000019:order')
+ OR EXISTS (SELECT 1 FROM public.v21_messages
+   WHERE client_id='taphoa:aaaa0019-0000-4000-8000-000000000019:staff-order')
+ THEN RAISE EXCEPTION 'DRAFT CREATED A NOTIFICATION'; END IF;
+END $$;
+
+-- A real draft modification remains equally silent.
+SELECT public.taphoa_save_order(jsonb_build_object(
+ 'id','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+ 'edit_order_id','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+ 'displayCode','DT701','status','pending',
+ 'customer_id','22222222-2222-4222-8222-222222222222',
+ 'tenKH','Khách đã chọn','tongTien',27000,'note','Đổi số lượng',
+ 'items',jsonb_build_array(jsonb_build_object(
+ 'product_id','PX03','tenSP','Hàng tạm','qty',3,
+ 'unit_price',9000,'line_no',1,'note',''))
+), 'aaaa0020-0000-4000-8000-000000000020'::uuid);
+DO $$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.test_customer_notices
+   WHERE command_id LIKE 'taphoa:aaaa0020-0000-4000-8000-000000000020:%')
+ OR EXISTS(SELECT 1 FROM public.v21_messages
+   WHERE client_id='taphoa:aaaa0020-0000-4000-8000-000000000020:staff-order')
+ THEN RAISE EXCEPTION 'DRAFT EDIT CREATED A NOTIFICATION'; END IF;
+END $$;
+
+-- A new delivered order still notifies permitted customer and pinned staff.
+SELECT public.taphoa_save_order(jsonb_build_object(
+ 'id','ffffffff-ffff-4fff-8fff-ffffffffffff',
+ 'displayCode','DG702','status','done',
+ 'customer_id','22222222-2222-4222-8222-222222222222',
+ 'tenKH','Khách đã chọn','tongTien',28000,'note','',
+ 'items',jsonb_build_array(jsonb_build_object(
+ 'product_id','PX04','tenSP','Hàng giao','qty',2,
+ 'unit_price',14000,'line_no',1,'note',''))
+), 'aaaa0021-0000-4000-8000-000000000021'::uuid);
+DO $$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.test_customer_notices
+  WHERE command_id='taphoa:aaaa0021-0000-4000-8000-000000000021:order')
+ OR NOT EXISTS(SELECT 1 FROM public.v21_messages
+  WHERE client_id='taphoa:aaaa0021-0000-4000-8000-000000000021:staff-order'
+   AND body='')
+ THEN RAISE EXCEPTION 'DELIVERED ORDER NOTIFY REGRESSION'; END IF;
+END $$;
+
+-- The helper itself must refuse pending even if called directly by admin.
+DO $$
+DECLARE messages_before integer;
+BEGIN
+ SELECT count(*) INTO messages_before FROM public.v21_messages;
+ PERFORM v21_private.taphoa_staff_order_notify(
+ '11111111-1111-4111-8111-111111111111',
+ 'aaaa0022-0000-4000-8000-000000000022',
+ '{"id":"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee","status":"pending","items":[]}'::jsonb,
+ NULL,'edit');
+ IF (SELECT count(*) FROM public.v21_messages)<>messages_before
+ THEN RAISE EXCEPTION 'PENDING STAFF HELPER WAS NOT SUPPRESSED'; END IF;
+END $$;
+\echo 'PASS ORDER-NOTIFY-017: pending create/edit silent to both; delivered still sends'

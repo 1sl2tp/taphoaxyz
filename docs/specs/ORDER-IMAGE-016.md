@@ -10,3 +10,9 @@ User clarification (15/11/2026): **Tạo đơn / sửa đơn → khách đã ch�
 - Existing text + image messages created *before* migration remain untouched (no delete/backfill); only future committed orders use the image-only envelope.
 - E0 this spec. E1 contracts and disposable PostgreSQL 17 tests PASS for source commit `9e1b700` (CI `43692708493`, `43692708497`). E2 migration `order_notification_image_only_both_recipients_20261115` applied successfully to production 15/11/2026, migration version `20261115080513`; postflight verified trigger enabled, customer ticket/pending hook, consent gate, staff media functions. E3 GitHub Pages publish PASS (`43692708469`) for `9e1b700`. E4 no new natural order notifications after rollout at the time of inspection, so actual Chat and Zalo media delivery is still unverified. E5 no cron/new route/no access broadening.
 - Rollback: forward remove this narrow trigger, revert ticket lookup and pending hook via audited forward migration, revert frontend; preserve existing media and customer preferences.
+
+## Correction ORDER-NOTIFY-017 — 15/11/2026
+
+The user explicitly corrected the previous interpretation: **“đơn tạm không gửi gì cả”**. This supersedes the draft-notification section above. Final automatic matrix: pending created/edited => **NO** Chat/Zalo notice to customer OR staff; delivered created, promoted or meaningfully edited => image-only to permitted selected customer and pinned staff. Walk-in delivered => staff only. Existing unrelated manual explicit share remains a separate opt-in user action, not an automatic order notification.
+
+The forward migration `supabase/migrations/20261115170000_disable_pending_order_auto_notice.sql` removes the pending customer branch, gates the staff hook by delivered state and adds a defense-in-depth pending check in the helper. The frontend does not request auto PNG for pending. No backfill, delete or historical message changes.

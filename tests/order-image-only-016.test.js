@@ -15,11 +15,13 @@ test('order images only: no automatic Chat/Zalo order text, other messages unaff
  assert.match(sql,/v21_private\.chat_outbound_allowed/);
  assert.match(sql,/pending selected customer/);
 });
-test('both recipients share canonical PNG renderer, draft selected customer included',()=>{
+test('both recipients share canonical PNG renderer for delivered orders only',()=>{
  assert(bridge.includes('window.TAPHOA_ORDER_PORTRAIT'));
  assert(bridge.includes('staffCommandId:result.staff_notice_command_id'));
- assert(bridge.includes('autoPending:true'));
- assert(bridge.includes("savedStatus==='pending'&&result.order.customer_id"));
+ assert(!bridge.includes('autoPending:true'));
+ assert(!bridge.includes("savedStatus==='pending'&&result.order.customer_id"));
+ assert(bridge.includes("['done','delivered'].includes(savedStatus)&&result?.order"));
+ assert(bridge.includes("const eligible=delivered||(manual===true&&state==='pending'&&!staff)"));
  assert(bridge.includes('result.image_attached=await attachOrderNoticePortrait(result.order)===true'));
  assert(bridge.includes('staff_image_attached=await attachOrderNoticePortrait(result.order'));
  assert(bridge.includes("staff?'taphoa_staff_order_image_ticket':'taphoa_order_notice_image_ticket'"));

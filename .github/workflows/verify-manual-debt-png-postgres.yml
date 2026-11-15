@@ -18,6 +18,7 @@ on:
       - "supabase/migrations/20261115143000_taphoa_staff_order_copy_gd_me_yeu.sql"
       - "tests/sql/staff-order-notice-014-isolated.sql"
       - "supabase/migrations/20261115163000_order_notification_image_only_both_recipients.sql"
+      - "supabase/migrations/20261115170000_disable_pending_order_auto_notice.sql"
       - "tests/sql/order-cycles-readonly-isolated-20261104.sql"
   workflow_dispatch:
 

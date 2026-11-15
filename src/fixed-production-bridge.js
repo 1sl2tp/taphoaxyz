@@ -655,7 +655,7 @@ function orderNoticeTotals(order,items){
     totalPrice:present(order?.tongTien)?numeric(order.tongTien):amount
   };
 }
-async function attachOrderNoticePortrait(order,{manual=false,staffCommandId=null,autoPending=false}={}){
+async function attachOrderNoticePortrait(order,{manual=false,staffCommandId=null}={}){
   // SPEC-MEDIA-UPLOAD-SESSION-20261101: an old notice must not start or
   // continue uploading/attaching images using a new account's credentials.
   const noticeOwner=captureProductionOwner();
@@ -664,9 +664,10 @@ async function attachOrderNoticePortrait(order,{manual=false,staffCommandId=null
   // Automatic images are ONLY for delivered orders (DG).
   // A draft can have an image solely after an EXPLICIT manual "Gửi đơn" click.
   const staff=typeof staffCommandId==='string' && /^[0-9a-f-]{36}$/i.test(staffCommandId);
-  const eligible=staff||['done','delivered'].includes(state)
-    ||(manual===true&&state==='pending')
-    ||(autoPending===true&&state==='pending'&&Boolean(order?.customer_id));
+  const delivered=['done','delivered'].includes(state);
+  // Automatic order media requires a delivered order. Pending drafts are
+  // silent; only a separate, explicitly requested manual share can use them.
+  const eligible=delivered||(manual===true&&state==='pending'&&!staff);
   if(!id||!eligible||(!staff&&!order?.customer_id)||publicAccess||employeeAccess)return false;
   const eventKey=id+'|'+String(order?.updated_at||order?.delivered_at||'')
     +(staff?'|staff:'+staffCommandId:'|customer');
@@ -893,24 +894,16 @@ async function saveOrder(payload){
   // cannot refresh or attach Chat media using B's newly authenticated session.
   if(!productionOwnerCurrent(mutationOwner))return result;
   const savedStatus=String(result?.order?.status||'').toLowerCase();
-  if(!publicAccess&&!employeeAccess&&result?.order){
-    // PNG of the exact committed order attaches to the EXISTING staff message.
-    // Staff receives pending and walk-in orders independent of customer opt-in.
+  if(!publicAccess&&!employeeAccess&&['done','delivered'].includes(savedStatus)&&result?.order){
+    // ORDER-NOTIFY-017: only delivered orders notify staff/customer.
+    // Pending creation and edits never initiate an automatic PNG upload.
     if(result.staff_notice_command_id){
       result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
         staffCommandId:result.staff_notice_command_id
       })===true;
     }
-    if(['done','delivered'].includes(savedStatus)){
-      // Customer's original consent-gated ticket stays unchanged.
-      result.image_attached=await attachOrderNoticePortrait(result.order)===true;
-    }else if(savedStatus==='pending'&&result.order.customer_id){
-      // Selected customer: pending order PNG, but only if the customer
-      // outbound configuration allowed an envelope in this transaction.
-      result.image_attached=await attachOrderNoticePortrait(result.order,{
-        autoPending:true
-      })===true;
-    }
+    // Customer's original consent-gated ticket stays unchanged.
+    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
   }
   // F-181: A confirmed pending draft (new or edited) never changes the
   // sale ledger. The DB prevents delivered → pending downgrades. Avoid
