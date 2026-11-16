@@ -117,48 +117,9 @@ renderCartUI = function() {
   });
 };
 
-/* Backend trả đơn mới nhất trước. Sau renderer gốc, đưa card về đúng thứ tự đó. */
-function stabilizeNewestOrderCards(sheetName, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const rows = typeof getRowsVisibleForOrderTab === 'function'
-    ? getRowsVisibleForOrderTab(sheetName)
-    : ((appData[sheetName] || []).slice(1));
-  const desiredIds = [];
-  const seen = new Set();
-  rows.forEach(row => {
-    const id = String(row?.[0] || '').trim();
-    if (id && !seen.has(id)) { seen.add(id); desiredIds.push(id); }
-  });
-  if (!desiredIds.length) return;
-
-  const cards = Array.from(container.children).filter(el => String(el.getAttribute('onclick') || '').includes('clickOrder('));
-  const byId = new Map();
-  cards.forEach(card => {
-    const match = String(card.getAttribute('onclick') || '').match(/clickOrder\('([^']+)'/);
-    if (match) byId.set(match[1], card);
-  });
-
-  desiredIds.forEach((id, index) => {
-    const card = byId.get(id);
-    if (!card) return;
-    container.appendChild(card);
-    const numberBadge = card.querySelector('.pointer-events-none > div:first-child');
-    if (numberBadge) numberBadge.textContent = String(desiredIds.length - index);
-  });
-}
-
-const __fixedRenderDonTam = renderDonTam;
-renderDonTam = function() {
-  __fixedRenderDonTam();
-  stabilizeNewestOrderCards('dontam', 'pendingOrderListContainer');
-};
-
-const __fixedRenderDaGiao = renderDaGiao;
-renderDaGiao = function() {
-  __fixedRenderDaGiao();
-  stabilizeNewestOrderCards('dongiao', 'completedOrderListContainer');
-};
+/* SPEC-ORDER-LIST-SORT-20261116: renderDonTam/renderDaGiao use their
+   canonical sorter. Do not reorder cards by backend row order after render:
+   that changed both their positions and their fixed DG/DT number badges. */
 
 function __debtTimeMs(value) {
   const m = String(value || '').match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
