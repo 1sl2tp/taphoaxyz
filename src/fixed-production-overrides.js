@@ -444,8 +444,16 @@
       :selected.length===total
         ?'Duyệt giao đủ '+total+' dòng của đơn hiện tại.'
         :'Giao '+selected.length+'/'+total+' dòng đã tích thành đơn Đã giao mới. Các dòng chưa tích vẫn là Đơn tạm cũ.';
+    // The confirmed list is immutable; never silently use later check marks.
+    const confirmedSelection=JSON.stringify(selected);
     showConfirmModal(title,description,target==='dontam'?'Tách đơn tạm':'Xác nhận giao','bg-primary',
-      ()=>dayToanBoGioHang(target==='dontam'?'tach-don-tam':'dongiao'));
+      ()=>{
+        const current=typeof getCartReviewSelection==='function'?getCartReviewSelection():[];
+        if(JSON.stringify(current)!==confirmedSelection){
+          return showAlertPopup('Đã thay đổi lựa chọn','Kiểm tra và xác nhận lại các dòng cần tách.');
+        }
+        return dayToanBoGioHang(target==='dontam'?'tach-don-tam':'dongiao');
+      });
   };
 
   dayToanBoGioHang=async function(tab){
@@ -455,7 +463,7 @@
     }
     if(currentAuthRole==='user'&&tab==='dongiao')return denyPermission('User chỉ được tạo Đơn tạm, không được Bán ngay.');
     if(currentAuthRole==='user'&&tab==='dontam'&&editingOrderSheet==='dongiao')return denyPermission('Đơn đã giao chỉ để xem. Hãy quay lại Bán hàng để tạo Đơn tạm mới.');
-    if(tab==='dontam'&&!hasPermission('canCreateDraft'))return denyPermission('Tài khoản này không được tạo Đơn tạm.');
+    if((tab==='dontam'||tab==='tach-don-tam')&&!hasPermission('canCreateDraft'))return denyPermission('Tài khoản này không được tạo Đơn tạm.');
     if(!selectedCustomer.id){showAlertPopup('Lỗi thao tác','Vui lòng chọn khách hàng trước khi đẩy đơn!');openCustomerModal();return;}
     if(Object.keys(cart).length===0){showAlertPopup('Giỏ hàng trống','Vui lòng chọn ít nhất 1 sản phẩm!');return;}
 
@@ -506,6 +514,10 @@
 
       if(isSplittingSelection){
         await assertDraftAlreadySavedForDelivery(backendEditOrderId,selectedCustomer.id,items);
+        if(typeof getCartReviewSelection!=='function'||
+           JSON.stringify(getCartReviewSelection())!==JSON.stringify(selectedReviewCodes)){
+          throw new Error('Dòng đã tích kiểm thay đổi trong lúc đối chiếu. Chọn và xác nhận lại.');
+        }
         const result=await backend().splitPendingOrder({
           orderId:backendEditOrderId,selectedCodes:selectedReviewCodes,
           expectedItems:items,targetStatus:isPromotingDraft?'delivered':'pending'
