@@ -281,7 +281,7 @@ export async function analyzeBillWithRegions({
    imageBlob,boxes:layout.boxes,aiFields:layout.aiFields,
    documentBox:layout.documentBox,readOcr,expectedAccount,bankNotificationBody
  });
- return {...out,status:out.reviewFields.length?'review':'fields_compared',
+ return {...out,status:(out.reviewFields.length||out.bankMemoEvidence?.needsReview)?'review':'fields_compared',
    selectedTransaction:layout.selectedTransaction,
    ledgerWritten:false};
 }
