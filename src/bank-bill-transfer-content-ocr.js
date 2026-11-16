@@ -26,7 +26,9 @@ function explain(status,reason,bankFormat=null,routingCode=null){
 }
 export function extractOfficialBankMemo(notificationBody){
   const text=String(notificationBody||'');
-  const match=/Nội dung giao dịch:\s*([\s\S]*?)(?:\s*Số dư cuối:|$)/i.exec(text);
+  // Agribank appends ". Số dư cuối:" as an OUTER notification delimiter.
+// Remove that exact separator only; never erase arbitrary OCR punctuation.
+  const match=/Nội dung giao dịch:\s*([\s\S]*?)(?:\.\s*Số dư cuối:|\s*Số dư cuối:|$)/i.exec(text);
   return match?.[1]?.trim()||null;
 }
 export function compareTransferMemo({printedMemo,bankMemo,bankNotificationBody,
