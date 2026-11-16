@@ -109,27 +109,30 @@ export function isRegionInsideDocument(bbox,documentBox){
 // Browser-side crop of a user-supplied picture, with no network upload or
 // OCR provider selection. Worker passes the resulting Blob to its OWN reader.
 // Preserves the original image and never sends a crop on its own.
-export async function cropBillRegion(imageBlob,bbox){
-  if(typeof createImageBitmap!=='function')throw Error('image_decoder_unavailable');
-  const image=await createImageBitmap(imageBlob);
-  try{
-    const bounds=validateRegion(bbox,image.width,image.height);
-    if(!bounds)throw Error('invalid_bill_region');
-    const canvas=typeof OffscreenCanvas==='function'
-      ?new OffscreenCanvas(bounds.width,bounds.height)
-      :(typeof document!=='undefined'?document.createElement('canvas'):null);
-    if(!canvas)throw Error('canvas_unavailable');
-    canvas.width=bounds.width;canvas.height=bounds.height;
-    const ctx=canvas.getContext('2d');
-    if(!ctx)throw Error('canvas_context_unavailable');
-    ctx.drawImage(image,bounds.x,bounds.y,bounds.width,bounds.height,
-      0,0,bounds.width,bounds.height);
-    if(typeof canvas.convertToBlob==='function')
-      return canvas.convertToBlob({type:'image/png'});
-    return new Promise((resolve,reject)=>
-      canvas.toBlob(blob=>blob?resolve(blob):reject(Error('crop_encode_failed')),'image/png'));
-  }finally{image.close?.();}
+async function cropDecodedRegion(image,bbox){
+ const bounds=validateRegion(bbox,image.width,image.height);
+ if(!bounds)throw Error('invalid_bill_region');
+ const canvas=typeof OffscreenCanvas==='function'
+   ?new OffscreenCanvas(bounds.width,bounds.height)
+   :(typeof document!=='undefined'?document.createElement('canvas'):null);
+ if(!canvas)throw Error('canvas_unavailable');
+ canvas.width=bounds.width;canvas.height=bounds.height;
+ const ctx=canvas.getContext('2d');
+ if(!ctx)throw Error('canvas_context_unavailable');
+ ctx.drawImage(image,bounds.x,bounds.y,bounds.width,bounds.height,
+   0,0,bounds.width,bounds.height);
+ if(typeof canvas.convertToBlob==='function')
+   return canvas.convertToBlob({type:'image/png'});
+ return new Promise((resolve,reject)=>
+   canvas.toBlob(blob=>blob?resolve(blob):reject(Error('crop_encode_failed')),'image/png'));
 }
+export async function cropBillRegion(imageBlob,bbox){
+ if(typeof createImageBitmap!=='function')throw Error('image_decoder_unavailable');
+ const image=await createImageBitmap(imageBlob);
+ try{return await cropDecodedRegion(image,bbox);}
+ finally{image.close?.();}
+}
+
 // Only TWO agreeing independent reads are confirmed. A cropped account
 // cannot be silently "repaired" from the configured Agribank account.
 export function compareRegionRead(field,aiValue,ocrValue){
@@ -149,6 +152,8 @@ export async function inspectBillZones({
 }){
  if(typeof readOcr!=='function')throw Error('ocr_reader_required');
  const results={};
+ let decodedImage=null;
+ try{
  for(const field of BILL_FIELDS){
    const bbox=boxes?.[field];
    if(!bbox){
@@ -162,7 +167,11 @@ export async function inspectBillZones({
      continue;
    }
    try{
-     const crop=await cropBillRegion(imageBlob,bbox);
+     if(!decodedImage){
+       if(typeof createImageBitmap!=='function')throw Error('image_decoder_unavailable');
+       decodedImage=await createImageBitmap(imageBlob);
+     }
+     const crop=await cropDecodedRegion(decodedImage,bbox);
      const raw=await readOcr({field,crop});
      const text=raw&&typeof raw==='object'?raw.text:raw;
      const confidence=raw&&typeof raw==='object'?raw.confidence:null;
@@ -175,11 +184,11 @@ export async function inspectBillZones({
      results[field]={field,status:'crop_or_ocr_unavailable',value:null,needsReview:true};
    }
  }
+ }finally{decodedImage?.close?.();}
  const expected=normalizeBillField('account',expectedAccount);
  const readyForIndependentBankMatch=['amount','account','transactionTime']
    .every(field=>results[field].status==='agreed')&&
    expected!==null&&results.account.value===expected&&
-   OPTIONAL_FIELDS.size===Array.from(OPTIONAL_FIELDS).length&&
    Array.from(OPTIONAL_FIELDS).every(field=>
      ['agreed','optional_absent'].includes(results[field].status))&&
    results.transactionStatus.value!=='FAILED';
