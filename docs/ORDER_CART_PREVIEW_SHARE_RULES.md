@@ -1,10 +1,21 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-SPLIT-PENDING-20261116 — Tách đơn tạm / Duyệt một phần
+
+- **Given:** Admin tài khoản đang xem một đơn tạm đã lưu. Dòng tích kiểm trong cột SL được xem là hàng muốn tách; chưa tích là hàng phải giữ ở đơn cũ.
+- **When Tách đơn tạm:** chọn 1..N−1 dòng → Tách đơn tạm → xác nhận. Tạo DT mới chứa các dòng tích, giữ DT cũ và các dòng chưa tích. Không ghi công nợ hoặc gửi thông báo giao.
+- **When Duyệt giao:** chọn 1..N−1 dòng → Duyệt đã chọn → xác nhận. Tạo DG mới chứa các dòng đã kiểm; DT cũ còn hàng chưa kiểm. Nếu tích đủ N dòng, tiếp tục Duyệt tất cả bằng lệnh giao đơn cũ, không tạo đơn trống.
+- **Then:** Giữ mã KH, từng mã SP, số lượng, đơn giá đang áp riêng, ghi chú, thứ tự tương đối và giá vốn lịch sử. Tổng tính lại theo từng đơn. Chỉ DG mới ghi một bút toán sale và thông báo ảnh (cho KH được phép và nhóm nhân viên theo cấu hình hiện hành).
+- **Atomicity:** một RPC PostgreSQL, transaction duy nhất, khóa đơn nguồn, so khớp bản lưu với toàn bộ giỏ, kiểm tra quyền Admin và khóa lệnh theo UUID. Nếu một thao tác lỗi thì rollback cả hai; không tạo đơn/bút toán trùng. Không cập nhật database production chỉ bằng commit nguồn.
+- **MUST-STAY:** user/PIN không tách/duyệt; đơn đã giao không tách; không tách một phần số lượng trong cùng một dòng ở phiên bản này; không tự gửi Đơn tạm; không thay đổi bố cục 5 cột.
+- **Source:** `src/fixed-ui-runtime-5.js`, `src/fixed-ui-runtime-6.js`, `src/fixed-production-overrides.js`, `src/fixed-production-bridge.js`, `src/core/business.js`, `supabase/migrations/20261116182500_taphoa_split_pending_order_atomic.sql`. **E0** spec; **E1** tests; **E2** canonical build; **E3** migration/release/live; **E4–E5** Web/PWA iPhone thực và người dùng xác nhận. Rollback: revert source then drop RPC after ensuring no in-flight splits.
+
+
 ## SPEC-DRAFT-EDIT-APPROVE-20261116 — Duyệt sau khi sửa đơn tạm
 
 - **Given:** Admin đang sửa một đơn tạm đã lưu (ví dụ DT268) tại Bán hàng, có thể đã đổi SL, sản phẩm, giá mới hoặc giá riêng.
 - **When:** footer có **Hủy**, **Cập nhật đơn**, và **Duyệt · soát hàng trước**. Nút Duyệt ở chế độ sửa **không giao ngay**: kiểm tra không có thao tác ghi đang chạy và không còn giá chưa lưu; đối chiếu đơn tạm trên máy chủ với khách, mã hàng, SL, giá và ghi chú của giỏ. Nếu khác, yêu cầu bấm Cập nhật đơn trước, không ghi thêm.
-- **Then:** khi nội dung đã lưu trùng khớp, chuyển giỏ đang mở sang trạng thái **Đang soát hàng** (readonly), xóa toàn bộ dấu tích cũ và hiển thị Soát hàng 0/N; tích đủ từng dòng SL mới mở khóa nút Duyệt thật. Nhấn duyệt thật đi qua guard `dayToanBoGioHang('dongiao')` và `deliverOrder` cũ. Không tự ghi đơn, không tự giao, không bỏ qua soát hoặc gửi lại thông báo.
+- **Then:** khi nội dung đã lưu trùng khớp, chuyển giỏ đang mở sang trạng thái **Đang soát hàng** (readonly), xóa toàn bộ dấu tích cũ và hiển thị Soát hàng 0/N; tích đủ từng dòng để duyệt toàn đơn; tích một phần để duyệt riêng theo SPEC-SPLIT-PENDING-20261116. Nhấn duyệt toàn đơn đi qua guard `dayToanBoGioHang('dongiao')` và `deliverOrder` cũ. Không tự ghi đơn, không tự giao, không bỏ qua soát hoặc gửi lại thông báo.
 - **Scope/MUST-STAY:** chỉ `src/fixed-ui-runtime-5.js` (footer), `src/fixed-production-overrides.js` (đọc và chuyển trạng thái UI) và version asset ở `index.html`; dùng guard ở `src/fixed-ui-runtime-6.js`. Không sửa backend/database, thông báo, tổng tiền, thứ tự, giá vốn, quyền user/PIN hoặc luồng Đã giao đã hoàn thành. Tương tác đổi đơn, sửa giỏ, đổi quyền giữa lúc đối chiếu phải hủy việc chuyển trạng thái.
 - **Verification:** `tests/draft-edit-review-approval-20261116.test.js`, các test giỏ/duyệt hiện có, canonical build và live build; chưa có ảnh iPhone thật thì E4/E5 pending.
 
@@ -21,7 +32,7 @@
 
 - **Given:** quản trị viên mở một đơn **tạm đã lưu** trong tab Đơn tạm (hoặc mở cùng đơn từ Công nợ) ở chế độ xem, không phải chế độ sửa.
 - **When:** mở giỏ, hệ thống hiện thanh `Soát hàng 0/N`, mỗi dòng có ô tích trong **cột SL**, không sinh cột thứ sáu, không che STT, tên, giá hoặc thành tiền. Tích dòng chỉ là trạng thái UI; không cập nhật số lượng hay tự ghi đơn.
-- **Then:** nút **Duyệt** bị khóa cho đến khi đủ N dòng được tích. Bỏ tích thì nút bị khóa trở lại. Chốt chặn tại `src/fixed-production-overrides.js::dayToanBoGioHang('dongiao')` cũng phải từ chối khi chưa đủ, kể cả gọi hàm trực tiếp.
+- **Then:** nút **Duyệt** bị khóa khi chưa tích dòng nào. Đủ N dòng duyệt toàn đơn, chọn 1..N−1 dòng có thể tách hoặc duyệt phần đã chọn. Bỏ hết tích thì nút bị khóa trở lại. Chốt chặn tại `src/fixed-production-overrides.js::dayToanBoGioHang('dongiao')` từ chối khi không chọn dòng nào; phần được chọn phải dùng một giao dịch nguyên tử, kể cả khi gọi hàm trực tiếp.
 - **Reset:** mở lại đơn, đổi đơn, đổi khách, đổi mặt hàng/SL/giá/ghi chú, rời chế độ xem hay chuyển tài khoản phải xóa các dấu soát cũ. Không đồng bộ dấu soát sang khách, PWA khác, Chat/Zalo hay Supabase.
 - **MUST-STAY:** 5 cột STT | Tên | SL | Giá | Tiền; dữ liệu gốc/giá/SL/tổng/STT/ghi chú; khả năng xem đơn đã giao; thao tác Đặt/Bán đơn mới, Sửa/Cập nhật; ảnh chia sẻ/ảnh đơn không được chứa ô soát. Quyền người dùng vẫn chỉ xem, không được duyệt.
 - **Owner & scope:** `src/fixed-ui-runtime-6.js` (trạng thái/dòng/progress), `src/fixed-ui-cart-spacing.css` (chiều rộng SL), `src/fixed-ui-runtime-5.js` (footer), `src/fixed-production-overrides.js` (guard), `src/fixed-ui-runtime-12.js` (reset) và version URL trong `index.html`. Không thêm DB/Edge/RPC/cron/polling.
