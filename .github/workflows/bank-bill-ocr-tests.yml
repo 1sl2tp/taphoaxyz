@@ -4,12 +4,14 @@ on:
     branches: [main]
     paths:
       - 'src/bank-bill-region-ocr.js'
+      - 'src/bank-bill-bank-evidence.js'
       - 'src/bank-bill-transfer-content-ocr.js'
       - 'src/bank-bill-ocr-review.js'
       - 'src/bank-bill-tesseract-ocr.js'
       - 'tests/bank-bill-ocr-review-20261117.test.js'
       - 'tests/bank-bill-tesseract-ocr-20261117.test.js'
       - 'tests/bank-bill-region-ocr-20261116.test.js'
+      - 'tests/bank-bill-bank-evidence-20261117.test.js'
       - 'tests/bank-bill-transfer-content-ocr-20261117.test.js'
       - 'supabase/migrations/20261116234000_bank_zone_optional_recipient_ascii_20261116.sql'
       - '.github/workflows/bank-bill-ocr-tests.yml'
@@ -30,4 +32,4 @@ jobs:
           node-version: '22'
       - name: Run read-only OCR tests
         run: |
-          node --test tests/bank-bill-region-ocr-20261116.test.js tests/bank-bill-transfer-content-ocr-20261117.test.js tests/bank-bill-ocr-review-20261117.test.js tests/bank-bill-tesseract-ocr-20261117.test.js
+          node --test tests/bank-bill-region-ocr-20261116.test.js tests/bank-bill-transfer-content-ocr-20261117.test.js tests/bank-bill-ocr-review-20261117.test.js tests/bank-bill-tesseract-ocr-20261117.test.js tests/bank-bill-bank-evidence-20261117.test.js
