@@ -429,6 +429,8 @@
 
             let items = appData[sheetName].slice(1).filter(r => String(r[0]).trim() === orderId);
             if (items.length === 0) return;
+            // New picking session for every opened saved order, even the same ID.
+            if (typeof resetCartReview === 'function') resetCartReview();
 
             let maKh = items[0][1]; let kh = appData.khachhang.find(r => r[0] == maKh);
             selectedCustomer = { id: maKh, name: resolveSavedOrderCustomerName(items[0], kh?.[1]) };
