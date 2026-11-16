@@ -31,17 +31,40 @@ const first=(obj,keys,fallback='')=>{
 // Asia/Ho_Chi_Minh. Projected sheet rows must use that SAME calendar day
 // regardless of desktop timezone, installed PWA or Android WebView locale.
 function viTime(value){
-  const d=value?new Date(value):new Date();
-  if(Number.isNaN(d.getTime()))return text(value);
+  if(value===null||value===undefined||value==='')return '';
+  const raw=typeof value==='string'?value.trim():'';
+  let date=null;
+  if(raw){
+    const validCalendar=(y,m,d)=>{
+      if(y<1||y>9999||m<1||m>12||d<1||d>31)return false;
+      const check=new Date(Date.UTC(y,m-1,d));
+      return check.getUTCFullYear()===y&&check.getUTCMonth()+1===m&&check.getUTCDate()===d;
+    };
+    const localStamp=(y,m,d,h,minute,second,hasTime)=>{
+      if(!validCalendar(y,m,d)||h<0||h>23||minute<0||minute>59||second<0||second>59)return raw;
+      const z=n=>String(n).padStart(2,'0');
+      const datePart=z(d)+'/'+z(m)+'/'+String(y).padStart(4,'0');
+      return hasTime?datePart+' '+z(h)+':'+z(minute)+':'+z(second):datePart;
+    };
+    let match=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if(match)return localStamp(Number(match[3]),Number(match[2]),Number(match[1]),Number(match[4]||0),Number(match[5]||0),Number(match[6]||0),match[4]!==undefined);
+    match=raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?$/);
+    if(match)return localStamp(Number(match[1]),Number(match[2]),Number(match[3]),Number(match[4]||0),Number(match[5]||0),Number(match[6]||0),match[4]!==undefined);
+    // Never pass a timezone-less, unrecognized string to Date.parse:
+    // browsers and host timezones interpret those differently.
+    if(!/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw))return raw;
+    date=new Date(raw);
+  }else{
+    date=new Date(value);
+  }
+  if(Number.isNaN(date.getTime()))return raw||String(value??'');
   const parts=new Intl.DateTimeFormat('en-GB',{
-    timeZone:'Asia/Ho_Chi_Minh',
-    year:'numeric',month:'2-digit',day:'2-digit',
+    timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit',
     hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
-  }).formatToParts(d);
+  }).formatToParts(date);
   const fields=Object.fromEntries(parts.map(part=>[part.type,part.value]));
-  return `${fields.day}/${fields.month}/${fields.year} ${fields.hour}:${fields.minute}:${fields.second}`;
+  return fields.day+'/'+fields.month+'/'+fields.year+' '+fields.hour+':'+fields.minute+':'+fields.second;
 }
-
 function currentUid(){return text(identity?.uid);}
 function captureProductionOwner(){
   return {
@@ -206,7 +229,8 @@ function orderTime(order){
   const keys=['done','delivered'].includes(orderStatus(order))
     ? ['delivered_at','ngay','ordered_at','created_at','updated_at']
     : ['ngay','ordered_at','created_at','updated_at'];
-  return viTime(first(order,keys,new Date()));
+  const stamp=first(order,keys,'');
+  return stamp ? viTime(stamp) : 'Chưa rõ thời gian';
 }
 function backendOrderId(order){return text(first(order,['backendOrderId','order_id','id']));}
 function orderDisplayCode(order){
