@@ -1,5 +1,13 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-CART-CUSTOMER-PRICE-20261116 — Chọn áp giá riêng khi sửa đơn đã lưu
+
+- **Given:** Admin đang sửa đơn tạm hoặc đơn đã giao đã lưu, khách đang chọn có ít nhất một giá riêng đã lưu trong Quản trị hàng hóa.
+- **When:** phần đầu Giỏ hàng giữ nút **Giá mới** lấy giá chung như cũ, thêm nút **Áp giá riêng** chỉ khi RPC Admin xác minh khách có giá riêng. Chạm Áp giá riêng đọc ma trận khách + các mã trong giỏ đúng 1 lần, chỉ cập nhật đơn giá của mã được áp riêng; mã khác giữ giá đang có. Không tự cập nhật trên mở giỏ/render, không làm mất số lượng, giá vốn, mã đơn, ghi chú hoặc STT.
+- **Then:** kiểm tra đầy đủ dữ liệu trước khi thay đổi giỏ; sai KH/mã/giá/trùng => từ chối toàn bộ và giữ giỏ. Nếu khách có giá riêng nhưng không có mã nào trong đơn có giá riêng => báo rõ, không đổi giá. Chỉ **Cập nhật đơn** mới ghi vào đơn; không ghi/sửa giá riêng trong danh mục. Đơn đã giao giữ snapshot vốn lịch sử; đơn tạm chỉ cập nhật snapshot vốn khi đã bấm Giá mới theo quy tắc hiện có.
+- **Scope:** `src/fixed-ui-runtime-6.js`, `src/fixed-production-bridge.js`, CSS header và `index.html`; dùng đúng 2 RPC Admin đã có (`taphoa_admin_customer_special_price_customers`, `taphoa_admin_customer_special_price_matrix`). Không thay backend/schema/PIN/user/Zalo/Chat; không sửa bảng giá riêng ở server. Thiếu API/mạng: nút Thử giá riêng, không suy ra chưa có giá. Phản hồi cũ sau đổi đơn/khách/tài khoản bị bỏ.
+- **Verify:** `tests/cart-customer-special-prices-20261116.test.js` — áp đúng một phần, không ghi ngầm, không dùng dữ liệu khách khác, không áp nếu thiếu, người dùng/PIN không thao tác, thử lại được; test + build + ảnh iPhone Web/PWA thực trước khi PASS.
+
 ## SPEC-TAPHOA-CART-REVIEW-20261116 — Soát từng dòng trước khi Duyệt đơn tạm
 
 - **Given:** quản trị viên mở một đơn **tạm đã lưu** trong tab Đơn tạm (hoặc mở cùng đơn từ Công nợ) ở chế độ xem, không phải chế độ sửa.
