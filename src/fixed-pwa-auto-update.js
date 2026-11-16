@@ -126,6 +126,45 @@
     return response.json();
   }
 
+  // SPEC-PWA-UPDATE-20261116: SOURCE-MAIN is a source placeholder, not an
+  // immutable release identity. If a host serves repository files directly,
+  // both version.json and the running HTML say "source-main" forever.
+  // Compare the current entry's local asset URLs to the uncached entry when
+  // both markers are placeholders. This adds one small HTML read only in
+  // that abnormal deployment mode, not on ordinary hashed production builds.
+  function localAssetSignature(head){
+    if(!head?.querySelectorAll)return '';
+    return Array.from(head.querySelectorAll('script[src],link[rel="stylesheet"][href]'))
+      .map(node=>{
+        const attribute=String(node.tagName||'').toLowerCase()==='script'?'src':'href';
+        const raw=node.getAttribute?.(attribute);
+        if(!raw)return '';
+        try{
+          const url=new URL(raw,location.href);
+          return url.origin===location.origin?url.pathname+url.search:'';
+        }catch(_){return ''}
+      }).filter(Boolean).join('\n');
+  }
+  function sourceFingerprint(value){
+    let hash=2166136261;
+    for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619);
+    return 'source-'+(hash>>>0).toString(36);
+  }
+  async function compareSourceShell(){
+    if(typeof DOMParser!=='function'||!document.head)return null;
+    const current=localAssetSignature(document.head);
+    if(!current)return null;
+    const url=new URL('./index.html',location.href);
+    url.searchParams.set('_ts',String(Date.now()));
+    const response=await fetch(url.toString(),{cache:'no-store',credentials:'same-origin'});
+    if(!response.ok)throw new Error('Source shell check '+response.status);
+    const html=await response.text();
+    const remote=new DOMParser().parseFromString(html,'text/html');
+    const latest=localAssetSignature(remote?.head);
+    if(!latest)return null;
+    return {changed:latest!==current,build:sourceFingerprint(latest)};
+  }
+
   function activateWaitingWorker(reg){
     try{ reg?.waiting?.postMessage?.({type:'SKIP_WAITING'}); }catch(_){}
   }
@@ -146,16 +185,39 @@
 
     updateInFlight=(async()=>{
       try{
+        // A slow SW registration/update must not block the actual build check.
+        // Keep worker maintenance independent from the no-store version read.
         if(registration){
-          try{ await registration.update(); }catch(_){}
+          void registration.update().then(()=>{
+            activateWaitingWorker(registration);
+            watchInstallingWorker(registration);
+          }).catch(()=>{});
           activateWaitingWorker(registration);
-          watchInstallingWorker(registration);
         }
 
         const server=await fetchServerVersion();
         const serverBuild=String(server?.build_id||'').trim();
         const runningBuild=currentBuildId();
         if(!serverBuild||!runningBuild)return null;
+
+        if(serverBuild==='source-main'&&runningBuild==='source-main'){
+          // A non-built shell has identical placeholders across every commit.
+          // Don't silently report it as the newest version.
+          const source=await compareSourceShell();
+          if(!source)return {updated:false,error:'source-build-unverified'};
+          if(source.changed){
+            showUpdateAction(source.build);
+            freshNavigate(source.build);
+            return {updated:true,from:runningBuild,to:source.build,source:true};
+          }
+          hideUpdateAction();
+          return {updated:false,build:source.build,source:true};
+        }
+        if(serverBuild==='source-main'){
+          // The backend served a source placeholder while the app is on a
+          // stamped build. Never treat this as a genuine newer release.
+          return {updated:false,error:'server-build-unverified'};
+        }
 
         if(serverBuild===runningBuild){
           hideUpdateAction();
@@ -181,6 +243,9 @@
   }
 
   async function registerAndCheck(){
+    // Start checking the build immediately. Safari can hold service worker
+    // registration while the PWA resumes; the notice must not wait for it.
+    const initialVersionCheck=checkForUpdate({force:true});
     try{
       registration=await navigator.serviceWorker.register(SW_URL,{
         scope:'./',
@@ -192,7 +257,7 @@
     }catch(_){
       // Version checks still work when the embedded browser blocks SW.
     }
-    await checkForUpdate({force:true});
+    await initialVersionCheck;
   }
 
   if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',()=>{
