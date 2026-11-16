@@ -8,7 +8,8 @@ test('logout stops polling, flushes price edits and clears admin caches',()=>{
  assert.match(page,/catalogSessionGeneration\+\+;marketSessionGeneration\+\+;analyticsSessionGeneration\+\+/);
  assert.match(page,/analyticsLoading=false;analyticsReloadQueued=false;analyticsLoaded=false/);
  assert.match(page,/marketItems=\[\];marketSources=\[\];marketTotal=0/);
- assert.match(page,/if\(!await flushProductEditsBeforeReload\(\)&&!confirm/);
+ assert.match(page,/if\(\(!await specialPrices\.flush\(\)\|\|!await flushProductEditsBeforeReload\(\)\)\&\&!confirm/);
+  assert.match(page,/specialPrices\.reset\(\)/);
  assert.match(page,/resetAdminSessionDisplays\(\);showLogin\(\)/);
 });
 test('async analytics does not overwrite another admin session or changed period',()=>{

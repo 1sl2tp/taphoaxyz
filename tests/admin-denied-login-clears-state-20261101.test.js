@@ -12,6 +12,7 @@ function fixture(){
  vm.runInContext(`
   let identity={uid:'old',role:'admin'},client={previous:'secret'};
   const customerCare={reset:()=>state.events.push('careReset')};
+   const specialPrices={mount:()=>state.events.push('specialPriceMount')};
   const resetAdminSessionDisplays=()=>{state.events.push('clearAdmin');state.reset=true};
   const showLogin=msg=>{state.events.push('login');state.error=msg};
   const showApp=()=>state.events.push('showApp');
@@ -50,4 +51,5 @@ test('authorized administrator is initialized only after state reset',async()=>{
  assert.equal(f.api.session().client.newSession,true);
  assert.deepEqual(f.state.events.slice(0,3),['careReset','clearAdmin','showApp']);
  assert.equal(f.state.events.includes('signedOut'),false);
+  assert.equal(f.state.events.includes('specialPriceMount'),true);
 });
