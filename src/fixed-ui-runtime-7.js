@@ -315,15 +315,27 @@
             return match ? Number(match[1]) : fallback;
         }
 
-        function sortOrderKeysForDisplay(orders) {
-            const keys = Object.keys(orders).reverse();
+        // SPEC-ORDER-LIST-SORT-20261116: sort only the visible cards.
+        // DG uses the delivered time shown on its card (newest first).
+        // DT uses the displayed buyer name (Vietnamese A-Z) independent of
+        // return order, account role and order ID; ties use the original ID.
+        function sortOrderKeysForDisplay(sheetName, orders) {
+            const keys = Object.keys(orders);
+            const nameCollator = new Intl.Collator('vi-VN', {
+                sensitivity: 'base', numeric: true
+            });
             keys.sort((a,b) => {
-                if (currentAuthRole === 'user') {
-                    const leftTime = orderTimelineStamp(orders[a]?.thoiGian);
-                    const rightTime = orderTimelineStamp(orders[b]?.thoiGian);
-                    if (leftTime !== rightTime) return leftTime < rightTime ? 1 : -1;
+                const byNumber = getTimelineOrderDisplayNumber(b,0)
+                    - getTimelineOrderDisplayNumber(a,0);
+                if (sheetName === 'dontam') {
+                    const leftName = String(orders[a]?.tenKh || '').trim();
+                    const rightName = String(orders[b]?.tenKh || '').trim();
+                    return nameCollator.compare(leftName,rightName) || byNumber;
                 }
-                return getTimelineOrderDisplayNumber(b,0) - getTimelineOrderDisplayNumber(a,0);
+                const leftTime = orderTimelineStamp(orders[a]?.thoiGian);
+                const rightTime = orderTimelineStamp(orders[b]?.thoiGian);
+                if (leftTime !== rightTime) return leftTime < rightTime ? 1 : -1;
+                return byNumber;
             });
             return keys;
         }
@@ -351,7 +363,8 @@
             const remaining = totalCount - visibleCount;
             return '<button type="button" class="order-timeline-more allow-fast-click" data-sheet="' +
                 sheetName + '" onclick="showMoreUserOrderTimeline(this.dataset.sheet)">' +
-                'Xem thêm ' + Math.min(40,remaining) + ' đơn cũ</button>';
+                'Xem thêm ' + Math.min(40,remaining) +
+                (sheetName === 'dontam' ? ' đơn khác' : ' đơn cũ') + '</button>';
         }
 
         function showMoreUserOrderTimeline(sheetName) {
