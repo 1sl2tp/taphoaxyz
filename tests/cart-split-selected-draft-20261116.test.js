@@ -30,6 +30,7 @@ test('a partial choice creates a new order; full review keeps original delivery'
 test('one RPC mutation, and image notices only from the delivered child order',()=>{
   assert.match(service,/gateway\.rpc\('taphoa_split_pending_order'/);
   assert.match(bridge,/async function splitPendingOrder/);
+  assert.match(bridge,/\['done','delivered'\]\.includes\(String\(result\?\.order\?\.status/);
   assert.match(bridge,/if\(result\?\.ok===true&&delivered\)/);
   assert.match(bridge,/staffCommandId:result\.child_command_id/);
   assert.match(bridge,/refresh\(delivered\?\['orders','debt'\]:\['orders'\]\)/);
