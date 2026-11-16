@@ -140,6 +140,10 @@
             if(editedCustomerPriceProbe.count<1)return;
             const entries=Object.entries(cart);
             if(!entries.length)return;
+            const signature=JSON.stringify(entries.map(([code,line])=>[
+                code,Number(line?.qty)||0,Number(line?.price)||0,
+                String(line?.note||'')
+            ]));
             cartPriceRefreshInFlight=true;
             renderCartUI();
             try {
@@ -148,6 +152,15 @@
                 const matrix=await window.TAPHOA_PRODUCTION.customerSpecialPriceMatrix(
                     context.customerId,entries.map(([code])=>code));
                 if(editedCustomerPriceContext()?.key!==context.key)return;
+                // A long price read must not override user edits made meanwhile.
+                const currentSignature=JSON.stringify(Object.entries(cart).map(([code,line])=>[
+                    code,Number(line?.qty)||0,Number(line?.price)||0,
+                    String(line?.note||'')
+                ]));
+                if(currentSignature!==signature){
+                    showToast('Giỏ hàng đã thay đổi. Bấm Áp giá riêng một lần nữa để lấy đúng giá.','info');
+                    return;
+                }
                 if(!Array.isArray(matrix))throw Error('Không đọc được bảng giá riêng.');
                 const idByCode=new Map(entries.map(([code])=>
                     [String(code).trim().toUpperCase(),code]));
