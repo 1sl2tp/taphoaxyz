@@ -141,9 +141,15 @@ export function compareRegionRead(field,aiValue,ocrValue){
   if(OPTIONAL_FIELDS.has(field)&&!ai&&!ocr)
     return {field,status:'optional_absent',value:null,needsReview:false};
   if(!ai&&!ocr)return {field,status:'unreadable',value:null,needsReview:true};
-  if(!ai||!ocr)return {field,status:'single_source',value:ai||ocr,needsReview:true};
-  if(ai!==ocr)return {field,status:'conflict',aiValue:ai,ocrValue:ocr,value:null,needsReview:true};
-  return {field,status:'agreed',value:ai,needsReview:false};
+  // Preserve exact OCR evidence separately from normalized matching text.
+  // Never silently rewrite digits, punctuation or the bank receipt itself.
+  const original=x=>x===null||x===undefined?null:
+    (typeof x==='string'||typeof x==='number'?String(x).slice(0,600):null);
+  const audit={aiText:original(aiValue),ocrText:original(ocrValue)};
+  if(!ai||!ocr)return {field,status:'single_source',value:ai||ocr,...audit,needsReview:true};
+  if(ai!==ocr)return {field,status:'conflict',aiValue:ai,ocrValue:ocr,
+    value:null,...audit,needsReview:true};
+  return {field,status:'agreed',value:ai,...audit,needsReview:false};
 }
 // Invoke external readers only for detected boxes. The caller decides whether
 // to show a manual crop editor for conflicts; this function cannot book money.
@@ -179,7 +185,9 @@ export async function inspectBillZones({
      if(typeof confidence==='number'&&(!Number.isFinite(confidence)||confidence<0.7||confidence>1)){
        results[field]={field,status:'low_ocr_confidence',value:null,needsReview:true};
      }else{
-       results[field]=compareRegionRead(field,aiFields?.[field],text);
+       results[field]={...compareRegionRead(field,aiFields?.[field],text),
+         bbox:[...bbox],
+         ocrConfidence:typeof confidence==='number'?confidence:null};
      }
    }catch(_e){
      results[field]={field,status:'crop_or_ocr_unavailable',value:null,needsReview:true};
