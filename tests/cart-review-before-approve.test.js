@@ -40,7 +40,7 @@ test('draft approval needs every checked line and revocation disables approval',
     assert.equal(review.isCartReviewComplete(),false);
 });
 
-test('edits, another order, role change and other tabs discard old confirmations',()=>{
+test('edits, another order, role change and leaving preview discard confirmations',()=>{
     const {env,review}=harness();
     const all=()=>{review.setCartReviewLine('milkA',true);review.setCartReviewLine('milkB',true);assert.equal(review.isCartReviewComplete(),true);};
     all();
@@ -53,7 +53,11 @@ test('edits, another order, role change and other tabs discard old confirmations
     env.currentAuthRole='user';
     assert.equal(review.isCartReviewComplete(),false);
     env.currentAuthRole='admin';
+    // Changing the underlying tab while the same draft sheet stays open
+    // must not hide the picker controls on mobile.
     env.tab='tab-da-giao';
+    all();
+    env.editingOrderInSaleMode=true;
     assert.equal(review.isCartReviewComplete(),false);
 });
 
