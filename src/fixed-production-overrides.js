@@ -424,6 +424,30 @@
     }
   };
 
+  // SPEC-SPLIT-PENDING-20261116: confirmation before creating any new
+  // order or sale. Only the in-memory checked items are selected.
+  window.requestSelectedDraftAction=function(target){
+    if(orderMutationInFlight||draftReviewTransitionInFlight)return;
+    if(currentAuthRole==='user'||backend()?.getAccessMode?.()!=='account'||
+       !editingOrderId||editingOrderSheet!=='dontam'||editingOrderInSaleMode){
+      return denyPermission('Chỉ quản trị viên được tách hoặc duyệt đơn tạm đã lưu.');
+    }
+    const selected=typeof getCartReviewSelection==='function'?getCartReviewSelection():[];
+    const total=Object.keys(cart||{}).length;
+    if(!selected.length)return showAlertPopup('Chưa chọn hàng','Tích ít nhất một dòng đã kiểm.');
+    if(target==='dontam'&&selected.length===total){
+      return showAlertPopup('Không còn hàng ở đơn gốc','Giữ ít nhất một dòng trong đơn cũ khi tách đơn tạm.');
+    }
+    const title=target==='dontam'?'Tách thành đơn tạm mới':selected.length===total?'Duyệt giao toàn bộ đơn':'Duyệt giao các dòng đã chọn';
+    const description=target==='dontam'
+      ?'Chuyển '+selected.length+'/'+total+' dòng sang một đơn tạm mới. Các dòng còn lại giữ ở đơn cũ. Không gửi thông báo giao.'
+      :selected.length===total
+        ?'Duyệt giao đủ '+total+' dòng của đơn hiện tại.'
+        :'Giao '+selected.length+'/'+total+' dòng đã tích thành đơn Đã giao mới. Các dòng chưa tích vẫn là Đơn tạm cũ.';
+    showConfirmModal(title,description,target==='dontam'?'Tách đơn tạm':'Xác nhận giao','bg-primary',
+      ()=>dayToanBoGioHang(target==='dontam'?'tach-don-tam':'dongiao'));
+  };
+
   dayToanBoGioHang=async function(tab){
     if(orderMutationInFlight)return;
     if(typeof cartPriceRefreshInFlight !== 'undefined' && cartPriceRefreshInFlight){
@@ -437,15 +461,22 @@
 
     const sourceSheet=editingOrderId?(editingOrderSheet||(String(editingOrderId).startsWith('DG')?'dongiao':'dontam')):tab;
     const isPromotingDraft=Boolean(editingOrderId)&&sourceSheet==='dontam'&&tab==='dongiao';
-    // SPEC-TAPHOA-CART-REVIEW-20261116: fail closed at the actual mutation
-    // boundary, not just the disabled UI button. This never writes checks.
-    if(isPromotingDraft && (typeof isCartReviewComplete!=='function'||!isCartReviewComplete())){
-      showAlertPopup('Chưa soát đủ hàng','Mở đơn tạm, tích xác nhận từng dòng và số lượng trước khi duyệt.');
+    const isSplittingPending=Boolean(editingOrderId)&&sourceSheet==='dontam'&&tab==='tach-don-tam';
+    const selectedReviewCodes=typeof getCartReviewSelection==='function'?getCartReviewSelection():[];
+    // Fail closed even on a direct function call; never split or deliver
+    // items without an authenticated review selection.
+    if((isPromotingDraft||isSplittingPending)&&
+       (!selectedReviewCodes.length||typeof isCartReviewComplete!=='function')){
+      showAlertPopup('Chưa soát hàng','Tích các dòng cần giao hoặc tách trong đơn tạm đã lưu.');
       return;
     }
-    // F-182: editing an existing order is not a new checkout.
-    // Keep the current customer, order ID and cart in the edit workspace after save.
-    const isUpdatingExistingOrder=Boolean(editingOrderId)&&!isPromotingDraft;
+    if(isSplittingPending&&selectedReviewCodes.length>=Object.keys(cart).length){
+      showAlertPopup('Không thể tách hết đơn','Phải còn ít nhất một dòng trong đơn gốc.');
+      return;
+    }
+    const isPartialPromotion=isPromotingDraft&&!isCartReviewComplete();
+    const isSplittingSelection=isSplittingPending||isPartialPromotion;
+    const isUpdatingExistingOrder=Boolean(editingOrderId)&&!isPromotingDraft&&!isSplittingSelection;
     const targetSheet=isPromotingDraft?'dongiao':sourceSheet;
     const status=targetSheet==='dongiao'?'done':'pending';
     let backendEditOrderId=editingOrderId?backendOrderIdFor(sourceSheet,editingOrderId):'';
