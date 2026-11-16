@@ -51,6 +51,59 @@ test('price action stays visible for Admin edits even if list count is zero/stal
   h.ctx.editingOrderInSaleMode=false;
   assert.equal(h.eligible(),null);
 });
+test('one customer-price action supports new order, draft edit and delivered edit',async()=>{
+  const h=harness({matrix:[{customer_id:CUSTOMER,product_code:'SP001',price:200}]});
+  // New order has no saved ID and no edit badge; selecting a customer is enough.
+  h.ctx.editingOrderId=null;
+  h.ctx.editingOrderSheet=null;
+  h.ctx.editingOrderInSaleMode=false;
+  assert.equal(h.eligible().mode,'new');
+  await h.apply();
+  assert.equal(h.ctx.cart.SP001.price,200);
+  assert.match(h.toasts[0].msg,/Bán ngay hoặc Lưu tạm/);
+  // Opening an existing draft must enable the same action.
+  h.ctx.editingOrderId='DT249';
+  h.ctx.editingOrderSheet='dontam';
+  h.ctx.editingOrderInSaleMode=true;
+  assert.equal(h.eligible().mode,'edit');
+  assert.equal(h.eligible().sheet,'dontam');
+  h.ctx.editingOrderId='DG370';
+  h.ctx.editingOrderSheet='dongiao';
+  assert.equal(h.eligible().mode,'edit');
+  assert.equal(h.eligible().sheet,'dongiao');
+  // Viewing a saved order is never a pricing edit.
+  h.ctx.editingOrderInSaleMode=false;
+  assert.equal(h.eligible(),null);
+});
+test('new order without customer and customer/PIN modes cannot apply prices',async()=>{
+  const h=harness({matrix:[{customer_id:CUSTOMER,product_code:'SP001',price:200}]});
+  h.ctx.editingOrderId=null;
+  h.ctx.editingOrderSheet=null;
+  h.ctx.editingOrderInSaleMode=false;
+  h.ctx.selectedCustomer={id:'',name:'Chọn khách'};
+  assert.equal(h.eligible(),null);
+  await h.apply();
+  assert.equal(h.ctx.cart.SP001.price,235);
+  h.ctx.selectedCustomer={id:CUSTOMER,name:'C Hà Trang'};
+  h.ctx.currentAuthRole='user';
+  assert.equal(h.eligible(),null);
+  h.ctx.currentAuthRole='admin';
+  h.ctx.window.TAPHOA_PRODUCTION.getAccessMode=()=> 'public-link';
+  assert.equal(h.eligible(),null);
+});
+test('price read from a previous new cart cannot overwrite a freshly reset cart',async()=>{
+  let finish;
+  const h=harness({provider:()=>new Promise(resolve=>{finish=resolve;})});
+  h.ctx.editingOrderId=null;
+  h.ctx.editingOrderSheet=null;
+  h.ctx.editingOrderInSaleMode=false;
+  const task=h.apply();
+  h.ctx.cart={SP001:{name:'Sữa A',qty:10,price:235},
+    SP002:{name:'Sữa B',qty:5,price:181}};
+  finish([{customer_id:CUSTOMER,product_code:'SP001',price:120}]);
+  await task;
+  assert.equal(h.ctx.cart.SP001.price,235);
+});
 test('apply only exact customer product overrides; keep other prices and do not save order',async()=>{
   const h=harness({matrix:[{customer_id:CUSTOMER,product_code:'SP001',price:202.5}]});
   await h.apply();
