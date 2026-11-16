@@ -47,6 +47,18 @@ export function createBusinessService({gateway,idFactory=defaultIdFactory}={}) {
       const result=await gateway.rpc('taphoa_save_order',{p_order:orderRpcPayload(payload),p_command_id:id});
       return {...result,staff_notice_command_id:id};
     },
+    // Single atomic server command. Never send two client saveOrder calls:
+    // they could duplicate an order after a partial network failure.
+    splitPendingOrder:async ({orderId,selectedCodes,expectedItems,targetStatus})=>{
+      const command=commandId();
+      return gateway.rpc('taphoa_split_pending_order',{
+        p_order_id:String(orderId||''),
+        p_selected_codes:(selectedCodes||[]).map(String),
+        p_expected_items:orderRpcPayload({items:expectedItems}).items,
+        p_target_status:targetStatus==='delivered'?'delivered':'pending',
+        p_command_id:command
+      });
+    },
     deliverOrder:async id=>{
       const command=commandId();
       const result=await gateway.rpc('taphoa_deliver_order',{p_order_id:String(id||''),p_command_id:command});
