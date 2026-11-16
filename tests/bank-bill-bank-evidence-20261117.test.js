@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
  parsePrintedBillClock,parseOfficialAgribankCredit,findAgribankBillEvidence
 } from '../src/bank-bill-bank-evidence.js';
+import {analyzeBillWithRegions} from '../src/bank-bill-region-ocr.js';
 
 const account='1234567890123';
 const transferMemo='Hanh dung Zalopay chuyen tien';
@@ -133,4 +134,68 @@ test('invalid printed time, absent AI amount and no events fail closed',()=>{
  assert.equal(findAgribankBillEvidence({
    billRead:good(),notifications:Array.from({length:101},()=>credit()),expectedAccount:account
  }).reason,'evidence_unavailable');
+});
+
+
+test('full AI boxes + independent OCR + delayed bank event yield review-only candidate',async()=>{
+ const bitmap=globalThis.createImageBitmap,canvas=globalThis.OffscreenCanvas;
+ let crops=0,decoded=0;
+ try{
+  globalThis.createImageBitmap=async()=>{decoded++;return{width:1000,height:1000,close(){}}};
+  globalThis.OffscreenCanvas=class{
+   constructor(w,h){this.width=w;this.height=h}
+   getContext(){return{drawImage(){crops++}}}
+   async convertToBlob(){return new Blob(['crop'],{type:'image/png'})}
+  };
+  const bounds={
+    amount:[0.15,0.2,0.3,0.05],account:[0.15,0.3,0.5,0.05],
+    transactionTime:[0.15,0.4,0.3,0.05],
+    transferContent:[0.15,0.5,0.7,0.05],
+    transactionStatus:[0.15,0.6,0.4,0.05]
+  };
+  const locateRegions=async()=>({
+   documentBox:[0.1,0.1,0.8,0.85],
+   selectedTransaction:'single_detail',boxes:bounds,
+   aiFields:{
+    amount:'70.000đ',account,transactionTime:'2026-11-16 15:25',
+    transferContent:'Hanh dung Zalopay chuyen tien',
+    transactionStatus:'Giao dịch thành công'
+   }
+  });
+  const readOcr=async({field})=>({
+   amount:'70,000 VND',account,transactionTime:'15:25 16/11/2026',
+   transferContent:'Hạnh dùng Zalopay chuyển tiền',
+   transactionStatus:'Giao dịch thành công'
+  })[field];
+  const props={imageBlob:new Blob(['mock']),locateRegions,readOcr,
+    expectedAccount:account,bankNotifications:[credit()],
+    creditUsageKnown:true,usedNotificationIds:[]};
+  const found=await analyzeBillWithRegions(props);
+  assert.equal(decoded,1);
+  assert.equal(crops,5);
+  assert.equal(found.fields.recipientName.status,'optional_absent');
+  assert.equal(found.bankEvidence.status,'candidate_for_financial_rpc');
+  assert.equal(found.status,'bank_candidate_review');
+  assert.equal(found.bankEvidence.candidateId,348);
+  assert.equal(found.readyForIndependentBankMatch,true);
+  assert.equal(found.automaticCollectionAuthorized,false);
+  assert.equal(found.ledgerWritten,false);
+
+  const unknownUsage=await analyzeBillWithRegions({...props,creditUsageKnown:false});
+  assert.equal(unknownUsage.status,'review');
+  assert.equal(unknownUsage.bankEvidence.reason,'credit_consumption_check_unavailable');
+  assert.equal(unknownUsage.automaticCollectionAuthorized,false);
+
+  const wrongAccount=await analyzeBillWithRegions({...props,
+   readOcr:async({field})=>field==='account'?'123456789012':(await readOcr({field}))});
+  assert.equal(wrongAccount.fields.account.status,'conflict');
+  assert.equal(wrongAccount.status,'review');
+  assert.equal(wrongAccount.bankEvidence.reason,'bill_destination_account_unverified');
+  assert.equal(wrongAccount.ledgerWritten,false);
+ }finally{
+  if(bitmap===undefined)delete globalThis.createImageBitmap;
+  else globalThis.createImageBitmap=bitmap;
+  if(canvas===undefined)delete globalThis.OffscreenCanvas;
+  else globalThis.OffscreenCanvas=canvas;
+ }
 });
