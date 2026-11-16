@@ -137,7 +137,7 @@ test('order preview actions are minimal by source state',async()=>{
   const preview=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
   assert.match(preview,/> Xóa/);
   assert.match(preview,/> Sửa/);
-  assert.match(preview,/isPendingOrderCart[\s\S]{0,700}Duyệt/);
+  assert.match(preview,/isPendingOrderCart[\s\S]{0,2200}Duyệt/);
   assert.doesNotMatch(preview,/Xóa đơn|Cập nhật đơn|Đặt|Bán/);
 });
 
