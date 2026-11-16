@@ -472,7 +472,7 @@
                 return;
             }
 
-            // A saved draft can be updated and then reviewed for delivery.
+            // Đơn tạm: save changes, then enter the review before delivery.
             // "Duyệt" is an entry into the checklist, never a direct mutation:
             // the backend must confirm the latest edit was saved first.
             if (isPendingOrderCart) {
