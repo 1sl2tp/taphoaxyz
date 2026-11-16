@@ -15,7 +15,7 @@ test('unaccented transfer memo preserves routing reference and rejects short gen
  assert.equal(normalizeTransferText('FT123456789 - chuyen tien'),'FT123456789 - CHUYEN TIEN');
  assert.equal(normalizeTransferText(null),null);
  assert.equal(extractOfficialBankMemo(proof('ABC123456789-Hanh dung Zalopay chuyen tien')),
-  'ABC123456789-Hanh dung Zalopay chuyen tien.');
+  'ABC123456789-Hanh dung Zalopay chuyen tien');
  // The final period is part of the bank evidence; no arbitrary punctuation removal.
  const generic=compareTransferMemo({printedMemo:'Chuyển tiền',bankMemo:'chuyen tien'});
  assert.equal(generic.status,'manual_review');
@@ -83,4 +83,16 @@ test('bank text cannot be inferred from receipt clock, amount or OCR alone',()=>
  // An unknown bank-side wrapper is not treated as a receipt reference.
  assert.equal(compareTransferMemo({
    printedMemo:billMemo,bankMemo:'UNKNOWN(1234) '+bankLiteral}).status,'manual_review');
+});
+
+
+test('official Agribank 70k body ends memo at its own punctuation, not at a phone banner',()=>{
+ const official=proof('O5CH7L3VSMM4-Hanh dung Zalopay chuyen tien');
+ const memo=extractOfficialBankMemo(official);
+ assert.equal(memo,'O5CH7L3VSMM4-Hanh dung Zalopay chuyen tien');
+ const result=compareTransferMemo({printedMemo:billMemo,bankNotificationBody:official});
+ assert.equal(result.status,'consistent');
+ assert.equal(result.reason,'verified_bank_routing_prefix');
+ assert.equal(result.bankTransferVerified,false);
+ assert.equal(result.automaticCollectionAuthorized,false);
 });
