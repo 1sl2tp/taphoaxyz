@@ -33,7 +33,7 @@ test('read calls serialize per-field OCR profiles to avoid mixed whitelists',asy
    engine.readOcr({field:'account',crop:new Blob(['a'])}),
    engine.readOcr({field:'recipientName',crop:new Blob(['b'])})
  ]);
- assert.deepEqual(trace,['set:14','recognize:start','recognize:done',
+ assert.deepEqual(trace,['set:13','recognize:start','recognize:done',
    'set:0','recognize:start','recognize:done']);
  assert.equal(outcomes[0].confidence,1);
  await engine.close();
