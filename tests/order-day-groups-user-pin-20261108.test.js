@@ -45,7 +45,7 @@ function renderFixture(source,name,sheet,role){
       const m=String(value).match(/^(\d\d)\/(\d\d)\/(\d{4})/);
       return m?m[3]+'-'+m[2]+'-'+m[1]:'';
     },
-    sortOrderKeysForDisplay:orders=>Object.keys(orders).sort((a,b)=>
+    sortOrderKeysForDisplay:(_sheet,orders)=>Object.keys(orders).sort((a,b)=>
       Number(b.replace(/\D/g,''))-Number(a.replace(/\D/g,''))),
     getUserTimelineVisibleKeys:(_sheet,keys)=>keys,
     renderUserOrderDayHeading:(day,count)=>
@@ -61,12 +61,20 @@ for(const [file,func,sheet,newest] of [
   ['src/fixed-ui-runtime-11.js','renderDaGiao','dongiao','DG14'],
   ['src/fixed-ui-runtime-10.js','renderDonTam','dontam','DT7']
 ]){
-  test('User/PIN '+sheet+' groups every card under its own date; admin remains unchanged',async()=>{
+  test('User/PIN '+sheet+' respects its current sort/group policy',async()=>{
     const src=await readFile(file,'utf8');
     const user=renderFixture(src,func,sheet,'user');
     const admin=renderFixture(src,func,sheet,'admin');
     const opened=user.match(/<section class="order-timeline-day-group">/g)||[];
     const closed=user.match(/<\/section>/g)||[];
+    if(sheet==='dontam'){
+      // November 16 requirement: one alphabetical draft list, no date breaks.
+      assert.equal(opened.length,0);
+      assert.equal(closed.length,0);
+      assert.ok(user.includes("clickOrder('DT7'"),'draft cards remain visible');
+      assert.doesNotMatch(admin,/order-timeline-day-group/);
+      return;
+    }
     assert.equal(opened.length,2);
     assert.equal(closed.length,2);
     assert.ok(user.includes('<section class="order-timeline-day-group"><h3 class="order-timeline-day-heading">2026-11-06 · '+(sheet==='dongiao'?2:1)+'</h3>'));
