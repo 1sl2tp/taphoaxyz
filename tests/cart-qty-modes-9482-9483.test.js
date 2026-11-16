@@ -37,7 +37,8 @@ test('readonly quantity uses short SL caption and a width sized to the maximum v
   assert.match(runtime,/const qtyHeader = cartSheet\.querySelector\('\.cart-column-header \.cart-qty'\)/);
   assert.match(runtime,/qtyHeader\.textContent = isDeliveredReadOnlyPreview \? 'SL' : 'Số lượng'/);
   assert.match(runtime,/const qtyChars = Math\.max\(1, \.\.\.cartEntries\.map\(\(\[, item\]\) => formattedLen\(item\.qty\)\)\)/);
-  assert.match(runtime,/setProperty\('--cart-qty-readonly-track',[\s\S]*?Math\.max\(32, Math\.ceil\(qtyChars \* 8 \+ 8\)\) \+ 'px'/);
+  assert.match(runtime,/setProperty\('--cart-qty-readonly-track',[\s\S]*?Math\.max\(32, Math\.ceil\(qtyChars \* 8 \+ 8\)\)/);
+  assert.match(runtime,/\(reviewMode \? 24 : 0\)/,'review checkbox must have its own space');
   const cssFinal=css.slice(css.indexOf('/* FIXED STYLE: cart-visual-numeric-gaps-and-name-note-popup-20261008'));
   assert.match(cssFinal,/#cartBottomSheet\[data-cart-mode="preview"\] \.cart-compact-grid\{[^}]*grid-template-columns:[^;]*var\(--cart-qty-readonly-track,32px\)/);
   assert.match(css, /#cartBottomSheet\[data-cart-mode="preview"\] #cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:var\(--cart-qty-readonly-track,32px\)/);
