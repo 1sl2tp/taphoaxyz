@@ -144,8 +144,22 @@
             // SPEC-TAPHOA-CART-SAFE-HANDLERS-20261102: keep product codes and
             // names in escaped data-* attributes. Inline JS string interpolation
             // breaks on apostrophes and must never own cart quantity changes.
+            // SPEC-TAPHOA-MILK-X-CART-20261116: Source group is column 5.
+            // Only an independent trailing " x" on a Milk product marks a high price.
+            const milkProductCodes = new Set(
+                (Array.isArray(appData?.sanpham) ? appData.sanpham.slice(1) : [])
+                    .filter(row => normalizeSearchText(row?.[4] || '') === 'sua')
+                    .map(row => String(row[0]))
+            );
             const lineCount = cartEntries.length;
             for (const [id, item] of cartEntries) {
+                const highPriceMilkX = milkProductCodes.has(String(id))
+                    && /(?:^|\s)x\s*$/i.test(String(item.name || ''));
+                const safeProductName = escapeProductEditorValue(item.name);
+                const displayProductName = highPriceMilkX
+                    ? safeProductName.replace(/(\s)(x)(\s*)$/i, '$1<span class="cart-milk-x-marker">$2</span>$3')
+                    : safeProductName;
+                const quantityWarningClass = highPriceMilkX ? ' cart-milk-x-qty' : '';
                 totalQty += item.qty; totalPrice += (item.qty * item.price);
                 html += `
                 <div class="cart-compact-grid py-3 border-b border-gray-50 text-[12px]" data-cart-readonly="${isDeliveredReadOnlyPreview ? '1' : '0'}">
@@ -158,16 +172,16 @@
                                 data-note-current="${escapeProductEditorValue(String(item.note || '').trim())}"
                                 data-cart-product-name="${escapeProductEditorValue(item.name)}"
                                 aria-label="Xem ghi chú sản phẩm ${escapeProductEditorValue(item.name)}"
-                                onclick="openCartLineNoteEditor(this)">${escapeProductEditorValue(item.name)}</button>
+                                onclick="openCartLineNoteEditor(this)">${displayProductName}</button>
                         </div>
                     </div>
                     <div class="cart-qty">
                         <span class="cart-field-caption">Số lượng</span>
                         ${isDeliveredReadOnlyPreview
-                            ? `<div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums">${item.qty}</div>`
+                            ? `<div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums${quantityWarningClass}">${item.qty}</div>`
                             : `<div class="cart-qty-control border border-gray-200 rounded-full bg-white">
                                 <button data-cart-product-code="${escapeProductEditorValue(id)}" data-cart-product-name="${escapeProductEditorValue(item.name)}" data-cart-price="${Number(item.price)}" onclick="updateCart(this.dataset.cartProductCode, this.dataset.cartProductName, Number(this.dataset.cartPrice), -1)" class="allow-fast-click w-4 h-4 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
-                                <input type="number" value="${item.qty}" min="1" step="1" inputmode="numeric" data-qty-editor="cart" data-qty-id="${escapeProductEditorValue(id)}" data-qty-price="${Number(item.price)}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-6 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[11px]">
+                                <input type="number" value="${item.qty}" min="1" step="1" inputmode="numeric" data-qty-editor="cart" data-qty-id="${escapeProductEditorValue(id)}" data-qty-price="${Number(item.price)}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-6 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[11px]${quantityWarningClass}">
                                 <button data-cart-product-code="${escapeProductEditorValue(id)}" data-cart-product-name="${escapeProductEditorValue(item.name)}" data-cart-price="${Number(item.price)}" onclick="updateCart(this.dataset.cartProductCode, this.dataset.cartProductName, Number(this.dataset.cartPrice), 1)" class="allow-fast-click w-4 h-4 rounded-full flex items-center justify-center shrink-0" aria-label="Tăng số lượng"><svg class="cart-plus-circle" viewBox="0 0 32 32" width="30" height="30" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><circle cx="16" cy="16" r="15.5" fill="#16a34a"/><path d="M10 16h12M16 10v12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></button>
                             </div>`}
                     </div>
