@@ -100,3 +100,27 @@ Các thông báo Agribank 12–17/11/2026 gồm 70 dạng thường/khác, 16 QR
 - Đọc OCR trả về text và confidence [0,1] đúng hợp đồng inspectBillZones. Ảnh crop rỗng/lớn bất thường, worker lỗi hoặc độ tin cậy thấp phải review. Không gọi RPC tài chính.
 - Thêm tests/bank-bill-tesseract-ocr-20261117.test.js và gắn vào GitHub Actions chỉ đọc. 30/30 bài test của bốn bộ source đã PASS trong JS isolate mô phỏng (không phải OCR trên ảnh thật).
 - CHƯA cài/bundled bộ ngôn ngữ Tesseract hay nối vào worker Supabase hiện hành; không được tuyên bố đã xử lý bill production. Giữ E2/E3/E4/E5 ở PENDING và E1 GitHub CI PENDING đến khi có status.
+
+## BANK-ZONE-OCR-20261117-4 — Ghép chứng cứ Agribank qua ngày (source-only)
+
+### Root owner / read-write path
+- src/bank-bill-bank-evidence.js — bộ chọn ứng viên đối soát Agribank dạng pure, KHÔNG ghi DB.
+- src/bank-bill-region-ocr.js — sau bước AI locator + crop + OCR, gọi bộ chọn ứng viên chỉ đọc nếu caller có truyền mảng thông báo bank.
+- src/bank-bill-ocr-review.js — giữ văn bản gốc AI/OCR, tọa độ vùng và confidence phục vụ admin khoanh lại.
+- tests/bank-bill-bank-evidence-20261117.test.js — thử sự kiện đến muộn qua 0 giờ, bằng chứng #348 và chống ứng viên trùng; được thêm vào workflow GitHub Actions.
+
+### Given / When / Then
+- GIVEN thông báo đến sau bill hoặc sang ngày; WHEN giá trị amount, bank's printed transaction time, bank account và memo đều khớp; THEN tạo bank_candidate_review (chỉ dùng để kiểm chứng qua RPC tài chính về sau), KHÔNG thay ngày giao dịch bằng posted_at/received_at.
+- GIVEN hai thông báo chính thức cùng số tiền/cùng phút; THEN review multiple_official_bank_credits_same_minute, không chọn đại.
+- GIVEN không xác minh được trạng thái đã sử dụng của notification_id; THEN review credit_consumption_check_unavailable, không suy luận chưa thu.
+- GIVEN account bị đọc thiếu; THEN review bill_account_requires_region_recheck và giữ nguyên raw AI/OCR; không tự điền số từ cấu hình.
+- GIVEN bill không có tên người nhận; THEN optional_absent, không dùng tên làm điều kiện bắt buộc.
+- GIVEN số tiền/ngày giờ khác, event không đúng package Agribank, thông báo đã dùng, ảnh đọc thất bại; THEN không cho phép tự ghi thu.
+- Output luôn automaticCollectionAuthorized=false và ledgerWritten=false. Existing financial SQL RPC vẫn là cổng ghi thu duy nhất; bằng chứng từ module không được thay vai trò của transaction lock/ledger/idempotency.
+
+### Bằng chứng và mức nghiệm thu
+- Truy vấn read-only Supabase #348 (16/11/2026) cho thấy bộ parse nhận ra chính xác 70.000đ và 15:25 theo giờ ngân hàng, phân biệt posted_at đến muộn. Không ghi vào sổ.
+- 42/42 phép thử cô lập JavaScript đã qua, nhưng đây KHÔNG phải GitHub Actions CI, KHÔNG phải OCR trên ảnh thật và KHÔNG phải production acceptance.
+- E0 PASS logic+owner mapping; E1 source PASS (isolated harness) / GitHub CI PENDING; E2 integration với worker Supabase canonical PENDING; E3 deploy PENDING; E4 mobile/PWA/APK PENDING; E5 performance/resource PENDING.
+- Không tự tạo mới source mirror giả làm worker thực tế; repo hiện chưa có đúng thư mục source v21-bank-bill-event. Không deploy thủ công, không gửi thông báo cho khách và không sửa công nợ.
+- Rollback: revert các commit module/test/doc; nếu sau này bật runtime, restore image-worker last-known-good và kiểm tra lại chứng cứ tránh thu trùng.
