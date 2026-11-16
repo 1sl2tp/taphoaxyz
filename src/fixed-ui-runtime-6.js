@@ -89,10 +89,10 @@
             cartReviewState={orderId:'',signature:'',checked:new Set()};
         }
         function cartReviewAvailable(){
-            const tab=getActiveTabId();
+            // Use the loaded order rather than whichever tab is currently
+            // marked active: mobile bottom sheets can outlive tab transitions.
             return currentAuthRole!=='user' && !!editingOrderId &&
                 editingOrderSheet==='dontam' && !editingOrderInSaleMode &&
-                (tab==='tab-don-tam'||tab==='tab-cong-no') &&
                 window.TAPHOA_PRODUCTION?.getAccessMode?.()==='account';
         }
         function cartReviewSignature(){
@@ -146,8 +146,10 @@
             const isOrderPreview = !!editingOrderId && !!editingOrderSheet
                 && (activeTabId === 'tab-da-giao' || activeTabId === 'tab-don-tam' || activeTabId === 'tab-cong-no')
                 && !editingOrderInSaleMode;
-            const isDeliveredReadOnlyPreview = (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') || isOrderPreview;
-            const reviewMode = isDeliveredReadOnlyPreview && syncCartReviewState();
+            const hasPendingReview = cartReviewAvailable();
+            const isDeliveredReadOnlyPreview = (currentAuthRole === 'user' && editingOrderSheet === 'dongiao')
+                || isOrderPreview || hasPendingReview;
+            const reviewMode = hasPendingReview && syncCartReviewState();
             // Header and rows must use the same five-column ruler in each mode.
             // Read-only quantity needs a number only; editing reserves room for -/+.
             const cartSheet = document.getElementById('cartBottomSheet');
