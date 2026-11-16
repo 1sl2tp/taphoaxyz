@@ -51,6 +51,7 @@ function createHarness({
     history:{replaceState(){}},
     location:{
       href:'https://app.taphoa.xyz/',
+      origin:'https://app.taphoa.xyz',
       replace:url=>replaced.push(url),
       reload:()=>replaced.push('reload')
     },
