@@ -363,6 +363,12 @@
 
     const sourceSheet=editingOrderId?(editingOrderSheet||(String(editingOrderId).startsWith('DG')?'dongiao':'dontam')):tab;
     const isPromotingDraft=Boolean(editingOrderId)&&sourceSheet==='dontam'&&tab==='dongiao';
+    // SPEC-TAPHOA-CART-REVIEW-20261116: fail closed at the actual mutation
+    // boundary, not just the disabled UI button. This never writes checks.
+    if(isPromotingDraft && (typeof isCartReviewComplete!=='function'||!isCartReviewComplete())){
+      showAlertPopup('Chưa soát đủ hàng','Mở đơn tạm, tích xác nhận từng dòng và số lượng trước khi duyệt.');
+      return;
+    }
     // F-182: editing an existing order is not a new checkout.
     // Keep the current customer, order ID and cart in the edit workspace after save.
     const isUpdatingExistingOrder=Boolean(editingOrderId)&&!isPromotingDraft;
