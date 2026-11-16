@@ -75,3 +75,21 @@ Các thông báo Agribank 12–17/11/2026 gồm 70 dạng thường/khác, 16 QR
 - E1 SOURCE PASS (isolate); E2 PENDING tích hợp locator và OCR thực vào worker v21-bank-bill-event; E3 PENDING deploy; E4 PENDING kiểm tra ảnh thật trên Web/PWA/APK; E5 PENDING đo CPU/bytes.
 - Không deploy Supabase thủ công, không viết dữ liệu production, không thêm cron hay tự ghi thu chứng từ lịch sử.
 - Rollback: revert source commit hoặc restore chính xác last-known-good worker/RPC khi được triển khai, không sửa sổ lịch sử.
+
+## BANK-ZONE-OCR-20261117-2 — Hàng đợi OCR xử lý từng vùng, CI chính thức
+
+### Vấn đề sửa
+- Trước đây khi AI không cung cấp một trong ba vùng trọng yếu (tiền/STK/ngày giờ), validateBillRegionLayout dừng toàn bộ; nguồn còn lại không được OCR. Nay layout chấp nhận kết quả một phần, trả missingFields để giao diện biết chính xác vùng cần khoanh lại; ghi thu vẫn khóa.
+- Thêm src/bank-bill-ocr-review.js: mapStoredBankBillToZoneFields chuyển raw_read hiện hành thành dữ liệu 10 vùng; buildBillOcrReviewQueue phân loại vùng cần kéo lại, so hai kết quả hoặc đọc lại; recheckBillOcrReviewQueue chỉ OCR vùng lỗi đã khoanh, giữ nguyên kết quả gốc.
+- OCR đọc lại thành công chỉ đặt requiresFullReconciliation=true và readyForIndependentBankMatch=false. Bắt buộc chạy lại đối soát ngân hàng độc lập; không có lối tắt ghi thu.
+- inspectBillZones lưu originalAiFields để lần kiểm tra tiếp theo không điền dữ liệu theo tài khoản ngân hàng hay kết quả OCR vừa đọc.
+
+### Kiểm thử
+- Đã thêm tests/bank-bill-ocr-review-20261117.test.js, gồm bill 70.000đ, thiếu vùng STK, crop lại chỉ một vùng, bảo toàn chứng cứ và lệnh tài chính luôn false.
+- 27/27 bài test của ba module đã chạy PASS trong JS isolate thực thi, không phải kết quả CI Node thật.
+- Workflow đọc-only .github/workflows/bank-bill-ocr-tests.yml chạy đúng ba file Node test trên commit main có thay đổi. Không có secret/production URL, không chạy deployment, không tạo cron. Khi chưa thấy GitHub check xanh, E1-CI = PENDING.
+
+### Nguồn sự thật và phát hành
+- Đã xác nhận trong repo không có supabase/functions/v21-bank-bill-event; bản Edge hiện chạy trên Supabase chưa import được các module này.
+- Không tạo bản Edge bản sao giả làm đã phát hành. Để đưa vào vận hành cần bổ sung đúng source owner/canonical build, kết nối AI locator và một OCR worker độc lập có nguồn lực rõ ràng; kiểm thử trên ảnh thật trước khi release.
+- E0: xác minh đường source; E1 source unit (isolate) PASS 27/27; E1 GitHub Actions PENDING; E2 integration PENDING; E3 release PENDING; E4 thiết bị PENDING; E5 tài nguyên PENDING.
