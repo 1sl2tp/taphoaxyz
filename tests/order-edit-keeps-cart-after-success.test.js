@@ -44,6 +44,7 @@ function scenario({id='DT025',sheet='dontam',ok=true,renderFails=false}={}){
     refreshFixedSheets:async()=>{},
     assertDraftAlreadySavedForDelivery:async()=>{},
     isCartReviewComplete:()=>true, // this fixture represents a fully checked draft
+    getCartReviewSelection:()=>Object.keys(ctx.cart),
     showAlertPopup:(...args)=>calls.alerts.push(args),
     openCustomerModal:()=>{},
     denyPermission:()=>{},
