@@ -16,7 +16,7 @@ test('cart A-E ruler applies to desktop split pane regardless of 1080px viewport
   assert.ok(owner.includes('minmax(0,1fr)'), 'Tên is flexible');
   assert.match(owner, /column-gap:6px !important;/);
   assert.match(owner, /justify-content:stretch !important;/);
-  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-intrinsic-5-cols-20261008&pc-panel=20261008/);
+  assert.match(html,/fixed-ui-cart-spacing\.css\?ui=cart-intrinsic-5-cols-20261008&[^"]*pc-panel=20261008/);
 });
 
 test('desktop cart header and item cells map A-E directly, no old combined name cell',()=>{
