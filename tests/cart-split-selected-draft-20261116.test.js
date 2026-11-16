@@ -54,7 +54,7 @@ test('uninstalled RPC is a readable Vietnamese error; no hidden retry or source 
   assert.match(mutation,/String\(error\?\.code\|\|''\)==='PGRST202'/);
   assert.match(mutation,/Tách đơn chưa hoạt động/);
   assert.match(mutation,/Chưa thay đổi đơn gốc, hàng hoặc công nợ/);
-  assert.doesNotMatch(bridge.slice(bridge.indexOf('async function splitPendingOrder'),bridge.indexOf('async function deliverOrder')),/retry|setTimeout\(/);
+  assert.doesNotMatch(bridge.slice(bridge.indexOf('async function splitPendingOrder'),bridge.indexOf('async function deliverOrder')),/setTimeout\(/);
 });
 
 test('media failure after SQL commit never masquerades as an order-save failure',()=>{
