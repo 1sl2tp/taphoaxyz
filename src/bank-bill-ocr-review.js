@@ -37,6 +37,8 @@ export function buildBillOcrReviewQueue({analysis,boxes,documentBox}){
     field,action,reason:state.status,
     bbox:inside?bbox:null,
     aiValue:state.aiValue??null,ocrValue:state.ocrValue??null,
+    aiText:state.aiText??null,ocrText:state.ocrText??null,
+    ocrConfidence:state.ocrConfidence??null,
     // Administrators can correct evidence without bypassing the money worker.
     collectionAuthorized:false
   });
