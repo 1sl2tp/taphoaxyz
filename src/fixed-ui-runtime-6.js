@@ -83,10 +83,10 @@
         }
 
 
-        // SPEC-CART-CUSTOMER-PRICE-20261116: read-only customer-specific
-        // override availability. Avoid network calls during ordinary cart
-        // rendering and ignore late responses after order/account switches.
-        let editedCustomerPriceProbe = { key:'', state:'idle', count:0 };
+        // SPEC-CART-CUSTOMER-PRICE-20261116: the Admin edit action is always
+        // discoverable. A customer-list price_count is NOT proof that this
+        // order's products have (or lack) saved overrides. Look up the exact
+        // customer/product matrix only on an explicit button press.
         function editedCustomerPriceContext() {
             const api=window.TAPHOA_PRODUCTION;
             const uid=String(api?.getIdentity?.()?.uid||'');
@@ -99,45 +99,9 @@
             return {uid,customerId,orderId,sheet:editingOrderSheet,
                 key:JSON.stringify([uid,customerId,orderId,editingOrderSheet])};
         }
-        function ensureEditedCustomerPriceProbe(retry=false) {
-            const context=editedCustomerPriceContext();
-            if(!context){
-                editedCustomerPriceProbe={key:'',state:'idle',count:0};
-                return;
-            }
-            if(!retry&&editedCustomerPriceProbe.key===context.key)return;
-            editedCustomerPriceProbe={key:context.key,state:'loading',count:0};
-            const readCount=window.TAPHOA_PRODUCTION?.customerSpecialPriceCount;
-            if(typeof readCount!=='function'){
-                editedCustomerPriceProbe={key:context.key,state:'error',count:0};
-                return; // mixed/stale shell: never break cart rendering
-            }
-            void readCount(context.customerId)
-                .then(count=>{
-                    if(editedCustomerPriceProbe.key!==context.key||
-                        editedCustomerPriceContext()?.key!==context.key)return;
-                    editedCustomerPriceProbe={
-                        key:context.key,state:'ready',count:Number(count)||0
-                    };
-                    renderCartUI();
-                })
-                .catch(error=>{
-                    if(editedCustomerPriceProbe.key!==context.key||
-                        editedCustomerPriceContext()?.key!==context.key)return;
-                    editedCustomerPriceProbe={key:context.key,state:'error',count:0};
-                    console.warn('[taphoa] read-only customer price availability:',String(error?.message||error));
-                    renderCartUI(); // retry action instead of an incorrect "no price" claim
-                });
-        }
         async function applyEditedCustomerSpecialPrices() {
             const context=editedCustomerPriceContext();
             if(!context||cartPriceRefreshInFlight)return;
-            if(editedCustomerPriceProbe.key!==context.key||
-                editedCustomerPriceProbe.state!=='ready'){
-                ensureEditedCustomerPriceProbe(true);
-                return;
-            }
-            if(editedCustomerPriceProbe.count<1)return;
             const entries=Object.entries(cart);
             if(!entries.length)return;
             const signature=JSON.stringify(entries.map(([code,line])=>[
@@ -179,7 +143,9 @@
                     updates.push([idByCode.get(code),price]);
                 }
                 if(!updates.length){
-                    showToast('Khách có giá riêng nhưng các sản phẩm trong đơn này chưa có giá áp riêng.','info');
+                    showToast('Chưa có giá riêng đã lưu cho '+entries.length+
+                        ' mã trong đơn của '+String(selectedCustomer?.name||'khách hàng')+
+                        '. Kiểm tra trong Quản trị hàng hóa.','info');
                     return;
                 }
                 // Atomic UI update after validating every returned override.
@@ -302,22 +268,18 @@
                 const visible = !!editingOrderId && (isDraftEdit || isDeliveredEdit)
                     && editingOrderInSaleMode && currentAuthRole !== 'user'
                     && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
+                const canApplyCustomerPrice=visible
+                    && window.TAPHOA_PRODUCTION?.getIdentity?.()?.role==='admin';
                 priceButton.classList.toggle('hidden', !visible);
                 priceButton.disabled = cartPriceRefreshInFlight;
-                // Show only after the Admin RPC confirms this customer has
-                // saved overrides; on read failure show a retry, not a fake zero.
-                ensureEditedCustomerPriceProbe();
-                const context=editedCustomerPriceContext();
-                const loaded=context && editedCustomerPriceProbe.key===context.key;
-                const available=loaded && editedCustomerPriceProbe.state==='ready'
-                    && editedCustomerPriceProbe.count>0;
-                const retry=loaded && editedCustomerPriceProbe.state==='error';
-                specialButton.classList.toggle('hidden',!visible||(!available&&!retry));
-                specialButton.disabled = cartPriceRefreshInFlight;
-                specialButton.textContent=retry?'Thử giá riêng':'Áp giá riêng';
-                specialButton.title=retry
-                    ?'Không đọc được giá riêng · chạm để thử lại'
-                    :'Áp giá riêng đã lưu của khách vào những sản phẩm có ngoại lệ';
+                // Do not hide the action based on an unrelated summary
+                // count: it could be zero/stale while prices exist by product.
+                // Matrix verification occurs on click; errors are shown in UI.
+                specialButton.classList.toggle('hidden',!canApplyCustomerPrice);
+                specialButton.disabled=cartPriceRefreshInFlight;
+                specialButton.textContent='Áp giá riêng';
+                specialButton.title='Kiểm tra và áp giá riêng đã lưu cho '
+                    +String(selectedCustomer?.name||'khách đang chọn');
                 specialButton.setAttribute('aria-label',specialButton.title);
             }
             if (cartSheet) {
