@@ -19,7 +19,7 @@ test('cart has same FIVE visible columns as invoice detail, not a two-row produc
 
 test('editable shopping cart uses buttons only at the same quantity track as readonly',()=>{
   assert.match(runtime,/data-cart-readonly="\$\{isDeliveredReadOnlyPreview \? '1' : '0'\}"/);
-  assert.match(runtime,/isDeliveredReadOnlyPreview\s*\? `<div class="cart-qty-readonly/);
+  assert.match(runtime,/isDeliveredReadOnlyPreview\s*\?\s*\(reviewMode[\s\S]{0,600}cart-qty-readonly/);
   assert.match(runtime,/: `<div class="cart-qty-control/);
   assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:96px !important;/);
   assert.match(owner,/#cartItemList \.cart-compact-grid \.cart-qty-control,[\s\S]*?#cartItemList \.cart-compact-grid \.cart-qty-readonly\{[^}]*width:96px !important;/);
