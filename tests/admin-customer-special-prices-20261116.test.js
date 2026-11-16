@@ -17,7 +17,9 @@ assert(html.includes('Giá riêng chưa kích hoạt'));
 assert(html.includes('Chưa xác minh được chức năng giá riêng trên máy chủ'));
 assert(html.includes('admin-customer-special-prices.js?v=20261116cp002'));
 assert(js.includes('state.probeGeneration++'));
-assert(js.includes('if(!state.ready){cleanOldColumns();return;}'));
+assert.match(js,/if\(!state\.ready\)\s*\{\s*cleanOldColumns\(\);/);
+assert(js.includes('Never show the generic'));
+
 assert(js.includes('void probe();'));
 assert(html.includes('special-price-toolbar[hidden]'));
 assert(js.includes('input.disabled=true; // Until a successful authorized read.'));
