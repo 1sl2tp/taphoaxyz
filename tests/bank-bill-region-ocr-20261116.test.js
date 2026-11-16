@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  BILL_FIELDS,normalizeRecipientName,normalizeBillField,
- validateRegion,compareRegionRead,inspectBillZones
+ validateRegion,isRegionInsideDocument,compareRegionRead,inspectBillZones
 } from '../src/bank-bill-region-ocr.js';
 
 const migration=readFileSync(new URL(
@@ -38,7 +38,10 @@ test('amount, account and printed transaction clock remain independently typed',
    'phone status-bar time cannot stand in for transaction date and time');
 });
 test('region coordinates must fit the real image, not the phone status bar',()=>{
- assert.deepEqual(BILL_FIELDS,['amount','account','recipientName','transactionTime']);
+ assert.deepEqual(BILL_FIELDS,[
+   'amount','account','recipientName','transactionTime','transferContent',
+   'transferReference','senderName','sendingBank','receivingBank','transactionStatus'
+ ]);
  assert.deepEqual(validateRegion([0.10,0.20,0.40,0.05],1000,1200),
    {x:100,y:240,width:400,height:60});
  assert.equal(validateRegion([-0.1,0.2,0.4,0.1],1000,1200),null);
@@ -80,8 +83,9 @@ test('crop/reader pass-through never posts money; required fields need independe
      expectedAccount:'2901181999999'
    });
    let result=await run();
-   assert.equal(crops,4);
+   assert.equal(crops,BILL_FIELDS.length);
    assert.equal(result.fields.recipientName.status,'optional_absent');
+   assert.equal(result.fields.transferContent.status,'optional_absent');
    assert.equal(result.readyForIndependentBankMatch,true);
    assert.equal(result.ledgerWritten,false);
    reads.account='290118199999';result=await run();
@@ -108,4 +112,82 @@ test('SQL patch changes only normalized PRESENT name, no credit/ledger/duplicati
  assert.match(migration,/v_replacement.*extensions\.unaccent\(btrim\(r\.receiving_name\)\)/);
  assert.match(migration,/EXECUTE replace\(v_sql, v_original, v_replacement\)/);
  assert.doesNotMatch(migration,/INSERT INTO public\.taphoa_debt_ledger|UPDATE public\.chat_bank_bill_receipts/i);
+});
+
+
+test('all extra bill regions are independently typed; transfer memo is not a bank credit',()=>{
+ assert.equal(normalizeBillField('transferContent','Hạnh dùng ZaloPay chuyển tiền'),
+   'HANH DUNG ZALOPAY CHUYEN TIEN');
+ assert.equal(normalizeBillField('transferReference','#261116003119208'),'261116003119208');
+ assert.equal(normalizeBillField('senderName','  Đặng   Thị Hạnh'),'DANG THI HANH');
+ assert.equal(normalizeBillField('sendingBank','ZaloPay'),'ZALOPAY');
+ assert.equal(normalizeBillField('receivingBank','Agribank'),'AGRIBANK');
+ assert.equal(normalizeBillField('transactionStatus','Giao dịch thành công'),'SUCCESS');
+ assert.equal(normalizeBillField('transactionStatus','Giao dịch thất bại'),'FAILED');
+ assert.equal(compareRegionRead('transferContent','abc 001','abc 002').status,'conflict');
+ assert.equal(compareRegionRead('transferReference','#261116003119208','261116003119208').status,'agreed');
+ assert.equal(compareRegionRead('transferContent',null,null).status,'optional_absent');
+ assert.equal(compareRegionRead('senderName','Nguyen Thi Ha',null).status,'single_source');
+});
+test('nested receipt bounding box excludes phone clock and foreign banner',()=>{
+ assert.equal(isRegionInsideDocument([0.15,0.24,0.6,0.12],[0.1,0.2,0.8,0.75]),true);
+ assert.equal(isRegionInsideDocument([0.15,0.03,0.6,0.1],[0.1,0.2,0.8,0.75]),false);
+ assert.equal(isRegionInsideDocument([0.91,0.3,0.12,0.1],[0.1,0.2,0.8,0.75]),false);
+});
+test('invalid or overlapping extraneous regions never make a financial collection',async()=>{
+ const priorBitmap=globalThis.createImageBitmap,priorCanvas=globalThis.OffscreenCanvas;
+ try{
+  globalThis.createImageBitmap=async()=>({width:1000,height:1000,close(){}});
+  globalThis.OffscreenCanvas=class{
+   constructor(w,h){this.width=w;this.height=h;}
+   getContext(){return {drawImage(){}}}
+   async convertToBlob(){return new Blob(['crop'],{type:'image/png'})}
+  };
+  const boxes=Object.fromEntries(BILL_FIELDS.map(f=>[f,[0.15,0.25,0.5,0.08]]));
+  boxes.transactionTime=[0.11,0.01,0.5,0.04];
+  const result=await inspectBillZones({
+   imageBlob:new Blob(['image']),boxes,
+   documentBox:[0.1,0.2,0.8,0.75],
+   expectedAccount:'2901181999999',
+   aiFields:{amount:70000,account:'2901181999999',
+     transactionTime:'2026-11-16 15:25'},
+   readOcr:async({field})=>({
+    amount:'70.000đ',account:'2901181999999',
+    transactionTime:'15:25 16/11/2026'
+   })[field]??null
+  });
+  assert.equal(result.fields.transactionTime.status,'outside_document');
+  assert.ok(result.reviewFields.includes('transactionTime'));
+  assert.equal(result.readyForIndependentBankMatch,false);
+  assert.equal(result.ledgerWritten,false);
+ }finally{
+  if(priorBitmap===undefined)delete globalThis.createImageBitmap;
+  else globalThis.createImageBitmap=priorBitmap;
+  if(priorCanvas===undefined)delete globalThis.OffscreenCanvas;
+  else globalThis.OffscreenCanvas=priorCanvas;
+ }
+});
+test('OCR confidence cannot alone authorize a conflicting transfer',async()=>{
+ const priorBitmap=globalThis.createImageBitmap,priorCanvas=globalThis.OffscreenCanvas;
+ try{
+  globalThis.createImageBitmap=async()=>({width:100,height:100,close(){}});
+  globalThis.OffscreenCanvas=class{
+   constructor(w,h){this.width=w;this.height=h;}
+   getContext(){return {drawImage(){}}}
+   async convertToBlob(){return new Blob(['x'],{type:'image/png'})}
+  };
+  const result=await inspectBillZones({
+   imageBlob:new Blob(['x']),expectedAccount:'2901181999999',
+   boxes:{account:[0.1,0.2,0.7,0.3]},
+   aiFields:{account:'2901181999999'},
+   readOcr:async()=>({text:'2901181999999',confidence:0.4})
+  });
+  assert.equal(result.fields.account.status,'low_ocr_confidence');
+  assert.equal(result.readyForIndependentBankMatch,false);
+ }finally{
+  if(priorBitmap===undefined)delete globalThis.createImageBitmap;
+  else globalThis.createImageBitmap=priorBitmap;
+  if(priorCanvas===undefined)delete globalThis.OffscreenCanvas;
+  else globalThis.OffscreenCanvas=priorCanvas;
+ }
 });
