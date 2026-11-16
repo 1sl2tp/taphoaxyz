@@ -153,8 +153,11 @@
             );
             const lineCount = cartEntries.length;
             for (const [id, item] of cartEntries) {
-                const highPriceMilkX = milkProductCodes.has(String(id))
-                    && /(?:^|\s)x\s*$/i.test(String(item.name || ''));
+                // Saved-order previews may open before the product catalog is fully hydrated.
+                // A Milk name beginning with "Sua"/"Sữa" is a safe fallback for that case.
+                const normalizedMilkName = normalizeSearchText(item.name || '');
+                const highPriceMilkX = /(?:^|\s)x\s*$/i.test(String(item.name || ''))
+                    && (milkProductCodes.has(String(id)) || /^sua(?:\s|$)/.test(normalizedMilkName));
                 const safeProductName = escapeProductEditorValue(item.name);
                 const displayProductName = highPriceMilkX
                     ? safeProductName.replace(/(\s)(x)(\s*)$/i, '$1<span class="cart-milk-x-marker">$2</span>$3')
