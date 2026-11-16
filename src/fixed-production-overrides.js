@@ -539,7 +539,15 @@
       window.__TAPHOA_REPRICE_DRAFT_ID = null;
     }catch(error){
       console.error(isSplittingSelection?'split pending order':isPromotingDraft?'deliver pending order':'save order',error);
-      showAlertPopup('Lỗi',error?.message||'Không thể lưu đơn hàng.');
+      // PGRST202 means the frontend is newer than the database migration.
+      // Never expose English schema/cache internals in the customer-facing UI.
+      const serverFunctionMissing=isSplittingSelection&&(
+        String(error?.code||'')==='PGRST202'
+        || /Could not find the function|schema cache/i.test(String(error?.message||'')));
+      showAlertPopup(serverFunctionMissing?'Tách đơn chưa hoạt động':'Lỗi',
+        serverFunctionMissing
+          ? 'Máy chủ chưa kích hoạt chức năng tách đơn. Chưa thay đổi đơn gốc, hàng hoặc công nợ. Không cần thử lại liên tục.'
+          :error?.message||'Không thể lưu đơn hàng.');
     }finally{
       orderMutationInFlight=false;
       hideLoading();
