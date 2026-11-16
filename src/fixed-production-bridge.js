@@ -1,5 +1,5 @@
 import {createAuthService} from './core/auth.js';
-import {createApi} from './core/api.js?v=order-image-016';
+import {createApi} from './core/api.js?v=split-pending-20261116';
 import {orderRpcPayload} from './core/business.js?v=order-image-016';
 import {createAppState,changedDomains} from './core/app-state.js';
 import {createSnapshotStore} from './core/snapshot.js';
@@ -938,6 +938,25 @@ async function saveOrder(payload){
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
+async function splitPendingOrder(payload){
+  if(employeeAccess||publicAccess)throw Error('admin_only');
+  const mutationOwner=captureProductionOwner();
+  const result=await business.splitPendingOrder(payload);
+  if(!productionOwnerCurrent(mutationOwner))return result;
+  const delivered=String(result?.order?.status||'').toLowerCase()==='delivered';
+  if(result?.ok===true&&delivered){
+    // Use the NEW order and the exact nested command ID for image-only staff notice.
+    if(result.child_command_id){
+      result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
+        staffCommandId:result.child_command_id
+      })===true;
+    }
+    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+  }
+  try{await refresh(delivered?['orders','debt']:['orders']);}
+  catch(error){noteCommittedRefreshFailure(error);}
+  return result;
+}
 async function deliverOrder(id){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
@@ -1281,7 +1300,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,orderCycles,ledgerToRows,
-  saveOrder,deliverOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,resolvePublicOrderLink,
+  saveOrder,deliverOrder,splitPendingOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,resolvePublicOrderLink,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   customerSpecialPriceCount,customerSpecialPriceMatrix,
   backendOrderId,orderDisplayCode,
