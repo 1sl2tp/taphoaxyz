@@ -66,7 +66,7 @@ test('saved draft enters read-only checklist, never submits delivery on first Du
   assert.match(h.calls.toasts[0][0],/Soát từng dòng/);
   assert.match(runtime,/isPendingOrderCart && !editingOrderInSaleMode/);
   assert.match(review,/cartReviewAvailable\(\)/);
-  assert.match(mutation,/isPromotingDraft && \(typeof isCartReviewComplete/);
+  assert.match(mutation,/isPartialPromotion=isPromotingDraft&&!isCartReviewComplete\(\)/);
 });
 
 test('unsaved edits block transition and preserve edit mode and cart',async()=>{
