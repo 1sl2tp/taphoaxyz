@@ -4,7 +4,7 @@
  */
 export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession}){
   const el=id=>document.getElementById(id);
-  const state={selected:[],customers:null,prices:new Map(),request:0,edits:new Map(),booted:false};
+  const state={selected:[],customers:null,prices:new Map(),request:0,edits:new Map(),booted:false,ready:false,probeGeneration:0};
   const maxColumns=8;
   const key=(customerId,code)=>customerId+'|'+code;
   const authorized=()=>getIdentity()?.role==='admin'&&getIdentity()?.active===true;
@@ -22,6 +22,11 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
   }
   function reset(){
     state.request++;
+    state.probeGeneration++;
+    state.ready=false;
+    const addButton=el('specialPriceAddCustomer');
+    if(addButton){addButton.disabled=true;addButton.textContent='+ Khách · giá riêng';}
+    if(el('specialPriceRetry'))el('specialPriceRetry').hidden=true;
     state.selected=[];
     state.customers=null;
     state.prices.clear();
@@ -47,7 +52,7 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     }
   }
   function mount(){
-    if(state.booted)return;
+    if(state.booted){void probe();return;}
     const button=el('specialPriceAddCustomer');
     const dialog=el('specialPricePicker');
     const list=el('specialPricePickerList');
@@ -55,6 +60,7 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     if(!button||!dialog||!list||!search)return;
     state.booted=true;
     button.addEventListener('click',()=>{void openPicker();});
+    el('specialPriceRetry').addEventListener('click',()=>{void probe();});
     el('specialPricePickerClose').addEventListener('click',()=>dialog.close());
     search.addEventListener('input',paintPicker);
     list.addEventListener('click',event=>{
@@ -78,9 +84,49 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
       if(event.target.matches('.special-price-input'))void saveCell(event.target);
     });
     dialog.addEventListener('close',()=>{search.value='';});
+    void probe();
+  }
+  async function probe(){
+    if(!authorized())return;
+    const button=el('specialPriceAddCustomer');
+    const retry=el('specialPriceRetry');
+    if(!button||!retry)return;
+    const generation=++state.probeGeneration;
+    const uid=String(getIdentity()?.uid||''),session=getSession();
+    const stillCurrent=()=>generation===state.probeGeneration&&authorized()
+      &&uid===String(getIdentity()?.uid||'')&&session===getSession();
+    button.disabled=true;
+    button.textContent='Đang kiểm tra giá riêng…';
+    retry.hidden=true;
+    info('Đang kiểm tra dịch vụ giá riêng…');
+    try{
+      const data=await rpc('taphoa_admin_customer_special_price_customers');
+      if(!stillCurrent())return;
+      if(!Array.isArray(data))throw new Error('invalid_customer_list');
+      state.customers=data.filter(row=>/^[\da-f-]{36}$/i.test(String(row?.id||'')))
+        .map(row=>({id:String(row.id),name:String(row.name||'Khách hàng').slice(0,100)}));
+      state.ready=true;
+      button.disabled=false;
+      button.textContent='+ Khách · giá riêng';
+      retry.hidden=true;
+      info('Đã kết nối giá riêng. Ô trống = giá chung; ẩn cột không xóa giá đã lưu.');
+      if(state.selected.length)render();
+    }catch(error){
+      if(!stillCurrent())return;
+      state.ready=false;
+      state.customers=null;
+      button.disabled=true;
+      button.textContent='Giá riêng chưa kích hoạt';
+      retry.hidden=false;
+      const missing=error?.code==='PGRST202'
+        ||/could not find the .*function/i.test(String(error?.message||''));
+      info(missing
+        ?'Máy chủ chưa có chức năng lưu giá riêng. Giá chung không thay đổi.'
+        :'Không kiểm tra được giá riêng. Giá chung không thay đổi.',true);
+    }
   }
   async function openPicker(){
-    if(!authorized())return;
+    if(!authorized()||!state.ready){return;}
     const dialog=el('specialPricePicker');
     if(!dialog)return;
     dialog.showModal();
@@ -187,6 +233,7 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     if(!authorized()){reset();return;}
     el('specialPriceToolbar').hidden=false;
     chips();
+    if(!state.ready){cleanOldColumns();return;}
     addColumns();
     if(!state.selected.length){
       info('Ô trống = giá chung. Ẩn cột không xóa giá riêng.');

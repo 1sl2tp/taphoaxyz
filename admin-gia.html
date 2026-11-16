@@ -33,6 +33,7 @@
     .summary{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--grid);font-size:12px;color:var(--muted)}
 
     /* SPEC-ADMIN-CP-001: customer-specific prices are separate columns, never sale-price inputs. */
+    #goodsPane .special-price-toolbar[hidden]{display:none!important}
     #goodsPane .special-price-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 10px;background:#f6f9fe;border-bottom:1px solid var(--grid)}
     #goodsPane .special-price-toolbar .special-price-selected{display:flex;gap:5px;flex-wrap:wrap;min-width:0}
     #goodsPane .special-price-toolbar .special-price-note{font-size:11px;color:#64748b;min-width:0}
@@ -656,7 +657,8 @@
         </div>
 
         <div id="specialPriceToolbar" class="special-price-toolbar" hidden>
-          <button id="specialPriceAddCustomer" class="btn" type="button">+ Khách · giá riêng</button>
+          <button id="specialPriceAddCustomer" class="btn" type="button" disabled>+ Khách · giá riêng</button>
+          <button id="specialPriceRetry" class="btn" type="button" hidden>Kiểm tra lại</button>
           <div id="specialPriceSelected" class="special-price-selected" aria-label="Cột giá riêng đang xem"></div>
           <span id="specialPriceNote" class="special-price-note" role="status" aria-live="polite">Ô trống = giá chung. Ẩn cột không xóa giá riêng.</span>
         </div>
