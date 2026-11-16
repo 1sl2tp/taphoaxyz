@@ -245,17 +245,20 @@ export function validateBillRegionLayout(layout){
    if(!validateRegion(bb,10000,10000)||!isRegionInsideDocument(bb,layout.documentBox))
      return {ok:false,reason:'invalid_or_outside_document',field};
  }
+ // Missing one field must not discard the other valid crops. Keep the
+ // receipt in REVIEW and request only the missing field from the admin.
  const critical=['amount','account','transactionTime'];
- if(critical.some(f=>boxes[f]==null))
-   return {ok:false,reason:'critical_region_missing'};
+ const missingFields=critical.filter(f=>boxes[f]==null);
  for(let i=0;i<critical.length;i++)
    for(let j=i+1;j<critical.length;j++)
-     if(overlapRatio(boxes[critical[i]],boxes[critical[j]])>0.55)
+     if(boxes[critical[i]]&&boxes[critical[j]]&&
+        overlapRatio(boxes[critical[i]],boxes[critical[j]])>0.55)
        return {ok:false,reason:'overlapping_critical_regions'};
  if(boxes.transferContent&&boxes.transferReference&&
     overlapRatio(boxes.transferContent,boxes.transferReference)>0.85)
    return {ok:false,reason:'memo_reference_same_region'};
- return {ok:true,reason:null};
+ return {ok:true,reason:missingFields.length?'critical_region_missing':null,
+   missingFields};
 }
 export async function analyzeBillWithRegions({
  imageBlob,locateRegions,readOcr,expectedAccount=null,bankNotificationBody=null
