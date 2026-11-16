@@ -31,6 +31,28 @@
     .chip.inactive{opacity:.6;border-style:dashed}
     .source-actions{margin-left:auto;white-space:nowrap}
     .summary{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--grid);font-size:12px;color:var(--muted)}
+
+    /* SPEC-ADMIN-CP-001: customer-specific prices are separate columns, never sale-price inputs. */
+    #goodsPane .special-price-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 10px;background:#f6f9fe;border-bottom:1px solid var(--grid)}
+    #goodsPane .special-price-toolbar .special-price-selected{display:flex;gap:5px;flex-wrap:wrap;min-width:0}
+    #goodsPane .special-price-toolbar .special-price-note{font-size:11px;color:#64748b;min-width:0}
+    #goodsPane .special-price-toolbar .btn{min-height:34px}
+    #goodsPane .special-price-column{background:#f0f7ff;color:#1e40af}
+    #goodsPane .special-price-th{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0}
+    #goodsPane .special-price-th span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #goodsPane .special-price-hide{border:0;background:transparent;color:#64748b;padding:3px 5px;font-size:16px}
+    #goodsPane .special-price-cell{background:#f9fcff}
+    #goodsPane .special-price-input{width:100%;height:39px;border:0;background:transparent;outline:0;text-align:right;padding:6px 9px;color:#1e40af;font:700 13px system-ui;font-variant-numeric:tabular-nums}
+    #goodsPane .special-price-input:focus{background:#fff7cc;box-shadow:inset 0 0 0 2px #60a5fa}
+    #goodsPane .special-price-input:disabled{color:#94a3b8}
+    #goodsPane .special-price-cell[data-state="saving"]{box-shadow:inset 3px 0 #f59e0b}
+    #goodsPane .special-price-cell[data-state="saved"]{box-shadow:inset 3px 0 #16a34a}
+    #goodsPane .special-price-cell[data-state="error"]{box-shadow:inset 3px 0 #dc2626}
+    .special-price-picker-search{width:100%;min-height:44px;border:1px solid #cbd5e1;border-radius:9px;padding:9px 11px;font-size:16px}
+    .special-price-picker-list{display:grid;gap:5px;max-height:min(56dvh,420px);overflow:auto;padding-top:8px}
+    .special-price-picker-list button{display:flex;justify-content:space-between;align-items:center;text-align:left;min-height:44px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;padding:8px 10px;color:#0f172a;font-weight:650}
+    .special-price-picker-list button:disabled{opacity:.45}
+    @media(max-width:540px){#goodsPane .special-price-toolbar .btn{min-height:44px}}
     .sheet-wrap{overflow:auto;max-height:calc(100vh - 215px);background:#fff}
     table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px;table-layout:fixed}
     th,td{border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);padding:0;height:40px}
@@ -633,6 +655,11 @@
           </details>
         </div>
 
+        <div id="specialPriceToolbar" class="special-price-toolbar" hidden>
+          <button id="specialPriceAddCustomer" class="btn" type="button">+ Khách · giá riêng</button>
+          <div id="specialPriceSelected" class="special-price-selected" aria-label="Cột giá riêng đang xem"></div>
+          <span id="specialPriceNote" class="special-price-note" role="status" aria-live="polite">Ô trống = giá chung. Ẩn cột không xóa giá riêng.</span>
+        </div>
         <div class="summary">
           <span id="countText">Đang tải…</span>
           <span class="summary-hint" title="Rời ô hoặc nhấn Enter để lưu; AUTO xanh là giá tự động; ô xanh là giá bán đang dùng">ⓘ Tự lưu · giá AUTO</span>
@@ -934,6 +961,14 @@
     </div>
   </dialog>
 
+  <dialog id="specialPricePicker">
+    <div class="dialog-head"><h3>Thêm cột giá riêng cho khách</h3><button id="specialPricePickerClose" class="btn" type="button" aria-label="Đóng">×</button></div>
+    <div class="dialog-body">
+      <input id="specialPricePickerSearch" class="special-price-picker-search" type="search" placeholder="Tìm khách hàng…" aria-label="Tìm khách hàng" autocomplete="off">
+      <div id="specialPricePickerStatus" class="msg" role="status" aria-live="polite"></div>
+      <div id="specialPricePickerList" class="special-price-picker-list"></div>
+    </div>
+  </dialog>
   <dialog id="columnDialog">
     <div class="dialog-head"><h3>Tùy chỉnh cột</h3><button class="btn dialog-close" type="button" data-dialog="columnDialog">×</button></div>
     <div class="dialog-body">
@@ -950,6 +985,7 @@
   <script type="module">
     import {createAuthService} from './src/core/auth.js';
     import {createCustomerCareReport} from './src/admin-customer-care-report.js';
+    import {createSpecialPriceColumns} from './src/admin-customer-special-prices.js';
 
     const auth=createAuthService();
     const PAGE_SIZE=100;
@@ -962,6 +998,12 @@
     let analyticsLoaded=false,analyticsLoading=false,analyticsReloadQueued=false,analyticsSessionGeneration=0;
     let feedbackGeneration=0,historyGeneration=0;
     const customerCare=createCustomerCareReport({rpc:(name,args)=>rpc(name,args),getIdentity:()=>identity});
+    const specialPrices=createSpecialPriceColumns({
+      rpc:(name,args)=>rpc(name,args),
+      getIdentity:()=>identity,
+      getItems:()=>items,
+      getSession:()=>catalogSessionGeneration
+    });
     let marketItems=[],marketSources=[],marketTotal=0,marketOffset=0,marketLoading=false,marketSearchTimer=0,marketCandidateTimer=0;
     let marketSelectedCode='',marketCandidates=[],marketCandidateOffset=0,marketCandidateHasMore=false,marketStatusTimer=0,marketPollingGeneration=0,marketSearchTags=[];
     let marketRefreshQueued=false,marketRefreshReset=false,marketCandidateGeneration=0,marketSessionGeneration=0,marketCandidateLoadingMore=false;
@@ -1087,6 +1129,7 @@
       }
       // Only pin the name when it is the first visible column; preserve custom ordering.
       table.classList.toggle('name-sticky',columnPrefs.order.find(id=>!columnPrefs.hidden.includes(id))==='name');
+      specialPrices.syncOrder();
       installColumnResizers();
       syncPriceJump();
     }
@@ -1167,6 +1210,7 @@
       catalogSessionGeneration++;marketSessionGeneration++;analyticsSessionGeneration++;
       feedbackGeneration++;historyGeneration++;marketCandidateGeneration++;
       ++peerCostLoadGeneration; // Old session may not repaint peer prices.
+      specialPrices.reset();
       if($('historyDialog').open)$('historyDialog').close();
       for(const id of ['sourceDialog','productDialog','columnDialog']){
         const dialog=$(id);if(dialog?.open)dialog.close();
@@ -1229,6 +1273,7 @@
       identity=nextIdentity;
       client=info.client||await auth.getClient();
       showApp();
+      specialPrices.mount();
       await loadPage(true);await loadSupplierFeedback();await loadMarketStatus();
     }
 
@@ -2444,7 +2489,7 @@
       const sessionGeneration=catalogSessionGeneration;
       let blocked=false;
       try{
-        if(!await flushProductEditsBeforeReload()){blocked=true;return;}
+        if(!await specialPrices.flush()||!await flushProductEditsBeforeReload()){blocked=true;return;}
         if(reset)offset=0;
         $('statusText').textContent='Đang tải…';
         const query=$('searchInput').value.trim();
@@ -2808,6 +2853,7 @@
       }).join('');
       [...$('productBody').rows].forEach((row,index)=>updateDerived(row,items[index]));
       applyColumnLayout();
+      specialPrices.render();
       $('countText').textContent=total
         ?(window.matchMedia('(max-width:540px)').matches
           ?`${offset+1}–${Math.min(offset+items.length,total)} / ${total} SP`
@@ -3493,7 +3539,7 @@
       if(loggingOutAdmin)return;
       loggingOutAdmin=true;
       try{
-        if(!await flushProductEditsBeforeReload()&&!confirm('Có thay đổi chưa lưu. Bạn vẫn muốn đăng xuất?'))return;
+        if((!await specialPrices.flush()||!await flushProductEditsBeforeReload())&&!confirm('Có thay đổi chưa lưu. Bạn vẫn muốn đăng xuất?'))return;
         await auth.logout().catch(()=>{});
         identity=null;client=null;customerCare.reset();
         resetAdminSessionDisplays();showLogin();
@@ -3504,7 +3550,7 @@
     // Warn on browser navigation while there are uncommitted changes.
     // A successful logout already clears the table and pending queue.
     window.addEventListener('beforeunload',e=>{
-      const dirty=Boolean($('productBody').querySelector('tr[data-dirty="1"]'));
+      const dirty=Boolean($('productBody').querySelector('tr[data-dirty="1"]'))||specialPrices.hasUnsaved();
       if(identity?.role==='admin'&&(dirty||saveQueues.size>0)){
         e.preventDefault();
         e.returnValue='';
