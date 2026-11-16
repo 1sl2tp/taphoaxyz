@@ -247,7 +247,21 @@
             const cartSheet = document.getElementById('cartBottomSheet');
             const editBadge = document.getElementById('cartEditBadge');
             if (editBadge?.parentElement) {
-                editBadge.parentElement.classList.add('cart-edit-header-group');
+                // UI-PRICE-ACTIONS-20261116: price selection has its own clear
+                // full-width row, not the narrow title/badge/share header.
+                let priceActions=document.getElementById('cartPriceActions');
+                if(!priceActions&&cartSheet){
+                    priceActions=document.createElement('div');
+                    priceActions.id='cartPriceActions';
+                    priceActions.className='cart-price-actions hidden';
+                    priceActions.setAttribute('role','group');
+                    priceActions.setAttribute('aria-label','Chọn giá bán');
+                    const label=document.createElement('span');
+                    label.className='cart-price-actions-label';
+                    label.textContent='Chọn giá';
+                    priceActions.appendChild(label);
+                    cartSheet.querySelector('.cart-column-header')?.before(priceActions);
+                }
                 let priceButton = document.getElementById('cartRefreshPricesButton');
                 if (!priceButton) {
                     priceButton = document.createElement('button');
@@ -256,8 +270,9 @@
                     priceButton.className = 'cart-price-refresh hidden';
                     priceButton.textContent = 'Giá mới';
                     priceButton.addEventListener('click', refreshEditedOrderPrices);
-                    editBadge.insertAdjacentElement('afterend', priceButton);
                 }
+                if(priceActions&&priceButton.parentElement!==priceActions)
+                    priceActions.appendChild(priceButton);
                 let specialButton = document.getElementById('cartCustomerPricesButton');
                 if (!specialButton) {
                     specialButton = document.createElement('button');
@@ -266,8 +281,9 @@
                     specialButton.className = 'cart-price-refresh cart-price-special hidden';
                     specialButton.textContent = 'Áp giá riêng';
                     specialButton.addEventListener('click', applyEditedCustomerSpecialPrices);
-                    priceButton.insertAdjacentElement('afterend', specialButton);
                 }
+                if(priceActions&&specialButton.parentElement!==priceActions)
+                    priceActions.appendChild(specialButton);
                 const isDraftEdit = editingOrderSheet === 'dontam';
                 const isDeliveredEdit = editingOrderSheet === 'dongiao';
                 priceButton.setAttribute('aria-label', isDraftEdit
@@ -279,9 +295,13 @@
                     && editingOrderInSaleMode && currentAuthRole !== 'user'
                     && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
                 const canApplyCustomerPrice=currentAuthRole==='admin'
-                    && window.TAPHOA_PRODUCTION?.getIdentity?.()?.role==='admin'
                     && window.TAPHOA_PRODUCTION?.getAccessMode?.()==='account'
                     && (!editingOrderId || visible);
+                if(priceActions){
+                    const anyPriceAction=visible||canApplyCustomerPrice;
+                    priceActions.classList.toggle('hidden',!anyPriceAction);
+                    priceActions.setAttribute('aria-hidden',anyPriceAction?'false':'true');
+                }
                 priceButton.classList.toggle('hidden', !visible);
                 priceButton.disabled = cartPriceRefreshInFlight;
                 // Do not hide the action based on an unrelated summary
