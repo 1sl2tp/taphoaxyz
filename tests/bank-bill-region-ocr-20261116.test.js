@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  BILL_FIELDS,normalizeRecipientName,normalizeBillField,
- validateRegion,isRegionInsideDocument,compareRegionRead,inspectBillZones
+ validateRegion,isRegionInsideDocument,compareRegionRead,inspectBillZones,
+ BILL_REGION_LOCATOR_RULES,validateBillRegionLayout,analyzeBillWithRegions
 } from '../src/bank-bill-region-ocr.js';
 
 const migration=readFileSync(new URL(
@@ -190,4 +191,78 @@ test('OCR confidence cannot alone authorize a conflicting transfer',async()=>{
   if(priorCanvas===undefined)delete globalThis.OffscreenCanvas;
   else globalThis.OffscreenCanvas=priorCanvas;
  }
+});
+
+
+test('AI locator must bind one transaction and distinct bounded critical fields',()=>{
+ const layout={
+  documentBox:[0.1,0.15,0.8,0.8],selectedTransaction:'single_detail',
+  boxes:{amount:[0.15,0.25,0.3,0.05],
+   account:[0.15,0.4,0.5,0.05],
+   transactionTime:[0.15,0.55,0.4,0.05]}
+ };
+ assert.equal(validateBillRegionLayout(layout).ok,true);
+ assert.equal(validateBillRegionLayout({...layout,selectedTransaction:'unknown'}).ok,false);
+ assert.equal(validateBillRegionLayout({
+   ...layout,boxes:{...layout.boxes,account:[0.15,0.25,0.3,0.05]}
+ }).reason,'overlapping_critical_regions');
+ assert.equal(validateBillRegionLayout({
+   ...layout,boxes:{...layout.boxes,transactionTime:[0.15,0.02,0.4,0.05]}
+ }).reason,'invalid_or_outside_document');
+ assert.equal(validateBillRegionLayout({
+   ...layout,boxes:{...layout.boxes,transferContent:[0.15,0.65,0.5,0.05],
+     transferReference:[0.15,0.65,0.5,0.05]}
+ }).reason,'memo_reference_same_region');
+ assert.ok(BILL_REGION_LOCATOR_RULES.includes('thanh trạng thái'));
+});
+test('AI locates -> single image decode -> OCR all detected regions -> evidence only',async()=>{
+ const originalBitmap=globalThis.createImageBitmap;
+ const originalCanvas=globalThis.OffscreenCanvas;
+ let decodes=0,crops=0,locates=0;
+ try{
+  globalThis.createImageBitmap=async()=>{decodes++;return{width:1000,height:1000,close(){}}};
+  globalThis.OffscreenCanvas=class{
+   constructor(w,h){this.width=w;this.height=h}
+   getContext(){return{drawImage(){crops++}}}
+   async convertToBlob(){return new Blob(['crop'],{type:'image/png'})}
+  };
+  const boxes={amount:[0.15,0.25,0.3,0.05],
+   account:[0.15,0.4,0.5,0.05],
+   transactionTime:[0.15,0.55,0.4,0.05]};
+  const result=await analyzeBillWithRegions({
+   imageBlob:new Blob(['mock']),expectedAccount:'2901181999999',
+   locateRegions:async()=>{locates++;return{
+    documentBox:[0.1,0.15,0.8,0.8],selectedTransaction:'single_detail',
+    boxes,aiFields:{amount:70000,account:'2901181999999',
+      transactionTime:'2026-11-16 15:25'}
+   }},
+   readOcr:async({field})=>({
+     amount:'70.000đ',account:'2901181999999',
+     transactionTime:'15:25 16/11/2026'
+   })[field]??null
+  });
+  assert.equal(locates,1);assert.equal(decodes,1);assert.equal(crops,3);
+  assert.equal(result.status,'fields_compared');
+  assert.equal(result.readyForIndependentBankMatch,true);
+  assert.equal(result.ledgerWritten,false);
+  assert.deepEqual(result.reviewFields,[]);
+ }finally{
+  if(originalBitmap===undefined)delete globalThis.createImageBitmap;
+  else globalThis.createImageBitmap=originalBitmap;
+  if(originalCanvas===undefined)delete globalThis.OffscreenCanvas;
+  else globalThis.OffscreenCanvas=originalCanvas;
+ }
+});
+test('AI locator failures never authorize collection or infer missing account numbers',async()=>{
+ let called=0;
+ const result=await analyzeBillWithRegions({
+   imageBlob:null,expectedAccount:'2901181999999',
+   locateRegions:async()=>{called++;throw Error('temporary_ai_failure')},
+   readOcr:async()=>{throw Error('should_not_be_called')}
+ });
+ assert.equal(called,1);
+ assert.equal(result.status,'review');
+ assert.equal(result.reason,'locator_unavailable');
+ assert.equal(result.ledgerWritten,false);
+ assert.equal(result.readyForIndependentBankMatch,false);
 });
