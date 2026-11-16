@@ -60,7 +60,7 @@ test('cart readonly order preview and editing share source but quantity alone is
   const render=read('src/fixed-ui-runtime-6.js');
   const behavior=read('src/fixed-ui-behavior.js');
   assert.match(render,/data-cart-readonly="\$\{isDeliveredReadOnlyPreview \? '1' : '0'\}"/);
-  assert.match(render,/isDeliveredReadOnlyPreview\s*\? `<div class="cart-qty-readonly/);
+  assert.match(render,/isDeliveredReadOnlyPreview\s*\?\s*\(reviewMode[\s\S]{0,600}cart-qty-readonly/);
   assert.match(render,/: `<div class="cart-qty-control/);
   assert.match(behavior,/if \(row\.dataset\.cartReadonly === '1'\) return;/);
   assert.match(behavior,/querySelector\('\.cart-total \.cart-money-value'\)/);
