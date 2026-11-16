@@ -235,7 +235,7 @@
                 const quantityWarningClass = highPriceMilkX ? ' cart-milk-x-qty' : '';
                 totalQty += item.qty; totalPrice += (item.qty * item.price);
                 html += `
-                <div class="cart-compact-grid py-3 border-b border-gray-50 text-[12px]" data-cart-readonly="${isDeliveredReadOnlyPreview ? '1' : '0'}">
+                <div class="cart-compact-grid py-3 border-b border-gray-50 text-[12px]${reviewed ? ' cart-row-reviewed' : ''}" data-cart-readonly="${isDeliveredReadOnlyPreview ? '1' : '0'}">
                     <div class="cart-left">
                         <div class="cart-stt font-bold text-gray-400">${index++}</div>
                         <div class="min-w-0">
@@ -251,7 +251,9 @@
                     <div class="cart-qty">
                         <span class="cart-field-caption">Số lượng</span>
                         ${isDeliveredReadOnlyPreview
-                            ? `<div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums${quantityWarningClass}">${item.qty}</div>`
+                            ? (reviewMode
+                                ? `<div class="cart-review-qty"><input type="checkbox" class="cart-review-checkbox allow-fast-click" data-cart-review-id="${escapeProductEditorValue(id)}" aria-label="Đã kiểm ${escapeProductEditorValue(item.name)}, số lượng ${item.qty}" onchange="setCartReviewLine(this.dataset.cartReviewId, this.checked)" ${reviewed ? 'checked' : ''}><div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums${quantityWarningClass}">${item.qty}</div></div>`
+                                : `<div class="cart-qty-readonly font-bold text-gray-700 text-center tabular-nums${quantityWarningClass}">${item.qty}</div>`)
                             : `<div class="cart-qty-control border border-gray-200 rounded-full bg-white">
                                 <button data-cart-product-code="${escapeProductEditorValue(id)}" data-cart-product-name="${escapeProductEditorValue(item.name)}" data-cart-price="${Number(item.price)}" onclick="updateCart(this.dataset.cartProductCode, this.dataset.cartProductName, Number(this.dataset.cartPrice), -1)" class="allow-fast-click w-4 h-4 flex items-center justify-center text-gray-500 hover:text-dark shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
                                 <input type="number" value="${item.qty}" min="1" step="1" inputmode="numeric" data-qty-editor="cart" data-qty-id="${escapeProductEditorValue(id)}" data-qty-price="${Number(item.price)}" onfocus="selectQtyInputValue(this)" onmouseup="event.preventDefault(); selectQtyInputValue(this)" oninput="previewQtyInput(this)" onblur="commitQtyEditor(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" class="qty-edit-input w-6 text-center font-bold text-gray-900 bg-transparent focus:outline-none text-[11px]${quantityWarningClass}">
@@ -368,7 +370,7 @@
                     // 4px internal padding + 2px border, i.e. 96px for 1 digit.
                     const controlWidth = 30 + qtyInputWidth + 30 + 2 + 4 + 2;
                     const qtyWidth = isDeliveredReadOnlyPreview
-                        ? columnWidth('SL', head('.cart-qty'), quantityTexts, qtyStyle, 8)
+                        ? columnWidth('SL', head('.cart-qty'), quantityTexts, qtyStyle, 8) + (reviewMode ? 24 : 0)
                         : Math.max(controlWidth, columnWidth('Số lượng', head('.cart-qty'), [], qtyStyle, 8));
                     // CSS 1fr name track also adapts when the panel resizes.
                     cartSheet.style.setProperty('--cart-stt-track', sttWidth + 'px');
