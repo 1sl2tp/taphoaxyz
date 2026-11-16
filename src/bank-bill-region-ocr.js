@@ -202,6 +202,9 @@ export async function inspectBillZones({
    });
  const reviewFields=BILL_FIELDS.filter(field=>results[field].needsReview);
  return {fields:results,reviewFields,bankMemoEvidence,
+   // Immutable AI text evidence for one-region retries; never fill a value from
+   // the configured destination account or from the bank's credit notice.
+   originalAiFields:Object.fromEntries(BILL_FIELDS.map(field=>[field,aiFields?.[field]??null])),
    readyForIndependentBankMatch:
      readyForIndependentBankMatch&&(!bankMemoEvidence||!bankMemoEvidence.needsReview),
    // True means 'may query official bank credits'; it never posts a ledger.
