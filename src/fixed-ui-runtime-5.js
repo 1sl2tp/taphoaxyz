@@ -436,27 +436,41 @@
 
             const isDeliveredOrderCart = hasSelectedOrder && editingOrderSheet === 'dongiao';
             const isPendingOrderCart = hasSelectedOrder && editingOrderSheet === 'dontam';
-            // A saved draft is only deliverable after all its lines were picked.
+            // Checked lines can be delivered separately; all checked lines
+            // still promote the original order with the existing delivery RPC.
+            const selectedLineCount = typeof getCartReviewSelection === 'function'
+                ? getCartReviewSelection().length : 0;
             const canPromoteDraft = !isUser && isPendingOrderCart && hasItems && hasCustomer
-                && typeof isCartReviewComplete === 'function' && isCartReviewComplete();
+                && typeof isCartReviewComplete === 'function'
+                && (isCartReviewComplete() || selectedLineCount > 0);
+            const canSplitDraft = canPromoteDraft && selectedLineCount < lineCount;
 
             // After saving an edited draft, the approval review also works
             // in the Sales bottom sheet; no need to reopen the order by hand.
             const isOrderPreview = hasSelectedOrder
                 && (isOrderTab || isDebtOrderPreview
                     || (isPendingOrderCart && !editingOrderInSaleMode));
+
             if (isOrderPreview) {
+                if (!isUser && isPendingOrderCart) owner.classList.add('flex-wrap');
                 owner.innerHTML = `
-                    <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
-                        <i class="ph ph-trash"></i> Xóa
-                    </button>
-                    <button ${canSwitchToSale ? 'onclick="goToBanHangForEditing()"' : 'disabled'} class="flex-1 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canSwitchToSale ? enabledOutlinePrimaryBtn : disabledBtn}">
-                        <i class="ph ph-pencil-simple"></i> Sửa
-                    </button>
+                    <div class="flex w-full min-w-0 gap-2">
+                        <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
+                            <i class="ph ph-trash"></i> Xóa
+                        </button>
+                        <button ${canSwitchToSale ? 'onclick="goToBanHangForEditing()"' : 'disabled'} class="flex-1 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canSwitchToSale ? enabledOutlinePrimaryBtn : disabledBtn}">
+                            <i class="ph ph-pencil-simple"></i> Sửa
+                        </button>
+                    </div>
                     ${!isUser && isPendingOrderCart ? `
-                    <button ${canPromoteDraft ? 'onclick="dayToanBoGioHang(\'dongiao\')"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
-                        <i class="ph-fill ph-check-circle"></i> Duyệt
-                    </button>` : ''}`;
+                    <div class="flex w-full min-w-0 gap-2">
+                        <button ${canSplitDraft ? 'onclick="requestSelectedDraftAction(\'dontam\')"' : 'disabled'} class="flex-1 min-w-0 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 ${canSplitDraft ? enabledOutlinePrimaryBtn : disabledBtn}">
+                            <i class="ph ph-git-branch"></i> Tách đơn tạm
+                        </button>
+                        <button ${canPromoteDraft ? 'onclick="requestSelectedDraftAction(\'dongiao\')"' : 'disabled'} class="flex-1 min-w-0 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
+                            <i class="ph-fill ph-check-circle"></i> ${selectedLineCount < lineCount ? 'Duyệt đã chọn' : 'Duyệt tất cả'}
+                        </button>
+                    </div>` : ''}`;
                 return;
             }
 
