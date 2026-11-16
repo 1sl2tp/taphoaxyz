@@ -8,6 +8,23 @@
   const escapeHtml=value=>String(value??'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  // MILK-X-371: suffix X identifies a high-price milk item. Only its last
+  // letter and its quantity are red; original name, numbers and totals stay intact.
+  const milkXInfo=item=>{
+    const original=String(item?.name??'').trim();
+    const normalized=original.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const group=String(item?.group||item?.category||'')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(!/\s+x$/i.test(original)||
+      !(/\bsua\b|\bprobi\b|\bvinamilk\b/.test(normalized)||/\bsua\b|\bmilk\b/.test(group)))
+      return null;
+    return {name:original.slice(0,-1),marker:original.slice(-1)};
+  };
+  const milkXNameHtml=item=>{
+    const x=milkXInfo(item);
+    return x?escapeHtml(x.name)+'<span style="color:#dc2626;">'+escapeHtml(x.marker)+'</span>'
+      :escapeHtml(item?.name);
+  };
   // UI-PORTRAIT-021: One consistent header identity in captured HTML and Canvas PNG.
   // Keep the full date and clock, but use compact separate labels rather
   // than putting two long phrases above the customer's name.
@@ -82,10 +99,10 @@
       <div style="${gridStyle}padding:15px 0;border-bottom:1px solid #e3eaf1;min-height:64px;font-size:${numericSize}px;line-height:1.45;">
         <div style="text-align:center;color:#64748b;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;">${escapeHtml(item.index??index+1)}</div>
         <div style="min-width:0;overflow-wrap:break-word;text-align:left;">
-          <div style="color:#142238;font-size:17px;line-height:1.4;font-weight:800;">${escapeHtml(item.name)}</div>
+          <div style="color:#142238;font-size:17px;line-height:1.4;font-weight:800;">${milkXNameHtml(item)}</div>
           ${item.note?'<div style="font-size:13px;line-height:1.4;margin-top:5px;color:#586b82;">'+escapeHtml(item.note)+'</div>':''}
         </div>
-        <div style="text-align:center;white-space:nowrap;font-weight:750;color:#142238;font-variant-numeric:tabular-nums;">${escapeHtml(item.qtyText)}</div>
+        <div style="text-align:center;white-space:nowrap;font-weight:750;color:${milkXInfo(item)?'#dc2626':'#142238'};font-variant-numeric:tabular-nums;">${escapeHtml(item.qtyText)}</div>
         <div style="text-align:right;white-space:nowrap;font-weight:750;color:#142238;font-variant-numeric:tabular-nums;">${escapeHtml(item.priceText)}</div>
         <div style="text-align:right;white-space:nowrap;font-weight:800;color:#142238;font-variant-numeric:tabular-nums;">${escapeHtml(item.totalText)}</div>
       </div>`).join('');
@@ -249,7 +266,7 @@
       const names=wrap(item.name,columns.name,nameStyle);
       const notes=String(item.note||'').trim()?wrap(item.note,columns.name,noteStyle):[];
       const height=Math.max(68,26+names.length*24+notes.length*19);
-      return {item,index,names,notes,height};
+      return {item,index,names,notes,height,milkX:!!milkXInfo(item)};
     });
     const tableTop=headerHeight+8,bodyTop=tableTop+48;
     const bodyHeight=rows.reduce((total,row)=>total+row.height,0);
@@ -308,11 +325,24 @@
     for(const row of rows){
       const item=row.item;
       label(item.index??row.index+1,xIndex,y+16,font(13,700),'#64748b','center');
-      row.names.forEach((part,i)=>
-        label(part,xName,y+13+i*24,nameStyle,'#142238'));
+      row.names.forEach((part,i)=>{
+        const last=row.milkX&&i===row.names.length-1;
+        const match=last?part.match(/^(.*?)(x)$/i):null;
+        if(!match){
+          label(part,xName,y+13+i*24,nameStyle,'#142238');
+          return;
+        }
+        // A wrapped trailing X may be on a separate line; draw it red at
+        // its exact original position without changing line width or wrapping.
+        const prefix=match[1];
+        if(prefix)label(prefix,xName,y+13+i*24,nameStyle,'#142238');
+        label(match[2],xName+measure(prefix,nameStyle),y+13+i*24,
+          nameStyle,'#dc2626');
+      });
       row.notes.forEach((part,i)=>
         label(part,xName,y+13+row.names.length*24+i*19,noteStyle,'#586b82'));
-      label(item.qtyText,xQty,y+16,numberStyle,'#142238','right');
+      label(item.qtyText,xQty,y+16,numberStyle,
+        row.milkX?'#dc2626':'#142238','right');
       label(item.priceText,xPrice,y+16,numberStyle,'#142238','right');
       label(item.totalText,xTotal,y+16,totalNumberStyle,'#142238','right');
       y+=row.height;
