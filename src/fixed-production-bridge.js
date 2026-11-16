@@ -945,13 +945,24 @@ async function splitPendingOrder(payload){
   if(!productionOwnerCurrent(mutationOwner))return result;
   const delivered=['done','delivered'].includes(String(result?.order?.status||'').toLowerCase());
   if(result?.ok===true&&delivered){
-    // Use the NEW order and the exact nested command ID for image-only staff notice.
+    // The two-order SQL transaction has ALREADY committed. A media failure
+    // must not masquerade as a failed order and induce a duplicate retry.
     if(result.child_command_id){
-      result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
-        staffCommandId:result.child_command_id
-      })===true;
+      try{
+        result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
+          staffCommandId:result.child_command_id
+        })===true;
+      }catch(mediaError){
+        result.staff_image_attached=false;
+        console.warn('split order staff image after committed sale',mediaError);
+      }
     }
-    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+    try{
+      result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+    }catch(mediaError){
+      result.image_attached=false;
+      console.warn('split order customer image after committed sale',mediaError);
+    }
   }
   try{await refresh(delivered?['orders','debt']:['orders']);}
   catch(error){noteCommittedRefreshFailure(error);}
