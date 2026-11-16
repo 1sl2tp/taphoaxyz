@@ -82,12 +82,72 @@
             }
         }
 
+
+        // SPEC-TAPHOA-CART-REVIEW-20261116: ephemeral per-line picking checks.
+        let cartReviewState={orderId:'',signature:'',checked:new Set()};
+        function resetCartReview(){
+            cartReviewState={orderId:'',signature:'',checked:new Set()};
+        }
+        function cartReviewAvailable(){
+            const tab=getActiveTabId();
+            return currentAuthRole!=='user' && !!editingOrderId &&
+                editingOrderSheet==='dontam' && !editingOrderInSaleMode &&
+                (tab==='tab-don-tam'||tab==='tab-cong-no') &&
+                window.TAPHOA_PRODUCTION?.getAccessMode?.()==='account';
+        }
+        function cartReviewSignature(){
+            const lines=Object.entries(cart).map(([id,item])=>[
+                String(id),Number(item.qty)||0,Number(item.price)||0,
+                String(item.name||''),String(item.note||'')
+            ]).sort((a,b)=>a[0].localeCompare(b[0]));
+            return JSON.stringify([String(editingOrderId||''),String(selectedCustomer?.id||''),lines]);
+        }
+        function syncCartReviewState(){
+            if(!cartReviewAvailable()){resetCartReview();return false;}
+            const signature=cartReviewSignature();
+            if(cartReviewState.orderId!==String(editingOrderId)||cartReviewState.signature!==signature){
+                cartReviewState={orderId:String(editingOrderId),signature,checked:new Set()};
+            }
+            return true;
+        }
+        function isCartReviewComplete(){
+            return syncCartReviewState() && Object.keys(cart).length>0 &&
+                Object.keys(cart).every(id=>cartReviewState.checked.has(String(id)));
+        }
+        function updateCartReviewBar(){
+            const bar=document.getElementById('cartReviewBar');
+            if(!bar)return;
+            if(!cartReviewAvailable()){bar.hidden=true;return;}
+            const done=cartReviewState.checked.size,total=Object.keys(cart).length;
+            bar.hidden=false;
+            bar.textContent='';
+            const heading=document.createElement('span');
+            heading.className='cart-review-heading';
+            heading.textContent='Soát hàng '+done+'/'+total;
+            const message=document.createElement('span');
+            message.className='cart-review-message';
+            message.textContent=done===total&&total>0?'Đã kiểm đủ · có thể duyệt':'Tích từng dòng sau khi kiểm hàng';
+            bar.append(heading,message);
+            bar.classList.toggle('cart-review-finished',total>0&&done===total);
+        }
+        function setCartReviewLine(productCode,checked){
+            if(!syncCartReviewState()||!Object.prototype.hasOwnProperty.call(cart,productCode))return;
+            if(checked)cartReviewState.checked.add(String(productCode));
+            else cartReviewState.checked.delete(String(productCode));
+            const input=Array.from(document.querySelectorAll('#cartItemList .cart-review-checkbox'))
+                .find(node=>node.dataset.cartReviewId===String(productCode));
+            if(input)input.closest('.cart-compact-grid')?.classList.toggle('cart-row-reviewed',checked);
+            updateCartReviewBar();
+            renderCartFooterActions();
+        }
+
         function renderCartUI() {
             const activeTabId = getActiveTabId();
             const isOrderPreview = !!editingOrderId && !!editingOrderSheet
                 && (activeTabId === 'tab-da-giao' || activeTabId === 'tab-don-tam' || activeTabId === 'tab-cong-no')
                 && !editingOrderInSaleMode;
             const isDeliveredReadOnlyPreview = (currentAuthRole === 'user' && editingOrderSheet === 'dongiao') || isOrderPreview;
+            const reviewMode = isDeliveredReadOnlyPreview && syncCartReviewState();
             // Header and rows must use the same five-column ruler in each mode.
             // Read-only quantity needs a number only; editing reserves room for -/+.
             const cartSheet = document.getElementById('cartBottomSheet');
@@ -119,6 +179,15 @@
             }
             if (cartSheet) {
                 cartSheet.dataset.cartMode = isDeliveredReadOnlyPreview ? 'preview' : 'edit';
+                cartSheet.dataset.cartReview = reviewMode ? '1' : '0';
+                let bar=document.getElementById('cartReviewBar');
+                if(!bar){
+                    bar=document.createElement('div');
+                    bar.id='cartReviewBar';
+                    bar.className='cart-review-bar';
+                    cartSheet.querySelector('.cart-column-header')?.before(bar);
+                }
+                updateCartReviewBar();
                 const qtyHeader = cartSheet.querySelector('.cart-column-header .cart-qty');
                 if (qtyHeader) qtyHeader.textContent = isDeliveredReadOnlyPreview ? 'SL' : 'Số lượng';
             }
@@ -137,7 +206,7 @@
                 // displayed quantity determine width instead of reserving 50px.
                 const qtyChars = Math.max(1, ...cartEntries.map(([, item]) => formattedLen(item.qty)));
                 cartSheet.style.setProperty('--cart-qty-readonly-track',
-                    Math.max(32, Math.ceil(qtyChars * 8 + 8)) + 'px');
+                    (Math.max(32, Math.ceil(qtyChars * 8 + 8)) + (reviewMode ? 24 : 0)) + 'px');
                 cartSheet.style.setProperty('--cart-unit-track', Math.max(54, Math.ceil(unitChars * 7.2 + 8)) + 'px');
                 cartSheet.style.setProperty('--cart-total-track', Math.max(69, Math.ceil(totalChars * 7.2 + 8)) + 'px');
             }
@@ -153,6 +222,7 @@
             );
             const lineCount = cartEntries.length;
             for (const [id, item] of cartEntries) {
+                const reviewed = reviewMode && cartReviewState.checked.has(String(id));
                 // Saved-order previews may open before the product catalog is fully hydrated.
                 // A Milk name beginning with "Sua"/"Sữa" is a safe fallback for that case.
                 const normalizedMilkName = normalizeSearchText(item.name || '');
@@ -411,6 +481,7 @@
 
             // Đóng một preview thì bỏ luôn đơn preview; không giữ "đơn gần nhất" trong Giỏ.
             if (editingOrderId && editingOrderSheet && !editingOrderInSaleMode) {
+                resetCartReview();
                 cart = {};
                 editingOrderId = null;
                 editingOrderSheet = null;
