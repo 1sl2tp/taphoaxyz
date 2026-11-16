@@ -83,6 +83,104 @@
         }
 
 
+        // SPEC-CART-CUSTOMER-PRICE-20261116: read-only customer-specific
+        // override availability. Avoid network calls during ordinary cart
+        // rendering and ignore late responses after order/account switches.
+        let editedCustomerPriceProbe = { key:'', state:'idle', count:0 };
+        function editedCustomerPriceContext() {
+            const api=window.TAPHOA_PRODUCTION;
+            const uid=String(api?.getIdentity?.()?.uid||'');
+            const customerId=String(selectedCustomer?.id||'').trim();
+            const orderId=String(editingOrderId||'');
+            if(!uid||!customerId||!orderId||!editingOrderInSaleMode
+                || !['dongiao','dontam'].includes(editingOrderSheet)
+                || currentAuthRole==='user'||api?.getAccessMode?.()!=='account')
+                return null;
+            return {uid,customerId,orderId,sheet:editingOrderSheet,
+                key:JSON.stringify([uid,customerId,orderId,editingOrderSheet])};
+        }
+        function ensureEditedCustomerPriceProbe(retry=false) {
+            const context=editedCustomerPriceContext();
+            if(!context){
+                editedCustomerPriceProbe={key:'',state:'idle',count:0};
+                return;
+            }
+            if(!retry&&editedCustomerPriceProbe.key===context.key)return;
+            editedCustomerPriceProbe={key:context.key,state:'loading',count:0};
+            void window.TAPHOA_PRODUCTION.customerSpecialPriceCount(context.customerId)
+                .then(count=>{
+                    if(editedCustomerPriceProbe.key!==context.key||
+                        editedCustomerPriceContext()?.key!==context.key)return;
+                    editedCustomerPriceProbe={
+                        key:context.key,state:'ready',count:Number(count)||0
+                    };
+                    renderCartUI();
+                })
+                .catch(error=>{
+                    if(editedCustomerPriceProbe.key!==context.key||
+                        editedCustomerPriceContext()?.key!==context.key)return;
+                    editedCustomerPriceProbe={key:context.key,state:'error',count:0};
+                    console.warn('[taphoa] read-only customer price availability:',String(error?.message||error));
+                    renderCartUI(); // retry action instead of an incorrect "no price" claim
+                });
+        }
+        async function applyEditedCustomerSpecialPrices() {
+            const context=editedCustomerPriceContext();
+            if(!context||cartPriceRefreshInFlight)return;
+            if(editedCustomerPriceProbe.key!==context.key||
+                editedCustomerPriceProbe.state!=='ready'){
+                ensureEditedCustomerPriceProbe(true);
+                return;
+            }
+            if(editedCustomerPriceProbe.count<1)return;
+            const entries=Object.entries(cart);
+            if(!entries.length)return;
+            cartPriceRefreshInFlight=true;
+            renderCartUI();
+            try {
+                // One existing read-only Admin RPC for this order's product IDs.
+                // Blank overrides NEVER replace old prices or default prices.
+                const matrix=await window.TAPHOA_PRODUCTION.customerSpecialPriceMatrix(
+                    context.customerId,entries.map(([code])=>code));
+                if(editedCustomerPriceContext()?.key!==context.key)return;
+                if(!Array.isArray(matrix))throw Error('Không đọc được bảng giá riêng.');
+                const idByCode=new Map(entries.map(([code])=>
+                    [String(code).trim().toUpperCase(),code]));
+                const updates=[],seen=new Set();
+                for(const entry of matrix){
+                    const code=String(entry?.product_code||'').trim().toUpperCase();
+                    const price=Number(entry?.price);
+                    if(String(entry?.customer_id||'')!==context.customerId||
+                        !idByCode.has(code)||seen.has(code)||
+                        entry?.price===null||entry?.price===undefined||
+                        entry?.price===''||!Number.isFinite(price)||
+                        price<=0||price>1e9){
+                        throw Error('Dữ liệu giá riêng không hợp lệ. Giỏ hàng chưa thay đổi.');
+                    }
+                    seen.add(code);
+                    updates.push([idByCode.get(code),price]);
+                }
+                if(!updates.length){
+                    showToast('Khách có giá riêng nhưng các sản phẩm trong đơn này chưa có giá áp riêng.','info');
+                    return;
+                }
+                // Atomic UI update after validating every returned override.
+                // The order is committed only through the existing Save button.
+                for(const [code,price] of updates)cart[code].price=price;
+                renderCartUI();
+                renderProductList();
+                showToast('Đã áp giá riêng cho '+updates.length+
+                    ' mã của '+String(selectedCustomer?.name||'khách hàng')+
+                    '. Các mã khác giữ nguyên. Bấm Cập nhật đơn để lưu.','success');
+            } catch(error){
+                showAlertPopup('Không áp dụng được giá riêng',
+                    error?.message||'Không đọc được giá riêng hiện tại.');
+            } finally{
+                cartPriceRefreshInFlight=false;
+                renderCartUI();
+            }
+        }
+
         // SPEC-TAPHOA-CART-REVIEW-20261116: ephemeral per-line picking checks.
         let cartReviewState={orderId:'',signature:'',checked:new Set()};
         function resetCartReview(){
@@ -166,6 +264,16 @@
                     priceButton.addEventListener('click', refreshEditedOrderPrices);
                     editBadge.insertAdjacentElement('afterend', priceButton);
                 }
+                let specialButton = document.getElementById('cartCustomerPricesButton');
+                if (!specialButton) {
+                    specialButton = document.createElement('button');
+                    specialButton.id = 'cartCustomerPricesButton';
+                    specialButton.type = 'button';
+                    specialButton.className = 'cart-price-refresh cart-price-special hidden';
+                    specialButton.textContent = 'Áp giá riêng';
+                    specialButton.addEventListener('click', applyEditedCustomerSpecialPrices);
+                    priceButton.insertAdjacentElement('afterend', specialButton);
+                }
                 const isDraftEdit = editingOrderSheet === 'dontam';
                 const isDeliveredEdit = editingOrderSheet === 'dongiao';
                 priceButton.setAttribute('aria-label', isDraftEdit
@@ -178,6 +286,21 @@
                     && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
                 priceButton.classList.toggle('hidden', !visible);
                 priceButton.disabled = cartPriceRefreshInFlight;
+                // Show only after the Admin RPC confirms this customer has
+                // saved overrides; on read failure show a retry, not a fake zero.
+                ensureEditedCustomerPriceProbe();
+                const context=editedCustomerPriceContext();
+                const loaded=context && editedCustomerPriceProbe.key===context.key;
+                const available=loaded && editedCustomerPriceProbe.state==='ready'
+                    && editedCustomerPriceProbe.count>0;
+                const retry=loaded && editedCustomerPriceProbe.state==='error';
+                specialButton.classList.toggle('hidden',!visible||(!available&&!retry));
+                specialButton.disabled = cartPriceRefreshInFlight;
+                specialButton.textContent=retry?'Thử giá riêng':'Áp giá riêng';
+                specialButton.title=retry
+                    ?'Không đọc được giá riêng · chạm để thử lại'
+                    :'Áp giá riêng đã lưu của khách vào những sản phẩm có ngoại lệ';
+                specialButton.setAttribute('aria-label',specialButton.title);
             }
             if (cartSheet) {
                 cartSheet.dataset.cartMode = isDeliveredReadOnlyPreview ? 'preview' : 'edit';
