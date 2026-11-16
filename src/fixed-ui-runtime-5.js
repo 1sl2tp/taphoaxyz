@@ -435,7 +435,9 @@
 
             const isDeliveredOrderCart = hasSelectedOrder && editingOrderSheet === 'dongiao';
             const isPendingOrderCart = hasSelectedOrder && editingOrderSheet === 'dontam';
-            const canPromoteDraft = !isUser && isPendingOrderCart && hasItems && hasCustomer;
+            // A saved draft is only deliverable after all its lines were picked.
+            const canPromoteDraft = !isUser && isPendingOrderCart && hasItems && hasCustomer
+                && typeof isCartReviewComplete === 'function' && isCartReviewComplete();
 
             const isOrderPreview = hasSelectedOrder && (isOrderTab || isDebtOrderPreview);
             if (isOrderPreview) {
