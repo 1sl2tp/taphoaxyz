@@ -1,5 +1,14 @@
 # ADMIN-CP-001 · 16/11/2026 · Giá riêng theo khách trên bảng quản trị hàng hóa
 
+## Trạng thái triển khai đã xác minh — 16/11/2026 (giờ Việt Nam)
+- **ĐÃ ÁP DỤNG production theo cho phép cụ thể của chủ dự án**: Supabase migration `admin_customer_special_price_columns_20261116`, phiên bản cơ sở dữ liệu `20261116010111`.
+- Đã xác minh: bảng `public.taphoa_customer_special_prices` tồn tại, RLS bật, bảng chưa có dữ liệu; cả ba RPC tồn tại, `anon` không thể gọi, `authenticated` có quyền gọi nhưng đều có kiểm tra Admin theo `taphoa_access_context()`.
+- Đã thử cả ba RPC không có phiên đăng nhập: đều bị chặn `42501`.
+- Có 60 tài khoản khách hàng đủ điều kiện tại thời điểm kiểm tra; chưa tạo giá thử, chưa viết dữ liệu giá cho bất kỳ khách nào.
+- **Chưa E4 với phiên Admin thật trên Web/PWA**, và chưa bật hiệu lực giá riêng trên giá niêm yết của khách, giỏ, đơn, PIN; cần kiểm thử riêng trước khi thay đổi giá thương mại.
+- Không triển khai lại migration đang có; các thay đổi tiếp theo yêu cầu migration mới, không cập nhật trực tiếp giá chung hoặc hóa đơn.
+
+
 **E0** Ảnh người dùng: bảng Hàng hóa hiển thị giá chung và cần `+ Khách`, mở nhiều cột theo tên khách, nhập giá riêng tại từng dòng sản phẩm; không sao chép/mất giá chung.
 **Owner** `admin-gia.html` + `src/admin-customer-special-prices.js`; backend do migration riêng `20261116005500_admin_customer_special_price_columns.sql`.
 
@@ -9,7 +18,7 @@
 **Editing guard** Trước khi đổi trang/nguồn hoặc đăng xuất phải flush giá riêng, nếu chưa lưu thì không âm thầm mất giá.
 **Error/security** Trang không mở bộ chọn khi backend chưa có API; tự kiểm tra khi Admin đăng nhập, nút + Khách bị khóa cho tới khi RPC xác nhận, hiển thị trạng thái tiếng Việt và có nút “Kiểm tra lại”. Không có RPC/mất mạng: khóa input, báo rõ; không xác nhận lưu giả; admin-only check ở SQL, bảng private RLS enabled/no open access; không đưa dữ liệu khách vào localStorage; async response kiểm tra phiên admin và trạng thái màn hình.
 
-**Important staged gate:** Migration chỉ lưu ngoại lệ và hiển thị trong Admin. **Chưa tự điều chỉnh** giá của khách trong Web/PWA, PIN hay hóa đơn/giỏ đã lưu; các đường customer/PIN có security wrapper riêng cần một SPEC kiểm thử tích hợp trước khi bật giá thương mại. Không được quảng cáo giá riêng đã áp vào đơn hàng khi gate này chưa hoàn tất. KHÔNG tự apply production DB.
+**Important staged gate:** Migration chỉ lưu ngoại lệ và hiển thị trong Admin. **Chưa tự điều chỉnh** giá của khách trong Web/PWA, PIN hay hóa đơn/giỏ đã lưu; các đường customer/PIN có security wrapper riêng cần một SPEC kiểm thử tích hợp trước khi bật giá thương mại. Không được quảng cáo giá riêng đã áp vào đơn hàng khi gate này chưa hoàn tất. Production migration đã triển khai đúng phạm vi được cho phép ngày 16/11/2026; không tự triển khai migration khác.
 **MUST-STAY** không sửa giá sale mặc định, công nợ, lịch sử đơn, Chat/Zalo, OTP/PIN, Supabase server production hoặc cron; không có send thật; không triển khai migration bằng tay.
 **Rollback** revert UI HTML+module; dữ liệu DB mới (nếu triển khai sau này) giữ nguyên, không drop.
-**E1/E2** static/source + CI. **E3** frontend deployment may succeed, but feature will show disconnected until authorized DB rollout. **E4/E5** Admin device test & customer-specific effective pricing PENDING.
+**E1** CI nguồn và cấu hình đã đạt. **E2** migration, DB schema, ACL, chặn các RPC khi không có phiên: PASS; chưa chạy thao tác lưu giá trong phiên Admin thật. **E3** frontend đã có bản build phát hành; backend 3 RPC đã sẵn sàng. **E4/E5** kiểm thử Admin Web/PWA thực tế và áp giá thương mại theo khách: CHƯA THỰC HIỆN.
