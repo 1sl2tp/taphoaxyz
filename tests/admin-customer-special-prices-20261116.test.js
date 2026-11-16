@@ -11,11 +11,16 @@ for(const marker of [
 assert(html.includes("specialPrices.mount();"));
 assert(!html.includes('customer_special_prices from localStorage'));
 assert(js.includes('const maxColumns=8'));
+assert(html.includes('id="specialPriceSuggestionRow"'));
+assert(html.includes('id="specialPriceSuggested"'));
+assert(js.includes('paintSuggestions()'));
+assert(js.includes('openCustomerColumn(id'));
+assert(js.includes('customer.price_count++'));
 assert(js.includes('button.disabled=true;'));
 assert(js.includes("error?.code==='PGRST202'"));
 assert(html.includes('Giá riêng chưa kích hoạt'));
 assert(html.includes('Chưa xác minh được chức năng giá riêng trên máy chủ'));
-assert(html.includes('admin-customer-special-prices.js?v=20261116cp002'));
+assert(html.includes('admin-customer-special-prices.js?v=20261116cp003'));
 assert(js.includes('state.probeGeneration++'));
 assert.match(js,/if\(!state\.ready\)\s*\{\s*cleanOldColumns\(\);/);
 assert(js.includes('Never show the generic'));

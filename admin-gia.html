@@ -38,6 +38,13 @@
     #goodsPane .special-price-toolbar .special-price-selected{display:flex;gap:5px;flex-wrap:wrap;min-width:0}
     #goodsPane .special-price-toolbar .special-price-note{font-size:11px;color:#64748b;min-width:0}
     #goodsPane .special-price-toolbar .btn{min-height:34px}
+    #goodsPane .special-price-suggestion-row[hidden]{display:none!important}
+    #goodsPane .special-price-suggestion-row{display:flex;align-items:center;flex:1 0 100%;gap:8px;flex-wrap:wrap;border-top:1px dashed #d9e4f4;padding:7px 0 1px}
+    #goodsPane .special-price-suggestion-label{font-size:11px;font-weight:700;color:#475569;white-space:nowrap}
+    #goodsPane .special-price-suggestion-list{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+    #goodsPane .special-price-suggestion-pill{background:#fff;border:1px solid #b9d0ec;border-radius:16px;color:#164c86;font-size:12px;font-weight:650;min-height:34px;padding:5px 11px;cursor:pointer}
+    #goodsPane .special-price-suggestion-pill[aria-pressed="true"]{background:#dbeafe;border-color:#4482df;color:#1e40af}
+    #goodsPane .special-price-suggestion-pill:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
     #goodsPane .special-price-column{background:#f0f7ff;color:#1e40af}
     #goodsPane .special-price-th{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0}
     #goodsPane .special-price-th span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -660,6 +667,10 @@
           <button id="specialPriceAddCustomer" class="btn" type="button" disabled title="Đang kiểm tra API giá riêng trên máy chủ">Giá riêng chưa kích hoạt</button>
           <button id="specialPriceRetry" class="btn" type="button" hidden>Kiểm tra lại</button>
           <div id="specialPriceSelected" class="special-price-selected" aria-label="Cột giá riêng đang xem"></div>
+          <div id="specialPriceSuggestionRow" class="special-price-suggestion-row" hidden>
+            <span class="special-price-suggestion-label">Khách đã có giá riêng:</span>
+            <div id="specialPriceSuggested" class="special-price-suggestion-list" aria-label="Chọn lại khách đã áp giá riêng"></div>
+          </div>
           <span id="specialPriceNote" class="special-price-note" role="status" aria-live="polite">Chưa xác minh được chức năng giá riêng trên máy chủ. Giá chung vẫn giữ nguyên.</span>
         </div>
         <div class="summary">
@@ -987,7 +998,7 @@
   <script type="module">
     import {createAuthService} from './src/core/auth.js';
     import {createCustomerCareReport} from './src/admin-customer-care-report.js';
-    import {createSpecialPriceColumns} from './src/admin-customer-special-prices.js?v=20261116cp002';
+    import {createSpecialPriceColumns} from './src/admin-customer-special-prices.js?v=20261116cp003';
 
     const auth=createAuthService();
     const PAGE_SIZE=100;

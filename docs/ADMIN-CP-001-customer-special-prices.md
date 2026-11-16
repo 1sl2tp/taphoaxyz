@@ -22,3 +22,12 @@
 **MUST-STAY** không sửa giá sale mặc định, công nợ, lịch sử đơn, Chat/Zalo, OTP/PIN, Supabase server production hoặc cron; không có send thật; không triển khai migration bằng tay.
 **Rollback** revert UI HTML+module; dữ liệu DB mới (nếu triển khai sau này) giữ nguyên, không drop.
 **E1** CI nguồn và cấu hình đã đạt. **E2** migration, DB schema, ACL, chặn các RPC khi không có phiên: PASS; chưa chạy thao tác lưu giá trong phiên Admin thật. **E3** frontend đã có bản build phát hành; backend 3 RPC đã sẵn sàng. **E4/E5** kiểm thử Admin Web/PWA thực tế và áp giá thương mại theo khách: CHƯA THỰC HIỆN.
+
+## ADMIN-CP-002 · Gợi ý chọn lại khách đã áp giá riêng · 16/11/2026
+
+- Trên bảng Quản trị hàng hóa, hiển thị các khách đã có ít nhất một sản phẩm với giá riêng trong mục **Khách đã có giá riêng**. Mỗi gợi ý hiển thị tên và số sản phẩm. Tối đa 8 gợi ý; còn lại xem tại bộ chọn.
+- Bấm gợi ý mở lại cột giá riêng của khách, với giá theo mọi nhóm sản phẩm đã lưu. Nếu cột đang mở thì cuộn tới cột, không tự xóa hay ẩn. Khi thêm cột, phải đợi các lần lưu trước hoàn tất.
+- API danh sách khách hiện có trả thêm trường `price_count` được tính trực tiếp từ `taphoa_customer_special_prices`, xếp người có giá riêng lên đầu theo cập nhật gần nhất. Chỉ admin được đọc qua RPC có `taphoa_access_context()`; không có quyền trực tiếp vào bảng.
+- Gợi ý cập nhật sau khi Admin lưu hoặc xóa giá riêng thành công trong phiên; không dựa vào localStorage. Trường hợp chưa có giá riêng thì vùng gợi ý ẩn, nút **+ Khách** vẫn bình thường.
+- Phần này là thao tác hiển thị/đọc, không thay đổi giá bán chung, giỏ, đơn hàng, công nợ, Chat/Zalo hoặc scheduler.
+- E1: `tests/admin-customer-price-suggestions-20261116.test.js`. E2: xác nhận quyền Admin và count khớp DB. E3/E4: xác nhận Web/PWA sau khi phát hành.

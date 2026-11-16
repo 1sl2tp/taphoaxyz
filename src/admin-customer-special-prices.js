@@ -2,6 +2,17 @@
  * The UI is not the authority: dedicated server RPCs enforce Admin role,
  * selected-customer identity and product/price constraints.
  */
+// Admin RPC response: only customers with persisted overrides become quick picks.
+export function normalizeSpecialPriceCustomers(rows){
+  if(!Array.isArray(rows))throw new Error('invalid_customer_list');
+  return rows.filter(row=>/^[0-9a-f-]{36}$/i.test(String(row?.id||'')))
+    .map(row=>({
+      id:String(row.id),
+      name:String(row.name||'Khách hàng').slice(0,100),
+      price_count:Number.isSafeInteger(Number(row.price_count))&&Number(row.price_count)>0
+        ?Number(row.price_count):0
+    }));
+}
 export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession}){
   const el=id=>document.getElementById(id);
   const state={selected:[],customers:null,prices:new Map(),request:0,edits:new Map(),booted:false,ready:false,probeGeneration:0};
@@ -34,6 +45,8 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     state.edits.clear();
     cleanOldColumns();
     if(el('specialPriceSelected'))el('specialPriceSelected').replaceChildren();
+    if(el('specialPriceSuggested'))el('specialPriceSuggested').replaceChildren();
+    if(el('specialPriceSuggestionRow'))el('specialPriceSuggestionRow').hidden=true;
     if(el('specialPricePickerList'))el('specialPricePickerList').replaceChildren();
     if(el('specialPricePicker')?.open)el('specialPricePicker').close();
     if(el('specialPriceToolbar'))el('specialPriceToolbar').hidden=true;
@@ -52,6 +65,51 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
       host.append(button);
     }
   }
+  function paintSuggestions(){
+    const area=el('specialPriceSuggestionRow'),host=el('specialPriceSuggested');
+    if(!area||!host)return;
+    host.replaceChildren();
+    const priced=authorized()&&state.ready
+      ?(state.customers||[]).filter(row=>row.price_count>0):[];
+    area.hidden=!priced.length;
+    for(const customer of priced.slice(0,8)){
+      const button=document.createElement('button');
+      button.type='button';button.className='special-price-suggestion-pill';
+      button.dataset.pricedCustomer=customer.id;
+      button.setAttribute('aria-pressed',String(state.selected.includes(customer.id)));
+      button.title='Mở cột giá riêng: '+customer.name;
+      button.textContent=customer.name+' · '+customer.price_count+' SP';
+      host.append(button);
+    }
+    if(priced.length>8){
+      const more=document.createElement('button');
+      more.type='button';more.className='special-price-suggestion-pill';
+      more.textContent='Xem thêm '+(priced.length-8)+' khách';
+      more.addEventListener('click',()=>{void openPicker();});
+      host.append(more);
+    }
+  }
+  function focusColumn(id){
+    const cells=[...(el('goodsPane')?.querySelectorAll('thead th[data-special-price-column]')||[])];
+    const header=cells.find(cell=>cell.dataset.specialPriceColumn===id);
+    header?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }
+  async function openCustomerColumn(id,{fromPicker=false}={}){
+    if(!authorized()||!state.ready||!state.customers?.some(row=>row.id===id))return;
+    if(state.selected.includes(id)){
+      if(fromPicker&&el('specialPricePicker')?.open)el('specialPricePicker').close();
+      focusColumn(id);return;
+    }
+    if(state.selected.length>=maxColumns){
+      info('Tối đa 8 cột. Hãy ẩn bớt cột đang mở.',true);return;
+    }
+    const ctx=context();
+    if(!await flush()){info('Có giá chưa lưu. Hãy kiểm tra ô báo đỏ trước khi mở cột.',true);return;}
+    if(!current(ctx)||!state.ready||state.selected.includes(id))return;
+    state.selected.push(id);
+    if(fromPicker&&el('specialPricePicker')?.open)el('specialPricePicker').close();
+    render();focusColumn(id);
+  }
   function mount(){
     if(state.booted){void probe();return;}
     const button=el('specialPriceAddCustomer');
@@ -62,18 +120,18 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     state.booted=true;
     button.addEventListener('click',()=>{void openPicker();});
     el('specialPriceRetry').addEventListener('click',()=>{void probe();});
+    el('specialPriceSuggested').addEventListener('click',event=>{
+      const button=event.target.closest('button[data-priced-customer]');
+      if(button)void openCustomerColumn(button.dataset.pricedCustomer);
+    });
     el('specialPricePickerClose').addEventListener('click',()=>dialog.close());
     search.addEventListener('input',paintPicker);
     list.addEventListener('click',event=>{
       const btn=event.target.closest('button[data-customer-id]');
       if(!btn||btn.disabled||!authorized())return;
       const id=btn.dataset.customerId;
-      if(!state.customers?.some(row=>row.id===id)||state.selected.includes(id))return;
-      if(state.selected.length>=maxColumns){info('Chỉ mở tối đa 8 cột cùng lúc.',true);return;}
-      state.selected.push(id);
-      dialog.close();
-      chips();
-      render();
+      if(!state.customers?.some(row=>row.id===id))return;
+      void openCustomerColumn(id,{fromPicker:true});
     });
     el('productBody').addEventListener('keydown',event=>{
       if(event.isComposing||event.keyCode===229)return;
@@ -104,18 +162,19 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
       const data=await rpc('taphoa_admin_customer_special_price_customers');
       if(!stillCurrent())return;
       if(!Array.isArray(data))throw new Error('invalid_customer_list');
-      state.customers=data.filter(row=>/^[\da-f-]{36}$/i.test(String(row?.id||'')))
-        .map(row=>({id:String(row.id),name:String(row.name||'Khách hàng').slice(0,100)}));
+      state.customers=normalizeSpecialPriceCustomers(data);
       state.ready=true;
       button.disabled=false;
       button.textContent='+ Khách · giá riêng';
       retry.hidden=true;
       info('Đã kết nối giá riêng. Ô trống = giá chung; ẩn cột không xóa giá đã lưu.');
+      paintSuggestions();
       if(state.selected.length)render();
     }catch(error){
       if(!stillCurrent())return;
       state.ready=false;
       state.customers=null;
+      paintSuggestions();
       button.disabled=true;
       button.textContent='Giá riêng chưa kích hoạt';
       retry.hidden=false;
@@ -138,8 +197,8 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
         const data=await rpc('taphoa_admin_customer_special_price_customers');
         if(!current(ctx))return;
         if(!Array.isArray(data))throw new Error('invalid_customer_list');
-        state.customers=data.filter(row=>/^[\da-f-]{36}$/i.test(String(row?.id||'')))
-          .map(row=>({id:String(row.id),name:String(row.name||'Khách hàng').slice(0,100)}));
+        state.customers=normalizeSpecialPriceCustomers(data);
+        paintSuggestions();
         el('specialPricePickerStatus').textContent=state.customers.length+' khách có thể chọn';
         chips();
       }catch(error){
@@ -164,7 +223,7 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
       button.type='button';
       button.dataset.customerId=customer.id;
       button.disabled=state.selected.includes(customer.id);
-      button.textContent=customer.name+(button.disabled?' · đã chọn':'');
+      button.textContent=customer.name+(customer.price_count>0?' · '+customer.price_count+' SP giá riêng':'')+(button.disabled?' · đã chọn':'');
       list.append(button);
     }
   }
@@ -234,6 +293,7 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     if(!authorized()){reset();return;}
     el('specialPriceToolbar').hidden=false;
     chips();
+    paintSuggestions();
     if(!state.ready){
       cleanOldColumns();
       // Retain the fail-closed backend status. Never show the generic
@@ -314,9 +374,16 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
       if(!current(ctx)||!input.isConnected)return;
       if(data?.ok!==true||String(data.customer_id)!==customerId||String(data.product_code)!==code)
         throw new Error('save_response_mismatch');
+      const previous=input.dataset.saved||'';
       const saved=number===null?'':String(number);
       input.value=saved;input.dataset.saved=saved;
       state.prices.set(key(customerId,code),saved);
+      const customer=state.customers?.find(row=>row.id===customerId);
+      if(customer){
+        if(!previous&&saved)customer.price_count++;
+        else if(previous&&!saved)customer.price_count=Math.max(0,customer.price_count-1);
+      }
+      paintSuggestions();
       cell.dataset.state='saved';info('Đã lưu giá riêng cho '+displayName(customerId));
     }catch(error){
       if(!current(ctx)||!input.isConnected)return;
