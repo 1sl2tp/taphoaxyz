@@ -19,11 +19,19 @@ test('cart keeps existing line position when quantity changes and only promotes 
   assert.doesNotMatch(runtime,/String\(a\.name[^\n]*localeCompare/);
 });
 
-test('order lists are stabilized to backend newest-first order',async()=>{
-  const behavior=await read('src/fixed-ui-behavior.js');
-  assert.match(behavior,/function stabilizeNewestOrderCards/);
-  assert.match(behavior,/stabilizeNewestOrderCards\('dontam'/);
-  assert.match(behavior,/stabilizeNewestOrderCards\('dongiao'/);
+test('delivered orders sort by delivery time and drafts sort by customer name, without a DOM re-sort',async()=>{
+  const [behavior,sortOwner,pending,delivered]=await Promise.all([
+    read('src/fixed-ui-behavior.js'),
+    read('src/fixed-ui-runtime-7.js'),
+    read('src/fixed-ui-runtime-10.js'),
+    read('src/fixed-ui-runtime-11.js')
+  ]);
+  assert.match(sortOwner,/function sortOrderKeysForDisplay\(sheetName, orders\)/);
+  assert.match(sortOwner,/sheetName === 'dontam'/);
+  assert.match(sortOwner,/orderTimelineStamp/);
+  assert.match(pending,/sortOrderKeysForDisplay\('dontam', orders\)/);
+  assert.match(delivered,/sortOrderKeysForDisplay\('dongiao', orders\)/);
+  assert.doesNotMatch(behavior,/function stabilizeNewestOrderCards/);
 });
 
 test('customer selector displays username/code instead of internal uuid',async()=>{
