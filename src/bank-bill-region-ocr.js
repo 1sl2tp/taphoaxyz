@@ -4,6 +4,7 @@
 // Field names are canonical; the recipient's NAME is OPTIONAL, and if shown
 // it is compared without Vietnamese diacritics.
 import {normalizeTransferText,compareTransferMemo} from './bank-bill-transfer-content-ocr.js';
+import {findAgribankBillEvidence} from './bank-bill-bank-evidence.js';
 export const BILL_FIELDS=Object.freeze([
  'amount','account','recipientName','transactionTime','transferContent',
  'transferReference','senderName','sendingBank','receivingBank','transactionStatus'
@@ -264,7 +265,8 @@ export function validateBillRegionLayout(layout){
    missingFields};
 }
 export async function analyzeBillWithRegions({
- imageBlob,locateRegions,readOcr,expectedAccount=null,bankNotificationBody=null
+ imageBlob,locateRegions,readOcr,expectedAccount=null,bankNotificationBody=null,
+ bankNotifications=null,creditUsageKnown=false,usedNotificationIds=[]
 }){
  if(typeof locateRegions!=='function'||typeof readOcr!=='function')
    throw Error('locator_and_ocr_required');
@@ -287,7 +289,16 @@ export async function analyzeBillWithRegions({
    imageBlob,boxes:layout.boxes,aiFields:layout.aiFields,
    documentBox:layout.documentBox,readOcr,expectedAccount,bankNotificationBody
  });
- return {...out,status:(out.reviewFields.length||out.bankMemoEvidence?.needsReview)?'review':'fields_compared',
+ // This extra read-only match does NOT upgrade a receipt to "received".
+ // The existing finance RPC alone handles locking, duplication and ledger.
+ const bankEvidence=bankNotifications===null?null:findAgribankBillEvidence({
+   billRead:out,notifications:bankNotifications,expectedAccount,
+   usedNotificationIds,creditUsageKnown
+ });
+ const regionReview=out.reviewFields.length>0||out.bankMemoEvidence?.needsReview===true;
+ const bankPending=bankEvidence!==null&&bankEvidence.status!=='candidate_for_financial_rpc';
+ return {...out,bankEvidence,
+   status:regionReview||bankPending?'review':bankEvidence?'bank_candidate_review':'fields_compared',
    selectedTransaction:layout.selectedTransaction,
-   ledgerWritten:false};
+   automaticCollectionAuthorized:false,ledgerWritten:false};
 }
