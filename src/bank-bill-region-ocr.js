@@ -107,7 +107,7 @@ export function compareRegionRead(field,aiValue,ocrValue){
 }
 // Invoke external readers only for detected boxes. The caller decides whether
 // to show a manual crop editor for conflicts; this function cannot book money.
-export async function inspectBillZones({imageBlob,boxes,aiFields,readOcr}){
+export async function inspectBillZones({imageBlob,boxes,aiFields,readOcr,expectedAccount=null}){
   if(typeof readOcr!=='function')throw Error('ocr_reader_required');
   const results={};
   for(const field of BILL_FIELDS){
@@ -116,11 +116,20 @@ export async function inspectBillZones({imageBlob,boxes,aiFields,readOcr}){
       results[field]=compareRegionRead(field,aiFields?.[field],null);
       continue;
     }
-    const crop=await cropBillRegion(imageBlob,bbox);
-    const read=await readOcr({field,crop});
-    results[field]=compareRegionRead(field,aiFields?.[field],read);
+    try{
+      const crop=await cropBillRegion(imageBlob,bbox);
+      const read=await readOcr({field,crop});
+      results[field]=compareRegionRead(field,aiFields?.[field],read);
+    }catch(_e){
+      results[field]={field,status:'crop_or_ocr_unavailable',value:null,needsReview:true};
+    }
   }
-  return {fields:results,eligibleForBankReconciliation:
-    !['amount','account','transactionTime'].some(f=>results[f].needsReview),
+  const requiredFieldsAgreed=!['amount','account','transactionTime']
+    .some(f=>results[f].needsReview);
+  const expected=normalizeBillField('account',expectedAccount);
+  const accountVerified=expected!==null&&results.account.value===expected;
+  return {fields:results,readyForIndependentBankMatch:
+    requiredFieldsAgreed&&accountVerified,
+    // This flag only permits an independent lookup, never financial posting.
     ledgerWritten:false};
 }
