@@ -484,8 +484,8 @@
       && String(window.__TAPHOA_REPRICE_DRAFT_ID||'')===String(editingOrderId);
     const refreshCostSnapshot = stagedNewCost && sourceSheet==='dontam'
       && !isPromotingDraft && currentAuthRole!=='user';
-    if(isPromotingDraft && stagedNewCost){
-      showAlertPopup('Giá mới chưa được lưu','Bấm Cập nhật đơn để lưu giá trước khi chuyển sang Đã giao.');
+    if((isPromotingDraft||isSplittingSelection) && stagedNewCost){
+      showAlertPopup('Giá mới chưa được lưu','Bấm Cập nhật đơn để lưu giá trước khi tách hoặc giao.');
       return;
     }
     const items=Object.entries(cart)
@@ -496,7 +496,7 @@
 
     orderMutationInFlight=true;
     let committed=false;
-    showLoading(isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
+    showLoading(isSplittingSelection?'Đang tách các mặt hàng đã chọn...':isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
     try{
       if(editingOrderId&&!backendEditOrderId){
         await refreshFixedSheets([sourceSheet]);
@@ -504,7 +504,14 @@
       }
       if(editingOrderId&&!backendEditOrderId)throw new Error('Không tìm thấy đơn gốc. Chưa lưu để tránh tạo đơn khác.');
 
-      if(isPromotingDraft){
+      if(isSplittingSelection){
+        await assertDraftAlreadySavedForDelivery(backendEditOrderId,selectedCustomer.id,items);
+        const result=await backend().splitPendingOrder({
+          orderId:backendEditOrderId,selectedCodes:selectedReviewCodes,
+          expectedItems:items,targetStatus:isPromotingDraft?'delivered':'pending'
+        });
+        if(result?.ok!==true)throw new Error('Không thể tách đơn đã chọn.');
+      }else if(isPromotingDraft){
         await assertDraftAlreadySavedForDelivery(backendEditOrderId,selectedCustomer.id,items);
         const result=await backend().deliverOrder(backendEditOrderId);
         if(result?.ok!==true)throw new Error('Không thể chuyển đơn tạm sang Đã giao.');
@@ -514,10 +521,12 @@
       }
 
       committed=true;
-      showToast(isPromotingDraft?'Đã duyệt đơn sang Đã giao!':isUpdatingExistingOrder?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
+      showToast(isSplittingSelection
+        ?(isPromotingDraft?'Đã giao phần hàng được tích; phần còn lại vẫn là đơn tạm.':'Đã tách đơn tạm mới; đơn cũ giữ phần hàng còn lại.')
+        :isPromotingDraft?'Đã duyệt đơn sang Đã giao!':isUpdatingExistingOrder?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
       window.__TAPHOA_REPRICE_DRAFT_ID = null;
     }catch(error){
-      console.error(isPromotingDraft?'deliver pending order':'save order',error);
+      console.error(isSplittingSelection?'split pending order':isPromotingDraft?'deliver pending order':'save order',error);
       showAlertPopup('Lỗi',error?.message||'Không thể lưu đơn hàng.');
     }finally{
       orderMutationInFlight=false;
