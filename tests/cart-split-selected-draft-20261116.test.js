@@ -46,4 +46,20 @@ test('SQL locks original and validates all lines before changing anything',()=>{
   assert.match(sql,/unit_cost_vnd_snapshot/);
   assert.match(sql,/taphoa_command_log/);
   assert.match(sql,/v_target_status='delivered'/);
+  assert.match(sql,/v_child_result:=jsonb_set\(v_child_result,'\{order\}'/);
+  assert.match(sql,/UPDATE public\.taphoa_command_log\s+SET result=v_child_result/);
+});
+
+test('uninstalled RPC is a readable Vietnamese error; no hidden retry or source order edit',()=>{
+  assert.match(mutation,/String\(error\?\.code\|\|''\)==='PGRST202'/);
+  assert.match(mutation,/Tách đơn chưa hoạt động/);
+  assert.match(mutation,/Chưa thay đổi đơn gốc, hàng hoặc công nợ/);
+  assert.doesNotMatch(bridge.slice(bridge.indexOf('async function splitPendingOrder'),bridge.indexOf('async function deliverOrder')),/retry|setTimeout\(/);
+});
+
+test('media failure after SQL commit never masquerades as an order-save failure',()=>{
+  const p=bridge.slice(bridge.indexOf('async function splitPendingOrder'),bridge.indexOf('async function deliverOrder'));
+  assert.match(p,/try\s*\{[\s\S]*staff_image_attached/);
+  assert.match(p,/catch\(mediaError\)/);
+  assert.match(p,/return result;/);
 });
