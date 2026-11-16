@@ -1157,6 +1157,46 @@ async function createCustomer(name){
   catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
+// SPEC-CART-CUSTOMER-PRICE-20261116: Admin-only, read-only access to
+// already persisted customer overrides. No automatic selling-price changes,
+// writes, new API route or customer/PIN access.
+async function customerSpecialPriceCount(customerId){
+  if(publicAccess||employeeAccess||identity?.role!=='admin')throw Error('admin_only');
+  const id=String(customerId||'').trim();
+  if(!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id))
+    throw Error('invalid_customer_id');
+  const owner=captureProductionOwner();
+  const client=await auth.getClient();
+  if(!productionOwnerCurrent(owner))throw Error('session_changed');
+  const {data,error}=await client.rpc('taphoa_admin_customer_special_price_customers');
+  if(!productionOwnerCurrent(owner))throw Error('session_changed');
+  if(error)throw error;
+  if(!Array.isArray(data))throw Error('customer_special_prices_unavailable');
+  const matched=data.find(row=>String(row?.id||'')===id);
+  const count=Number(matched?.price_count);
+  return Number.isSafeInteger(count)&&count>0?count:0;
+}
+async function customerSpecialPriceMatrix(customerId,productCodes){
+  if(publicAccess||employeeAccess||identity?.role!=='admin')throw Error('admin_only');
+  const id=String(customerId||'').trim();
+  if(!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id))
+    throw Error('invalid_customer_id');
+  if(!Array.isArray(productCodes)||productCodes.length<1||productCodes.length>130)
+    throw Error('invalid_order_price_items');
+  const codes=[...new Set(productCodes.map(code=>String(code||'').trim().toUpperCase()))];
+  if(codes.some(code=>!code||code.length>128))throw Error('invalid_product_code');
+  const owner=captureProductionOwner();
+  const client=await auth.getClient();
+  if(!productionOwnerCurrent(owner))throw Error('session_changed');
+  const {data,error}=await client.rpc('taphoa_admin_customer_special_price_matrix',{
+    p_customer_ids:[id],p_product_codes:codes
+  });
+  if(!productionOwnerCurrent(owner))throw Error('session_changed');
+  if(error)throw error;
+  if(!Array.isArray(data))throw Error('customer_special_prices_unavailable');
+  return data;
+}
+
 async function stockCheckLinks(customerId){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)return publicRpc('taphoa_public_employee_link_access');
@@ -1243,6 +1283,7 @@ window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,orderCycles,ledgerToRows,
   saveOrder,deliverOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,resolvePublicOrderLink,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
+  customerSpecialPriceCount,customerSpecialPriceMatrix,
   backendOrderId,orderDisplayCode,
   getIdentity:()=>identity,getState:()=>appState.get(),
   getAccessMode:()=>employeeAccess?'employee-link':publicAccess?'public-link':'account',
