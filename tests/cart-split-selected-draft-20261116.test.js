@@ -38,7 +38,7 @@ test('one RPC mutation, and image notices only from the delivered child order',(
 test('SQL locks original and validates all lines before changing anything',()=>{
   assert.match(sql,/select \* into v_source from public\.taphoa_orders\s+where id=p_order_id for update/i);
   assert.match(sql,/v_source\.status<>'pending'/);
-  assert.match(sql,/v_saved_compare is distinct from v_expected_compare/);
+  assert.match(sql,/v_saved_compare is distinct from v_expected_compare/i);
   assert.match(sql,/v_selected_count>=v_line_count/);
   assert.match(sql,/v_source_result:=public\.taphoa_save_order/);
   assert.match(sql,/v_child_result:=public\.taphoa_save_order/);
