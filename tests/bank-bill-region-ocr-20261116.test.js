@@ -266,3 +266,20 @@ test('AI locator failures never authorize collection or infer missing account nu
  assert.equal(result.ledgerWritten,false);
  assert.equal(result.readyForIndependentBankMatch,false);
 });
+
+
+test('raw AI and OCR reading stays available for audit without changing matching text',()=>{
+ const a=compareRegionRead('transferContent','Hạnh dùng ZaloPay chuyển tiền',
+   'Hanh dung ZaloPay chuyen tien');
+ assert.equal(a.status,'agreed');
+ assert.equal(a.value,'HANH DUNG ZALOPAY CHUYEN TIEN');
+ assert.equal(a.aiText,'Hạnh dùng ZaloPay chuyển tiền');
+ assert.equal(a.ocrText,'Hanh dung ZaloPay chuyen tien');
+ const mismatch=compareRegionRead('account','290118199999',
+   '2901181999999');
+ assert.equal(mismatch.status,'conflict');
+ assert.equal(mismatch.value,null);
+ assert.equal(mismatch.aiText,'290118199999');
+ assert.equal(mismatch.ocrText,'2901181999999');
+ assert.equal(mismatch.needsReview,true);
+});
