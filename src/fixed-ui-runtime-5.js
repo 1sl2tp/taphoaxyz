@@ -412,6 +412,7 @@
                 return;
             }
             owner.classList.remove('hidden');
+            owner.classList.remove('flex-wrap');
 
             const hasItems = lineCount > 0;
             const hasCustomer = !!selectedCustomer.id;
@@ -439,7 +440,11 @@
             const canPromoteDraft = !isUser && isPendingOrderCart && hasItems && hasCustomer
                 && typeof isCartReviewComplete === 'function' && isCartReviewComplete();
 
-            const isOrderPreview = hasSelectedOrder && (isOrderTab || isDebtOrderPreview);
+            // After saving an edited draft, the approval review also works
+            // in the Sales bottom sheet; no need to reopen the order by hand.
+            const isOrderPreview = hasSelectedOrder
+                && (isOrderTab || isDebtOrderPreview
+                    || (isPendingOrderCart && !editingOrderInSaleMode));
             if (isOrderPreview) {
                 owner.innerHTML = `
                     <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
@@ -467,14 +472,22 @@
                 return;
             }
 
-            // Đơn tạm sau khi bấm Sửa: chỉ Hủy hoặc Cập nhật đơn.
+            // A saved draft can be updated and then reviewed for delivery.
+            // "Duyệt" is an entry into the checklist, never a direct mutation:
+            // the backend must confirm the latest edit was saved first.
             if (isPendingOrderCart) {
+                owner.classList.add('flex-wrap');
                 owner.innerHTML = `
-                    <button onclick="cancelEditingOrder()" class="px-3 py-3 rounded-xl border border-gray-200 text-gray-500 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap hover:bg-gray-50">
-                        <i class="ph ph-x"></i> Hủy
-                    </button>
-                    <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledPrimaryBtn : disabledBtn}">
-                        <i class="ph-fill ph-check-circle"></i> Cập nhật đơn
+                    <div class="flex w-full min-w-0 gap-2">
+                        <button onclick="cancelEditingOrder()" class="px-3 py-3 rounded-xl border border-gray-200 text-gray-500 font-bold transition flex items-center justify-center gap-1 whitespace-nowrap hover:bg-gray-50">
+                            <i class="ph ph-x"></i> Hủy
+                        </button>
+                        <button ${canUpdateOrder ? 'onclick="updateExistingOrder()"' : 'disabled'} class="flex-1 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canUpdateOrder ? enabledPrimaryBtn : disabledBtn}">
+                            <i class="ph-fill ph-check-circle"></i> Cập nhật đơn
+                        </button>
+                    </div>
+                    <button ${canUpdateOrder && !isUser ? 'onclick="beginDraftReviewAfterEditing()"' : 'disabled'} class="w-full py-2.5 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-2 ${canUpdateOrder && !isUser ? enabledOutlinePrimaryBtn : disabledBtn}" title="Kiểm tra đơn đã lưu, soát đủ hàng rồi mới duyệt">
+                        <i class="ph-fill ph-check-circle"></i> Duyệt <span class="text-xs font-medium opacity-75">· soát hàng trước</span>
                     </button>`;
                 return;
             }
