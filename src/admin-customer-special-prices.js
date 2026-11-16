@@ -25,7 +25,8 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     state.probeGeneration++;
     state.ready=false;
     const addButton=el('specialPriceAddCustomer');
-    if(addButton){addButton.disabled=true;addButton.textContent='+ Khách · giá riêng';}
+    if(addButton){addButton.disabled=true;addButton.textContent='Giá riêng chưa kích hoạt';}
+    info('Chưa xác minh được chức năng giá riêng trên máy chủ. Giá chung vẫn giữ nguyên.',true);
     if(el('specialPriceRetry'))el('specialPriceRetry').hidden=true;
     state.selected=[];
     state.customers=null;
@@ -233,7 +234,12 @@ export function createSpecialPriceColumns({rpc,getIdentity,getItems,getSession})
     if(!authorized()){reset();return;}
     el('specialPriceToolbar').hidden=false;
     chips();
-    if(!state.ready){cleanOldColumns();return;}
+    if(!state.ready){
+      cleanOldColumns();
+      // Retain the fail-closed backend status. Never show the generic
+      // pricing instructions while the server API is unavailable.
+      return;
+    }
     addColumns();
     if(!state.selected.length){
       info('Ô trống = giá chung. Ẩn cột không xóa giá riêng.');

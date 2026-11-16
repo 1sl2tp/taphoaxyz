@@ -657,10 +657,10 @@
         </div>
 
         <div id="specialPriceToolbar" class="special-price-toolbar" hidden>
-          <button id="specialPriceAddCustomer" class="btn" type="button" disabled>+ Khách · giá riêng</button>
+          <button id="specialPriceAddCustomer" class="btn" type="button" disabled title="Đang kiểm tra API giá riêng trên máy chủ">Giá riêng chưa kích hoạt</button>
           <button id="specialPriceRetry" class="btn" type="button" hidden>Kiểm tra lại</button>
           <div id="specialPriceSelected" class="special-price-selected" aria-label="Cột giá riêng đang xem"></div>
-          <span id="specialPriceNote" class="special-price-note" role="status" aria-live="polite">Ô trống = giá chung. Ẩn cột không xóa giá riêng.</span>
+          <span id="specialPriceNote" class="special-price-note" role="status" aria-live="polite">Chưa xác minh được chức năng giá riêng trên máy chủ. Giá chung vẫn giữ nguyên.</span>
         </div>
         <div class="summary">
           <span id="countText">Đang tải…</span>
@@ -987,7 +987,7 @@
   <script type="module">
     import {createAuthService} from './src/core/auth.js';
     import {createCustomerCareReport} from './src/admin-customer-care-report.js';
-    import {createSpecialPriceColumns} from './src/admin-customer-special-prices.js';
+    import {createSpecialPriceColumns} from './src/admin-customer-special-prices.js?v=20261116cp002';
 
     const auth=createAuthService();
     const PAGE_SIZE=100;
