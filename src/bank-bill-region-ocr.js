@@ -129,7 +129,7 @@ export async function inspectBillZones({imageBlob,boxes,aiFields,readOcr,expecte
   const expected=normalizeBillField('account',expectedAccount);
   const accountVerified=expected!==null&&results.account.value===expected;
   return {fields:results,readyForIndependentBankMatch:
-    requiredFieldsAgreed&&accountVerified,
+    requiredFieldsAgreed&&accountVerified&&results.recipientName.status!=='conflict',
     // This flag only permits an independent lookup, never financial posting.
     ledgerWritten:false};
 }
