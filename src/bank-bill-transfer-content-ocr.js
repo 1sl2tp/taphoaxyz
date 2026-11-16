@@ -49,6 +49,15 @@ export function compareTransferMemo({printedMemo,bankMemo,bankNotificationBody,
     return explain(meaningful(printed)?'consistent':'manual_review',
       meaningful(printed)?'verified_qr_prefix':'qr_generic_memo','qr');
   }
+  // A generic sender-side "chuyen tien" can only corroborate a QR memo if
+  // the BANK prefix contains the exact, full, distinctive OCR sender name.
+  const qrSender=/^(.+?)\s+(chuyen tien|chuyển tiền)\.?$/i.exec(qr?.[1]||'');
+  const printedSender=normalizeTransferText(senderName);
+  if(qr&&printed==='CHUYEN TIEN'&&qrSender&&printedSender&&
+      printedSender.replace(/[^A-Z0-9]/g,'').length>=12&&
+      normalizeTransferText(qrSender[1])===printedSender){
+    return explain('consistent','verified_qr_full_sender_and_generic_memo','qr');
+  }
   const mb=/^MB\((\d{6})\)\(([^()]*)\)\.?\s*$/i.exec(rawBank);
   if(mb&&normalizeTransferText(mb[2])===printed){
     return explain(meaningful(printed)?'consistent':'manual_review',
@@ -74,6 +83,13 @@ export function compareTransferMemo({printedMemo,bankMemo,bankNotificationBody,
   const mcc=/^(\d{6})-(.+?);MCC;(20\d{12});(\d{9,20});(\d{6})\.?$/i.exec(rawBank);
   if(mcc&&senderBound&&normalizeTransferText(mcc[2])===printed)
     return explain('consistent','verified_mcc_sender_memo','mcc',mcc[1]);
+  // Some MCC bank notices append a FT reference to a literal sender-bound
+  // memo. Strip it only if the receipt separately prints the EXACT FT token.
+  const mccFt=/^(.+?)\s+(FT[0-9A-Z]{10,24})$/i.exec(mcc?.[2]||'');
+  const printedFt=String(transferReference||'').trim().replace(/^#/,'').toUpperCase();
+  if(mcc&&senderBound&&mccFt&&printedFt===mccFt[2].toUpperCase()&&
+      normalizeTransferText(mccFt[1])===printed)
+    return explain('consistent','verified_mcc_exact_ft_reference','mcc',mcc[1]);
   // Known MBVCB destination/sender envelope: verify *every* structural
   // component before accepting its embedded memo; require the exact transfer
   // reference when it is visible on the receipt.
