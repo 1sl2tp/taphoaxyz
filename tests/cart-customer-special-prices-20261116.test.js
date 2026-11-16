@@ -57,6 +57,17 @@ test('price action stays visible for Admin edits even if list count is zero/stal
   h.ctx.editingOrderInSaleMode=false;
   assert.equal(h.eligible(),null);
 });
+test('price actions occupy one visible row below cart title, not squeezed into title group',()=>{
+  assert.match(ui,/priceActions\.id='cartPriceActions'/);
+  assert.match(ui,/cartSheet\.querySelector\('\.cart-column-header'\)\?\.before\(priceActions\)/);
+  assert.match(ui,/priceActions\.appendChild\(priceButton\)/);
+  assert.match(ui,/priceActions\.appendChild\(specialButton\)/);
+  assert.match(ui,/priceActions\.classList\.toggle\('hidden',!anyPriceAction\)/);
+  assert.match(css,/#cartBottomSheet \.cart-price-actions\{/);
+  assert.match(css,/#cartBottomSheet \.cart-price-actions\.hidden\{display:none!important;\}/);
+  assert.match(shell,/src\/fixed-ui-runtime-6\.js[^"]*price-row=20261116/);
+  assert.match(shell,/src\/fixed-ui-cart-spacing\.css[^"]*price-row=20261116/);
+});
 test('one customer-price action supports new order, draft edit and delivered edit',async()=>{
   const h=harness({matrix:[{customer_id:CUSTOMER,product_code:'SP001',price:200}]});
   // New order has no saved ID and no edit badge; selecting a customer is enough.
