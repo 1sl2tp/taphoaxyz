@@ -207,3 +207,81 @@ export async function inspectBillZones({
    // True means 'may query official bank credits'; it never posts a ledger.
    ledgerWritten:false};
 }
+
+
+// A caller-owned image AI supplies these normalized rectangles. A deterministic
+// OCR engine reads the resulting crops. This contract does not call Gemini or
+// any bank/money RPC, and never guesses missing box locations.
+export const BILL_REGION_LOCATOR_RULES=[
+  'Khoanh DUY NHAT một giao dịch thành công trong ảnh bill gốc.',
+  'Nếu ảnh chụp điện thoại khác, documentBox phải ôm phần BILL bên trong màn hình.',
+  'Tuyệt đối loại thanh trạng thái, giờ pin/sóng, banner thông báo, quảng cáo và các giao dịch khác.',
+  'Trả JSON {documentBox:[x,y,w,h],boxes:{amount,account,recipientName,transactionTime,transferContent,transferReference,senderName,sendingBank,receivingBank,transactionStatus},aiFields:{...},selectedTransaction:"single_detail"|"latest_top_row"}.',
+  'Tọa độ là tỷ lệ 0..1 trên ẢNH GỐC. Mỗi bbox trỏ tới đúng dòng/chữ in của đúng một trường; không dùng một bbox chung cho số tiền, tài khoản và giờ.',
+  'Không bắt buộc tên người nhận, người gửi, ngân hàng, mã tham chiếu hoặc nội dung chuyển tiền xuất hiện; trường không thấy rõ phải là null và không tạo bbox.',
+  'Tách nội dung gốc trên bill khỏi mã giao dịch; tiền tố QR, MB, IBFT, MCC, MBVCB và mã định tuyến phía ngân hàng KHÔNG được bịa vào ảnh bill.',
+  'Không lấy số dư làm số tiền chuyển, không lấy giờ chụp/giờ gửi Chat làm giờ giao dịch.',
+  'Không suy ra số tài khoản bị che/mất chữ số từ tài khoản ngân hàng đã lưu.',
+  'AI chỉ khoanh và chép chữ, KHÔNG xác nhận tiền vào, KHÔNG ghi thu.'
+].join('\n');
+
+function overlapRatio(a,b){
+ const ix=Math.max(0,Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0]));
+ const iy=Math.max(0,Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1]));
+ return ix*iy/Math.min(a[2]*a[3],b[2]*b[3]);
+}
+export function validateBillRegionLayout(layout){
+ if(!layout||typeof layout!=='object')return {ok:false,reason:'layout_missing'};
+ if(!Array.isArray(layout.documentBox)||
+    !validateRegion(layout.documentBox,10000,10000))
+   return {ok:false,reason:'document_box_invalid'};
+ if(!['single_detail','latest_top_row'].includes(layout.selectedTransaction))
+   return {ok:false,reason:'transaction_selection_unclear'};
+ const boxes=layout.boxes;
+ if(!boxes||typeof boxes!=='object')return {ok:false,reason:'region_boxes_missing'};
+ for(const field of BILL_FIELDS){
+   const bb=boxes[field];
+   if(bb==null)continue;
+   if(!validateRegion(bb,10000,10000)||!isRegionInsideDocument(bb,layout.documentBox))
+     return {ok:false,reason:'invalid_or_outside_document',field};
+ }
+ const critical=['amount','account','transactionTime'];
+ if(critical.some(f=>boxes[f]==null))
+   return {ok:false,reason:'critical_region_missing'};
+ for(let i=0;i<critical.length;i++)
+   for(let j=i+1;j<critical.length;j++)
+     if(overlapRatio(boxes[critical[i]],boxes[critical[j]])>0.55)
+       return {ok:false,reason:'overlapping_critical_regions'};
+ if(boxes.transferContent&&boxes.transferReference&&
+    overlapRatio(boxes.transferContent,boxes.transferReference)>0.85)
+   return {ok:false,reason:'memo_reference_same_region'};
+ return {ok:true,reason:null};
+}
+export async function analyzeBillWithRegions({
+ imageBlob,locateRegions,readOcr,expectedAccount=null,bankNotificationBody=null
+}){
+ if(typeof locateRegions!=='function'||typeof readOcr!=='function')
+   throw Error('locator_and_ocr_required');
+ let layout=null;
+ try{
+   layout=await locateRegions({
+     imageBlob,fields:BILL_FIELDS,rules:BILL_REGION_LOCATOR_RULES
+   });
+ }catch(_e){
+   return {status:'review',reason:'locator_unavailable',
+     reviewFields:[...BILL_FIELDS],readyForIndependentBankMatch:false,
+     ledgerWritten:false};
+ }
+ const verified=validateBillRegionLayout(layout);
+ if(!verified.ok)
+   return {status:'review',reason:verified.reason,
+     field:verified.field||null,reviewFields:[...BILL_FIELDS],
+     readyForIndependentBankMatch:false,ledgerWritten:false};
+ const out=await inspectBillZones({
+   imageBlob,boxes:layout.boxes,aiFields:layout.aiFields,
+   documentBox:layout.documentBox,readOcr,expectedAccount,bankNotificationBody
+ });
+ return {...out,status:out.reviewFields.length?'review':'fields_compared',
+   selectedTransaction:layout.selectedTransaction,
+   ledgerWritten:false};
+}
