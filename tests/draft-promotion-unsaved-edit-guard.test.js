@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const src=fs.readFileSync('src/fixed-production-overrides.js','utf8');
 const start=src.indexOf('async function assertDraftAlreadySavedForDelivery(');
-const end=src.indexOf('dayToanBoGioHang=async function(',start);
+const end=src.indexOf('// SPEC-DRAFT-EDIT-APPROVE-20261116:',start);
 assert.ok(start>=0&&end>start,'Draft guard not present');
 const code=src.slice(start,end).trim();
 const item=(price=146,qty=1,note='')=>({
