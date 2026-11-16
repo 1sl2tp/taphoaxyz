@@ -1660,16 +1660,22 @@
 #cartBottomSheet .cart-price-refresh.hidden{display:none !important;}
 #cartBottomSheet .cart-price-refresh:disabled{opacity:.55;pointer-events:none;}
 #cartBottomSheet .cart-price-refresh:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
-/* SPEC-CART-CUSTOMER-PRICE-20261116: distinct, compact explicit action.
-   The edit header already wraps; never overlay share/close on small phones. */
+/* UI-PRICE-ACTIONS-20261116: full-width price tools immediately below
+   cart title, outside the cramped share/close/badge flex row. */
+#cartBottomSheet .cart-price-actions{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  flex:0 0 auto;min-width:0;
+  padding:8px 16px;border-bottom:1px solid #e2e8f0;background:#f8fafc;
+}
+#cartBottomSheet .cart-price-actions.hidden{display:none!important;}
+#cartBottomSheet .cart-price-actions-label{
+  flex:0 0 auto;color:#64748b;font-size:12px;font-weight:750;
+}
+#cartBottomSheet .cart-price-actions .cart-price-refresh{
+  min-height:32px;font-size:12px;padding:6px 12px;
+}
 #cartBottomSheet .cart-price-special{
   border-color:#9bd8bd;background:#effcf5;color:#127747;
-}
-#cartBottomSheet .cart-edit-header-group{
-  flex:1 1 auto;
-  max-width:calc(100% - 83px);
-  column-gap:6px;
-  align-content:center;
 }
 
 @media(max-width:400px){
