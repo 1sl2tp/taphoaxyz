@@ -64,7 +64,7 @@
             // Keep an edited order at its original DG/DT position. Backend refresh
             // may return updated rows first; the issued display number never changes.
             let orderHtml = '';
-            const orderKeys = sortOrderKeysForDisplay(orders);
+            const orderKeys = sortOrderKeysForDisplay('dongiao', orders);
             const visibleOrderKeys = getUserTimelineVisibleKeys('dongiao', orderKeys);
             const dayCounts = {};
             if (currentAuthRole === 'user') {
