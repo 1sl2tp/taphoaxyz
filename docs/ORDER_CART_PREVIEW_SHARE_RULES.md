@@ -1,5 +1,16 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-TAPHOA-CART-REVIEW-20261116 — Soát từng dòng trước khi Duyệt đơn tạm
+
+- **Given:** quản trị viên mở một đơn **tạm đã lưu** trong tab Đơn tạm (hoặc mở cùng đơn từ Công nợ) ở chế độ xem, không phải chế độ sửa.
+- **When:** mở giỏ, hệ thống hiện thanh `Soát hàng 0/N`, mỗi dòng có ô tích trong **cột SL**, không sinh cột thứ sáu, không che STT, tên, giá hoặc thành tiền. Tích dòng chỉ là trạng thái UI; không cập nhật số lượng hay tự ghi đơn.
+- **Then:** nút **Duyệt** bị khóa cho đến khi đủ N dòng được tích. Bỏ tích thì nút bị khóa trở lại. Chốt chặn tại `src/fixed-production-overrides.js::dayToanBoGioHang('dongiao')` cũng phải từ chối khi chưa đủ, kể cả gọi hàm trực tiếp.
+- **Reset:** mở lại đơn, đổi đơn, đổi khách, đổi mặt hàng/SL/giá/ghi chú, rời chế độ xem hay chuyển tài khoản phải xóa các dấu soát cũ. Không đồng bộ dấu soát sang khách, PWA khác, Chat/Zalo hay Supabase.
+- **MUST-STAY:** 5 cột STT | Tên | SL | Giá | Tiền; dữ liệu gốc/giá/SL/tổng/STT/ghi chú; khả năng xem đơn đã giao; thao tác Đặt/Bán đơn mới, Sửa/Cập nhật; ảnh chia sẻ/ảnh đơn không được chứa ô soát. Quyền người dùng vẫn chỉ xem, không được duyệt.
+- **Owner & scope:** `src/fixed-ui-runtime-6.js` (trạng thái/dòng/progress), `src/fixed-ui-cart-spacing.css` (chiều rộng SL), `src/fixed-ui-runtime-5.js` (footer), `src/fixed-production-overrides.js` (guard), `src/fixed-ui-runtime-12.js` (reset) và version URL trong `index.html`. Không thêm DB/Edge/RPC/cron/polling.
+- **Kiểm thử:** `tests/cart-review-before-approve.test.js`; E1 mô phỏng đủ/thiếu/bỏ tích, đổi qty/đổi đơn/role/tab; E2 CI và canonical build; E3 build/live release; E4 ảnh iPhone Safari/PWA 320–428px; E5 người dùng duyệt. Không gọi source commit là E4 PASS.
+
+
 ## 17/10/2026 — Ảnh Chia sẻ phải là ảnh của đơn ĐÃ LƯU
 
 - Dùng duy nhất `TAPHOA_ORDER_PORTRAIT.createPage` qua `prepareDetailClone/prepareDetailShareCache` với dữ liệu popup chi tiết đơn. Ảnh có mã DG/DT, tên khách, thời gian, STT/Tên/SL/Đơn giá/Thành tiền và chân tổng. Không tự dựng ảnh giỏ hàng giả, không chụp các nút Xóa/Sửa/Duyệt vào ảnh gửi khách.
