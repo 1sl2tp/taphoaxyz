@@ -1774,3 +1774,11 @@
   text-align:center !important;
   font-variant-numeric:tabular-nums;
 }
+
+
+/* SPEC-TAPHOA-MILK-X-CART-20261116: Milk product ending in a standalone X is high-priced.
+   Highlight only the final X and that row's quantity, without changing its totals. */
+#cartBottomSheet #cartItemList .cart-milk-x-marker,
+#cartBottomSheet #cartItemList .cart-milk-x-qty {
+  color:#dc2626 !important;
+}
