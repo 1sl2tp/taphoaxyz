@@ -35,3 +35,43 @@ Bộ đọc mới định nghĩa vùng cho số tiền, tài khoản, tên ngư�
 
 ## Việc chưa hoàn tất
 Tích hợp locator AI trả tọa độ chính xác, OCR crop độc lập trong v21-bank-bill-event canonical; chạy corpus kiểm thử gồm bill ZaloPay 70.000đ ngày 16/11, ảnh điện thoại lồng trong ảnh, tên thiếu/có dấu, STK thiếu chữ số và thông báo sang ngày; sau đó phát hành qua quy trình được phép, nghiệm thu E3–E5.
+
+## BANK-ZONE-OCR-20261117 — Rà soát nội dung chuyển và AI locator (source-only)
+
+Đã thêm src/bank-bill-transfer-content-ocr.js và mở rộng src/bank-bill-region-ocr.js thành 10 vùng:
+- amount: số tiền giao dịch, không phải số dư
+- account: số tài khoản nhận, không tự bù số thiếu
+- recipientName: tên người nhận CÓ THỂ KHÔNG CÓ, chuẩn hóa không dấu
+- transactionTime: ngày và giờ IN TRÊN BILL, không lấy giờ máy
+- transferContent: nội dung nguyên văn khách gửi
+- transferReference: mã giao dịch riêng; không đánh đồng routing token
+- senderName: tên người gửi nếu có
+- sendingBank: ngân hàng/ứng dụng bên gửi
+- receivingBank: ngân hàng bên nhận
+- transactionStatus: giao dịch hoàn tất hay thất bại nếu có
+
+### Quy tắc khoanh và đọc
+AI locator cung cấp documentBox ôm bill nội bộ, boxes[field] tỷ lệ 0..1, aiFields, selectedTransaction (single_detail hoặc latest_top_row). Bộ xác thực từ chối vùng nào ở ngoài bill, gồm giờ thanh trạng thái điện thoại, popup thông báo và quảng cáo. Từ chối bbox chồng nhau quá 55% cho các cặp số tiền/STK/thời gian, và quá 85% cho nội dung/mã tham chiếu.
+
+Giải mã ảnh một lần, cắt từng vùng. Hai bộ đọc mâu thuẫn thì review đúng vùng; OCR confidence dưới 70% thì review. Thiếu tên người nhận là optional_absent, không chặn; tên có nhưng khác nhau thì review. Mô-đun chỉ xuất readyForIndependentBankMatch để TÌM chứng cứ Agribank, luôn ledgerWritten=false.
+
+### Nội dung chuyển và mã kỹ thuật
+Mọi bản sao phải giữ thông tin gốc. So sánh không dấu/hoa thường nhưng không tự bỏ chữ số hoặc mã tham chiếu. Chỉ bóc wrapper khi đúng mẫu và toàn bộ nội dung khớp:
+- Nội dung thường: so nguyên chuỗi; chỉ "chuyen tien" không đủ phân biệt
+- QR - : gỡ tiền tố có neo; nếu bill chỉ ghi "chuyen tien" yêu cầu tên người gửi đầy đủ khớp
+- MB(sáu chữ số)(nội dung): chỉ gỡ wrapper nguyên vẹn
+- Mã routing 12 ký tự chữ+số-nội dung: chỉ phân tách khi toàn bộ hậu tố khớp nội dung bill có tính phân biệt. Mã routing không phải mã giao dịch bill
+- IBFT: yêu cầu nội dung gắn tên người gửi rõ ràng
+- MCC: xác minh memo và tên người gửi; hậu tố FT chỉ gỡ khi mã FT in bill trùng tuyệt đối
+- MBVCB: yêu cầu mã tham chiếu, người gửi, tài khoản đích và toàn bộ nội dung khớp
+- Không xác định dạng / nội dung khác / nhiều ứng viên => đưa review, không tự ghi thu
+
+### Bằng chứng read-only
+Các thông báo Agribank 12–17/11/2026 gồm 70 dạng thường/khác, 16 QR, 3 MB, 2 mã định tuyến trước nội dung, 1 IBFT. Case 70.000đ có bill 15:25 ngày 16/11, thông báo #348 cũng 15:25, nhận trên máy chủ 17:51; memo bank thêm mã routing, AI từng thiếu một số tài khoản. Chưa tự ghi thu.
+
+### E0–E5 và rollback
+- 2 file test: tests/bank-bill-region-ocr-20261116.test.js và tests/bank-bill-transfer-content-ocr-20261117.test.js.
+- 22/22 bài test cô lập PASS trong JS isolate giản lược, bao gồm crop giả lập; chưa phải kết quả Node CI/GitHub Actions hay OCR trên thiết bị thật.
+- E1 SOURCE PASS (isolate); E2 PENDING tích hợp locator và OCR thực vào worker v21-bank-bill-event; E3 PENDING deploy; E4 PENDING kiểm tra ảnh thật trên Web/PWA/APK; E5 PENDING đo CPU/bytes.
+- Không deploy Supabase thủ công, không viết dữ liệu production, không thêm cron hay tự ghi thu chứng từ lịch sử.
+- Rollback: revert source commit hoặc restore chính xác last-known-good worker/RPC khi được triển khai, không sửa sổ lịch sử.
