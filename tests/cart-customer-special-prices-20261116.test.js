@@ -91,6 +91,18 @@ test('late response after switching orders cannot write to the next cart',async(
   await task;
   assert.equal(h.ctx.cart.SP001.price,235);
 });
+test('cart changed while waiting for price matrix cannot receive stale prices',async()=>{
+  let finish;
+  const h=harness({provider:()=>new Promise(resolve=>{finish=resolve;})});
+  h.probe();await h.flush();
+  const task=h.apply();
+  h.ctx.cart.SP002.qty=7; // same order/customer, but different cart snapshot
+  finish([{customer_id:CUSTOMER,product_code:'SP001',price:120}]);
+  await task;
+  assert.equal(h.ctx.cart.SP001.price,235);
+  assert.equal(h.ctx.cart.SP002.qty,7);
+  assert.match(h.toasts[0].msg,/Giỏ hàng đã thay đổi/);
+});
 test('Admin RPC is read-only and role/session guarded; original general price and cost flow remains',()=>{
   assert.match(bridge,/async function customerSpecialPriceCount\(customerId\)/);
   assert.match(bridge,/async function customerSpecialPriceMatrix\(customerId,productCodes\)/);
