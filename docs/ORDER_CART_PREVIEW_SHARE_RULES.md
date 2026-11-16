@@ -1,5 +1,13 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-DRAFT-EDIT-APPROVE-20261116 — Duyệt sau khi sửa đơn tạm
+
+- **Given:** Admin đang sửa một đơn tạm đã lưu (ví dụ DT268) tại Bán hàng, có thể đã đổi SL, sản phẩm, giá mới hoặc giá riêng.
+- **When:** footer có **Hủy**, **Cập nhật đơn**, và **Duyệt · soát hàng trước**. Nút Duyệt ở chế độ sửa **không giao ngay**: kiểm tra không có thao tác ghi đang chạy và không còn giá chưa lưu; đối chiếu đơn tạm trên máy chủ với khách, mã hàng, SL, giá và ghi chú của giỏ. Nếu khác, yêu cầu bấm Cập nhật đơn trước, không ghi thêm.
+- **Then:** khi nội dung đã lưu trùng khớp, chuyển giỏ đang mở sang trạng thái **Đang soát hàng** (readonly), xóa toàn bộ dấu tích cũ và hiển thị Soát hàng 0/N; tích đủ từng dòng SL mới mở khóa nút Duyệt thật. Nhấn duyệt thật đi qua guard `dayToanBoGioHang('dongiao')` và `deliverOrder` cũ. Không tự ghi đơn, không tự giao, không bỏ qua soát hoặc gửi lại thông báo.
+- **Scope/MUST-STAY:** chỉ `src/fixed-ui-runtime-5.js` (footer), `src/fixed-production-overrides.js` (đọc và chuyển trạng thái UI) và version asset ở `index.html`; dùng guard ở `src/fixed-ui-runtime-6.js`. Không sửa backend/database, thông báo, tổng tiền, thứ tự, giá vốn, quyền user/PIN hoặc luồng Đã giao đã hoàn thành. Tương tác đổi đơn, sửa giỏ, đổi quyền giữa lúc đối chiếu phải hủy việc chuyển trạng thái.
+- **Verification:** `tests/draft-edit-review-approval-20261116.test.js`, các test giỏ/duyệt hiện có, canonical build và live build; chưa có ảnh iPhone thật thì E4/E5 pending.
+
 ## SPEC-CART-CUSTOMER-PRICE-20261116 — Giá riêng cho cả ba luồng bán hàng
 
 - **Given:** Admin có thể đang **tạo đơn mới**, **sửa đơn tạm** hoặc **sửa đơn đã giao**. Màn hình đang ở Bán hàng; khách được chọn; giá riêng (nếu có) được lưu theo mã sản phẩm trong Quản trị hàng hóa.
