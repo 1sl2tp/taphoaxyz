@@ -87,23 +87,31 @@
         // discoverable. A customer-list price_count is NOT proof that this
         // order's products have (or lack) saved overrides. Look up the exact
         // customer/product matrix only on an explicit button press.
+        // All Admin sale carts share one explicit customer-price action:
+        // new orders, editing a pending draft, and editing a delivered order.
+        // Saved-order preview remains read-only.
         function editedCustomerPriceContext() {
             const api=window.TAPHOA_PRODUCTION;
             const uid=String(api?.getIdentity?.()?.uid||'');
             const customerId=String(selectedCustomer?.id||'').trim();
             const orderId=String(editingOrderId||'');
-            if(!uid||!customerId||!orderId||!editingOrderInSaleMode
-                || !['dongiao','dontam'].includes(editingOrderSheet)
-                || currentAuthRole==='user'||api?.getAccessMode?.()!=='account')
+            const savedEdit=!!orderId&&editingOrderInSaleMode
+                && ['dongiao','dontam'].includes(editingOrderSheet);
+            const newSale=!orderId&&!editingOrderInSaleMode;
+            if(!uid||!customerId||(!savedEdit&&!newSale)
+                || currentAuthRole!=='admin'||api?.getIdentity?.()?.role!=='admin'
+                || api?.getAccessMode?.()!=='account')
                 return null;
-            return {uid,customerId,orderId,sheet:editingOrderSheet,
-                key:JSON.stringify([uid,customerId,orderId,editingOrderSheet])};
+            const mode=savedEdit?'edit':'new';
+            return {uid,customerId,orderId,mode,sheet:savedEdit?editingOrderSheet:'',
+                key:JSON.stringify([uid,customerId,mode,orderId,savedEdit?editingOrderSheet:''])};
         }
         async function applyEditedCustomerSpecialPrices() {
             const context=editedCustomerPriceContext();
             if(!context||cartPriceRefreshInFlight)return;
             const entries=Object.entries(cart);
             if(!entries.length)return;
+            const targetCart=cart;
             const signature=JSON.stringify(entries.map(([code,line])=>[
                 code,Number(line?.qty)||0,Number(line?.price)||0,
                 String(line?.note||'')
@@ -115,7 +123,7 @@
                 // Blank overrides NEVER replace old prices or default prices.
                 const matrix=await window.TAPHOA_PRODUCTION.customerSpecialPriceMatrix(
                     context.customerId,entries.map(([code])=>code));
-                if(editedCustomerPriceContext()?.key!==context.key)return;
+                if(editedCustomerPriceContext()?.key!==context.key||cart!==targetCart)return;
                 // A long price read must not override user edits made meanwhile.
                 const currentSignature=JSON.stringify(Object.entries(cart).map(([code,line])=>[
                     code,Number(line?.qty)||0,Number(line?.price)||0,
@@ -155,7 +163,9 @@
                 renderProductList();
                 showToast('Đã áp giá riêng cho '+updates.length+
                     ' mã của '+String(selectedCustomer?.name||'khách hàng')+
-                    '. Các mã khác giữ nguyên. Bấm Cập nhật đơn để lưu.','success');
+                    '. Các mã khác giữ nguyên. '+
+                    (context.mode==='new'?'Bấm Bán ngay hoặc Lưu tạm để lưu.':'Bấm Cập nhật đơn để lưu.'),
+                    'success');
             } catch(error){
                 showAlertPopup('Không áp dụng được giá riêng',
                     error?.message||'Không đọc được giá riêng hiện tại.');
@@ -268,18 +278,25 @@
                 const visible = !!editingOrderId && (isDraftEdit || isDeliveredEdit)
                     && editingOrderInSaleMode && currentAuthRole !== 'user'
                     && window.TAPHOA_PRODUCTION?.getAccessMode?.() === 'account';
-                const canApplyCustomerPrice=visible
-                    && window.TAPHOA_PRODUCTION?.getIdentity?.()?.role==='admin';
+                const canApplyCustomerPrice=currentAuthRole==='admin'
+                    && window.TAPHOA_PRODUCTION?.getIdentity?.()?.role==='admin'
+                    && window.TAPHOA_PRODUCTION?.getAccessMode?.()==='account'
+                    && (!editingOrderId || visible);
                 priceButton.classList.toggle('hidden', !visible);
                 priceButton.disabled = cartPriceRefreshInFlight;
                 // Do not hide the action based on an unrelated summary
                 // count: it could be zero/stale while prices exist by product.
                 // Matrix verification occurs on click; errors are shown in UI.
                 specialButton.classList.toggle('hidden',!canApplyCustomerPrice);
-                specialButton.disabled=cartPriceRefreshInFlight;
+                specialButton.disabled=cartPriceRefreshInFlight
+                    ||!selectedCustomer?.id||!Object.keys(cart).length;
                 specialButton.textContent='Áp giá riêng';
-                specialButton.title='Kiểm tra và áp giá riêng đã lưu cho '
-                    +String(selectedCustomer?.name||'khách đang chọn');
+                specialButton.title=!selectedCustomer?.id
+                    ?'Chọn khách hàng trước khi áp giá riêng'
+                    :!Object.keys(cart).length
+                        ?'Thêm sản phẩm vào giỏ trước khi áp giá riêng'
+                        :'Kiểm tra và áp giá riêng đã lưu cho '
+                            +String(selectedCustomer?.name||'khách đang chọn');
                 specialButton.setAttribute('aria-label',specialButton.title);
             }
             if (cartSheet) {
