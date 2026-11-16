@@ -10,7 +10,7 @@ const end=runtime.indexOf('        function renderCartUI()',start);
 assert.ok(start>=0&&end>start,'Cart review helpers must remain in canonical runtime');
 const functions=runtime.slice(start,end);
 const createHarness=new Function('env','with(env){'+functions+
-    ';return {syncCartReviewState,isCartReviewComplete,setCartReviewLine,resetCartReview};}');
+    ';return {syncCartReviewState,isCartReviewComplete,getCartReviewSelection,setCartReviewLine,resetCartReview};}');
 
 function harness(){
     const env={
@@ -34,6 +34,7 @@ test('draft approval needs every checked line and revocation disables approval',
     assert.equal(review.isCartReviewComplete(),false);
     review.setCartReviewLine('milkA',true);
     assert.equal(review.isCartReviewComplete(),false);
+    assert.deepEqual(review.getCartReviewSelection(),['milkA']);
     review.setCartReviewLine('milkB',true);
     assert.equal(review.isCartReviewComplete(),true);
     review.setCartReviewLine('milkA',false);
@@ -65,7 +66,8 @@ test('approval button and authoritative mutation both gate on review completion'
     const footer=readFileSync(new URL('../src/fixed-ui-runtime-5.js',import.meta.url),'utf8');
     const mutation=readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
     assert.match(footer,/canPromoteDraft[\s\S]{0,180}isCartReviewComplete\(\)/);
-    assert.match(mutation,/isPromotingDraft && \(typeof isCartReviewComplete/);
+    assert.match(mutation,/isPartialPromotion=isPromotingDraft&&!isCartReviewComplete\(\)/);
+    assert.match(mutation,/isSplittingSelection=isSplittingPending\|\|isPartialPromotion/);
     assert.match(runtime,/class="cart-review-qty"/);
     assert.match(runtime,/class="cart-stt font-bold/);
 });
