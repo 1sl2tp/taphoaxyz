@@ -93,3 +93,10 @@ Các thông báo Agribank 12–17/11/2026 gồm 70 dạng thường/khác, 16 QR
 - Đã xác nhận trong repo không có supabase/functions/v21-bank-bill-event; bản Edge hiện chạy trên Supabase chưa import được các module này.
 - Không tạo bản Edge bản sao giả làm đã phát hành. Để đưa vào vận hành cần bổ sung đúng source owner/canonical build, kết nối AI locator và một OCR worker độc lập có nguồn lực rõ ràng; kiểm thử trên ảnh thật trước khi release.
 - E0: xác minh đường source; E1 source unit (isolate) PASS 27/27; E1 GitHub Actions PENDING; E2 integration PENDING; E3 release PENDING; E4 thiết bị PENDING; E5 tài nguyên PENDING.
+
+## BANK-ZONE-OCR-20261117-3 — Bộ đọc Tesseract chạy cục bộ (source-only)
+- Thêm src/bank-bill-tesseract-ocr.js: adapter nhận một worker OCR Tesseract đã khởi tạo với gói ngôn ngữ cục bộ (không tự tải CDN hoặc key); cung cấp readOcr cho pipeline vùng.
+- Profile theo từng vùng: số tiền và tài khoản chỉ đọc tập ký tự số có kiểm soát; ngày giờ ưu tiên dấu phân cách ngày và giờ; tên/nội dung chuyển giữ chữ; mã tham chiếu có profile chữ-số; không cho các profile chạy song song trên cùng worker để tránh lẫn whitelist/PSM.
+- Đọc OCR trả về text và confidence [0,1] đúng hợp đồng inspectBillZones. Ảnh crop rỗng/lớn bất thường, worker lỗi hoặc độ tin cậy thấp phải review. Không gọi RPC tài chính.
+- Thêm tests/bank-bill-tesseract-ocr-20261117.test.js và gắn vào GitHub Actions chỉ đọc. 30/30 bài test của bốn bộ source đã PASS trong JS isolate mô phỏng (không phải OCR trên ảnh thật).
+- CHƯA cài/bundled bộ ngôn ngữ Tesseract hay nối vào worker Supabase hiện hành; không được tuyên bố đã xử lý bill production. Giữ E2/E3/E4/E5 ở PENDING và E1 GitHub CI PENDING đến khi có status.
