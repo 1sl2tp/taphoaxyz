@@ -202,6 +202,10 @@
             }
             return true;
         }
+        function getCartReviewSelection(){
+            if(!syncCartReviewState())return [];
+            return Object.keys(cart).filter(id=>cartReviewState.checked.has(String(id)));
+        }
         function isCartReviewComplete(){
             return syncCartReviewState() && Object.keys(cart).length>0 &&
                 Object.keys(cart).every(id=>cartReviewState.checked.has(String(id)));
@@ -218,7 +222,7 @@
             heading.textContent='Soát hàng '+done+'/'+total;
             const message=document.createElement('span');
             message.className='cart-review-message';
-            message.textContent=done===total&&total>0?'Đã kiểm đủ · có thể duyệt':'Tích từng dòng sau khi kiểm hàng';
+            message.textContent=done===total&&total>0?'Đã kiểm đủ · duyệt toàn đơn':done>0?'Chỉ giao hoặc tách các dòng đã tích':'Tích dòng để giao một phần hoặc tách đơn tạm';
             bar.append(heading,message);
             bar.classList.toggle('cart-review-finished',total>0&&done===total);
         }
