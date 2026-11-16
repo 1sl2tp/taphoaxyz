@@ -47,6 +47,12 @@ test('price action stays visible for Admin edits even if list count is zero/stal
   const h=harness();
   assert.equal(h.eligible().customerId,CUSTOMER);
   assert.match(ui,/specialButton\.classList\.toggle\('hidden',!canApplyCustomerPrice\)/);
+  // Visible in new sale (even though the edit badge and 'Giá mới' are hidden).
+  assert.match(ui,/const canApplyCustomerPrice=currentAuthRole==='admin'/);
+  assert.match(ui,/&& \(!editingOrderId \|\| visible\)/);
+  assert.match(ui,/specialButton\.disabled=cartPriceRefreshInFlight/);
+  assert.match(ui,/!selectedCustomer\?\.id\|\|!Object\.keys\(cart\)\.length/);
+
   assert.doesNotMatch(snippet,/customerSpecialPriceCount|price_count|ensureEditedCustomerPriceProbe/);
   h.ctx.editingOrderInSaleMode=false;
   assert.equal(h.eligible(),null);
