@@ -107,7 +107,12 @@
             }
             if(!retry&&editedCustomerPriceProbe.key===context.key)return;
             editedCustomerPriceProbe={key:context.key,state:'loading',count:0};
-            void window.TAPHOA_PRODUCTION.customerSpecialPriceCount(context.customerId)
+            const readCount=window.TAPHOA_PRODUCTION?.customerSpecialPriceCount;
+            if(typeof readCount!=='function'){
+                editedCustomerPriceProbe={key:context.key,state:'error',count:0};
+                return; // mixed/stale shell: never break cart rendering
+            }
+            void readCount(context.customerId)
                 .then(count=>{
                     if(editedCustomerPriceProbe.key!==context.key||
                         editedCustomerPriceContext()?.key!==context.key)return;
