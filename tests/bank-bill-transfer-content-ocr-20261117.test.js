@@ -96,3 +96,28 @@ test('official Agribank 70k body ends memo at its own punctuation, not at a phon
  assert.equal(result.bankTransferVerified,false);
  assert.equal(result.automaticCollectionAuthorized,false);
 });
+
+
+test('generic QR note is useful only with the full distinct sender name',()=>{
+ const bank='QR - Nguyễn Thị Hồng chuyển tiền';
+ const good=compareTransferMemo({printedMemo:'Chuyển tiền',
+   bankMemo:bank,senderName:'Nguyễn Thị Hồng'});
+ assert.equal(good.status,'consistent');
+ assert.equal(good.reason,'verified_qr_full_sender_and_generic_memo');
+ assert.equal(compareTransferMemo({printedMemo:'Chuyển tiền',bankMemo:bank}).status,'manual_review');
+ assert.equal(compareTransferMemo({printedMemo:'Chuyển tiền',bankMemo:bank,
+   senderName:'Nguyễn Thị Hà'}).status,'manual_review');
+ assert.equal(good.automaticCollectionAuthorized,false);
+});
+test('MCC FT suffix can be removed only by exact reference explicitly printed on bill',()=>{
+ const sender='Nguyễn Thị Hồng',printed='Nguyễn Thị Hồng trả tiền đơn hàng 235';
+ const reference='FT2611161234567';
+ const bank='123456-'+printed+' '+reference+';MCC;20261116152500;123456789012;654321';
+ const ok=compareTransferMemo({printedMemo:printed,bankMemo:bank,senderName:sender,
+    transferReference:reference});
+ assert.equal(ok.status,'consistent');
+ assert.equal(ok.reason,'verified_mcc_exact_ft_reference');
+ assert.equal(compareTransferMemo({printedMemo:printed,bankMemo:bank,senderName:sender,
+    transferReference:'FT2611161234568'}).status,'manual_review');
+ assert.equal(compareTransferMemo({printedMemo:printed,bankMemo:bank,senderName:sender}).status,'manual_review');
+});
