@@ -1,0 +1,31 @@
+name: Bank bill OCR regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/bank-bill-region-ocr.js'
+      - 'src/bank-bill-transfer-content-ocr.js'
+      - 'src/bank-bill-ocr-review.js'
+      - 'tests/bank-bill-ocr-review-20261117.test.js'
+      - 'tests/bank-bill-region-ocr-20261116.test.js'
+      - 'tests/bank-bill-transfer-content-ocr-20261117.test.js'
+      - 'supabase/migrations/20261116234000_bank_zone_optional_recipient_ascii_20261116.sql'
+      - '.github/workflows/bank-bill-ocr-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    name: OCR region and transfer-memo regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run read-only OCR tests
+        run: |
+          node --test tests/bank-bill-region-ocr-20261116.test.js tests/bank-bill-transfer-content-ocr-20261117.test.js tests/bank-bill-ocr-review-20261117.test.js
