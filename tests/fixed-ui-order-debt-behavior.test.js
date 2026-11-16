@@ -153,14 +153,19 @@ test('editing delivered order shows cancel and update-order only',async()=>{
 });
 
 
-test('editing pending order shows cancel and update-order only',async()=>{
+test('editing pending order has update and review-to-approve actions, without direct delivery',async()=>{
   const runtime=await read('src/fixed-ui-runtime-5.js');
   const p0=runtime.indexOf('if (isPendingOrderCart) {');
   const p1=runtime.indexOf('// Ở tab đơn',p0);
   const block=p0>=0&&p1>p0?runtime.slice(p0,p1):'';
   assert.match(block,/Hủy/);
   assert.match(block,/Cập nhật đơn/);
-  assert.doesNotMatch(block,/Xóa hàng|Xóa đơn|Duyệt|Đặt|Bán/);
+  assert.match(block,/Duyệt/);
+  assert.match(block,/beginDraftReviewAfterEditing\(\)/);
+  assert.doesNotMatch(block,/dayToanBoGioHang\(.*dongiao|Xóa đơn|Đặt|Bán/);
+  const backend=await read('src/fixed-production-overrides.js');
+  assert.match(backend,/window\.beginDraftReviewAfterEditing=async function\(\)/);
+  assert.match(backend,/await assertDraftAlreadySavedForDelivery\(/);
 });
 
 
