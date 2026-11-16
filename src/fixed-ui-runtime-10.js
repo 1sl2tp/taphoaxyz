@@ -67,8 +67,11 @@
             const safeSource = sanitizeSourceShareFileName(activeSourceDetailState.source);
             const mode = grouped ? 'gop' : 'chitiet';
             const sortMode = grouped && activeSourceDetailState.groupSort === 'customer' ? 'customer' : 'product';
+            const milkXFiltered = grouped && milkSourceHasXVariants(activeSourceDetailState.source)
+                && activeSourceDetailState.hideMilkX !== false;
             const modeLabel = grouped
-                ? (sortMode === 'customer' ? 'Gộp theo tên khách hàng' : 'Gộp theo tên hàng')
+                ? (sortMode === 'customer' ? 'Gộp theo tên khách hàng' : 'Gộp theo tên hàng') +
+                    (milkXFiltered ? ' · Ẩn hàng cuối tên X' : '')
                 : 'Chi tiết';
             const signature = sourceShareHash([
                 activeSourceDetailState.sheetName || '',

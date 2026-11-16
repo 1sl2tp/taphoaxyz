@@ -72,6 +72,7 @@
                 source: sourceName,
                 tab: 'detail',
                 groupSort: 'product',
+                hideMilkX: true, // Only Gộp presentation; never modifies saved orders.
                 detailRows: built.detailRows,
                 groupedRows: built.groupedRows,
                 customerRows: built.customerRows,
@@ -284,6 +285,48 @@
 
         // SPEC-SOURCE-SUPPLIER-PICK-SORT-20261108: sorting never changes
         // saved orders, quantities, per-customer notes, or supplier totals.
+        // SPEC-MILK-X-20261116: the standalone suffix " x" denotes the
+        // expensive alternate in the Milk supplier set. This is a view filter.
+        function milkSourceHasXVariants(source) {
+            const normalized = normalizeSourceGroupName(source);
+            return normalized === 'sữa' || normalized === 'sua';
+        }
+        function sourceMilkXProduct(name) {
+            return /(?:^|\s)x\s*$/i.test(String(name || '').trim());
+        }
+        function ensureSourceMilkXFilter() {
+            const state = activeSourceDetailState;
+            const parent = document.querySelector('#sourceDetailPanelGrouped .source-detail-sort-row');
+            if (!parent) return;
+            let wrapper = document.getElementById('sourceDetailMilkXControl');
+            if (!wrapper) {
+                wrapper = document.createElement('label');
+                wrapper.id = 'sourceDetailMilkXControl';
+                wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:5px 9px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;cursor:pointer';
+                const checkbox = document.createElement('input');
+                checkbox.id = 'sourceDetailMilkXFilter';
+                checkbox.type = 'checkbox';
+                checkbox.style.cssText = 'width:16px;height:16px;accent-color:#2563eb';
+                checkbox.addEventListener('change', () => {
+                    if (!activeSourceDetailState || !milkSourceHasXVariants(activeSourceDetailState.source)) return;
+                    activeSourceDetailState.hideMilkX = checkbox.checked;
+                    renderSourceDetailCaptureGrouped();
+                });
+                const text = document.createElement('span');
+                text.textContent = 'Ẩn hàng cuối tên X';
+                wrapper.append(checkbox, text);
+                const hint = document.createElement('span');
+                hint.id = 'sourceDetailMilkXCount';
+                hint.style.cssText = 'font-size:10px;color:#64748b;white-space:nowrap';
+                parent.append(wrapper,hint);
+            }
+            const isMilk = milkSourceHasXVariants(state.source);
+            wrapper.style.display = isMilk ? 'inline-flex' : 'none';
+            const hint = document.getElementById('sourceDetailMilkXCount');
+            if (hint) hint.style.display = isMilk ? 'inline' : 'none';
+            const input = document.getElementById('sourceDetailMilkXFilter');
+            if (input) input.checked = isMilk && state.hideMilkX !== false;
+        }
         function changeSourceDetailGroupSort(value) {
             activeSourceDetailState.groupSort = value === 'customer' ? 'customer' : 'product';
             renderSourceDetailCaptureGrouped();
@@ -308,15 +351,20 @@
             const owner = document.getElementById('sourceDetailCaptureGrouped');
             if (!owner) return;
             const byCustomer = activeSourceDetailState.groupSort === 'customer';
-            const rows = (byCustomer
+            const unfiltered = (byCustomer
                 ? activeSourceDetailState.customerRows || []
-                : activeSourceDetailState.groupedRows || []).slice().sort((a,b) =>
+                : activeSourceDetailState.groupedRows || []).slice();
+            const hideX = milkSourceHasXVariants(activeSourceDetailState.source)
+                && activeSourceDetailState.hideMilkX !== false;
+            const rows = unfiltered.filter(row=>!hideX||!sourceMilkXProduct(row.productName)).sort((a,b) =>
                     byCustomer
                         ? sourceSortByName(a.buyerName,b.buyerName) || sourceSortByName(a.productName,b.productName)
                         : sourceSortByName(a.productName,b.productName)
                 );
             const selector = document.getElementById('sourceDetailGroupSortSelect');
             if (selector) selector.value = byCustomer ? 'customer' : 'product';
+            const hint = document.getElementById('sourceDetailMilkXCount');
+            if (hint) hint.textContent = hideX ? 'Đã ẩn '+(unfiltered.length-rows.length)+' dòng' : 'Đang hiện đủ';
             if (!rows.length) {
                 owner.innerHTML = '<div class="source-detail-empty">Không có dữ liệu.</div>';
                 return;
@@ -342,7 +390,7 @@
                 <div data-source-share-rows>${rowHtml}</div>
                 <div class="source-detail-grid source-detail-total" data-source-share-footer>
                     <div class="source-detail-total-label">TỔNG · ${rows.length} ${byCustomer ? 'dòng KH/hàng' : 'mã'}</div>
-                    <div class="source-detail-total-qty">${activeSourceDetailState.totalQty.toLocaleString('vi-VN')}</div>
+                    <div class="source-detail-total-qty">${rows.reduce((sum,row)=>sum+(Number(row.qty)||0),0).toLocaleString('vi-VN')}</div>
                 </div>`;
         }
 
@@ -351,6 +399,7 @@
             document.getElementById('sourceDetailSheetLabel').innerText = getSourceDetailSheetLabel(state.sheetName);
             document.getElementById('sourceDetailSourceName').innerText = state.source;
             document.getElementById('sourceDetailTimeLabel').innerText = state.timeLabel;
+            ensureSourceMilkXFilter();
             renderSourceDetailCaptureDetail();
             renderSourceDetailCaptureGrouped();
             switchSourceDetailTab(state.tab);

@@ -19,7 +19,8 @@ h1{font-size:26px;margin:5px 0 8px}.muted{color:#667085;font-size:13px;line-heig
 .head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px}.head h1{margin:2px 0 4px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .main-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 14px 10px;padding:4px;background:#f2f4f7;border-radius:12px}.main-tab{height:40px;border:0;border-radius:9px;background:transparent;color:#667085;font-weight:850;cursor:pointer}.main-tab.active{background:#fff;color:#17202a;box-shadow:0 1px 3px rgba(16,24,40,.12)}
 .toolbar{display:flex;gap:8px;padding:10px;border-top:1px solid #e4e7ec;border-bottom:1px solid #e4e7ec}.search{flex:1;min-width:0}.save{min-width:150px}
-.summary{padding:8px 11px;font-size:12px;color:#667085;background:#f9fafb;border-bottom:1px solid #e4e7ec}.orders-tools{display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid #e4e7ec;border-bottom:1px solid #e4e7ec}.seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;background:#f2f4f7;border-radius:10px;flex:1}.seg button{height:36px;border:0;border-radius:8px;background:transparent;font-weight:850;color:#667085;cursor:pointer}.seg button.active{background:#fff;color:#17202a;box-shadow:0 1px 3px rgba(16,24,40,.12)}.order-note{font-size:11px;color:#b54708;margin-top:3px}.order-meta{font-size:10px;color:#98a2b3;margin-top:3px}
+.summary{padding:8px 11px;font-size:12px;color:#667085;background:#f9fafb;border-bottom:1px solid #e4e7ec}.milk-x-filter[hidden]{display:none!important}.milk-x-filter{display:inline-flex;align-items:center;gap:6px;min-height:38px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:750;cursor:pointer;white-space:nowrap}.milk-x-filter input{width:17px;height:17px;accent-color:#2563eb}
+.orders-tools{display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid #e4e7ec;border-bottom:1px solid #e4e7ec}.seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;background:#f2f4f7;border-radius:10px;flex:1}.seg button{height:36px;border:0;border-radius:8px;background:transparent;font-weight:850;color:#667085;cursor:pointer}.seg button.active{background:#fff;color:#17202a;box-shadow:0 1px 3px rgba(16,24,40,.12)}.order-note{font-size:11px;color:#b54708;margin-top:3px}.order-meta{font-size:10px;color:#98a2b3;margin-top:3px}
 .table-wrap{overflow:auto;max-height:calc(100vh - 235px)}table{width:100%;border-collapse:collapse;min-width:620px}th{position:sticky;top:0;z-index:2;background:#f9fafb;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:10px 11px;border-bottom:1px solid #e4e7ec}
 td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{font-weight:760}.code{font-size:10px;color:#98a2b3;margin-top:3px}.cost-cell{width:160px}.cost-input,.new-cost{height:38px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}.cost-input.changed{background:#fff7cc;border-color:#f0b429}.new-name{height:38px}.new-row td{background:#fbfcff}.new-tag{display:inline-block;margin-left:7px;border-radius:999px;background:#eef4ff;color:#3538cd;padding:3px 6px;font-size:9px;font-weight:850;text-transform:uppercase}
 .empty{padding:28px;text-align:center;color:#667085}.foot{padding:12px 2px;color:#667085;font-size:12px;line-height:1.5}
@@ -93,6 +94,7 @@ td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{
     <div id="costPanel">
       <div class="toolbar">
         <input id="search" class="search" type="search" placeholder="Tìm tên hoặc mã sản phẩm…" autocomplete="off">
+        <label id="milkXCostFilterWrap" class="milk-x-filter" hidden><input id="milkXCostFilter" type="checkbox" checked>Ẩn hàng X</label>
         <button id="saveBtn" class="btn primary save" type="button" disabled>Lưu thay đổi</button>
       </div>
       <div id="summary" class="summary">Đang tải…</div>
@@ -112,6 +114,7 @@ td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}.name{
           <button id="detailModeBtn" class="active" type="button">Chi tiết</button>
           <button id="groupModeBtn" type="button">Gộp</button>
         </div>
+        <label id="milkXOrdersFilterWrap" class="milk-x-filter" hidden><input id="milkXOrdersFilter" type="checkbox" checked>Ẩn hàng X</label>
         <button id="refreshOrdersBtn" class="btn" type="button">Làm mới</button>
         <button id="printOrdersBtn" class="btn" type="button">In / Lưu PDF</button>
       </div>
@@ -274,6 +277,31 @@ let ordersLoaded=false;
 let ordersSource='';
 let activeView='cost';
 let orderMode='detail';
+let hideMilkX=true; // Supplier display/print only: source records never altered.
+function isMilkXName(name){
+  return /(?:^|\s)x\s*$/i.test(String(name||'').trim());
+}
+function shouldHideMilkX(name,source=session?.source_key||''){
+  return source==='sua'&&hideMilkX&&isMilkXName(name);
+}
+function updateMilkXControls(){
+  const visible=session?.source_key==='sua';
+  $('milkXCostFilterWrap').hidden=!visible;
+  $('milkXOrdersFilterWrap').hidden=!visible;
+  $('milkXCostFilter').checked=hideMilkX;
+  $('milkXOrdersFilter').checked=hideMilkX;
+}
+function visibleSupplierOrders(){
+  return orderRows.filter(row=>!shouldHideMilkX(row.product_name));
+}
+function applyMilkXFilter(checked){
+  // Re-render must preserve unsaved costs, even while X variants are hidden.
+  hideMilkX=Boolean(checked);
+  updateMilkXControls();
+  render();
+  if(ordersLoaded)renderOrders();
+}
+
 
 async function rpc(name,args){
   const res=await fetch(SUPABASE+'/rest/v1/rpc/'+name,{
@@ -357,14 +385,15 @@ function switchView(view){
   $('ordersTab').classList.toggle('active',view==='orders');
   $('costPanel').classList.toggle('hidden',view!=='cost');
   $('ordersPanel').classList.toggle('hidden',view!=='orders');
+  updateMilkXControls();
   if(view==='orders'&&(!ordersLoaded||ordersSource!==session?.source_key))return loadOrders();
 }
 function orderNotes(row){
   return [row.order_note,row.item_note].map(x=>String(x||'').trim()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
 }
-function groupedOrders(){
+function groupedOrders(rows=visibleSupplierOrders()){
   const map=new Map();
-  for(const row of orderRows){
+  for(const row of rows){
     const key=row.product_code;
     if(!map.has(key))map.set(key,{product_code:key,product_name:row.product_name,qty:0,notes:[]});
     const item=map.get(key);
@@ -384,9 +413,11 @@ function groupedOrders(){
 }
 function renderOrders(){
   const source=session?.source_key||'';
-  const uniqueOrders=new Set(orderRows.map(x=>x.order_id)).size;
-  const totalQty=orderRows.reduce((sum,x)=>sum+(Number(x.qty)||0),0);
-  $('ordersSummary').textContent=(session?.source_name||SOURCE_LABELS[source]||'NCC')+' · '+uniqueOrders+' đơn tạm · '+orderRows.length+' dòng hàng · tổng SL '+fmtQty(totalQty)+' · toàn bộ thời gian';
+  const shownRows=visibleSupplierOrders();
+  const excluded=orderRows.length-shownRows.length;
+  const uniqueOrders=new Set(shownRows.map(x=>x.order_id)).size;
+  const totalQty=shownRows.reduce((sum,x)=>sum+(Number(x.qty)||0),0);
+  $('ordersSummary').textContent=(session?.source_name||SOURCE_LABELS[source]||'NCC')+' · '+uniqueOrders+' đơn tạm · '+shownRows.length+' dòng hàng · tổng SL '+fmtQty(totalQty)+' · toàn bộ thời gian'+(source==='sua'&&hideMilkX?' · Ẩn '+excluded+' dòng hàng X':'');
   $('ordersPrintTitle').textContent='Đơn tạm · '+(session?.source_name||SOURCE_LABELS[source]||'NCC');
 
   $('detailModeBtn').classList.toggle('active',orderMode==='detail');
@@ -394,7 +425,7 @@ function renderOrders(){
 
   if(orderMode==='detail'){
     $('ordersHead').innerHTML='<tr><th>STT</th><th>Sản phẩm</th><th>Tên KH</th><th style="text-align:right">SL</th></tr>';
-    $('ordersRows').innerHTML=orderRows.map((row,i)=>{
+    $('ordersRows').innerHTML=shownRows.map((row,i)=>{
       const notes=orderNotes(row);
       return '<tr>'+
         '<td>'+(i+1)+'</td>'+
@@ -407,7 +438,7 @@ function renderOrders(){
       '</tr>';
     }).join('');
   }else{
-    const grouped=groupedOrders();
+    const grouped=groupedOrders(shownRows);
     $('ordersHead').innerHTML='<tr><th>STT</th><th>Tên sản phẩm</th><th style="text-align:right">SL</th></tr>';
     $('ordersRows').innerHTML=grouped.map((row,i)=>
       '<tr>'+
@@ -419,7 +450,8 @@ function renderOrders(){
       '</tr>'
     ).join('');
   }
-  $('ordersEmpty').classList.toggle('hidden',orderRows.length!==0);
+  $('ordersEmpty').classList.toggle('hidden',shownRows.length!==0);
+  if(!shownRows.length)$('ordersEmpty').textContent=excluded?'Tất cả dòng đang ẩn theo lọc X. Bỏ chọn để xem đủ.':'Hiện không có đơn tạm của nguồn này.';
 }
 async function loadOrders(){
   const token=session?.token,source=session?.source_key,sessionGeneration=supplierSessionGeneration;
@@ -474,6 +506,7 @@ function render(resetDraft=false){
     sourceItems.sort((a,b)=>displayName(a.name,source).localeCompare(displayName(b.name,source),'vi',{sensitivity:'base',numeric:true}));
   }
   const visible=sourceItems
+    .filter(p=>!shouldHideMilkX(p.name,source))
     .filter(p=>!q||(String(p.product_code)+' '+String(p.name)+' '+displayName(p.name,source)).toLocaleLowerCase('vi').includes(q));
 
   const existing=visible.map(p=>`
@@ -490,7 +523,8 @@ function render(resetDraft=false){
 
   $('rows').innerHTML=existing+blanks;
   $('empty').classList.toggle('hidden',visible.length!==0);
-  $('summary').textContent=items.length+' mặt hàng · nhập giá dạng số, ví dụ 400 = 400';
+  const excluded=source==='sua'&&hideMilkX?sourceItems.filter(p=>isMilkXName(p.name)).length:0;
+  $('summary').textContent=visible.length+'/'+items.length+' mặt hàng'+(excluded?' · Ẩn '+excluded+' hàng X':'')+' · nhập giá dạng số, ví dụ 400 = 400';
   $('rows').querySelectorAll('input').forEach(input=>{
     if(input.classList.contains('cost-input')||input.classList.contains('new-cost')){
       input.addEventListener('focus',()=>{
@@ -548,7 +582,7 @@ async function loadCatalog(){
   pendingCostEdits.clear();pendingNewRows=[];
   orderRows=[];ordersLoaded=false;ordersSource='';
   $('title').textContent='Cập nhật giá vốn · '+(data.source_name||SOURCE_LABELS[data.source_key]||'NCC');
-  showApp();render(true);
+  showApp();updateMilkXControls();render(true);
 }
 function clearSupplierSession(){
   saveSession(null);
@@ -681,6 +715,9 @@ $('saveBtn').addEventListener('click',async()=>{
     }
   }
 });
+
+$('milkXCostFilter').addEventListener('change',event=>applyMilkXFilter(event.target.checked));
+$('milkXOrdersFilter').addEventListener('change',event=>applyMilkXFilter(event.target.checked));
 
 $('logoutBtn').addEventListener('click',()=>{
   if((savingSupplierChanges||hasSupplierDrafts())&&!confirm('Có giá vốn chưa lưu hoặc đang lưu. Bạn vẫn muốn đăng xuất?'))return;
