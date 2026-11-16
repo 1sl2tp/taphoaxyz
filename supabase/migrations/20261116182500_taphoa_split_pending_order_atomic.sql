@@ -166,6 +166,16 @@ BEGIN
     END IF;
   END IF;
 
+  -- The nested save produced its JSON before historic cost restoration.
+  -- Refresh both response and nested command log so the shared order PNG,
+  -- total cost and profit match the final committed records.
+  v_child_result:=jsonb_set(v_child_result,'{order}',
+    (SELECT public.taphoa_order_frontend_json(o)
+     FROM public.taphoa_orders o WHERE o.id=v_child_id));
+  UPDATE public.taphoa_command_log
+  SET result=v_child_result WHERE command_id=v_child_command
+    AND operation='save_order';
+
   v_result:=jsonb_build_object(
     'ok',true,
     'source_order',v_source_result->'order',
