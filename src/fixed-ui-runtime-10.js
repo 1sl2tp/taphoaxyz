@@ -310,32 +310,14 @@
             // Keep an edited order at its original DG/DT position. Backend refresh
             // may return updated rows first; the issued display number never changes.
             let orderHtml = '';
-            const orderKeys = sortOrderKeysForDisplay(orders);
+            const orderKeys = sortOrderKeysForDisplay('dontam', orders);
             const visibleOrderKeys = getUserTimelineVisibleKeys('dontam', orderKeys);
-            const dayCounts = {};
-            if (currentAuthRole === 'user') {
-                orderKeys.forEach(key => {
-                    const day = parseOrderDateKey(orders[key]?.thoiGian);
-                    dayCounts[day] = (dayCounts[day] || 0) + 1;
-                });
-            }
-            let previousDay = null;
-            let isDayGroupOpen = false;
+            // Drafts are alphabetized globally; date-group headings would
+            // split one alphabetic list into misleading repeated day sections.
             document.getElementById('pendingCountBadge').innerText = orderKeys.length;
 
             visibleOrderKeys.forEach((k, idx) => {
                 let o = orders[k];
-                if (currentAuthRole === 'user') {
-                    const dayKey = parseOrderDateKey(o.thoiGian);
-                    if (dayKey !== previousDay) {
-                        // Group cards inside their own day's DOM section.
-                        if (isDayGroupOpen) orderHtml += '</section>';
-                        orderHtml += '<section class="order-timeline-day-group">' +
-                            renderUserOrderDayHeading(dayKey, dayCounts[dayKey]);
-                        isDayGroupOpen = true;
-                        previousDay = dayKey;
-                    }
-                }
                 const shortTime = formatOrderCardTime(o.thoiGian);
                 const productPreview = buildOrderProductPreview(o.items, 2);
 
@@ -357,7 +339,6 @@
                         </div>
                     </div>`;
             });
-            if (isDayGroupOpen) orderHtml += '</section>';
             orderHtml += renderUserTimelineMoreButton('dontam', visibleOrderKeys.length, orderKeys.length);
             document.getElementById('pendingOrderListContainer').innerHTML = orderHtml;
         }
