@@ -943,7 +943,7 @@ async function splitPendingOrder(payload){
   const mutationOwner=captureProductionOwner();
   const result=await business.splitPendingOrder(payload);
   if(!productionOwnerCurrent(mutationOwner))return result;
-  const delivered=String(result?.order?.status||'').toLowerCase()==='delivered';
+  const delivered=['done','delivered'].includes(String(result?.order?.status||'').toLowerCase());
   if(result?.ok===true&&delivered){
     // Use the NEW order and the exact nested command ID for image-only staff notice.
     if(result.child_command_id){
