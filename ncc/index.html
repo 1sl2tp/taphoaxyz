@@ -716,9 +716,6 @@ $('saveBtn').addEventListener('click',async()=>{
   }
 });
 
-$('milkXCostFilter').addEventListener('change',event=>applyMilkXFilter(event.target.checked));
-$('milkXOrdersFilter').addEventListener('change',event=>applyMilkXFilter(event.target.checked));
-
 $('logoutBtn').addEventListener('click',()=>{
   if((savingSupplierChanges||hasSupplierDrafts())&&!confirm('Có giá vốn chưa lưu hoặc đang lưu. Bạn vẫn muốn đăng xuất?'))return;
   const token=session?.token;
@@ -726,6 +723,10 @@ $('logoutBtn').addEventListener('click',()=>{
   setMsg('loginMsg','');showLogin();
   if(token)void rpc('taphoa_supplier_logout',{p_token:token}).catch(error=>console.error('supplier logout',error));
 });
+
+// Filter controls are initialization-only, not part of the save handler.
+$('milkXCostFilter').addEventListener('change',event=>applyMilkXFilter(event.target.checked));
+$('milkXOrdersFilter').addEventListener('change',event=>applyMilkXFilter(event.target.checked));
 
 window.addEventListener('beforeunload',event=>{
   if(session?.token&&(savingSupplierChanges||hasSupplierDrafts())){
