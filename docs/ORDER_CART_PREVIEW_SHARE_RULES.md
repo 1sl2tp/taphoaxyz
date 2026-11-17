@@ -1,5 +1,16 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-CART-GEOMETRY-20261117 — Hình học giỏ hàng trên PWA/Web
+
+- **Evidence (ảnh PWA iOS 12:26 ngày 17/11/2026):** giỏ ở chế độ **Đang xem đơn**, một hàng `Gia vi - aj hai san`, SL 1, giá 542, thành tiền 542. Header và footer dùng padding ngang `px-5` (20px) khác vùng số liệu `px-4` (16px), nút Xóa/Sửa có chênh lệch bề rộng quá lớn. Nguồn CSS @360px của soát hàng đặt SL cột 4 và Giá cột 3, ngược thứ tự canonical.
+- **Given/When:** mở giỏ trống, đơn mới, đơn đã giao/tạm xem readonly, sửa đơn và soát hàng trên Safari/Chrome Web/PWA (320, 360, 375, 393, 428px) và pane desktop; dữ liệu có tên dài và tổng lớn.
+- **Then:** header, dòng, tổng tiền và các nút chung một lề 16px (màn 320–360px là 12px), 5 cột **STT | Tên | SL | Giá | TT** dùng cùng thước động. SL đặt giữa; Giá/TT thẳng phải; chiều cao dòng tối thiểu 46px, touch target soát hàng tối thiểu 44px. Xóa/Sửa là 36/64 thay vì nút Xóa bị bóp vào nội dung. Khi tên còn dưới 72px trong vùng thực tế, tên chuyển lên hàng một, SL/Giá/TT vẫn nằm cột 3/4/5 ở hàng hai, không thêm cột; chế độ review 320–360px cũng không được đảo SL/Giá.
+- **Owner/read-write:** `src/fixed-ui-markup-3.js` gắn lớp semantic cho đầu giỏ và footer; `src/fixed-ui-runtime-5.js` đánh dấu nút Xóa/Sửa; `src/fixed-ui-runtime-6.js` dùng bề rộng pane thực tế; `src/fixed-ui-semantic-columns.css` chủ sở hữu hình học cuối cùng; `index.html` đổi version URL. Không chạm dữ liệu đơn, quyền, tiền, số lượng, ghi chú, ảnh chia sẻ, Chat/Zalo, DB hay cron.
+- **MUST-STAY:** giữ nguyên giỏ sửa và đọc, thông báo, quyền user/PIN, thao tác soát và duyệt không tự giao, căn số qua các mode. PWA không được tự reload làm mất giỏ.
+- **Verification:** E0 ảnh/source, E1 source contract ở `tests/cart-qty-modes-9482-9483.test.js`, E2 full CI/build, E3 live build & thông báo cập nhật, E4 đối chiếu ảnh thực Safari/Chrome ở từng bề rộng và desktop, E5 nghiệm thu. Không lấy test cú pháp thay cho ảnh E4.
+- **Rollback:** revert riêng bốn owner UI và cache marker, không chạy lại các RPC bán hàng.
+
+
 ## SPEC-CART-REVIEW-ALL-GAP-20261117 — Chọn tất cả và cân lề Soát hàng
 
 - **Given:** Admin mở đơn tạm đã lưu ở chế độ soát; có 1–N dòng sản phẩm. Đơn tạm vẫn chưa giao.
