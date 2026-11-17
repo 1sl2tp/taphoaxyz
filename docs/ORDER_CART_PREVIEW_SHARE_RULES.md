@@ -1,5 +1,17 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## ORDER-UI-385 — 17/11/2026 · Quản lý mẫu hóa đơn có bản in đen trắng làm gốc
+
+- **E0 / nhu cầu:** Một mẫu **00 Print Master đen trắng** là chuẩn bản in; các mẫu 01 Tối giản, 02 Business Navy, 03 Retail Green chỉ thay bộ màu. Người dùng chọn và xem trước trong **Cài đặt → Quản lý giao diện · Mẫu hóa đơn → Quản lý mẫu**, rồi nhấn **Lưu mẫu sử dụng**. Có **Về mẫu 00** để phục hồi nhanh. Không tự đổi mẫu trong lúc chỉ xem trước.
+- **Given / When / Then:** chọn một mẫu trong danh sách, xem trước DG400 bằng **chính renderer PNG thực** và lưu. Khi tạo ảnh đơn tiếp theo, các luồng tự gửi ảnh và chia sẻ thủ công đều đọc lựa chọn; ảnh/lịch sử đã gửi **không** thay đổi. Render HTML dự phòng và Canvas cùng dùng template id và cùng dữ liệu đầu vào.
+- **Một owner hình học:** `src/fixed-ui-portrait-order.js` giữ nguyên 5 cột STT | Tên | SL | Đơn giá | Thành tiền, lề 22px, các quy tắc ngắt dòng, mã đơn, giờ VN, ghi chú, dấu X sữa, tổng gốc và phân trang. `src/fixed-ui-invoice-templates.js` **chỉ** chứa preset màu + UI quản lý; `src/fixed-ui-invoice-templates.css` chứa bố cục màn chọn. `index.html` khai báo hai asset/version. Không tạo renderer/bộ tính tiền thứ hai.
+- **Bản gốc:** trên giấy trắng, header nền trắng/chữ đen, khung thông tin trắng, viền xám và số tổng đen. Mẫu màu kế thừa thước cột và nội dung của Print Master, không dùng nút xanh chứa số tiền.
+- **Mức lưu thiết lập:** sử dụng localStorage khóa `TAPHOA_INVOICE_TEMPLATE_V1` **trên từng trình duyệt/PWA**; đây chưa phải cấu hình chủ sở hữu đồng bộ qua nhiều thiết bị. Mặc định mới là `print`, nếu localStorage bị chặn thì không báo lưu thành công. Mẫu mới thêm vào registry cần có id cố định và kiểm thử, không thay đổi order RPC.
+- **MUST STAY:** không ghi DB production, không gửi tin thử, không sửa mã đơn, dữ liệu mua hàng, nợ, giá hoặc người nhận, không gửi lại ảnh cũ. Xem trước dùng dữ liệu demo cố định, không gửi tin/thu tiền. Không thêm cron, quyền, API hoặc công cụ mạng.
+- **E1/E2:** `tests/order-invoice-template-manager-385.test.js` kiểm tra 4 mẫu, dữ liệu DG400, HTML/Canvas, bản in không màu, chọn/lưu/preview chưa lưu, localStorage bị chặn, script trong Settings. Các kiểm thử hóa đơn cũ phải tiếp tục qua; build canonical & GitHub Actions là E2/E3.
+- **E4/E5:** chỉ xác nhận thực tế sau khi thấy Settings trên iPhone Safari/PWA, Android Chrome/PWA và PC, chọn mẫu, tạo **một ảnh đơn mới** và đối chiếu mã build Live. GitHub PASS không thay bằng bằng chứng trên thiết bị.
+- **Rollback:** revert renderer/registry/CSS/index/test riêng của ORDER-UI-385; dữ liệu đơn và media lịch sử giữ nguyên.
+
 ## ORDER-UI-383 — 17/11/2026 · Mẫu hóa đơn hiện đại đã được duyệt
 
 - **E0:** Người dùng duyệt ảnh mẫu của hóa đơn Chat DG399 (E Quyên dv, 17/11/2026 20:58, Sua chua co 5 × 275 = 1.375) với tiêu đề xanh navy, hai vùng khách hàng/mã đơn, bảng 5 cột và tổng thanh toán nền xanh. Đây là thiết kế ảnh đơn, **không** phải yêu cầu sửa số tiền, nghiệp vụ hoặc tin lịch sử.
