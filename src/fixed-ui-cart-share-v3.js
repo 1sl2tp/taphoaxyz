@@ -297,13 +297,14 @@
       };
     });
     const meta=getOrderMeta();
-    const built=portrait.createPage({
+    const portraitOptions={
       isDraft:meta.isCreatingSaleDraft||/^DT[0-9]+$/.test(meta.orderId),
       orderId:meta.orderId,customer:meta.customer,time:meta.time,
       items,lineCount:items.length,totalQty,
       totalPriceText:displayRoundedTotal(totalPrice)
-    });
-    return {...built,totalQty,totalPrice,meta};
+    };
+    const built=portrait.createPage(portraitOptions);
+    return {...built,totalQty,totalPrice,meta,portraitOptions};
   }
 
   function prepareDetailClone(source){
@@ -333,11 +334,12 @@
     const totalPriceText=displayRoundedTotal(
       rawTotal?parseVisibleMoney(rawTotal):items.reduce((sum,item)=>sum+number(item.totalText),0)
     );
-    return portrait.createPage({
+    const portraitOptions={
       isDraft:/^DT[0-9]+$/.test(orderCode||meta.orderId),
       orderId:orderCode||meta.orderId,
       customer,time,items,lineCount:items.length,totalQty,totalPriceText
-    });
+    };
+    return {...portrait.createPage(portraitOptions),portraitOptions};
   }
 
   async function canvasToPngBlob(target,width,height,errorMessage){
@@ -351,6 +353,26 @@
       libraryTimeout:5000
     });
     return capture.canvasToPngBlob(canvas,errorMessage);
+  }
+
+  // ORDER-PNG-UNIFY-20261117: manual cart/detail PNG and automatic
+  // Chat notices share the same Canvas2D order portrait. HTML capture is
+  // a guarded browser fallback only, never a second visual default.
+  async function captureUnifiedOrderPng(built,source,width,height,errorMessage){
+    const portrait=window.TAPHOA_ORDER_PORTRAIT;
+    const capture=window.TAPHOA_SHARE_CAPTURE;
+    if(portrait?.renderCanvas && capture?.canvasToPngBlob){
+      let canvas=null;
+      try{
+        canvas=portrait.renderCanvas(built.portraitOptions,1.2);
+        return await capture.canvasToPngBlob(canvas,errorMessage);
+      }catch(error){
+        console.warn('[taphoa] portrait Canvas unavailable; using HTML fallback:',String(error?.message||error));
+      }finally{
+        if(canvas){canvas.width=1;canvas.height=1;}
+      }
+    }
+    return canvasToPngBlob(source,width,height,errorMessage);
   }
 
   async function prepareCartShareCache(){
@@ -372,7 +394,7 @@
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
         const width=Math.ceil(built.capture.scrollWidth);
         const height=Math.ceil(built.capture.scrollHeight)+2;
-        const blob=await canvasToPngBlob(built.capture,width,height,'Không tạo được ảnh giỏ hàng.');
+        const blob=await captureUnifiedOrderPng(built,built.capture,width,height,'Không tạo được ảnh giỏ hàng.');
         const safeId=String(built.meta.orderId||'').replace(/[^a-zA-Z0-9_-]+/g,'_');
         const artifact={
           signature,
@@ -416,7 +438,7 @@
         built=prepareDetailClone(source);
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
         const height=Math.ceil(built.clone.scrollHeight)+4;
-        const blob=await canvasToPngBlob(built.clone,built.width,height,'Không tạo được ảnh đơn hàng.');
+        const blob=await captureUnifiedOrderPng(built,built.clone,built.width,height,'Không tạo được ảnh đơn hàng.');
         const rawOrderId=(typeof editingOrderId!=='undefined' && editingOrderId)
           || document.getElementById('detailModalTitle')?.textContent?.trim()
           || '';
