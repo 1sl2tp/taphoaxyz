@@ -112,14 +112,14 @@
     const gridStyle=`display:grid;grid-template-columns:${grid};column-gap:${trackGap}px;align-items:baseline;box-sizing:border-box;width:100%;min-width:0;`;
     const rowsHtml=items.map((item,index)=>`
       <div style="${gridStyle}padding:15px 0;border-bottom:1px solid ${visual.rowRule};min-height:64px;font-size:${numericSize}px;line-height:1.45;">
-        <div style="text-align:center;color:#64748b;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;">${escapeHtml(item.index??index+1)}</div>
+        <div style="text-align:center;color:${muted};font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;">${escapeHtml(item.index??index+1)}</div>
         <div style="min-width:0;overflow-wrap:break-word;text-align:left;">
-          <div style="color:#142238;font-size:17px;line-height:1.4;font-weight:800;">${milkXNameHtml(item)}</div>
-          ${item.note?'<div style="font-size:13px;line-height:1.4;margin-top:5px;color:#586b82;">'+escapeHtml(item.note)+'</div>':''}
+          <div style="color:${ink};font-size:17px;line-height:1.4;font-weight:800;">${milkXNameHtml(item)}</div>
+          ${item.note?'<div style="font-size:13px;line-height:1.4;margin-top:5px;color:#666666;">'+escapeHtml(item.note)+'</div>':''}
         </div>
         <div style="text-align:center;white-space:nowrap;font-weight:750;color:${milkXInfo(item)?'#dc2626':'#142238'};font-variant-numeric:tabular-nums;">${escapeHtml(item.qtyText)}</div>
-        <div style="text-align:right;white-space:nowrap;font-weight:750;color:#142238;font-variant-numeric:tabular-nums;">${escapeHtml(item.priceText)}</div>
-        <div style="text-align:right;white-space:nowrap;font-weight:800;color:#142238;font-variant-numeric:tabular-nums;">${escapeHtml(item.totalText)}</div>
+        <div style="text-align:right;white-space:nowrap;font-weight:750;color:${ink};font-variant-numeric:tabular-nums;">${escapeHtml(item.priceText)}</div>
+        <div style="text-align:right;white-space:nowrap;font-weight:800;color:${ink};font-variant-numeric:tabular-nums;">${escapeHtml(item.totalText)}</div>
       </div>`).join('');
     const isDraft=!!options.isDraft;
     const isLast=options.isLastPage!==false;
@@ -140,15 +140,15 @@
     const summary=isLast?`
       <div style="margin:12px 22px 16px;padding:15px 14px;border-radius:12px;background:${visual.footer};display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;box-sizing:border-box;">
         <div style="min-width:0;padding-right:9px;border-right:1px solid ${visual.rowRule};">
-          <div style="font-size:12px;color:#576878;font-weight:750;">Số lượng</div>
-          <div style="margin-top:7px;font-size:15px;line-height:1.4;color:#142238;font-weight:800;overflow-wrap:break-word;">${escapeHtml(options.lineCount??items.length)} mã · ${escapeHtml(options.totalQty??0)} sản phẩm</div>
+          <div style="font-size:12px;color:${visual.id==="print"?"#555555":"#576878"};font-weight:750;">Số lượng</div>
+          <div style="margin-top:7px;font-size:15px;line-height:1.4;color:${ink};font-weight:800;overflow-wrap:break-word;">${escapeHtml(options.lineCount??items.length)} mã · ${escapeHtml(options.totalQty??0)} sản phẩm</div>
         </div>
         <div style="min-width:0;text-align:right;">
-          <div style="font-size:12px;line-height:1.3;color:#576878;font-weight:750;">Tổng thanh toán</div>
+          <div style="font-size:12px;line-height:1.3;color:${visual.id==="print"?"#555555":"#576878"};font-weight:750;">Tổng thanh toán</div>
           <div style="display:inline-block;max-width:100%;box-sizing:border-box;margin-top:7px;color:${visual.total};font-size:${summarySize}px;line-height:1.2;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;">${escapeHtml(totalValue)}</div>
         </div>
       </div>`:`
-      <div style="margin:12px 22px 16px;padding:15px 14px;text-align:right;border-radius:12px;background:${visual.table};color:#64748b;font-size:13px;font-weight:750;">Còn tiếp…</div>`;
+      <div style="margin:12px 22px 16px;padding:15px 14px;text-align:right;border-radius:12px;background:${visual.table};color:${muted};font-size:13px;font-weight:750;">Còn tiếp…</div>`;
     const host=document.createElement('div');
     host.setAttribute('aria-hidden','true');
     host.style.position='fixed';
@@ -159,7 +159,7 @@
     host.style.pointerEvents='none';
     host.style.zIndex='-1';
     const page=document.createElement('div');
-    page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:#142238;font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;border-radius:12px;overflow:hidden;`;
+    page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:${ink};font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;border-radius:12px;overflow:hidden;`;
     page.innerHTML=`
       <div style="box-sizing:border-box;min-height:56px;padding:0 22px;display:flex;align-items:center;gap:11px;background:${visual.header};color:${visual.headerText};border-bottom:${visual.id==='print'?'1px solid '+visual.headerRule:'none'};">
         <svg width="23" height="25" viewBox="0 0 24 26" fill="none" aria-hidden="true" style="flex-shrink:0;"><path d="M4 2h16v21l-4-2.5-4 2.5-4-2.5L4 23V2Z" stroke="${visual.headerText}" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 9h8M8 13h8" stroke="${visual.headerText}" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -168,18 +168,18 @@
       </div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) ${HEADER_META_WIDTH}px;gap:${HEADER_GAP}px;padding:13px 22px 14px;align-items:stretch;box-sizing:border-box;">
         <div style="min-width:0;padding:14px 13px;background:${visual.customer};border-radius:12px;border:1px solid ${visual.infoBorder};box-sizing:border-box;">
-          <div style="font-size:11px;letter-spacing:.055em;color:#64748b;font-weight:800;">KHÁCH HÀNG</div>
-          <div style="margin-top:10px;font-size:21px;line-height:1.3;letter-spacing:-.02em;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
+          <div style="font-size:11px;letter-spacing:.055em;color:${muted};font-weight:800;">KHÁCH HÀNG</div>
+          <div style="margin-top:10px;font-size:21px;line-height:1.3;letter-spacing:-.02em;font-weight:800;color:${ink};overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
         </div>
         <div style="min-width:0;padding:14px 12px;background:${metaBackground};border-radius:12px;border:1px solid ${visual.infoBorder};box-sizing:border-box;text-align:right;">
-          <div style="font-size:10.5px;letter-spacing:.04em;color:#64748b;font-weight:800;">${metaLabel}</div>
+          <div style="font-size:10.5px;letter-spacing:.04em;color:${muted};font-weight:800;">${metaLabel}</div>
           <div style="margin-top:6px;font-size:22px;line-height:1.2;font-weight:800;color:${codeColor};overflow-wrap:anywhere;">${escapeHtml(metaCode)}</div>
-          <div style="margin-top:9px;font-size:11.5px;line-height:1.4;color:#415c75;font-weight:700;overflow-wrap:anywhere;">${escapeHtml([stamp.date,stamp.clock].filter(Boolean).join(' · '))}</div>
-          ${pageMarker?`<div style="margin-top:5px;font-size:11px;color:#64748b;font-weight:700;">${escapeHtml(pageMarker)}</div>`:''}
+          <div style="margin-top:9px;font-size:11.5px;line-height:1.4;color:${visual.id==="print"?"#555555":"#415c75"};font-weight:700;overflow-wrap:anywhere;">${escapeHtml([stamp.date,stamp.clock].filter(Boolean).join(' · '))}</div>
+          ${pageMarker?`<div style="margin-top:5px;font-size:11px;color:${muted};font-weight:700;">${escapeHtml(pageMarker)}</div>`:''}
         </div>
       </div>
       <div style="padding:0 22px;flex:0 0 auto;box-sizing:border-box;">
-        <div style="${gridStyle}height:44px;border-radius:8px;background:${visual.table};color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
+        <div style="${gridStyle}height:44px;border-radius:8px;background:${visual.table};color:${visual.id==="print"?"#555555":"#53677d"};font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
           <div style="text-align:center;">STT</div><div>Tên</div>
           <div style="text-align:center;">SL</div>
           <div style="text-align:right;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
