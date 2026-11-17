@@ -58,7 +58,7 @@ test('four variants share one immutable invoice structure, five numeric columns 
     const paints=h.drawings.slice(before);
     const html=h.portrait.createPage({...example,templateId:id}).page.innerHTML;
     assert.ok(canvas.height>canvas.width,'portrait output required');
-    const header=paints.find(x=>x.type==='rect'&&x.x===0&&x.y===0&&x.w===440);
+    const header=paints.find(x=>x.type==='rect'&&x.x===0&&x.y===0&&x.w===440&&x.h===56);
     assert.equal(header?.color,palette.header,id+' canvas header');
     assert.ok(html.includes('background:'+palette.header+';color:'+palette.headerText),id+' HTML header');
     assert.ok(html.includes('background:'+palette.table),id+' table header');
