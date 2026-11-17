@@ -463,11 +463,11 @@
                         </button>
                     </div>
                     ${!isUser && isPendingOrderCart ? `
-                    <div class="flex w-full min-w-0 gap-2">
-                        <button ${canSplitDraft ? 'onclick="requestSelectedDraftAction(\'dontam\')"' : 'disabled'} class="flex-1 min-w-0 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 ${canSplitDraft ? enabledOutlinePrimaryBtn : disabledBtn}">
+                    <div class="cart-review-action-row flex w-full min-w-0 gap-2">
+                        <button ${canSplitDraft ? 'onclick="requestSelectedDraftAction(\'dontam\')"' : 'disabled'} class="cart-review-action flex-1 min-w-0 py-3 rounded-xl border border-primary text-primary font-bold transition flex items-center justify-center gap-1 ${canSplitDraft ? enabledOutlinePrimaryBtn : disabledBtn}">
                             <i class="ph ph-git-branch"></i> Tách đơn tạm
                         </button>
-                        <button ${canPromoteDraft ? 'onclick="requestSelectedDraftAction(\'dongiao\')"' : 'disabled'} class="flex-1 min-w-0 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
+                        <button ${canPromoteDraft ? 'onclick="requestSelectedDraftAction(\'dongiao\')"' : 'disabled'} class="cart-review-action flex-1 min-w-0 py-3 rounded-xl bg-primary text-white font-bold transition flex items-center justify-center gap-1 ${canPromoteDraft ? enabledPrimaryBtn : disabledBtn}">
                             <i class="ph-fill ph-check-circle"></i> ${selectedLineCount < lineCount ? 'Duyệt đã chọn' : 'Duyệt tất cả'}
                         </button>
                     </div>` : ''}`;
