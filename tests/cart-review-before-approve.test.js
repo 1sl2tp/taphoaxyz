@@ -10,7 +10,7 @@ const end=runtime.indexOf('        function renderCartUI()',start);
 assert.ok(start>=0&&end>start,'Cart review helpers must remain in canonical runtime');
 const functions=runtime.slice(start,end);
 const createHarness=new Function('env','with(env){'+functions+
-    ';return {syncCartReviewState,isCartReviewComplete,getCartReviewSelection,setCartReviewLine,resetCartReview};}');
+    ';return {syncCartReviewState,isCartReviewComplete,getCartReviewSelection,setCartReviewLine,setCartReviewAll,resetCartReview};}');
 
 function harness(){
     const env={
@@ -70,4 +70,66 @@ test('approval button and authoritative mutation both gate on review completion'
     assert.match(mutation,/isSplittingSelection=isSplittingPending\|\|isPartialPromotion/);
     assert.match(runtime,/class="cart-review-qty"/);
     assert.match(runtime,/class="cart-stt font-bold/);
+});
+
+test('select all and clear all update only checklist and obey saved-draft access',()=>{
+    const {env,review}=harness();
+    let footerUpdates=0,checkedUpdates=0;
+    const rows=Object.keys(env.cart).map(id=>({
+        dataset:{cartReviewId:id},checked:false,
+        closest:()=>({classList:{toggle(name,checked){
+            assert.equal(name,'cart-row-reviewed');
+            if(checked)checkedUpdates++;
+        }}})
+    }));
+    env.document.querySelectorAll=()=>rows;
+    env.renderCartFooterActions=()=>{footerUpdates++;};
+    review.setCartReviewAll(true);
+    assert.deepEqual(review.getCartReviewSelection(),['milkA','milkB']);
+    assert.equal(review.isCartReviewComplete(),true);
+    assert.deepEqual(rows.map(r=>r.checked),[true,true]);
+    review.setCartReviewAll(false);
+    assert.equal(review.isCartReviewComplete(),false);
+    assert.deepEqual(rows.map(r=>r.checked),[false,false]);
+    assert.equal(footerUpdates,2);
+    assert.equal(checkedUpdates,2);
+    // The selection never writes an order; user/PIN and edit mode cannot use it.
+    env.currentAuthRole='user';
+    review.setCartReviewAll(true);
+    assert.deepEqual(review.getCartReviewSelection(),[]);
+    env.currentAuthRole='admin';
+    env.editingOrderInSaleMode=true;
+    review.setCartReviewAll(true);
+    assert.deepEqual(review.getCartReviewSelection(),[]);
+});
+
+test('select all cannot carry approval across a changed order, quantity or note',()=>{
+    const {env,review}=harness();
+    review.setCartReviewAll(true);
+    assert.equal(review.isCartReviewComplete(),true);
+    env.cart.milkB.note='Thay ghi chú';
+    assert.deepEqual(review.getCartReviewSelection(),[]);
+    review.setCartReviewAll(true);
+    env.editingOrderId='DT-NEW';
+    assert.deepEqual(review.getCartReviewSelection(),[]);
+    review.setCartReviewAll(true);
+    env.cart.milkA.qty=10;
+    assert.equal(review.isCartReviewComplete(),false);
+});
+
+test('review toolbar and touch targets stay balanced on narrow PWA and desktop',()=>{
+    const css=readFileSync(new URL('../src/fixed-ui-cart-spacing.css',import.meta.url),'utf8');
+    const footer=readFileSync(new URL('../src/fixed-ui-runtime-5.js',import.meta.url),'utf8');
+    assert.match(runtime,/action\.textContent=complete\?'Bỏ chọn tất cả':'Chọn tất cả'/);
+    assert.match(runtime,/action\.type='button'/);
+    assert.match(runtime,/action\.addEventListener\('click',\(\)=>setCartReviewAll/);
+    assert.match(runtime,/role|aria-pressed/);
+    assert.match(runtime,/\<label class="cart-review-qty"\>/);
+    assert.match(runtime,/const checkedQtyWidth = reviewMode/);
+    assert.match(css,/grid-template-areas:"review-title review-action" "review-help review-help"/);
+    assert.match(css,/\.cart-review-all\{[\s\S]*?min-height:44px/);
+    assert.match(css,/\.cart-review-qty\{[\s\S]*?height:44px/);
+    assert.match(css,/@media\(max-width:360px\)\{[\s\S]*?grid-column:2 \/ -1 !important/);
+    assert.match(footer,/cart-review-action-row/);
+    assert.match(footer,/cart-review-action/);
 });
