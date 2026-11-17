@@ -66,7 +66,8 @@ test('SPEC-CART-GEOMETRY-20261117: header, rows, totals and actions share the sa
       'cart-summary-block','cart-summary-row','cart-column-header','cartItemList',
       'cartFooterActions'])assert.ok(cart.includes(name),name);
   assert.match(footer,/class="cart-preview-actions flex w-full min-w-0 gap-2"/);
-  const geometry=semantic.slice(semantic.indexOf('/* SPEC-CART-GEOMETRY-20261117'));
+  const geometry=semantic.slice(semantic.indexOf('/* SPEC-CART-GEOMETRY-20261117'),
+    semantic.indexOf('/* TAPHOA-REGION-AXIS-20261117'));
   assert.ok(geometry.startsWith('/* SPEC-CART-GEOMETRY-20261117'));
   assert.match(geometry,/#cartBottomSheet \.cart-head-row\{[\s\S]*?padding:10px 16px !important/);
   assert.match(geometry,/#cartBottomSheet > \.cart-column-header\{[\s\S]*?padding-left:16px !important/);
