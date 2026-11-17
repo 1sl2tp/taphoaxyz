@@ -58,9 +58,8 @@ test('SPEC-CART-GEOMETRY-20261117: header, rows, totals and actions share the sa
   const semantic=fs.readFileSync('src/fixed-ui-semantic-columns.css','utf8');
   const markup=fs.readFileSync('src/fixed-ui-markup-3.js','utf8');
   const footer=fs.readFileSync('src/fixed-ui-runtime-5.js','utf8');
-  const match=markup.match(/^document\\.write\\(("(?:\\\\.|[^"\\\\])*")\\);\\s*$/s);
-  assert.ok(match,'cart markup must remain parseable');
-  const source=JSON.parse(match[1]);
+  assert.ok(markup.startsWith('document.write("') && markup.trimEnd().endsWith(');'));
+  const source=JSON.parse(markup.trimEnd().slice('document.write('.length,-2));
   const cart=source.slice(source.indexOf('<!-- UI GIỎ HÀNG -->'),
       source.indexOf('<!-- CHỌN KHOẢNG THỜI GIAN ĐƠN -->'));
   for(const name of ['cart-head-row','cart-head-main','cart-head-actions',
