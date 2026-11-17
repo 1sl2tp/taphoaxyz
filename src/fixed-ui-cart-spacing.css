@@ -1841,6 +1841,13 @@
   border-color:#cbd5e1;color:#334155;
 }
 #cartBottomSheet #cartItemList .cart-row-reviewed{background:#f0fdf4}
+/* Allow the 44px tap target to determine row height in both modes. */
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid{
+  min-height:52px !important;
+}
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-qty{
+  min-height:44px !important;height:44px !important;
+}
 #cartBottomSheet #cartItemList .cart-review-qty{
   box-sizing:border-box;display:flex;justify-content:center;align-items:center;
   gap:4px;width:var(--cart-qty-readonly-track,56px);
