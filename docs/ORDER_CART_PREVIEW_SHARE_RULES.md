@@ -1,5 +1,15 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-ORDER-NOTICE-RESTORE-20261117 — Không để ảnh thông báo bị chặn chéo
+
+- **Given:** Admin tạo DG mới, sửa DG đã giao, duyệt DT sang DG hoặc duyệt một phần. Lệnh RPC ghi đơn đã xác nhận `ok:true`. Tin thông báo là ảnh PNG-only trong chính Chat message server đã tạo.
+- **When:** Bắt đầu cả hai lần lấy ticket/đính PNG của khách được chọn (nếu đủ quyền nhận) và liên hệ nhân viên ngay sau ACK; không chờ refresh danh sách hoặc chờ ảnh người còn lại. Mỗi lượt độc lập về lỗi và trạng thái.
+- **Then:** KH không bị trễ vì upload nhân viên thất bại; nhân viên không bị trễ vì KH không nhận/opt-out. Không viết đơn lần hai, không tái gửi Chat message, không tạo chữ cho Zalo. Đơn tạm không tự gửi.
+- **Owner:** `src/fixed-production-bridge.js::attachCommittedOrderNotices`; không sửa Chat/Supabase/giá, công nợ hoặc DB production. `index.html` có cache-busting cho bridge.
+- **E0** spec này; **E1** test VM cả hai upload cùng bắt đầu trước read, lỗi một bên không chặn bên kia; **E2/E3** CI/build/live theo mã phát hành; **E4/E5** theo dõi DG thực trên Chat/Zalo và thông báo đẩy iOS/Android, không gửi tin thử đến khách. **Push OS không được suy ra chỉ từ media attach**.
+- **Rollback:** revert đúng commit bridge và index nếu thấy lỗi trên thiết bị; không chạy lại RPC ghi đơn.
+
+
 ## SPEC-PWA-ORDER-RESUME-20261117 — Không khóa Bán hàng vì ảnh thông báo
 - **Given:** Admin đang tạo/sửa/giao/tách đơn qua PWA iOS. Có thể đưa ứng dụng xuống nền sau khi bấm đẩy đơn rồi mở lại; Chat image ticket/upload có thể chậm, canvas có thể tốn CPU.
 - **When:** Máy chủ trả `ok:true` từ đúng RPC ghi đơn thì đó là ACK giao dịch. Mở khóa spinner và giỏ ngay, chỉ một lần; domain read và ghép ảnh vào đúng thông báo tiếp tục bằng promise cũ. Khi dữ liệu đơn đã refresh, chỉ một lần repaint danh sách. Nếu ảnh thất bại, không coi đơn đã ghi là lỗi và không gửi lại RPC ghi đơn.
