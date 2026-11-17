@@ -908,34 +908,41 @@ async function manualShareOrder(orderId,requestId){
   return {...response,image_attached:imageAttached===true};
 }
 
+// SPEC-PWA-ORDER-RESUME-20261117: the SQL RPC result is the commit ACK.
+// UI callbacks must not wait for image rendering, upload or a follow-up read.
+// Hooks are local JS only; orderRpcPayload never includes them in the RPC.
+function notifyOrderUiStage(result,callback,stage){
+  if(result?.ok!==true||typeof callback!=='function')return;
+  try{callback(result);}
+  catch(error){console.warn('[taphoa] order '+stage+' UI:',String(error?.message||error));}
+}
+
 async function saveOrder(payload){
   if(employeeAccess)throw new Error('employee_read_only');
   const mutationOwner=captureProductionOwner();
   const result=publicAccess
     ?await publicRpc('taphoa_public_save_pending_access',{p_order:orderRpcPayload({...payload,status:'pending'}),p_command_id:crypto.randomUUID()})
     :await business.saveOrder(payload);
-  // SPEC-MUTATION-SESSION-CONTINUATION-20261101: a committed write from A
-  // cannot refresh or attach Chat media using B's newly authenticated session.
   if(!productionOwnerCurrent(mutationOwner))return result;
+  // Confirmed order writes must unlock the sales UI before optional Chat PNG
+  // and even before a slow canonical refresh; NEVER replay the write on resume.
+  notifyOrderUiStage(result,payload?.onCommitted,'committed');
   const savedStatus=String(result?.order?.status||'').toLowerCase();
+  const isConfirmedDraft=savedStatus==='pending';
+  try{await refresh(isConfirmedDraft?['orders']:['orders','debt']);}
+  catch(error){noteCommittedRefreshFailure(error);}
+  if(!productionOwnerCurrent(mutationOwner))return result;
+  notifyOrderUiStage(result,payload?.onReconciled,'reconciled');
   if(!publicAccess&&!employeeAccess&&['done','delivered'].includes(savedStatus)&&result?.order){
-    // ORDER-NOTIFY-017: only delivered orders notify staff/customer.
-    // Pending creation and edits never initiate an automatic PNG upload.
+    // ORDER-NOTIFY-017: draft creation/edit remains silent. Keep PNGs on the
+    // original exact staff/customer messages, not a duplicate order command.
     if(result.staff_notice_command_id){
       result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
         staffCommandId:result.staff_notice_command_id
       })===true;
     }
-    // Customer's original consent-gated ticket stays unchanged.
     result.image_attached=await attachOrderNoticePortrait(result.order)===true;
   }
-  // F-181: A confirmed pending draft (new or edited) never changes the
-  // sale ledger. The DB prevents delivered → pending downgrades. Avoid
-  // rebuilding debtSummary for each draft edit. Delivered sales still
-  // synchronously refresh both orders and debt before returning success.
-  const isConfirmedDraft=String(result?.order?.status||'').toLowerCase()==='pending';
-  try{await refresh(isConfirmedDraft?['orders']:['orders','debt']);}
-  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function splitPendingOrder(payload){
@@ -943,10 +950,15 @@ async function splitPendingOrder(payload){
   const mutationOwner=captureProductionOwner();
   const result=await business.splitPendingOrder(payload);
   if(!productionOwnerCurrent(mutationOwner))return result;
+  notifyOrderUiStage(result,payload?.onCommitted,'committed');
   const delivered=['done','delivered'].includes(String(result?.order?.status||'').toLowerCase());
+  try{await refresh(delivered?['orders','debt']:['orders']);}
+  catch(error){noteCommittedRefreshFailure(error);}
+  if(!productionOwnerCurrent(mutationOwner))return result;
+  notifyOrderUiStage(result,payload?.onReconciled,'reconciled');
   if(result?.ok===true&&delivered){
-    // The two-order SQL transaction has ALREADY committed. A media failure
-    // must not masquerade as a failed order and induce a duplicate retry.
+    // The two-order SQL transaction has ALREADY committed. Media failure
+    // must not masquerade as a failed order and induce duplicate retry.
     if(result.child_command_id){
       try{
         result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
@@ -964,16 +976,19 @@ async function splitPendingOrder(payload){
       console.warn('split order customer image after committed sale',mediaError);
     }
   }
-  try{await refresh(delivered?['orders','debt']:['orders']);}
-  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
-async function deliverOrder(id){
+async function deliverOrder(id,orderUiHooks={}){
   if(employeeAccess)throw new Error('employee_read_only');
   if(publicAccess)throw new Error('public_pending_only');
   const mutationOwner=captureProductionOwner();
   const result=await business.deliverOrder(id);
   if(!productionOwnerCurrent(mutationOwner))return result;
+  notifyOrderUiStage(result,orderUiHooks?.onCommitted,'committed');
+  try{await refresh(['orders','debt']);}
+  catch(error){noteCommittedRefreshFailure(error);}
+  if(!productionOwnerCurrent(mutationOwner))return result;
+  notifyOrderUiStage(result,orderUiHooks?.onReconciled,'reconciled');
   if(['done','delivered'].includes(String(result?.order?.status||'').toLowerCase())){
     if(result.staff_notice_command_id){
       result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
@@ -982,8 +997,6 @@ async function deliverOrder(id){
     }
     result.image_attached=await attachOrderNoticePortrait(result.order)===true;
   }
-  try{await refresh(['orders','debt']);}
-  catch(error){noteCommittedRefreshFailure(error);}
   return result;
 }
 async function reverseOrder(id,reason='Hoàn đơn'){

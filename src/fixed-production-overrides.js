@@ -457,7 +457,10 @@
   };
 
   dayToanBoGioHang=async function(tab){
-    if(orderMutationInFlight)return;
+    if(orderMutationInFlight){
+      showToast('Đơn trước còn chờ máy chủ xác nhận. Không gửi lại để tránh trùng.','info');
+      return;
+    }
     if(typeof cartPriceRefreshInFlight !== 'undefined' && cartPriceRefreshInFlight){
       showAlertPopup('Đang cập nhật giá','Vui lòng chờ lấy giá mới xong trước khi lưu đơn.');return;
     }
@@ -504,6 +507,51 @@
 
     orderMutationInFlight=true;
     let committed=false;
+    let uiReleased=false;
+    let refreshQueued=false;
+    const startedAt=Date.now();
+    const scheduleOrderUiRepaint=()=>{
+      if(refreshQueued)return;
+      refreshQueued=true;
+      setTimeout(()=>refreshOrderUiAfterMutation()
+        .catch(error=>console.warn('refresh committed order UI',error)),16);
+    };
+    const releaseConfirmedOrder=()=>{
+      if(uiReleased)return;
+      uiReleased=true;
+      committed=true;
+      // Only the server ACK can release the order lock. Attachment of its
+      // Chat/Zalo PNG may continue without freezing a resumed iOS PWA.
+      orderMutationInFlight=false;
+      hideLoading();
+      showToast(isSplittingSelection
+        ?(isPromotingDraft?'Đã giao phần hàng được tích; phần còn lại vẫn là đơn tạm.':'Đã tách đơn tạm mới; đơn cũ giữ phần hàng còn lại.')
+        :isPromotingDraft?'Đã duyệt đơn sang Đã giao!':isUpdatingExistingOrder?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
+      window.__TAPHOA_REPRICE_DRAFT_ID=null;
+      try{
+        if(isUpdatingExistingOrder){
+          editingOrderInSaleMode=true;
+          renderCartUI();
+          renderCartFooterActions();
+        }else{
+          resetSaleSession();
+          closeCartMobile();
+        }
+      }catch(uiError){
+        console.warn('render confirmed order workspace',uiError);
+      }
+    };
+    // iOS may suspend a fetch while backgrounded. A slow, unconfirmed RPC is
+    // NOT safe to retry; update the existing loading text on foreground.
+    const showPendingConfirmation=()=>{
+      if(uiReleased||!orderMutationInFlight||Date.now()-startedAt<12000)return;
+      const text=document.getElementById('loadingText');
+      if(text)text.textContent='Chưa có xác nhận lưu đơn. Không gửi lại để tránh trùng.';
+    };
+    const pendingTimer=setTimeout(showPendingConfirmation,12000);
+    const checkResumedOrder=()=>{if(!document.hidden)showPendingConfirmation();};
+    document.addEventListener('visibilitychange',checkResumedOrder);
+    window.addEventListener('pageshow',checkResumedOrder);
     showLoading(isSplittingSelection?'Đang tách các mặt hàng đã chọn...':isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
     try{
       if(editingOrderId&&!backendEditOrderId){
@@ -520,23 +568,23 @@
         }
         const result=await backend().splitPendingOrder({
           orderId:backendEditOrderId,selectedCodes:selectedReviewCodes,
-          expectedItems:items,targetStatus:isPromotingDraft?'delivered':'pending'
+          expectedItems:items,targetStatus:isPromotingDraft?'delivered':'pending',
+          onCommitted:releaseConfirmedOrder,onReconciled:scheduleOrderUiRepaint
         });
         if(result?.ok!==true)throw new Error('Không thể tách đơn đã chọn.');
       }else if(isPromotingDraft){
         await assertDraftAlreadySavedForDelivery(backendEditOrderId,selectedCustomer.id,items);
-        const result=await backend().deliverOrder(backendEditOrderId);
+        const result=await backend().deliverOrder(backendEditOrderId,{
+          onCommitted:releaseConfirmedOrder,onReconciled:scheduleOrderUiRepaint
+        });
         if(result?.ok!==true)throw new Error('Không thể chuyển đơn tạm sang Đã giao.');
       }else{
-        const result=await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items,refreshCostSnapshot});
+        const result=await backend().saveOrder({maKH:String(selectedCustomer.id),status,ghiChu:'',editOrderId:backendEditOrderId,items,refreshCostSnapshot,
+          onCommitted:releaseConfirmedOrder,onReconciled:scheduleOrderUiRepaint});
         if(result?.ok!==true)throw new Error('Không thể lưu đơn hàng.');
       }
 
-      committed=true;
-      showToast(isSplittingSelection
-        ?(isPromotingDraft?'Đã giao phần hàng được tích; phần còn lại vẫn là đơn tạm.':'Đã tách đơn tạm mới; đơn cũ giữ phần hàng còn lại.')
-        :isPromotingDraft?'Đã duyệt đơn sang Đã giao!':isUpdatingExistingOrder?'Đã cập nhật đơn thành công!':'Đã đẩy đơn thành công!','success');
-      window.__TAPHOA_REPRICE_DRAFT_ID = null;
+      releaseConfirmedOrder();
     }catch(error){
       console.error(isSplittingSelection?'split pending order':isPromotingDraft?'deliver pending order':'save order',error);
       // PGRST202 means the frontend is newer than the database migration.
@@ -544,36 +592,27 @@
       const serverFunctionMissing=isSplittingSelection&&(
         String(error?.code||'')==='PGRST202'
         || /Could not find the function|schema cache/i.test(String(error?.message||'')));
-      showAlertPopup(serverFunctionMissing?'Tách đơn chưa hoạt động':'Lỗi',
-        serverFunctionMissing
-          ? 'Máy chủ chưa kích hoạt chức năng tách đơn. Chưa thay đổi đơn gốc, hàng hoặc công nợ. Không cần thử lại liên tục.'
-          :error?.message||'Không thể lưu đơn hàng.');
+      if(!uiReleased){
+        showAlertPopup(serverFunctionMissing?'Tách đơn chưa hoạt động':'Lỗi',
+          serverFunctionMissing
+            ? 'Máy chủ chưa kích hoạt chức năng tách đơn. Chưa thay đổi đơn gốc, hàng hoặc công nợ. Không cần thử lại liên tục.'
+            :error?.message||'Không thể lưu đơn hàng.');
+      }
     }finally{
-      orderMutationInFlight=false;
-      hideLoading();
+      clearTimeout(pendingTimer);
+      document.removeEventListener('visibilitychange',checkResumedOrder);
+      window.removeEventListener('pageshow',checkResumedOrder);
+      // An older completed media upload must never clear the loading overlay
+      // or unlock the order mutation started AFTER its own commit ACK.
+      if(!uiReleased){
+        orderMutationInFlight=false;
+        hideLoading();
+      }
     }
     if(committed){
-      if(isUpdatingExistingOrder){
-        // Do NOT resetSaleSession() or closeCartMobile(): both erase the
-        // very order the Admin just updated. Stay on "Cập nhật đơn" with
-        // the same existing backend ID; further saves must update, not create.
-        editingOrderInSaleMode=true;
-        try{
-          renderCartUI();
-          renderCartFooterActions();
-        }catch(uiError){
-          // The canonical Supabase mutation has already committed; a local
-          // repaint failure must never be reported as a failed financial write.
-          console.warn('render updated order workspace',uiError);
-        }
-      }else{
-        // New orders and draft-to-delivered promotions really end checkout.
-        resetSaleSession();
-        closeCartMobile();
-      }
-      // The backend already awaited canonical orders/debt data.
-      // Repainting hidden lists is not part of the financial transaction.
-      setTimeout(()=>refreshOrderUiAfterMutation()
+      // onReconciled already schedules this when the fresh order projection
+      // arrives. This fallback also supports older compatible bridge builds.
+      if(!refreshQueued)setTimeout(()=>refreshOrderUiAfterMutation()
         .catch(error=>console.warn('refresh committed order UI',error)),16);
     }
   };

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const source=fs.readFileSync(new URL('../src/fixed-production-overrides.js',import.meta.url),'utf8');
 
 test('draft promotion uses dedicated deliverOrder instead of re-saving the order',()=>{
-  assert.match(source,/if\(isPromotingDraft\)\{[\s\S]*backend\(\)\.deliverOrder\(backendEditOrderId\)/);
+  assert.match(source,/if\(isPromotingDraft\)\{[\s\S]*backend\(\)\.deliverOrder\(backendEditOrderId,\{/);
   assert.match(source,/else\{[\s\S]*backend\(\)\.saveOrder\(\{maKH:String\(selectedCustomer\.id\),status/);
 });
 
@@ -24,6 +24,8 @@ test('successful order mutation is not reported as failed when UI refresh fails'
   // visible or turn a successful financial write into a failure.
   assert.match(block,/if\(committed\)\{[\s\S]*refreshOrderUiAfterMutation\(\)/);
   assert.ok(block.indexOf('hideLoading();') < block.indexOf('if(committed){'));
+  assert.match(block,/onCommitted:releaseConfirmedOrder/);
+  assert.match(block,/onReconciled:scheduleOrderUiRepaint/);
 });
 
 test('order mutation prevents accidental concurrent double submit',()=>{

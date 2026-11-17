@@ -1,5 +1,14 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-PWA-ORDER-RESUME-20261117 — Không khóa Bán hàng vì ảnh thông báo
+- **Given:** Admin đang tạo/sửa/giao/tách đơn qua PWA iOS. Có thể đưa ứng dụng xuống nền sau khi bấm đẩy đơn rồi mở lại; Chat image ticket/upload có thể chậm, canvas có thể tốn CPU.
+- **When:** Máy chủ trả `ok:true` từ đúng RPC ghi đơn thì đó là ACK giao dịch. Mở khóa spinner và giỏ ngay, chỉ một lần; domain read và ghép ảnh vào đúng thông báo tiếp tục bằng promise cũ. Khi dữ liệu đơn đã refresh, chỉ một lần repaint danh sách. Nếu ảnh thất bại, không coi đơn đã ghi là lỗi và không gửi lại RPC ghi đơn.
+- **Chưa có ACK:** Giữ khóa chống gửi trùng; sau 12 giây hoặc khi PWA resume, cập nhật lời nhắc chờ xác nhận (không tự retry, không tự ghi đơn mới). Khi media cũ hoàn tất, không được xóa overlay của đơn mới.
+- **Owner/read-write:** `src/fixed-production-bridge.js` (local onCommitted/onReconciled callbacks trước media), `src/fixed-production-overrides.js` (orderMutationInFlight, UI), `index.html` (asset cache version). Đọc state in-memory; ghi chỉ RPC gốc, không thêm DB, cron hoặc request mạng; test `tests/pwa-order-resume-confirmed-20261117.test.js`.
+- **MUST-STAY:** Chỉ đơn Đã giao mới tự gửi ảnh cho KH/nhân viên theo consent; Đơn tạm không gửi; chính xác một write/command; giữ giá, số lượng, STT, note, orderId, công nợ, quyền và nhận diện owner. Không đổi hợp đồng API, migration, deploy thủ công hoặc thông báo ở PWA khác.
+- **Evidence gates:** E0 SPEC; E1 unit/contract test; E2 canonical build/CI; E3 Pages build ID và thông báo update; E4 Safari iPhone background→resume & ảnh Chat thực; E5 người dùng nghiệm thu. Chưa có E4/E5 phải báo PENDING; rollback bằng revert commit chính xác.
+
+
 ## SPEC-SPLIT-PENDING-20261116 — Tách đơn tạm / Duyệt một phần
 
 - **Given:** Admin tài khoản đang xem một đơn tạm đã lưu. Dòng tích kiểm trong cột SL được xem là hàng muốn tách; chưa tích là hàng phải giữ ở đơn cũ.
