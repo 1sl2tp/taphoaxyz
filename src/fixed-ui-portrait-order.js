@@ -166,7 +166,7 @@
         </div>
       </div>
       <div style="padding:0 22px;flex:0 0 auto;box-sizing:border-box;">
-        <div style="${gridStyle}height:44px;padding:0 8px;border-radius:10px;background:#f1f4f8;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
+        <div style="${gridStyle}height:44px;border-radius:10px;background:#f1f4f8;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
           <div style="text-align:center;">STT</div><div>Tên</div>
           <div style="text-align:center;">SL</div>
           <div style="text-align:right;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
@@ -248,39 +248,41 @@
     const noteStyle=font(13,550);
     const isDraft=!!options.isDraft;
     const palette=headerPalette(isDraft);
-    const customerStyle=font(22,800);
+    const customerStyle=font(21,800);
     const customerLines=wrap(options.customer||'Khách hàng',
-      HEADER_NAME_WIDTH,customerStyle);
+      HEADER_NAME_WIDTH-26,customerStyle);
     const code=String(options.orderId||'').trim()||'--';
     const pages=Math.max(1,Number(options.pageCount)||1);
     const pageNo=Number(options.pageIndex)||0;
     const stamp=splitReceiptTimestamp(options.time);
     const metaLabel=isDraft?'ĐƠN TẠM':'MÃ ĐƠN';
     const metaWidth=HEADER_META_WIDTH-24;
-    const codeStyle=font(18,800),timeStyle=font(12,750);
-    const dateStyle=font(12,650),pageStyle=font(11,700);
+    const codeStyle=font(22,800),stampStyle=font(11.5,700);
+    const pageStyle=font(11,700);
     const codeLines=wrap(code,metaWidth,codeStyle);
-    const timeLines=wrap(stamp.clock,metaWidth,timeStyle);
-    const dateLines=stamp.date?wrap(stamp.date,metaWidth,dateStyle):[];
+    const stampText=[stamp.date,stamp.clock].filter(Boolean).join(' · ');
+    const stampLines=wrap(stampText,metaWidth,stampStyle);
     const pageLines=pages>1
       ?wrap('Trang '+(pageNo+1)+'/'+pages,metaWidth,pageStyle):[];
-    const codeY=35;
-    const clockY=codeY+codeLines.length*22+3;
-    const dateY=clockY+timeLines.length*17;
-    const pageY=dateY+dateLines.length*17;
-    const cardBottom=pageY+pageLines.length*17+12;
-    const headerHeight=Math.max(116,cardBottom+10,
-      42+customerLines.length*28+16);
+    const bannerHeight=56;
+    const infoTop=bannerHeight+13;
+    const codeY=infoTop+41;
+    const stampY=codeY+codeLines.length*26+5;
+    const pageY=stampY+stampLines.length*17+6;
+    const infoHeight=Math.max(114,51+customerLines.length*29,
+      pageY-infoTop+pageLines.length*17+14);
+    const headerHeight=infoTop+infoHeight+14;
     const rows=items.map((item,index)=>{
       const names=wrap(item.name,columns.name,nameStyle);
       const notes=String(item.note||'').trim()?wrap(item.note,columns.name,noteStyle):[];
       const height=Math.max(68,26+names.length*24+notes.length*19);
       return {item,index,names,notes,height,milkX:!!milkXInfo(item)};
     });
-    const tableTop=headerHeight+8,bodyTop=tableTop+48;
+    const tableTop=headerHeight+2,bodyTop=tableTop+46;
     const bodyHeight=rows.reduce((total,row)=>total+row.height,0);
-    const footerTop=bodyTop+bodyHeight+14;
-    const logicalHeight=Math.max(MIN_HEIGHT,footerTop+104);
+    const footerTop=bodyTop+bodyHeight+9;
+    const isLast=options.isLastPage!==false;
+    const logicalHeight=Math.max(MIN_HEIGHT,footerTop+(isLast?128:72));
     if(!Number.isSafeInteger(Math.ceil(logicalHeight*ratio))
       ||logicalHeight*ratio>19500)throw Error('order_png_height_limit');
     paper.width=Math.ceil(width*ratio);
@@ -298,38 +300,62 @@
       ctx.font=style;ctx.fillStyle=color;ctx.textAlign=align;
       ctx.fillText(String(value??''),x,y);
     };
-    // UI-PORTRAIT-021: two fixed horizontal zones, same content as HTML.
-    // No overlay for a long customer name or unusually long order code.
-    ctx.fillStyle=palette.background;ctx.fillRect(0,0,width,headerHeight);
-    ctx.fillStyle=palette.accent;ctx.fillRect(0,0,4,headerHeight);
+    // ORDER-UI-383: the same compact navy invoice heading and two clear
+    // information cards as the HTML fallback, drawn without network/fonts.
+    const fillRounded=(x,y,w,h,r,color)=>{
+      ctx.fillStyle=color;
+      if(typeof ctx.beginPath!=='function'||typeof ctx.quadraticCurveTo!=='function'
+         ||typeof ctx.closePath!=='function'||typeof ctx.fill!=='function'){
+        ctx.fillRect(x,y,w,h);return;
+      }
+      const k=Math.min(r,w/2,h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+k,y);ctx.lineTo(x+w-k,y);
+      ctx.quadraticCurveTo(x+w,y,x+w,y+k);
+      ctx.lineTo(x+w,y+h-k);
+      ctx.quadraticCurveTo(x+w,y+h,x+w-k,y+h);
+      ctx.lineTo(x+k,y+h);
+      ctx.quadraticCurveTo(x,y+h,x,y+h-k);
+      ctx.lineTo(x,y+k);
+      ctx.quadraticCurveTo(x,y,x+k,y);
+      ctx.closePath();ctx.fill();
+    };
+    ctx.fillStyle='#173c59';ctx.fillRect(0,0,width,bannerHeight);
+    if(typeof ctx.strokeRect==='function'){
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=1.7;
+      ctx.strokeRect(22,15,19,25);
+      ctx.fillStyle='#ffffff';ctx.fillRect(27,23,9,1.5);
+      ctx.fillRect(27,29,9,1.5);
+    }
+    line(56,17,57,39,'#7b9cac');
+    label(isDraft?'ĐƠN HÀNG TẠM':'HÓA ĐƠN BÁN HÀNG',
+      69,18,font(15,800),'#ffffff');
     const cardX=width-margin-HEADER_META_WIDTH;
-    ctx.fillStyle='#ffffff';
-    ctx.fillRect(cardX,10,HEADER_META_WIDTH,headerHeight-20);
-    label('KHÁCH HÀNG',margin,18,font(11,800),'#607890');
+    fillRounded(margin,infoTop,HEADER_NAME_WIDTH,infoHeight,15,'#f1f5fa');
+    fillRounded(cardX,infoTop,HEADER_META_WIDTH,infoHeight,15,palette.background);
+    label('KHÁCH HÀNG',margin+13,infoTop+16,font(11,800),'#64748b');
     customerLines.forEach((part,i)=>
-      label(part,margin,42+i*28,customerStyle,'#142238'));
+      label(part,margin+13,infoTop+43+i*28,customerStyle,'#142238'));
     const metaRight=width-margin-12;
-    label(metaLabel,metaRight,19,font(11,800),'#718397','right');
+    label(metaLabel,metaRight,infoTop+15,font(11,800),'#64748b','right');
     codeLines.forEach((part,i)=>
-      label(part,metaRight,codeY+i*22,codeStyle,palette.code,'right'));
-    timeLines.forEach((part,i)=>
-      label(part,metaRight,clockY+i*17,timeStyle,'#415c75','right'));
-    dateLines.forEach((part,i)=>
-      label(part,metaRight,dateY+i*17,dateStyle,'#60758a','right'));
+      label(part,metaRight,codeY+i*26,codeStyle,palette.code,'right'));
+    stampLines.forEach((part,i)=>
+      label(part,metaRight,stampY+i*17,stampStyle,'#415c75','right'));
     pageLines.forEach((part,i)=>
-      label(part,metaRight,pageY+i*17,pageStyle,'#60758a','right'));
+      label(part,metaRight,pageY+i*17,pageStyle,'#64748b','right'));
     const xIndex=margin+indexWidth/2;
     const xName=margin+indexWidth+gap;
     const xQty=xName+columns.name+gap+columns.qty;
     const xPrice=xQty+gap+columns.price;
     const xTotal=xPrice+gap+columns.amount;
-    const captionY=tableTop+15;
+    fillRounded(margin,tableTop,contentWidth,44,10,'#f1f4f8');
+    const captionY=tableTop+14;
     label('STT',xIndex,captionY,font(11,800),'#53677d','center');
     label('TÊN',xName,captionY,font(12,800),'#53677d');
     label('SL',xQty,captionY,font(12,800),'#53677d','right');
     label('ĐG',xPrice,captionY,font(12,800),'#53677d','right');
     label('TIỀN',xTotal,captionY,font(12,800),'#53677d','right');
-    line(margin,tableTop+43,width-margin,tableTop+44);
     let y=bodyTop;
     for(const row of rows){
       const item=row.item;
@@ -357,19 +383,33 @@
       y+=row.height;
       line(margin,y-1,width-margin,y,'#e3eaf1');
     }
-    line(0,footerTop,width,footerTop+1);
-    ctx.fillStyle='#f7fbf8';
-    ctx.fillRect(0,footerTop+1,width,logicalHeight-footerTop-1);
-    label('Số lượng',margin,footerTop+18,font(12,700),'#64748b');
-    label(String(options.lineCount??items.length)+' mã · '+String(options.totalQty??0)+' sản phẩm',
-      margin,footerTop+42,font(15,800),'#142238');
-    label('Tổng thanh toán',width-margin,footerTop+18,
-      font(12,700),'#64748b','right');
-    const total=String(options.totalPriceText??'0');
-    let totalSize=28;
-    while(totalSize>18&&measure(total,font(totalSize,800))>contentWidth*0.48)
-      totalSize--;
-    label(total,width-margin,footerTop+39,font(totalSize,800),'#13853a','right');
+    if(!isLast){
+      fillRounded(16,footerTop+10,width-32,44,14,'#f1f5f9');
+      label('Còn tiếp…',width-margin-13,footerTop+22,
+        font(13,750),'#64748b','right');
+    }else{
+      // The printed grand total is the source-provided label, not the
+      // sum of rounded visible rows. Never recompute a monetary value here.
+      fillRounded(16,footerTop+10,width-32,102,16,'#eef7f0');
+      line(218,footerTop+25,219,footerTop+95,'#cadbd0');
+      label('Số lượng',32,footerTop+24,font(12,750),'#576878');
+      const qtySummary=String(options.lineCount??items.length)+' mã · '+
+        String(options.totalQty??0)+' sản phẩm';
+      const qtyLines=wrap(qtySummary,174,font(15,800));
+      qtyLines.slice(0,2).forEach((part,i)=>
+        label(part,32,footerTop+51+i*19,font(15,800),'#142238'));
+      label('Tổng thanh toán',width-32,footerTop+22,
+        font(12,750),'#576878','right');
+      const total=String(options.totalPriceText??'0');
+      let totalSize=28;
+      while(totalSize>14&&measure(total,font(totalSize,800))>160)
+        totalSize--;
+      const badgeWidth=Math.max(106,Math.min(184,
+        Math.ceil(measure(total,font(totalSize,800))+26)));
+      fillRounded(width-32-badgeWidth,footerTop+46,
+        badgeWidth,43,22,'#268b4b');
+      label(total,width-45,footerTop+52,font(totalSize,800),'#ffffff','right');
+    }
     return paper;
   }
 
