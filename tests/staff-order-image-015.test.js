@@ -9,7 +9,7 @@ test('same-message staff PNG attaches after exact admin command',()=>{
   assert(client.includes(field)||business.includes(field),field);
  assert.match(business,/saveOrder:async payload=>\{[\s\S]*?staff_notice_command_id:id/);
  assert.match(business,/deliverOrder:async id=>\{[\s\S]*?staff_notice_command_id:command/);
- assert(client.includes('staffCommandId:result.staff_notice_command_id'));
+ assert(client.includes('attachCommittedOrderNotices(result,result.staff_notice_command_id)'));
  assert(client.includes("staff?'taphoa_staff_order_image_ticket':'taphoa_order_notice_image_ticket'"));
  assert(client.includes("staff?'taphoa_staff_order_image_attach':'taphoa_order_notice_image_attach'"));
  assert(client.includes('result.image_attached=await attachOrderNoticePortrait(result.order)===true;'));
