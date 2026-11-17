@@ -1883,28 +1883,6 @@
 @media(max-width:360px){
   #cartBottomSheet .cart-review-bar{padding:8px 12px;column-gap:8px;}
   #cartBottomSheet .cart-review-all{padding-inline:9px;}
-  /* At 320–360px the checkbox consumes the narrow name track.
-     Keep the SAME five columns: name spans row 1; amount/SL stay in their
-     original columns on row 2, instead of truncating every product name. */
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid{
-    grid-template-rows:minmax(36px,auto) 44px !important;
-    row-gap:3px !important;min-height:83px !important;
-  }
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-stt{
-    grid-column:1 !important;grid-row:1 !important;
-  }
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-left > .min-w-0{
-    grid-column:2 / -1 !important;grid-row:1 !important;
-    width:100% !important;min-height:36px !important;height:auto !important;
-  }
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-price{
-    grid-column:3 !important;grid-row:2 !important;
-  }
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-qty{
-    grid-column:4 !important;grid-row:2 !important;
-    min-height:44px !important;height:44px !important;
-  }
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-total{
-    grid-column:5 !important;grid-row:2 !important;
-  }
+  /* Picked lines use the SAME responsive row decision as the header.
+     A viewport breakpoint must not place values on row 2 by itself. */
 }
