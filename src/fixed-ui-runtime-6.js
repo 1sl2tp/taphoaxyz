@@ -590,7 +590,7 @@
                     cartSheet.style.setProperty('--cart-finance-gap',
                         (gap + gapExtra) + 'px');
                     cartSheet.dataset.compactTwoLine =
-                        (!isDeliveredReadOnlyPreview && innerWidth > 0 && availableName < 68)
+                        (innerWidth > 0 && availableName < 72)
                             ? '1' : '0';
                     // On resize/orientation change, change only the presentation
                     // flag. No cart rebuild, network request or background timer.
@@ -615,8 +615,7 @@
                             if (cartSheet.style.getPropertyValue('--cart-finance-gap') !== nextGap) {
                                 cartSheet.style.setProperty('--cart-finance-gap',nextGap);
                             }
-                            const next = (cartSheet.dataset.cartMode === 'edit'
-                                && usable > 0 && usable - fixed < 68) ? '1' : '0';
+                            const next = (usable > 0 && usable - fixed < 72) ? '1' : '0';
                             if (cartSheet.dataset.compactTwoLine !== next) {
                                 cartSheet.dataset.compactTwoLine = next;
                             }
