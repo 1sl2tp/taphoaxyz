@@ -53,7 +53,7 @@ test('share-cart and public-order image use the same read-only portrait renderer
   for(const f of ['src/fixed-ui-cart-share-v3.js','src/fixed-ui-public-order-image.js']){
     const share=read(f);
     assert.match(share,/TAPHOA_ORDER_PORTRAIT/);
-    assert.match(share,/\.createPage\(\{/);
+    assert.match(share,/\.createPage\((?:\{|portraitOptions)/);
   }
 });
 test('cart readonly order preview and editing share source but quantity alone is editable',()=>{
