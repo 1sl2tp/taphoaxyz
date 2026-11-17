@@ -304,7 +304,8 @@
     // information cards as the HTML fallback, drawn without network/fonts.
     const fillRounded=(x,y,w,h,r,color)=>{
       ctx.fillStyle=color;
-      if(typeof ctx.beginPath!=='function'||typeof ctx.quadraticCurveTo!=='function'
+      if(typeof ctx.beginPath!=='function'||typeof ctx.moveTo!=='function'
+         ||typeof ctx.lineTo!=='function'||typeof ctx.quadraticCurveTo!=='function'
          ||typeof ctx.closePath!=='function'||typeof ctx.fill!=='function'){
         ctx.fillRect(x,y,w,h);return;
       }
