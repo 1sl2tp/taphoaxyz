@@ -439,3 +439,127 @@
   #tab-cong-no .debt-customer-money{font-size:14px}
   #tab-cong-no #debtSortSelect{max-width:137px}
 }
+
+
+/* SPEC-CART-GEOMETRY-20261117 — canonical Cart sheet spacing.
+   One 16px inline ruler across header, rows, summary and actions for
+   preview/edit/review on Web/PWA. Do not alter order data or shared PNG. */
+#cartBottomSheet .cart-head-row{
+  box-sizing:border-box;gap:10px;min-width:0;
+  padding:10px 16px !important;min-height:60px;
+}
+#cartBottomSheet .cart-head-main{
+  min-width:0;flex:1 1 auto;flex-wrap:wrap;gap:6px 8px;
+}
+#cartBottomSheet .cart-head-main h2{
+  flex:0 0 auto;margin:0;font-size:18px;line-height:24px;white-space:nowrap;
+}
+#cartBottomSheet #cartEditBadge{
+  box-sizing:border-box;max-width:100%;margin-left:0 !important;
+  padding:3px 8px;font-size:11px;line-height:16px;white-space:nowrap;
+}
+#cartBottomSheet .cart-head-actions{
+  flex:0 0 auto;align-items:center;gap:8px;
+}
+#cartBottomSheet .cart-head-actions > button{
+  box-sizing:border-box;flex:0 0 36px;width:36px;height:36px;
+  min-width:36px;min-height:36px;touch-action:manipulation;
+}
+#cartBottomSheet > .cart-column-header{
+  padding-left:16px !important;
+  padding-right:calc(16px + var(--cart-scrollbar-inset,0px)) !important;
+}
+#cartBottomSheet #cartItemList{
+  box-sizing:border-box;min-width:0;
+  padding:4px 16px !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid{
+  box-sizing:border-box;min-height:46px;
+  padding-top:5px !important;padding-bottom:5px !important;
+}
+#cartBottomSheet #cartItemList .cart-name-note-trigger{
+  font-size:13px !important;
+}
+#cartBottomSheet .cart-summary-block{
+  box-sizing:border-box;padding:12px 16px !important;
+}
+#cartBottomSheet .cart-summary-row{
+  min-width:0;gap:12px;margin-bottom:12px !important;
+}
+#cartBottomSheet .cart-summary-row > div{min-width:0;}
+#cartBottomSheet .cart-summary-row > div:first-child{flex:1 1 auto;}
+#cartBottomSheet .cart-summary-row > div:last-child{
+  flex:0 1 auto;max-width:62%;text-align:right;
+}
+#cartBottomSheet #cartTotalPriceDisplay{
+  font-size:clamp(22px,6vw,26px);
+  font-variant-numeric:tabular-nums;line-height:1.1;
+}
+#cartBottomSheet #cartFooterActions{
+  box-sizing:border-box;min-width:0;gap:8px;
+}
+#cartBottomSheet #cartFooterActions .cart-preview-actions{
+  box-sizing:border-box;display:grid !important;
+  grid-template-columns:minmax(0,0.36fr) minmax(0,0.64fr);
+  align-items:stretch;width:100%;min-width:0;gap:8px;
+}
+#cartBottomSheet #cartFooterActions .cart-preview-actions > button{
+  box-sizing:border-box;min-width:0;width:100%;min-height:48px;
+  padding:9px 10px !important;font-size:14px;line-height:20px;
+  white-space:nowrap;touch-action:manipulation;
+}
+#cartBottomSheet #cartFooterActions .cart-review-action-row{gap:8px;}
+#cartBottomSheet #cartFooterActions .cart-review-action{min-height:48px;}
+#cartBottomSheet #cartFooterActions > button{
+  min-width:0;min-height:46px;line-height:20px;
+}
+
+/* Compact fallback is based on ACTUAL cart pane width, not device class.
+   Preserve 5 semantic columns: STT/Name on row one, SL/Giá/TT on row two.
+   A short-name preview should never squeeze text into a ~zero-width track. */
+#cartBottomSheet[data-compact-two-line="1"] .cart-column-header,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid{
+  grid-template-rows:minmax(20px,auto) minmax(34px,auto) !important;
+  row-gap:3px !important;align-items:center !important;
+}
+#cartBottomSheet[data-compact-two-line="1"] .cart-column-header .cart-stt,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-stt{
+  grid-column:1 !important;grid-row:1 !important;
+}
+#cartBottomSheet[data-compact-two-line="1"] .cart-column-header .cart-name,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+  grid-column:2 / -1 !important;grid-row:1 !important;min-width:0 !important;
+}
+#cartBottomSheet[data-compact-two-line="1"] .cart-column-header .cart-qty,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-qty{
+  grid-column:3 !important;grid-row:2 !important;
+}
+#cartBottomSheet[data-compact-two-line="1"] .cart-column-header .cart-price,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-price{
+  grid-column:4 !important;grid-row:2 !important;
+}
+#cartBottomSheet[data-compact-two-line="1"] .cart-column-header .cart-total,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-total{
+  grid-column:5 !important;grid-row:2 !important;
+}
+#cartBottomSheet[data-compact-two-line="1"][data-cart-review="1"] #cartItemList .cart-compact-grid{
+  grid-template-rows:minmax(36px,auto) minmax(44px,auto) !important;
+  min-height:83px !important;
+}
+@media(max-width:360px){
+  #cartBottomSheet .cart-head-row{padding:9px 12px !important;gap:6px;}
+  #cartBottomSheet .cart-head-main{gap:4px 6px;}
+  #cartBottomSheet .cart-head-main h2{font-size:17px;line-height:22px;}
+  #cartBottomSheet #cartEditBadge{font-size:10px;padding:2px 6px;}
+  #cartBottomSheet .cart-head-actions{gap:6px;}
+  #cartBottomSheet > .cart-column-header{
+    padding-left:12px !important;
+    padding-right:calc(12px + var(--cart-scrollbar-inset,0px)) !important;
+  }
+  #cartBottomSheet #cartItemList{padding-inline:12px !important;}
+  #cartBottomSheet .cart-summary-block{padding:11px 12px !important;}
+  #cartBottomSheet .cart-summary-row{gap:8px;}
+  #cartBottomSheet #cartFooterActions .cart-preview-actions{
+    grid-template-columns:minmax(0,0.36fr) minmax(0,0.64fr);
+  }
+}
