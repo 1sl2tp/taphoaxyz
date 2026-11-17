@@ -1,5 +1,16 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-CART-REVIEW-ALL-GAP-20261117 — Chọn tất cả và cân lề Soát hàng
+
+- **Given:** Admin mở đơn tạm đã lưu ở chế độ soát; có 1–N dòng sản phẩm. Đơn tạm vẫn chưa giao.
+- **When:** nút **Chọn tất cả** tích toàn bộ dòng của đơn đang xem, đổi thành **Bỏ chọn tất cả** khi đã tích đủ; bỏ chọn một dòng trở về trạng thái chưa đầy đủ. Nút chỉ thay đổi trạng thái checklist tại máy, không gọi API, không tạo đơn, không duyệt ngay. Trường hợp 0 dòng: vô hiệu hóa nút.
+- **Then:** số **Soát hàng X/N**, dấu tích, màu dòng và trạng thái nút Duyệt/Tách cập nhật cùng lúc. Quyền user/PIN, chế độ sửa, đổi KH/đơn, số lượng, giá hoặc ghi chú phải làm hết hiệu lực lựa chọn cũ; duyệt vẫn có xác nhận và guard server sẵn có.
+- **Bố cục:** thanh Soát hàng 2 hàng thống nhất (tên & nút ở hàng một, mô tả hàng hai), font 12–14px, nút chọn và vùng chạm SL tối thiểu 44px, footer 2 nút duyệt/tách giãn đều. Với viewport 320–360px, chỉ dòng soát chuyển thành 2 hàng trong đúng **5 cột**, tên hàng chiếm chiều ngang dòng đầu và số liệu vẫn đúng cột dòng hai; từ >360px giữ hiển thị 5 cột một hàng. Không sửa giao diện ảnh hóa đơn và cột dữ liệu chung.
+- **Owner:** `src/fixed-ui-runtime-6.js` (state và bar), `src/fixed-ui-runtime-5.js` (footer class), `src/fixed-ui-cart-spacing.css` (chỉ selector trong review), `index.html` (cache-busting). Không đổi nghiệp vụ/API/DB/Chat/Zalo/cron.
+- **Evidence:** E0 spec; E1 unit test select all/clear/row/role/reset cùng CSS contracts; E2 CI và canonical build; E3 live build ID và PWA update; E4 ảnh/màn hình Safari, Chrome, Web/PWA 320, 360, 393, 428px và desktop thực; E5 người dùng nghiệm thu. Chưa có E4/E5 thì báo PENDING.
+- **Rollback:** revert thay đổi UI/asset của feature, không gửi lại đơn hay thay dữ liệu gốc.
+
+
 ## SPEC-ORDER-NOTICE-RESTORE-20261117 — Không để ảnh thông báo bị chặn chéo
 
 - **Given:** Admin tạo DG mới, sửa DG đã giao, duyệt DT sang DG hoặc duyệt một phần. Lệnh RPC ghi đơn đã xác nhận `ok:true`. Tin thông báo là ảnh PNG-only trong chính Chat message server đã tạo.
