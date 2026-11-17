@@ -113,7 +113,7 @@ test('UI-PORTRAIT-019: names and money are legible in a short five-column receip
   const price=words.find(w=>w.value==='975');
   assert(price&&/1[2-6]px/.test(price.font),'unit prices must be readable');
   const header=words.find(w=>w.value==='DG361');
-  assert(header&&header.font.includes('18px'));
+  assert(header&&header.font.includes('22px'),'modern order-code font size');
   assert(words.some(w=>w.value==='KHÁCH HÀNG'));
   for(const val of ['STT','TÊN','SL','ĐG','TIỀN','Bat 1kg *','Sua ensua re *'])
     assert(words.some(w=>w.value===val),'lost required receipt text '+val);
@@ -144,22 +144,24 @@ test('UI-PORTRAIT-021: customer left; order code and split time on the right',()
     lineCount:2,totalQty:58,totalPriceText:'56.640'
   },1.2);
   const code=rendered.find(x=>x.value==='DG363');
-  const date=rendered.find(x=>x.value==='15/11/2026');
-  const clock=rendered.find(x=>x.value==='15:39:16');
+  const stamp=rendered.find(x=>x.value==='15/11/2026 · 15:39:16');
   const customer=rendered.find(x=>x.value==='Bác Thơm Lễ');
   const leftLabel=rendered.find(x=>x.value==='KHÁCH HÀNG');
   const rightLabel=rendered.find(x=>x.value==='MÃ ĐƠN');
-  assert(code&&date&&clock&&customer&&leftLabel&&rightLabel);
+  assert(code&&stamp&&customer&&leftLabel&&rightLabel);
+  assert(rendered.some(x=>x.value==='HÓA ĐƠN BÁN HÀNG'));
+  assert(rendered.some(x=>x.value==='Tổng thanh toán'));
   assert(customer.x<code.x,'customer belongs in the left column');
-  assert.equal(code.x,clock.x,'order ID and time must share the right ruler');
-  assert.equal(clock.x,date.x,'date must align with clock');
+  assert.equal(code.x,stamp.x,'code and timestamp share the right ruler');
   assert.equal(code.align,'right');
-  assert(customer.y<clock.y,'left and right columns start together, not stacked full-width');
-  assert(image.height<550,'short receipt should remain compact');
-  assert(backgrounds.some(r=>r.color==='#eaf3fc'&&r.x===0&&r.y===0),
-    'use a soft tinted header background');
-  assert(backgrounds.some(r=>r.color==='#ffffff'&&r.x>200&&r.y===10),
-    'the right metadata panel should be white');
+  assert(customer.y<stamp.y,'customer card and metadata are side by side');
+  assert(image.height<720,'short receipt should remain compact and readable');
+  assert(backgrounds.some(r=>r.color==='#173c59'&&r.x===0&&r.y===0),
+    'approved navy invoice banner');
+  assert(backgrounds.some(r=>r.color==='#e8f5eb'&&r.x>200),
+    'approved pastel metadata card');
+  assert(backgrounds.some(r=>r.color==='#268b4b'&&r.x>200),
+    'approved green total badge');
   assert(!rendered.some(x=>x.value.startsWith('Thời gian:')),
     'do not waste a separate line on verbose time labels');
 });
@@ -184,10 +186,10 @@ test('UI-PORTRAIT-021: long customer and code wrap inside their own columns',()=
     items:[row('Sữa hộp',2,350)],lineCount:1,totalQty:2,totalPriceText:'700'
   });
   const code=rendered.find(x=>x.value.startsWith('DG-'));
-  const clock=rendered.find(x=>x.value==='15:39:16');
-  const nameLines=rendered.filter(x=>x.x===22&&x.y>=42&&x.y<200);
-  assert(code&&clock&&nameLines.length>=2);
-  assert(clock.y>code.y,'long order ID must not overlap the time');
+  const stamp=rendered.find(x=>x.value.includes('15/11/2026'));
+  const nameLines=rendered.filter(x=>x.x===35&&x.y>=100&&x.y<400);
+  assert(code&&stamp&&nameLines.length>=2);
+  assert(stamp.y>code.y,'long order ID must not overlap timestamp');
   assert(nameLines.some(x=>x.value.includes('Khách Hàng')));
   assert(image.height>380,'large content expands header height rather than clipping');
 });
@@ -206,7 +208,10 @@ test('UI-PORTRAIT-021: HTML capture matches Canvas header and escapes customer t
   });
   const html=page.page.innerHTML;
   assert(html.includes('grid-template-columns:minmax(0,1fr) 154px'));
-  assert(html.includes('background:#eaf3fc'));
+  assert(html.includes('background:#173c59'));
+  assert(html.includes('background:#e8f5eb'));
+  assert(html.includes('background:#268b4b'));
+  assert(html.includes('HÓA ĐƠN BÁN HÀNG'));
   assert(html.includes('KHÁCH HÀNG'));
   assert(html.includes('MÃ ĐƠN'));
   assert(html.includes('DG365'));
@@ -233,7 +238,9 @@ test('UI-PORTRAIT-021: draft uses warm differentiated header, not delivered blue
     time:'17:52 15/11/2026',items:[row('Bánh',2,350)],
     lineCount:1,totalQty:2,totalPriceText:'700'
   });
-  assert(rects.some(r=>r.x===0&&r.y===0&&r.color==='#fff5e9'));
+  assert(rects.some(r=>r.x>200&&r.color==='#fff3e2'));
+  assert(words.includes('ĐƠN HÀNG TẠM'));
+  assert(!words.includes('HÓA ĐƠN BÁN HÀNG'));
   assert(words.includes('ĐƠN TẠM')&&words.includes('DT42'));
   assert(words.includes('C Hà Trang'));
 });
