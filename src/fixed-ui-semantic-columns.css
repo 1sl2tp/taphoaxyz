@@ -557,6 +557,13 @@
     padding-right:calc(12px + var(--cart-scrollbar-inset,0px)) !important;
   }
   #cartBottomSheet #cartItemList{padding-inline:12px !important;}
+  /* Fix the inherited 320px review-only swap: canonical C=SL, D=Giá. */
+  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-qty{
+    grid-column:3 !important;grid-row:2 !important;
+  }
+  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-price{
+    grid-column:4 !important;grid-row:2 !important;
+  }
   #cartBottomSheet .cart-summary-block{padding:11px 12px !important;}
   #cartBottomSheet .cart-summary-row{gap:8px;}
   #cartBottomSheet #cartFooterActions .cart-preview-actions{
