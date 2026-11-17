@@ -454,7 +454,7 @@
             if (isOrderPreview) {
                 if (!isUser && isPendingOrderCart) owner.classList.add('flex-wrap');
                 owner.innerHTML = `
-                    <div class="flex w-full min-w-0 gap-2">
+                    <div class="cart-preview-actions flex w-full min-w-0 gap-2">
                         <button ${canDeleteOrder ? 'onclick="requestDeleteEditingOrder()"' : 'disabled'} class="px-3 py-3 rounded-xl border border-danger/40 text-danger font-bold transition flex items-center justify-center gap-1 whitespace-nowrap ${canDeleteOrder ? enabledDangerBtn : disabledBtn}">
                             <i class="ph ph-trash"></i> Xóa
                         </button>
