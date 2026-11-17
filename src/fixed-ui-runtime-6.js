@@ -552,8 +552,15 @@
                     // Two 30px buttons + editable number + 2 one-pixel gaps,
                     // 4px internal padding + 2px border, i.e. 96px for 1 digit.
                     const controlWidth = 30 + qtyInputWidth + 30 + 2 + 4 + 2;
+                    const readonlyQtyWidth = columnWidth('SL', head('.cart-qty'), quantityTexts, qtyStyle, 8);
+                    const checkedQtyWidth = reviewMode
+                        ? Math.max(readonlyQtyWidth + 24,
+                            Number.parseFloat(cartSheet.style.getPropertyValue('--cart-qty-readonly-track')) || 56)
+                        : readonlyQtyWidth;
+                    // Keep the heading and data row the SAME width even when
+                    // a 24px checkbox + 4px gap needs more than 'SL' text.
                     const qtyWidth = isDeliveredReadOnlyPreview
-                        ? columnWidth('SL', head('.cart-qty'), quantityTexts, qtyStyle, 8) + (reviewMode ? 24 : 0)
+                        ? checkedQtyWidth
                         : Math.max(controlWidth, columnWidth('Số lượng', head('.cart-qty'), [], qtyStyle, 8));
                     // CSS 1fr name track also adapts when the panel resizes.
                     cartSheet.style.setProperty('--cart-stt-track', sttWidth + 'px');
