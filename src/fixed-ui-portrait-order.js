@@ -32,8 +32,8 @@
   const HEADER_GAP=14;
   const HEADER_NAME_WIDTH=WIDTH-44-HEADER_META_WIDTH-HEADER_GAP;
   const headerPalette=isDraft=>isDraft
-    ?{background:'#fff5e9',accent:'#d28b44',code:'#925b20'}
-    :{background:'#eaf3fc',accent:'#3b7cba',code:'#285e91'};
+    ?{background:'#fff3e2',accent:'#d28b44',code:'#925b20'}
+    :{background:'#e8f5eb',accent:'#2c9658',code:'#194f38'};
   function splitReceiptTimestamp(value){
     const raw=String(value??'').trim()||'--';
     const date=raw.match(/\b\d{1,2}\/\d{1,2}\/\d{4}\b/);
@@ -109,7 +109,7 @@
     const isDraft=!!options.isDraft;
     const isLast=options.isLastPage!==false;
     const orderId=String(options.orderId??'').trim();
-    const title=isDraft?(orderId?'Đơn tạm: '+orderId:'Đơn đang tạo'):'Mã đơn: '+(orderId||'--');
+    const bannerTitle=isDraft?'ĐƠN HÀNG TẠM':'HÓA ĐƠN BÁN HÀNG';
     const pageIndex=Number(options.pageIndex)||0;
     const pageCount=Math.max(1,Number(options.pageCount)||1);
     // UI-PORTRAIT-021: customer on the left; code and full timestamp
@@ -119,18 +119,23 @@
     const metaLabel=isDraft?'ĐƠN TẠM':'MÃ ĐƠN';
     const pageMarker=pageCount>1?`Trang ${pageIndex+1}/${pageCount}`:'';
     const metaCode=orderId||'--';
+    // ORDER-UI-383: one premium receipt layout for generated HTML and Canvas.
+    // Header, customer, immutable order metadata, five columns, and summary.
+    // No financial rounding or line-item transformations occur here.
+    const totalValue=String(options.totalPriceText??'0');
+    const summarySize=totalValue.length>14?19:totalValue.length>10?22:27;
     const summary=isLast?`
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:18px 22px 21px;border-top:1px solid #dfe7ef;background:#f7fbf8;">
-        <div style="min-width:0;">
-          <div style="font-size:12px;color:#64748b;font-weight:700;">Số lượng</div>
-          <div style="margin-top:6px;font-size:15px;line-height:1.4;color:#142238;font-weight:800;">${escapeHtml(options.lineCount??items.length)} mã · ${escapeHtml(options.totalQty??0)} sản phẩm</div>
+      <div style="margin:12px 16px 15px;padding:15px 16px;border-radius:16px;background:#eef7f0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;box-sizing:border-box;">
+        <div style="min-width:0;padding-right:9px;border-right:1px solid #cbdcd1;">
+          <div style="font-size:12px;color:#576878;font-weight:750;">Số lượng</div>
+          <div style="margin-top:7px;font-size:15px;line-height:1.4;color:#142238;font-weight:800;overflow-wrap:break-word;">${escapeHtml(options.lineCount??items.length)} mã · ${escapeHtml(options.totalQty??0)} sản phẩm</div>
         </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:12px;color:#64748b;font-weight:700;">Tổng thanh toán</div>
-          <div style="margin-top:6px;font-size:28px;line-height:1.2;font-weight:800;color:#13853a;font-variant-numeric:tabular-nums;">${escapeHtml(options.totalPriceText??'0')}</div>
+        <div style="min-width:0;text-align:right;">
+          <div style="font-size:12px;line-height:1.3;color:#576878;font-weight:750;">Tổng thanh toán</div>
+          <div style="display:inline-block;max-width:100%;box-sizing:border-box;margin-top:7px;padding:7px 12px;border-radius:22px;background:#268b4b;color:#fff;font-size:${summarySize}px;line-height:1.2;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;">${escapeHtml(totalValue)}</div>
         </div>
       </div>`:`
-      <div style="padding:18px 22px 21px;text-align:right;font-size:13px;color:#64748b;font-weight:750;border-top:1px solid #dfe7ef;">Còn tiếp…</div>`;
+      <div style="margin:12px 16px 15px;padding:15px 16px;text-align:right;border-radius:14px;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:750;">Còn tiếp…</div>`;
     const host=document.createElement('div');
     host.setAttribute('aria-hidden','true');
     host.style.position='fixed';
@@ -141,23 +146,27 @@
     host.style.pointerEvents='none';
     host.style.zIndex='-1';
     const page=document.createElement('div');
-    page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:#1f2937;font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;`;
+    page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:#142238;font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;border-radius:18px;overflow:hidden;`;
     page.innerHTML=`
-      <div style="box-sizing:border-box;min-height:116px;padding:12px 22px;display:grid;grid-template-columns:minmax(0,1fr) ${HEADER_META_WIDTH}px;gap:${HEADER_GAP}px;align-items:stretch;background:${palette.background};box-shadow:inset 4px 0 0 ${palette.accent};border-bottom:1px solid #dbe6f1;">
-        <div style="min-width:0;padding:7px 0 5px;align-self:start;">
-          <div style="font-size:11px;line-height:1.3;letter-spacing:.065em;color:#607890;font-weight:800;">KHÁCH HÀNG</div>
-          <div style="margin-top:8px;font-size:22px;line-height:1.24;letter-spacing:-.02em;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
+      <div style="box-sizing:border-box;min-height:56px;padding:0 22px;display:flex;align-items:center;gap:11px;background:#173c59;color:#fff;">
+        <svg width="23" height="25" viewBox="0 0 24 26" fill="none" aria-hidden="true" style="flex-shrink:0;"><path d="M4 2h16v21l-4-2.5-4 2.5-4-2.5L4 23V2Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 9h8M8 13h8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span style="height:22px;width:1px;background:#7c9daf;"></span>
+        <div style="font-size:15px;font-weight:800;letter-spacing:.045em;line-height:1.3;">${bannerTitle}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) ${HEADER_META_WIDTH}px;gap:${HEADER_GAP}px;padding:13px 22px 14px;align-items:stretch;box-sizing:border-box;">
+        <div style="min-width:0;padding:15px 13px;background:#f1f5fa;border-radius:15px;border:1px solid #e7edf3;box-sizing:border-box;">
+          <div style="font-size:11px;letter-spacing:.055em;color:#64748b;font-weight:800;">KHÁCH HÀNG</div>
+          <div style="margin-top:10px;font-size:21px;line-height:1.3;letter-spacing:-.02em;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
         </div>
-        <div style="min-width:0;box-sizing:border-box;background:#fff;border:1px solid #dbe6f1;border-radius:13px;padding:10px 12px 11px;align-self:stretch;text-align:right;">
-          <div style="font-size:10.5px;line-height:1.2;letter-spacing:.05em;color:#718397;font-weight:800;">${metaLabel}</div>
-          <div style="margin-top:4px;font-size:18px;line-height:1.2;font-weight:800;color:${palette.code};overflow-wrap:anywhere;">${escapeHtml(metaCode)}</div>
-          <div style="margin-top:6px;font-size:12px;line-height:1.3;font-weight:750;color:#415c75;overflow-wrap:anywhere;">${escapeHtml(stamp.clock)}</div>
-          ${stamp.date?`<div style="font-size:12px;line-height:1.3;color:#60758a;font-weight:650;">${escapeHtml(stamp.date)}</div>`:''}
-          ${pageMarker?`<div style="margin-top:5px;font-size:11px;line-height:1.3;color:#60758a;font-weight:700;">${escapeHtml(pageMarker)}</div>`:''}
+        <div style="min-width:0;padding:13px 12px;background:${palette.background};border-radius:15px;border:1px solid #d9e9dd;box-sizing:border-box;text-align:right;">
+          <div style="font-size:10.5px;letter-spacing:.04em;color:#64748b;font-weight:800;">${metaLabel}</div>
+          <div style="margin-top:6px;font-size:22px;line-height:1.2;font-weight:800;color:${palette.code};overflow-wrap:anywhere;">${escapeHtml(metaCode)}</div>
+          <div style="margin-top:9px;font-size:11.5px;line-height:1.4;color:#415c75;font-weight:700;overflow-wrap:anywhere;">${escapeHtml([stamp.date,stamp.clock].filter(Boolean).join(' · '))}</div>
+          ${pageMarker?`<div style="margin-top:5px;font-size:11px;color:#64748b;font-weight:700;">${escapeHtml(pageMarker)}</div>`:''}
         </div>
       </div>
-      <div style="padding:0 22px;flex:0 0 auto;">
-        <div style="${gridStyle}height:46px;border-bottom:1px solid #dfe7ef;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
+      <div style="padding:0 22px;flex:0 0 auto;box-sizing:border-box;">
+        <div style="${gridStyle}height:44px;padding:0 8px;border-radius:10px;background:#f1f4f8;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
           <div style="text-align:center;">STT</div><div>Tên</div>
           <div style="text-align:center;">SL</div>
           <div style="text-align:right;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
@@ -165,7 +174,7 @@
         </div>
         <div>${rowsHtml}</div>
       </div>
-      <div style="flex:1 1 auto;min-height:8px;"></div>
+      <div style="flex:1 1 auto;min-height:0;"></div>
       ${summary}`;
     host.appendChild(page);
     document.body.appendChild(host);
