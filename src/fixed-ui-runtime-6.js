@@ -213,18 +213,37 @@
         function updateCartReviewBar(){
             const bar=document.getElementById('cartReviewBar');
             if(!bar)return;
-            if(!cartReviewAvailable()){bar.hidden=true;return;}
+            if(!syncCartReviewState()){bar.hidden=true;return;}
             const done=cartReviewState.checked.size,total=Object.keys(cart).length;
             bar.hidden=false;
-            bar.textContent='';
-            const heading=document.createElement('span');
-            heading.className='cart-review-heading';
+            // Reuse the same controls, avoiding focus loss and layout jumps
+            // when a line is checked or Select all is tapped on mobile.
+            let heading=bar.querySelector('.cart-review-heading');
+            let message=bar.querySelector('.cart-review-message');
+            let action=bar.querySelector('.cart-review-all');
+            if(!heading||!message||!action){
+                bar.textContent='';
+                heading=document.createElement('span');
+                heading.className='cart-review-heading';
+                message=document.createElement('span');
+                message.className='cart-review-message';
+                action=document.createElement('button');
+                action.type='button';
+                action.className='cart-review-all allow-fast-click';
+                action.addEventListener('click',()=>setCartReviewAll(!isCartReviewComplete()));
+                bar.append(heading,action,message);
+            }
+            const complete=total>0&&done===total;
             heading.textContent='Soát hàng '+done+'/'+total;
-            const message=document.createElement('span');
-            message.className='cart-review-message';
-            message.textContent=done===total&&total>0?'Đã kiểm đủ · duyệt toàn đơn':done>0?'Chỉ giao hoặc tách các dòng đã tích':'Tích dòng để giao một phần hoặc tách đơn tạm';
-            bar.append(heading,message);
-            bar.classList.toggle('cart-review-finished',total>0&&done===total);
+            message.textContent=complete?'Đã kiểm đủ · chỉ duyệt khi bấm Duyệt'
+                :done>0?'Chỉ giao hoặc tách các dòng đã tích'
+                :'Tích từng dòng hoặc chọn tất cả để kiểm hàng';
+            action.textContent=complete?'Bỏ chọn tất cả':'Chọn tất cả';
+            action.disabled=total===0;
+            action.setAttribute('aria-pressed',complete?'true':'false');
+            action.setAttribute('aria-label',complete?'Bỏ chọn tất cả sản phẩm'
+                :'Chọn tất cả '+total+' sản phẩm để soát hàng');
+            bar.classList.toggle('cart-review-finished',complete);
         }
         function setCartReviewLine(productCode,checked){
             if(!syncCartReviewState()||!Object.prototype.hasOwnProperty.call(cart,productCode))return;
@@ -232,7 +251,25 @@
             else cartReviewState.checked.delete(String(productCode));
             const input=Array.from(document.querySelectorAll('#cartItemList .cart-review-checkbox'))
                 .find(node=>node.dataset.cartReviewId===String(productCode));
-            if(input)input.closest('.cart-compact-grid')?.classList.toggle('cart-row-reviewed',checked);
+            if(input){
+                input.checked=!!checked;
+                input.closest('.cart-compact-grid')?.classList.toggle('cart-row-reviewed',checked);
+            }
+            updateCartReviewBar();
+            renderCartFooterActions();
+        }
+        // Select all only changes the local picking checklist. Never write,
+        // split, deliver or bypass the existing confirmation and server guards.
+        function setCartReviewAll(checked){
+            if(!syncCartReviewState())return;
+            const ids=Object.keys(cart);
+            if(!ids.length)return;
+            cartReviewState.checked=checked?new Set(ids.map(String)):new Set();
+            for(const input of document.querySelectorAll('#cartItemList .cart-review-checkbox')){
+                const selected=cartReviewState.checked.has(String(input.dataset.cartReviewId));
+                input.checked=selected;
+                input.closest('.cart-compact-grid')?.classList.toggle('cart-row-reviewed',selected);
+            }
             updateCartReviewBar();
             renderCartFooterActions();
         }
