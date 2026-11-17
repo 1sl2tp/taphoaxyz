@@ -27,8 +27,9 @@ test('saved DT images are labeled draft in manual send, detail and cart',()=>{
   assert.match(bridge,/isDraft:state==='pending',orderId:displayCode/);
   assert.match(share,/isDraft:\/\^DT\[0-9\]\+\$\/\.test\(orderCode\|\|meta\.orderId\)/);
   assert.match(share,/isDraft:meta\.isCreatingSaleDraft\|\|\/\^DT\[0-9\]\+\$\/\.test\(meta\.orderId\)/);
-  assert.match(portrait,/orderId\?'Đơn tạm: '\+orderId:'Đơn đang tạo'/);
-  assert.match(portrait,/'Mã đơn: '\+\(orderId\|\|'--'\)/);
+  assert.match(portrait,/const bannerTitle=isDraft\?'ĐƠN HÀNG TẠM':'HÓA ĐƠN BÁN HÀNG'/);
+  assert.match(portrait,/const metaLabel=isDraft\?'ĐƠN TẠM':'MÃ ĐƠN'/);
+  assert.match(portrait,/label\(isDraft\?'ĐƠN HÀNG TẠM':'HÓA ĐƠN BÁN HÀNG'/);
 });
 
 test('manual Send only shares the stored order; it creates no extra order or debt',()=>{
