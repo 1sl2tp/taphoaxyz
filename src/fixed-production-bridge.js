@@ -917,6 +917,39 @@ function notifyOrderUiStage(result,callback,stage){
   catch(error){console.warn('[taphoa] order '+stage+' UI:',String(error?.message||error));}
 }
 
+// SPEC-ORDER-NOTICE-RESTORE-20261117: start both image uploads as soon as
+// the committed RPC ACK arrives. Staff media can be slow/denied; it must never
+// postpone the independent opted-in customer's image (or vice versa).
+// These are attachments to server-created, idempotent messages, NOT sends.
+async function attachCommittedOrderNotices(result,staffCommandId){
+  const status=String(result?.order?.status||'').toLowerCase();
+  if(result?.ok!==true||!['done','delivered'].includes(status)
+     ||!result.order||publicAccess||employeeAccess)return result;
+  const tasks=[];
+  if(staffCommandId){
+    tasks.push((async()=>{
+      try{
+        result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
+          staffCommandId
+        })===true;
+      }catch(error){
+        result.staff_image_attached=false;
+        console.warn('[taphoa] staff order image failed after commit:',String(error?.message||error));
+      }
+    })());
+  }
+  tasks.push((async()=>{
+    try{
+      result.image_attached=await attachOrderNoticePortrait(result.order)===true;
+    }catch(error){
+      result.image_attached=false;
+      console.warn('[taphoa] customer order image failed after commit:',String(error?.message||error));
+    }
+  })());
+  await Promise.all(tasks);
+  return result;
+}
+
 async function saveOrder(payload){
   if(employeeAccess)throw new Error('employee_read_only');
   const mutationOwner=captureProductionOwner();
@@ -928,21 +961,17 @@ async function saveOrder(payload){
   // and even before a slow canonical refresh; NEVER replay the write on resume.
   notifyOrderUiStage(result,payload?.onCommitted,'committed');
   const savedStatus=String(result?.order?.status||'').toLowerCase();
-  const isConfirmedDraft=String(result?.order?.status||'').toLowerCase()==='pending';
+  const isConfirmedDraft=savedStatus==='pending';
+  // Start after the ACK, before a potentially slow canonical refresh.
+  // ORDER-NOTIFY-017: draft creation/edit remains silent.
+  const mediaTask=['done','delivered'].includes(savedStatus)&&result?.order
+    ?attachCommittedOrderNotices(result,result.staff_notice_command_id):null;
   try{await refresh(isConfirmedDraft?['orders']:['orders','debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
-  if(!productionOwnerCurrent(mutationOwner))return result;
-  notifyOrderUiStage(result,payload?.onReconciled,'reconciled');
-  if(!publicAccess&&!employeeAccess&&['done','delivered'].includes(savedStatus)&&result?.order){
-    // ORDER-NOTIFY-017: draft creation/edit remains silent. Keep PNGs on the
-    // original exact staff/customer messages, not a duplicate order command.
-    if(result.staff_notice_command_id){
-      result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
-        staffCommandId:result.staff_notice_command_id
-      })===true;
-    }
-    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
-  }
+  if(productionOwnerCurrent(mutationOwner))
+    notifyOrderUiStage(result,payload?.onReconciled,'reconciled');
+  // Media failure never rolls back a committed order or repeats the write.
+  if(mediaTask)await mediaTask;
   return result;
 }
 async function splitPendingOrder(payload){
@@ -952,30 +981,14 @@ async function splitPendingOrder(payload){
   if(!productionOwnerCurrent(mutationOwner))return result;
   notifyOrderUiStage(result,payload?.onCommitted,'committed');
   const delivered=['done','delivered'].includes(String(result?.order?.status||'').toLowerCase());
+  const mediaTask=result?.ok===true&&delivered
+    ?attachCommittedOrderNotices(result,result.child_command_id):null;
   try{await refresh(delivered?['orders','debt']:['orders']);}
   catch(error){noteCommittedRefreshFailure(error);}
-  if(!productionOwnerCurrent(mutationOwner))return result;
-  notifyOrderUiStage(result,payload?.onReconciled,'reconciled');
-  if(result?.ok===true&&delivered){
-    // The two-order SQL transaction has ALREADY committed. Media failure
-    // must not masquerade as a failed order and induce duplicate retry.
-    if(result.child_command_id){
-      try{
-        result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
-          staffCommandId:result.child_command_id
-        })===true;
-      }catch(mediaError){
-        result.staff_image_attached=false;
-        console.warn('split order staff image after committed sale',mediaError);
-      }
-    }
-    try{
-      result.image_attached=await attachOrderNoticePortrait(result.order)===true;
-    }catch(mediaError){
-      result.image_attached=false;
-      console.warn('split order customer image after committed sale',mediaError);
-    }
-  }
+  if(productionOwnerCurrent(mutationOwner))
+    notifyOrderUiStage(result,payload?.onReconciled,'reconciled');
+  // Both recipients run independently; no extra sale/notice is generated.
+  if(mediaTask)await mediaTask;
   return result;
 }
 async function deliverOrder(id,orderUiHooks={}){
@@ -985,18 +998,12 @@ async function deliverOrder(id,orderUiHooks={}){
   const result=await business.deliverOrder(id);
   if(!productionOwnerCurrent(mutationOwner))return result;
   notifyOrderUiStage(result,orderUiHooks?.onCommitted,'committed');
+  const mediaTask=attachCommittedOrderNotices(result,result.staff_notice_command_id);
   try{await refresh(['orders','debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
-  if(!productionOwnerCurrent(mutationOwner))return result;
-  notifyOrderUiStage(result,orderUiHooks?.onReconciled,'reconciled');
-  if(['done','delivered'].includes(String(result?.order?.status||'').toLowerCase())){
-    if(result.staff_notice_command_id){
-      result.staff_image_attached=await attachOrderNoticePortrait(result.order,{
-        staffCommandId:result.staff_notice_command_id
-      })===true;
-    }
-    result.image_attached=await attachOrderNoticePortrait(result.order)===true;
-  }
+  if(productionOwnerCurrent(mutationOwner))
+    notifyOrderUiStage(result,orderUiHooks?.onReconciled,'reconciled');
+  await mediaTask;
   return result;
 }
 async function reverseOrder(id,reason='Hoàn đơn'){
