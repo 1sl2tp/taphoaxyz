@@ -17,7 +17,7 @@ test('order images only: no automatic Chat/Zalo order text, other messages unaff
 });
 test('both recipients share canonical PNG renderer for delivered orders only',()=>{
  assert(bridge.includes('window.TAPHOA_ORDER_PORTRAIT'));
- assert(bridge.includes('staffCommandId:result.staff_notice_command_id'));
+ assert(bridge.includes('attachCommittedOrderNotices(result,result.staff_notice_command_id)'));
  assert(!bridge.includes('autoPending:true'));
  assert(!bridge.includes("savedStatus==='pending'&&result.order.customer_id"));
  assert(bridge.includes("['done','delivered'].includes(savedStatus)&&result?.order"));
