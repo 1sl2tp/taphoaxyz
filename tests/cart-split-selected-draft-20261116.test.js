@@ -31,8 +31,8 @@ test('one RPC mutation, and image notices only from the delivered child order',(
   assert.match(service,/gateway\.rpc\('taphoa_split_pending_order'/);
   assert.match(bridge,/async function splitPendingOrder/);
   assert.match(bridge,/\['done','delivered'\]\.includes\(String\(result\?\.order\?\.status/);
-  assert.match(bridge,/if\(result\?\.ok===true&&delivered\)/);
-  assert.match(bridge,/staffCommandId:result\.child_command_id/);
+  assert.match(bridge,/const mediaTask=result\?\.ok===true&&delivered/);
+  assert.match(bridge,/attachCommittedOrderNotices\(result,result\.child_command_id\)/);
   assert.match(bridge,/refresh\(delivered\?\['orders','debt'\]:\['orders'\]\)/);
 });
 
@@ -59,7 +59,11 @@ test('uninstalled RPC is a readable Vietnamese error; no hidden retry or source 
 
 test('media failure after SQL commit never masquerades as an order-save failure',()=>{
   const p=bridge.slice(bridge.indexOf('async function splitPendingOrder'),bridge.indexOf('async function deliverOrder'));
-  assert.match(p,/try\s*\{[\s\S]*staff_image_attached/);
-  assert.match(p,/catch\(mediaError\)/);
+  const helper=bridge.slice(bridge.indexOf('async function attachCommittedOrderNotices('),
+    bridge.indexOf('async function saveOrder('));
+  assert.match(helper,/try\s*\{[\s\S]*staff_image_attached/);
+  assert.match(helper,/catch\(error\)/);
+  assert.match(helper,/result\.image_attached=await attachOrderNoticePortrait/);
+  assert.match(p,/if\(mediaTask\)await mediaTask/);
   assert.match(p,/return result;/);
 });
