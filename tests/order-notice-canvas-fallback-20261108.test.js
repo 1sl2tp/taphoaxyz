@@ -156,12 +156,14 @@ test('UI-PORTRAIT-021: customer left; order code and split time on the right',()
   assert.equal(code.align,'right');
   assert(customer.y<stamp.y,'customer card and metadata are side by side');
   assert(image.height<720,'short receipt should remain compact and readable');
-  assert(backgrounds.some(r=>r.color==='#173c59'&&r.x===0&&r.y===0),
+  assert(backgrounds.some(r=>r.color==='#203c52'&&r.x===0&&r.y===0),
     'approved navy invoice banner');
-  assert(backgrounds.some(r=>r.color==='#e8f5eb'&&r.x>200),
+  assert(backgrounds.some(r=>r.color==='#f3f6f8'&&r.x>200),
     'approved pastel metadata card');
-  assert(backgrounds.some(r=>r.color==='#268b4b'&&r.x>200),
-    'approved green total badge');
+  assert(!backgrounds.some(r=>r.color==='#268b4b'),
+    'total must not look like a green button');
+  assert(rendered.some(r=>r.value==='56.640'&&r.x===404),
+    'total must be right aligned to the 22px footer ruler with 14px inset');
   assert(!rendered.some(x=>x.value.startsWith('Thời gian:')),
     'do not waste a separate line on verbose time labels');
 });
@@ -208,9 +210,10 @@ test('UI-PORTRAIT-021: HTML capture matches Canvas header and escapes customer t
   });
   const html=page.page.innerHTML;
   assert(html.includes('grid-template-columns:minmax(0,1fr) 154px'));
-  assert(html.includes('background:#173c59'));
-  assert(html.includes('background:#e8f5eb'));
-  assert(html.includes('background:#268b4b'));
+  assert(html.includes('background:#203c52'));
+  assert(html.includes('background:#f3f6f8'));
+  assert(html.includes('color:#226c49'));
+  assert(html.includes('margin:12px 22px 16px'));
   assert(html.includes('HÓA ĐƠN BÁN HÀNG'));
   assert(html.includes('KHÁCH HÀNG'));
   assert(html.includes('MÃ ĐƠN'));
@@ -238,7 +241,7 @@ test('UI-PORTRAIT-021: draft uses warm differentiated header, not delivered blue
     time:'17:52 15/11/2026',items:[row('Bánh',2,350)],
     lineCount:1,totalQty:2,totalPriceText:'700'
   });
-  assert(rects.some(r=>r.x>200&&r.color==='#fff3e2'));
+  assert(rects.some(r=>r.x>200&&r.color==='#fff5eb'));
   assert(words.includes('ĐƠN HÀNG TẠM'));
   assert(!words.includes('HÓA ĐƠN BÁN HÀNG'));
   assert(words.includes('ĐƠN TẠM')&&words.includes('DT42'));
