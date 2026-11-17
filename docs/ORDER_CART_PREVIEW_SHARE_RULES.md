@@ -1,5 +1,14 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-ORDER-PNG-UNIFY-20261117 — Một mẫu ảnh đơn, không ghi đè lịch sử Chat
+
+- **E0 ảnh thực iPhone 13:29–13:30 (17/11):** DG398 tạo 17/11 hiện mẫu xanh mới, DG352 tạo 15/11 vẫn mẫu trắng cũ có khoảng trắng và thông báo chữ. Đây là media lịch sử đã gửi; CSS/tab/ảnh đơn mới không sửa byte PNG hay gỡ tin cũ.
+- **Given:** admin tạo/sửa/duyệt DG, gửi ảnh đơn từ giỏ hoặc chi tiết đã lưu. **When:** cần xuất PNG. **Then:** tự động và chia sẻ thủ công ưu tiên cùng `TAPHOA_ORDER_PORTRAIT.renderCanvas` trên các dòng/số liệu đã xác nhận; HTML `createPage`/capture chỉ là dự phòng khi Canvas không khả dụng; không tự gửi lại đơn, không đổi mã đơn, giá, công nợ, khách nhận hoặc history.
+- **Chat display owner:** chỉ media với `clientId=taphoa:<uuid>:(order|order-edit|deliver|staff-order)` được tăng preview ảnh dọc tối đa 320px/760px; ảnh khác giữ 260px/560px, tất cả giữ đúng tỷ lệ và viewer đầy đủ. Không crop auto, không OCR ảnh đã gửi, không ghi đè storage.
+- **E1/E2:** `tests/order-notification-portrait-link.test.js` + `tests/order-cart-preview-share-rule.test.js` và Chat image geometry CI. **E3:** xác minh commit/live build riêng từng repo. **E4/E5:** ảnh đơn mới chụp thực tế từ iOS Safari/PWA, Android Web/PWA và desktop; ảnh DG352 lịch sử chỉ có thể đổi nếu quy trình làm lại và gửi lại có phê duyệt riêng.
+- **Rollback:** revert `src/fixed-ui-cart-share-v3.js` (và Chat `app.js` + `chat-image-orientation.js` + `index.source.html` ở repo Chat); không chạy lại RPC đơn hàng, không di chuyển hình cũ.
+
+
 ## SPEC-CART-HORIZONTAL-AXIS-20261117 — Thẳng trục STT/Tên/SL/Giá/TT
 
 - **Given:** Người dùng thấy các tiêu đề và dòng đơn hàng bị lệch trục ở một số bề rộng. Owner hiện hành `src/fixed-ui-cart-spacing.css` có block `@media(max-width:360px)` buộc riêng các ô soát hàng sang `grid-row:2`, trong khi `cart-column-header` chỉ sang hàng 2 khi `data-compact-two-line=1`. Do đó khoảng 340–360px có thể có header một hàng nhưng data hai hàng.
