@@ -52,3 +52,55 @@ test('readonly quantity uses short SL caption and a width sized to the maximum v
   assert.match(html,/fixed-ui-cart-spacing\.css\?ui=[^"]*cart-intrinsic-5-cols-20261008/);
   assert.match(html,/fixed-ui-runtime-6\.js\?v=semantic-columns-20261008c[^"]*/);
 });
+
+
+test('SPEC-CART-GEOMETRY-20261117: header, rows, totals and actions share the same inline ruler',()=>{
+  const semantic=fs.readFileSync('src/fixed-ui-semantic-columns.css','utf8');
+  const markup=fs.readFileSync('src/fixed-ui-markup-3.js','utf8');
+  const footer=fs.readFileSync('src/fixed-ui-runtime-5.js','utf8');
+  const match=markup.match(/^document\\.write\\(("(?:\\\\.|[^"\\\\])*")\\);\\s*$/s);
+  assert.ok(match,'cart markup must remain parseable');
+  const source=JSON.parse(match[1]);
+  const cart=source.slice(source.indexOf('<!-- UI GIỎ HÀNG -->'),
+      source.indexOf('<!-- CHỌN KHOẢNG THỜI GIAN ĐƠN -->'));
+  for(const name of ['cart-head-row','cart-head-main','cart-head-actions',
+      'cart-summary-block','cart-summary-row','cart-column-header','cartItemList',
+      'cartFooterActions'])assert.ok(cart.includes(name),name);
+  assert.match(footer,/class="cart-preview-actions flex w-full min-w-0 gap-2"/);
+  const geometry=semantic.slice(semantic.indexOf('/* SPEC-CART-GEOMETRY-20261117'));
+  assert.ok(geometry.startsWith('/* SPEC-CART-GEOMETRY-20261117'));
+  assert.match(geometry,/#cartBottomSheet \.cart-head-row\{[\s\S]*?padding:10px 16px !important/);
+  assert.match(geometry,/#cartBottomSheet > \.cart-column-header\{[\s\S]*?padding-left:16px !important/);
+  assert.match(geometry,/#cartBottomSheet #cartItemList\{[\s\S]*?padding:4px 16px !important/);
+  assert.match(geometry,/#cartBottomSheet \.cart-summary-block\{[\s\S]*?padding:12px 16px !important/);
+  assert.match(geometry,/#cartBottomSheet #cartFooterActions \.cart-preview-actions\{[\s\S]*?grid-template-columns:minmax\(0,0\.36fr\) minmax\(0,0\.64fr\)/);
+  assert.match(geometry,/#cartBottomSheet #cartFooterActions \.cart-preview-actions > button\{[\s\S]*?min-height:48px/);
+  // The same four paddings change together on extra-narrow screens.
+  const narrow=geometry.slice(geometry.lastIndexOf('@media(max-width:360px)'));
+  for(const edge of ['cart-head-row','cart-column-header','cartItemList','cart-summary-block'])
+    assert.ok(narrow.includes(edge),edge);
+  assert.doesNotMatch(geometry,/#orderDetailContentToShare|#detailModalItems/);
+});
+
+test('SPEC-CART-GEOMETRY-20261117: 5 columns remain ordered in preview, edit and review',()=>{
+  const semantic=fs.readFileSync('src/fixed-ui-semantic-columns.css','utf8');
+  const geom=semantic.slice(semantic.indexOf('/* SPEC-CART-GEOMETRY-20261117'));
+  assert.match(geom,/data-compact-two-line="1"\] \.cart-column-header/);
+  assert.match(geom,/grid-column:2 \/ -1 !important;grid-row:1 !important/);
+  for(const [name,column] of [['qty',3],['price',4],['total',5]]){
+    // Verify the specific second-row remapping by its expected selector.
+    assert.ok(geom.includes('grid-column:'+column+' !important;grid-row:2 !important;'),
+      name+' is in its canonical column');
+  }
+  assert.match(geom,/Fix the inherited 320px review-only swap: canonical C=SL, D=Giá/);
+  assert.match(geom,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-qty\{\s*grid-column:3 !important;grid-row:2 !important/);
+  assert.match(geom,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-price\{\s*grid-column:4 !important;grid-row:2 !important/);
+  assert.match(runtime,/innerWidth > 0 && availableName < 72/);
+  assert.match(runtime,/usable > 0 && usable - fixed < 72/);
+  // Widths illustrative only; actual font/scrollbar ruler stays in runtime.
+  for(const width of [320,360,375,393,428]){
+    const padding=width<=360?12:16;
+    const availableName=width-2*padding-(24+56+54+69+4*6);
+    assert.ok(availableName>0,String(width));
+  }
+});
