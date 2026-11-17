@@ -45,8 +45,10 @@ test('approved modern invoice renders identical immutable order fields for HTML 
     assert.ok(text.includes(field),'Canvas missing '+field);
     assert.ok(html.includes(field),'HTML missing '+field);
   }
-  assert.ok(html.includes('background:#173c59'),'approved navy header missing');
-  assert.ok(html.includes('background:#268b4b'),'approved green total missing');
+  assert.ok(html.includes('background:#203c52'),'subdued navy header missing');
+  assert.ok(html.includes('color:#226c49'),'professional green total text missing');
+  assert.ok(html.includes('margin:12px 22px 16px'),'footer must share 22px ruler');
+  assert.doesNotMatch(html,/background:#268b4b/,'total should not look like a button');
   assert.equal(canvas.width,528);
   assert.ok(canvas.height>canvas.width,'receipt must be portrait');
   const ordered=['STT','TÊN','SL','ĐG','TIỀN'];
