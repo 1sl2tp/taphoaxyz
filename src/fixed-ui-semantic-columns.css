@@ -557,16 +557,115 @@
     padding-right:calc(12px + var(--cart-scrollbar-inset,0px)) !important;
   }
   #cartBottomSheet #cartItemList{padding-inline:12px !important;}
-  /* Fix the inherited 320px review-only swap: canonical C=SL, D=Giá. */
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-qty{
-    grid-column:3 !important;grid-row:2 !important;
-  }
-  #cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-price{
-    grid-column:4 !important;grid-row:2 !important;
-  }
+  /* All five columns now follow the shared measured-row selector below. */
   #cartBottomSheet .cart-summary-block{padding:11px 12px !important;}
   #cartBottomSheet .cart-summary-row{gap:8px;}
   #cartBottomSheet #cartFooterActions .cart-preview-actions{
     grid-template-columns:minmax(0,0.36fr) minmax(0,0.64fr);
   }
+}
+
+
+/* SPEC-CART-HORIZONTAL-AXIS-20261117 — one ruler, one axis per visual row.
+   Previous 320–360px review CSS could move data to row 2 while its heading
+   remained on row 1; never let viewport rules choose rows independently.
+   This owner comes after all legacy cart declarations. */
+#cartBottomSheet > .cart-column-header,
+#cartBottomSheet #cartItemList .cart-compact-grid{
+  display:grid !important;
+  grid-template-columns:
+    var(--cart-stt-track,24px)
+    minmax(0,1fr)
+    var(--cart-qty-track,96px)
+    var(--cart-unit-track,54px)
+    var(--cart-total-track,69px) !important;
+  column-gap:var(--cart-finance-gap,6px) !important;
+  align-items:center !important;
+  justify-items:stretch !important;
+}
+#cartBottomSheet > .cart-column-header{
+  min-height:38px !important;
+  padding-top:6px !important;
+  padding-bottom:6px !important;
+}
+#cartBottomSheet > .cart-column-header :is(.cart-stt,.cart-name,.cart-qty,.cart-price,.cart-total){
+  align-self:center !important;
+  line-height:18px !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid{
+  min-height:52px !important;
+  padding-top:6px !important;
+  padding-bottom:6px !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-stt,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-left > .min-w-0,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-price,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-total{
+  box-sizing:border-box !important;
+  height:40px !important;
+  min-height:40px !important;
+  align-self:center !important;
+  align-items:center !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-stt{
+  display:flex !important;justify-content:center !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+  display:flex !important;justify-content:flex-start !important;overflow:hidden;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-name-note-trigger{
+  box-sizing:border-box !important;
+  height:40px !important;
+  min-height:40px !important;
+  line-height:40px !important;
+  text-align:left !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-qty{
+  display:flex !important;
+  justify-content:center !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-price,
+#cartBottomSheet #cartItemList .cart-compact-grid .cart-total{
+  display:flex !important;
+  justify-content:flex-end !important;
+}
+#cartBottomSheet #cartItemList .cart-compact-grid :is(.cart-price,.cart-total) .cart-money-value{
+  line-height:20px !important;
+  font-variant-numeric:tabular-nums;
+}
+/* In picking mode the checkbox needs a 44px target. All five cells use
+   the same minimum line height, rather than moving SL independently. */
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid{
+  min-height:56px !important;
+}
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-stt,
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-left > .min-w-0,
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-qty,
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-price,
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-total{
+  min-height:44px !important;height:44px !important;
+}
+#cartBottomSheet[data-cart-review="1"] #cartItemList .cart-compact-grid .cart-name-note-trigger{
+  height:44px !important;min-height:44px !important;line-height:44px !important;
+}
+/* Only the measured compact flag may split the header and each data row.
+   Each stays on the same C=SL, D=GIÁ, E=TT axes at ANY viewport width. */
+#cartBottomSheet[data-compact-two-line="1"] > .cart-column-header,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid{
+  grid-template-rows:minmax(20px,auto) minmax(40px,auto) !important;
+  row-gap:4px !important;
+}
+#cartBottomSheet[data-compact-two-line="1"] > .cart-column-header .cart-stt,
+#cartBottomSheet[data-compact-two-line="1"] > .cart-column-header .cart-name,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-stt,
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid .cart-left > .min-w-0{
+  grid-row:1 !important;
+}
+#cartBottomSheet[data-compact-two-line="1"] > .cart-column-header :is(.cart-qty,.cart-price,.cart-total),
+#cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid :is(.cart-qty,.cart-price,.cart-total){
+  grid-row:2 !important;
 }
