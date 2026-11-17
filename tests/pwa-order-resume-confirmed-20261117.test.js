@@ -35,17 +35,64 @@ test('confirmed sale releases UI before slow refresh and PNG attach, without sec
   });
   await new Promise(resolve=>setImmediate(resolve));
   assert.deepEqual(events,['committed']);
-  assert.deepEqual(calls,['write','refresh']);
+  assert.deepEqual(calls,['write','staff','customer','refresh']);
   resolveRead();
   await new Promise(resolve=>setImmediate(resolve));
   assert.deepEqual(events,['committed','reconciled']);
-  assert.deepEqual(calls,['write','refresh','staff']);
+  assert.deepEqual(calls,['write','staff','customer','refresh']);
   resolveMedia();
   const result=await action;
   assert.equal(result.ok,true);
   assert.equal(result.staff_image_attached,true);
   assert.equal(result.image_attached,true);
-  assert.deepEqual(calls,['write','refresh','staff','customer']);
+  assert.deepEqual(calls,['write','staff','customer','refresh']);
+});
+
+
+test('slow or failed staff PNG never blocks selected customer PNG',async()=>{
+  let rejectStaff;
+  const staff=new Promise((_,reject)=>{rejectStaff=reject;});
+  const calls=[];
+  const ctx=vm.createContext({
+    console:{warn:()=>{}},
+    employeeAccess:false,publicAccess:false,
+    captureProductionOwner:()=>({uid:'A'}),
+    productionOwnerCurrent:()=>true,
+    business:{saveOrder:async()=>({ok:true,staff_notice_command_id:'staff-id',
+      order:{status:'delivered',order_id:'order-1',customer_id:'customer-1'}})},
+    refresh:async()=>{calls.push('read');},
+    noteCommittedRefreshFailure:()=>{},
+    attachOrderNoticePortrait:(_order,opts)=>{
+      calls.push(opts?.staffCommandId?'staff':'customer');
+      return opts?.staffCommandId?staff:Promise.resolve(true);
+    }
+  });
+  vm.runInContext(bridge.slice(begin,end)+'\nthis.saveOrderForTest=saveOrder;',ctx);
+  const action=ctx.saveOrderForTest({});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(calls,['staff','customer','read']);
+  rejectStaff(Error('staff upload timed out'));
+  const result=await action;
+  assert.equal(result.ok,true);
+  assert.equal(result.image_attached,true);
+  assert.equal(result.staff_image_attached,false);
+});
+
+test('pending create/edit remains silent even when customer and staff IDs exist',async()=>{
+  const calls=[];
+  const ctx=vm.createContext({
+    console:{warn:()=>{}},employeeAccess:false,publicAccess:false,
+    captureProductionOwner:()=>({uid:'A'}),productionOwnerCurrent:()=>true,
+    business:{saveOrder:async()=>({ok:true,staff_notice_command_id:'id',
+      order:{status:'pending',order_id:'draft',customer_id:'customer'}})},
+    refresh:async()=>{calls.push('read');},
+    noteCommittedRefreshFailure:()=>{},
+    attachOrderNoticePortrait:async()=>{calls.push('image');return true;}
+  });
+  vm.runInContext(bridge.slice(begin,end)+'\nthis.saveOrderForTest=saveOrder;',ctx);
+  const result=await ctx.saveOrderForTest({});
+  assert.equal(result.ok,true);
+  assert.deepEqual(calls,['read']);
 });
 
 test('failed server write cannot unlock UI or initiate image upload',async()=>{
