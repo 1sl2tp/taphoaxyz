@@ -143,3 +143,20 @@ test('SPEC-CART-HORIZONTAL-AXIS-20261117: model all 5 columns at 320–1440px',(
     }
   }
 });
+
+
+test('TAPHOA-REGION-AXIS-20261117: Main 1–4 and Popup 1–4 have contained children',()=>{
+  const styles=fs.readFileSync('src/fixed-ui-semantic-columns.css','utf8');
+  const axis=styles.slice(styles.indexOf('/* TAPHOA-REGION-AXIS-20261117'));
+  assert.ok(axis.startsWith('/* TAPHOA-REGION-AXIS-20261117'));
+  for(const part of ['#appContainer','#cartBottomSheet','#orderDetailBottomSheet',
+    '#customerDebtBottomSheet','#cartItemList','#detailModalItems',
+    '#cartFooterActions','#customerBox','#confirmBox','#alertBox']){
+    assert(axis.includes(part),part);
+  }
+  assert.match(axis,/#appContainer \.tab-content\{[\s\S]*?min-width:0;[\s\S]*?min-height:0/);
+  assert.match(axis,/#appContainer :is\(#customerBox,#confirmBox,#alertBox\)\{[\s\S]*?max-width:min\(100%,calc\(100vw - 24px\)\)/);
+  assert.doesNotMatch(axis,/position:\s*(fixed|absolute)|z-index:\s*9999|scrollTop\s*=|height:\s*100dvh/);
+  assert.doesNotMatch(axis,/\.cart-compact-grid|\.order-detail-compact-grid/,
+    'must not change existing shared five-column money ruler');
+});
