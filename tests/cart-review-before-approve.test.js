@@ -129,7 +129,11 @@ test('review toolbar and touch targets stay balanced on narrow PWA and desktop',
     assert.match(css,/grid-template-areas:"review-title review-action" "review-help review-help"/);
     assert.match(css,/\.cart-review-all\{[\s\S]*?min-height:44px/);
     assert.match(css,/\.cart-review-qty\{[\s\S]*?height:44px/);
-    assert.match(css,/@media\(max-width:360px\)\{[\s\S]*?grid-column:2 \/ -1 !important/);
+    // A viewport must not split reviewed data without splitting its header.
+    const narrow=css.slice(css.lastIndexOf('@media(max-width:360px)'));
+    assert.doesNotMatch(narrow,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-price\{/);
+    const axis=readFileSync(new URL('../src/fixed-ui-semantic-columns.css',import.meta.url),'utf8');
+    assert.match(axis,/Only the measured compact flag may split the header and each data row/);
     assert.match(footer,/cart-review-action-row/);
     assert.match(footer,/cart-review-action/);
 });
