@@ -20,7 +20,7 @@ test('pending order create and edit do not automatically notify anyone',()=>{
 });
 test('non-draft customer opt-in, staff recipient and image-only flow are preserved',()=>{
  assert(bridge.includes('result.image_attached=await attachOrderNoticePortrait(result.order)===true;'));
- assert(bridge.includes('staffCommandId:result.staff_notice_command_id'));
+ assert(bridge.includes('attachCommittedOrderNotices(result,result.staff_notice_command_id)'));
  assert(!/DROP\s+TABLE|DELETE\s+FROM\s+public\.v21_messages/i.test(sql));
 });
 
