@@ -1,5 +1,15 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## SPEC-CART-HORIZONTAL-AXIS-20261117 — Thẳng trục STT/Tên/SL/Giá/TT
+
+- **Given:** Người dùng thấy các tiêu đề và dòng đơn hàng bị lệch trục ở một số bề rộng. Owner hiện hành `src/fixed-ui-cart-spacing.css` có block `@media(max-width:360px)` buộc riêng các ô soát hàng sang `grid-row:2`, trong khi `cart-column-header` chỉ sang hàng 2 khi `data-compact-two-line=1`. Do đó khoảng 340–360px có thể có header một hàng nhưng data hai hàng.
+- **When:** Xem đơn, sửa, chọn kiểm hàng ở 320/340/360/375/390/393/414/428px và pane desktop 768/1024/1440px. JS vẫn đo trục và chỉ đặt `data-compact-two-line` theo độ rộng thực còn lại của tên hàng, không theo chế độ xem.
+- **Then:** Cả header và tất cả dòng sản phẩm dùng một `grid-template-columns` và cùng `column-gap` với thước A–E: **STT (giữa), Tên (trái), SL (giữa), Giá (phải), TT (phải)**. Trong mỗi hàng nhìn thấy, cả 5 ô có chiều cao và tâm hàng chung; soát hàng giữ vùng bấm ≥44px. Chỉ khi *cùng một cờ compact* được bật, cả header **và** từng dòng mới chia tên/STT lên trên, SL/Giá/TT xuống dưới, giữ đúng thứ tự và trục x của các cột.
+- **Owner/read-write:** `src/fixed-ui-cart-spacing.css` bỏ media-review chuyển dòng riêng; `src/fixed-ui-semantic-columns.css` khóa trục/căn giữa và cách chuyển hàng chung; `index.html` làm mới CSS cache; `tests/cart-qty-modes-9482-9483.test.js` tăng contract. Không đổi markup, JS nghiệp vụ, dữ liệu, kiểm quyền, backend, thông báo, chia sẻ, giá hoặc tạo đơn.
+- **Evidence:** E0 đọc source và ảnh PWA user; E1 static/CSS contract với bề rộng mô hình; E2 GitHub CI/build; E3 live build; **E4** ảnh thật Safari/Chrome/PWA & web ở các kích thước; E5 user xác nhận. Chưa có E4/E5 thì báo PENDING.
+- **Rollback:** revert hai CSS và marker cache, không cần xử lý database.
+
+
 ## SPEC-CART-GEOMETRY-20261117 — Hình học giỏ hàng trên PWA/Web
 
 - **Evidence (ảnh PWA iOS 12:26 ngày 17/11/2026):** giỏ ở chế độ **Đang xem đơn**, một hàng `Gia vi - aj hai san`, SL 1, giá 542, thành tiền 542. Header và footer dùng padding ngang `px-5` (20px) khác vùng số liệu `px-4` (16px), nút Xóa/Sửa có chênh lệch bề rộng quá lớn. Nguồn CSS @360px của soát hàng đặt SL cột 4 và Giá cột 3, ngược thứ tự canonical.
