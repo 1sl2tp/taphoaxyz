@@ -1,5 +1,14 @@
 # RULE — BỐ CỤC ĐƠN HÀNG / GIỎ HÀNG / XEM TRƯỚC / CHIA SẺ
 
+## ORDER-UI-383 — 17/11/2026 · Mẫu hóa đơn hiện đại đã được duyệt
+
+- **E0:** Người dùng duyệt ảnh mẫu của hóa đơn Chat DG399 (E Quyên dv, 17/11/2026 20:58, Sua chua co 5 × 275 = 1.375) với tiêu đề xanh navy, hai vùng khách hàng/mã đơn, bảng 5 cột và tổng thanh toán nền xanh. Đây là thiết kế ảnh đơn, **không** phải yêu cầu sửa số tiền, nghiệp vụ hoặc tin lịch sử.
+- **Given/When:** tạo, sửa, duyệt đơn đã giao hoặc chia sẻ giỏ/đơn tạm theo thao tác hợp lệ; **Then:** TAPHOA_ORDER_PORTRAIT.createPage và renderCanvas dùng cùng nhịp bố cục: banner navy, khối khách bên trái và mã đơn + ngày giờ bên phải, header STT | TÊN | SL | ĐG | TIỀN trên nền xám nhạt, dòng sản phẩm nhiều dòng và tổng màu xanh. Đơn tạm ghi rõ ĐƠN HÀNG TẠM, không giả là đã giao; trang giữa không in tổng cuối.
+- **Owner/read-write:** duy nhất src/fixed-ui-portrait-order.js cho mẫu HTML/Canvas; index.html làm mới URL phiên bản. src/fixed-ui-cart-share-v3.js, src/fixed-production-bridge.js, src/fixed-ui-public-order-image.js vẫn gọi renderer cũ, không sinh mẫu thứ hai. Không thêm network, scheduler hoặc thay đổi API, quyền người nhận, Chat/Zalo, Supabase.
+- **Bất biến:** giữ nguyên mã đơn, tên KH, thời gian thực, STT, thứ tự, số lượng, đơn giá, thành tiền, ghi chú, ngoại lệ sữa hậu tố x đỏ, phân trang, định dạng và làm tròn tổng theo nguồn hiện hành. HTML fallback escape dữ liệu không tin cậy. Không sửa PNG/tin đã gửi, không tự gửi lại đơn.
+- **E1:** kiểm tra chạy hàm với fixture DG399, DT269, tên dài, số lớn; E2: tests/order-invoice-modern-383.test.js và bộ npm test/build canonical; E3: kiểm tra build/deploy và cache-busting PWA thực tế; E4/E5: ảnh mới trong Chat và chia sẻ từ Safari/PWA iOS, Chrome Android và desktop. Chưa có kiểm chứng môi trường thực thì không kết luận DONE.
+- **Rollback:** revert chỉ owner renderer, test và cache marker; không sửa order RPC, công nợ hay media lịch sử.
+
 ## SPEC-ORDER-PNG-UNIFY-20261117 — Một mẫu ảnh đơn, không ghi đè lịch sử Chat
 
 - **E0 ảnh thực iPhone 13:29–13:30 (17/11):** DG398 tạo 17/11 hiện mẫu xanh mới, DG352 tạo 15/11 vẫn mẫu trắng cũ có khoảng trắng và thông báo chữ. Đây là media lịch sử đã gửi; CSS/tab/ảnh đơn mới không sửa byte PNG hay gỡ tin cũ.
