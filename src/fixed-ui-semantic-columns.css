@@ -669,3 +669,60 @@
 #cartBottomSheet[data-compact-two-line="1"] #cartItemList .cart-compact-grid :is(.cart-qty,.cart-price,.cart-total){
   grid-row:2 !important;
 }
+
+
+/* TAPHOA-REGION-AXIS-20261117 — geometry guard for M1–M4/P1–P4.
+   Main 1 shell (#appContainer); Main 2 tab/header; Main 3 tab content;
+   Main 4 own footer. Popup 1 wrapper; Popup 2 sheet; Popup 3 header/actions;
+   Popup 4 existing independent list. Do not seize keyboard/scroll ownership. */
+#appContainer,
+#appContainer > .tab-content,
+#appContainer .tab-content > header,
+#appContainer .tab-content > main,
+#appContainer #cartBottomSheet,
+#appContainer #orderDetailBottomSheet,
+#appContainer #customerDebtBottomSheet,
+#appContainer #sourceDetailModalCard{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+#appContainer .tab-content{
+  min-width:0;
+  min-height:0;
+}
+#appContainer :is(#cartModalWrapper,#orderDetailModalWrapper,
+  #customerModal,#sourceDetailModalWrapper,#confirmModal,#alertModal){
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+#appContainer :is(#cartBottomSheet,#orderDetailBottomSheet,
+  #customerDebtBottomSheet,#sourceDetailModalCard,#customerBox){
+  box-sizing:border-box;
+  min-width:0;
+  min-height:0;
+  max-width:100%;
+}
+#appContainer :is(#customerBox,#confirmBox,#alertBox){
+  box-sizing:border-box;
+  max-width:min(100%,calc(100vw - 24px));
+  min-width:0;
+}
+#appContainer :is(#cartItemList,#detailModalItems){
+  box-sizing:border-box;
+  min-width:0;
+  min-height:0;
+}
+#appContainer :is(#cartFooterActions,.cart-summary-row,
+  .order-detail-summary){
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+/* Keep long content in the named scroll owner, not an extra body scroller. */
+#appContainer :is(#cartBottomSheet,#orderDetailBottomSheet,
+  #sourceDetailModalCard) :is(button,input,textarea){
+  max-width:100%;
+  box-sizing:border-box;
+}
