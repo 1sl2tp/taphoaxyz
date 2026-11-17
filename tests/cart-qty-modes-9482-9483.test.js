@@ -91,9 +91,9 @@ test('SPEC-CART-GEOMETRY-20261117: 5 columns remain ordered in preview, edit and
     assert.ok(geom.includes('grid-column:'+column+' !important;grid-row:2 !important;'),
       name+' is in its canonical column');
   }
-  assert.match(geom,/Fix the inherited 320px review-only swap: canonical C=SL, D=Giá/);
-  assert.match(geom,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-qty\{\s*grid-column:3 !important;grid-row:2 !important/);
-  assert.match(geom,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-price\{\s*grid-column:4 !important;grid-row:2 !important/);
+  assert.match(geom,/All five columns now follow the shared measured-row selector below/);
+  assert.doesNotMatch(geom,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-qty\{\s*grid-column:3 !important;grid-row:2 !important/);
+  assert.doesNotMatch(geom,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-price\{\s*grid-column:4 !important;grid-row:2 !important/);
   assert.match(runtime,/innerWidth > 0 && availableName < 72/);
   assert.match(runtime,/usable > 0 && usable - fixed < 72/);
   // Widths illustrative only; actual font/scrollbar ruler stays in runtime.
@@ -101,5 +101,45 @@ test('SPEC-CART-GEOMETRY-20261117: 5 columns remain ordered in preview, edit and
     const padding=width<=360?12:16;
     const availableName=width-2*padding-(24+56+54+69+4*6);
     assert.ok(availableName>0,String(width));
+  }
+});
+
+
+test('SPEC-CART-HORIZONTAL-AXIS-20261117: caption and rows lock one shared five-track axis',()=>{
+  const semantic=fs.readFileSync('src/fixed-ui-semantic-columns.css','utf8');
+  const cart=fs.readFileSync('src/fixed-ui-cart-spacing.css','utf8');
+  const final=semantic.slice(semantic.indexOf('/* SPEC-CART-HORIZONTAL-AXIS-20261117'));
+  assert.ok(final.startsWith('/* SPEC-CART-HORIZONTAL-AXIS-20261117'));
+  assert.match(final,/#cartBottomSheet > \.cart-column-header,\s*#cartBottomSheet #cartItemList \.cart-compact-grid\{[\s\S]*?grid-template-columns:[\s\S]*?var\(--cart-stt-track,24px\)[\s\S]*?minmax\(0,1fr\)[\s\S]*?var\(--cart-qty-track,96px\)[\s\S]*?var\(--cart-unit-track,54px\)[\s\S]*?var\(--cart-total-track,69px\)[\s\S]*?align-items:center !important/);
+  assert.match(final,/#cartBottomSheet #cartItemList \.cart-compact-grid \.cart-stt,[\s\S]*?\.cart-total\{[\s\S]*?height:40px !important;[\s\S]*?align-self:center !important/);
+  assert.match(final,/#cartBottomSheet\[data-cart-review="1"\] #cartItemList \.cart-compact-grid \.[^\n]+\{[\s\S]*?min-height:44px !important;height:44px !important/);
+  assert.match(final,/Only the measured compact flag may split the header and each data row/);
+  assert.match(final,/#cartBottomSheet\[data-compact-two-line="1"\] > \.cart-column-header,/);
+  assert.match(final,/#cartBottomSheet\[data-compact-two-line="1"\] #cartItemList \.cart-compact-grid\{/);
+  const narrow=cart.slice(cart.lastIndexOf('@media(max-width:360px)'));
+  assert.doesNotMatch(narrow,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-qty\{/);
+  assert.doesNotMatch(narrow,/data-cart-review="1"\] #cartItemList \.cart-compact-grid \.cart-price\{/);
+});
+
+test('SPEC-CART-HORIZONTAL-AXIS-20261117: model all 5 columns at 320–1440px',()=>{
+  for(const paneWidth of [280,320,340,360,375,390,393,414,428,768,1024,1440]){
+    for(const mode of ['preview','edit','review']){
+      const padding=paneWidth<=360?12:16;
+      const track=[24,null,mode==='edit'?96:mode==='review'?56:32,54,69];
+      const gap=6;
+      const nameWidth=paneWidth-2*padding-track.filter(n=>n!==null).reduce((a,b)=>a+b,0)-4*gap;
+      const compact=nameWidth<72;
+      const columns=[0,1,2,3,4].map(index=>{
+        const start=padding+track.slice(0,index).reduce((a,b)=>a+(b??nameWidth),0)+index*gap;
+        return {start,width:track[index]??nameWidth};
+      });
+      assert.equal(columns.length,5);
+      assert.ok(Math.abs(columns[4].start+columns[4].width-(paneWidth-padding))<1e-6);
+      // Only one compact flag for BOTH header and data; no viewport-only split.
+      assert.equal(typeof compact,'boolean');
+      if(paneWidth===360&&mode==='review')assert.equal(compact,false,
+        '360px reviewed row fits on one line and must not be moved to row 2 alone');
+      for(const col of columns)assert.ok(col.width>0,'negative track at '+paneWidth+'/'+mode);
+    }
   }
 });
