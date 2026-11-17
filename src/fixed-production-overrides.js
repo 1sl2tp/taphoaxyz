@@ -534,6 +534,7 @@
           renderCartUI();
           renderCartFooterActions();
         }else{
+          // New orders and draft-to-delivered promotions really end checkout.
           resetSaleSession();
           closeCartMobile();
         }
@@ -548,10 +549,14 @@
       const text=document.getElementById('loadingText');
       if(text)text.textContent='Chưa có xác nhận lưu đơn. Không gửi lại để tránh trùng.';
     };
-    const pendingTimer=setTimeout(showPendingConfirmation,12000);
+    const canObserveResume=typeof document!=='undefined'
+      && typeof document.addEventListener==='function';
+    const pendingTimer=canObserveResume?setTimeout(showPendingConfirmation,12000):null;
     const checkResumedOrder=()=>{if(!document.hidden)showPendingConfirmation();};
-    document.addEventListener('visibilitychange',checkResumedOrder);
-    window.addEventListener('pageshow',checkResumedOrder);
+    if(canObserveResume){
+      document.addEventListener('visibilitychange',checkResumedOrder);
+      window.addEventListener('pageshow',checkResumedOrder);
+    }
     showLoading(isSplittingSelection?'Đang tách các mặt hàng đã chọn...':isPromotingDraft?'Đang chuyển đơn sang Đã giao...':'Đang xử lý đẩy đơn...');
     try{
       if(editingOrderId&&!backendEditOrderId){
@@ -599,9 +604,11 @@
             :error?.message||'Không thể lưu đơn hàng.');
       }
     }finally{
-      clearTimeout(pendingTimer);
-      document.removeEventListener('visibilitychange',checkResumedOrder);
-      window.removeEventListener('pageshow',checkResumedOrder);
+      if(canObserveResume){
+        if(pendingTimer!==null)clearTimeout(pendingTimer);
+        document.removeEventListener('visibilitychange',checkResumedOrder);
+        window.removeEventListener('pageshow',checkResumedOrder);
+      }
       // An older completed media upload must never clear the loading overlay
       // or unlock the order mutation started AFTER its own commit ACK.
       if(!uiReleased){

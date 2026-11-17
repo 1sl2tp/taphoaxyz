@@ -928,7 +928,7 @@ async function saveOrder(payload){
   // and even before a slow canonical refresh; NEVER replay the write on resume.
   notifyOrderUiStage(result,payload?.onCommitted,'committed');
   const savedStatus=String(result?.order?.status||'').toLowerCase();
-  const isConfirmedDraft=savedStatus==='pending';
+  const isConfirmedDraft=String(result?.order?.status||'').toLowerCase()==='pending';
   try{await refresh(isConfirmedDraft?['orders']:['orders','debt']);}
   catch(error){noteCommittedRefreshFailure(error);}
   if(!productionOwnerCurrent(mutationOwner))return result;

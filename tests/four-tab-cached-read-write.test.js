@@ -44,7 +44,9 @@ test('Save and collection wait for Supabase commit, but not for hidden tab rende
   assert.ok(save.includes("await backend().saveOrder("));
   assert.ok(save.includes("await backend().deliverOrder("));
   assert.ok(save.indexOf("hideLoading();")<save.indexOf("if(committed){"));
-  assert.ok(save.indexOf("if(committed){")<save.indexOf("refreshOrderUiAfterMutation()"));
+  // Repaint is scheduled by onReconciled BEFORE the optional media task ends.
+  assert.ok(save.includes("onCommitted:releaseConfirmedOrder"));
+  assert.ok(save.includes("onReconciled:scheduleOrderUiRepaint"));
   assert.ok(collect.includes("await backend().debtTransaction("));
   assert.ok(collect.indexOf("hideLoading();")<collect.indexOf("if(committed){"));
   assert.ok(collect.indexOf("if(committed){")<collect.indexOf("SheetDB.read('thuchi')"));
