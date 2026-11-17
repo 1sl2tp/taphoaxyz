@@ -25,15 +25,14 @@
     return x?escapeHtml(x.name)+'<span style="color:#dc2626;">'+escapeHtml(x.marker)+'</span>'
       :escapeHtml(item?.name);
   };
-  // UI-PORTRAIT-021: One consistent header identity in captured HTML and Canvas PNG.
-  // Keep the full date and clock, but use compact separate labels rather
-  // than putting two long phrases above the customer's name.
+  // ORDER-UI-384: a single restrained visual scale for HTML and Canvas PNG.
+  // All content uses a 22px outer axis; only the navy title bleeds to edges.
   const HEADER_META_WIDTH=154;
   const HEADER_GAP=14;
   const HEADER_NAME_WIDTH=WIDTH-44-HEADER_META_WIDTH-HEADER_GAP;
   const headerPalette=isDraft=>isDraft
-    ?{background:'#fff3e2',accent:'#d28b44',code:'#925b20'}
-    :{background:'#e8f5eb',accent:'#2c9658',code:'#194f38'};
+    ?{background:'#fff5eb',accent:'#bd8652',code:'#86531c'}
+    :{background:'#f3f6f8',accent:'#748b9c',code:'#203c52'};
   function splitReceiptTimestamp(value){
     const raw=String(value??'').trim()||'--';
     const date=raw.match(/\b\d{1,2}\/\d{1,2}\/\d{4}\b/);
@@ -119,23 +118,22 @@
     const metaLabel=isDraft?'ĐƠN TẠM':'MÃ ĐƠN';
     const pageMarker=pageCount>1?`Trang ${pageIndex+1}/${pageCount}`:'';
     const metaCode=orderId||'--';
-    // ORDER-UI-383: one premium receipt layout for generated HTML and Canvas.
-    // Header, customer, immutable order metadata, five columns, and summary.
-    // No financial rounding or line-item transformations occur here.
+    // ORDER-UI-384: restrained colors, matched corner radii and 22px margins.
+    // Pure presentation: totals and order values are still source-provided.
     const totalValue=String(options.totalPriceText??'0');
     const summarySize=totalValue.length>14?19:totalValue.length>10?22:27;
     const summary=isLast?`
-      <div style="margin:12px 16px 15px;padding:15px 16px;border-radius:16px;background:#eef7f0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;box-sizing:border-box;">
-        <div style="min-width:0;padding-right:9px;border-right:1px solid #cbdcd1;">
+      <div style="margin:12px 22px 16px;padding:15px 14px;border-radius:12px;background:#f5f8f6;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;box-sizing:border-box;">
+        <div style="min-width:0;padding-right:9px;border-right:1px solid #dce5e0;">
           <div style="font-size:12px;color:#576878;font-weight:750;">Số lượng</div>
           <div style="margin-top:7px;font-size:15px;line-height:1.4;color:#142238;font-weight:800;overflow-wrap:break-word;">${escapeHtml(options.lineCount??items.length)} mã · ${escapeHtml(options.totalQty??0)} sản phẩm</div>
         </div>
         <div style="min-width:0;text-align:right;">
           <div style="font-size:12px;line-height:1.3;color:#576878;font-weight:750;">Tổng thanh toán</div>
-          <div style="display:inline-block;max-width:100%;box-sizing:border-box;margin-top:7px;padding:7px 12px;border-radius:22px;background:#268b4b;color:#fff;font-size:${summarySize}px;line-height:1.2;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;">${escapeHtml(totalValue)}</div>
+          <div style="display:inline-block;max-width:100%;box-sizing:border-box;margin-top:7px;color:#226c49;font-size:${summarySize}px;line-height:1.2;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;">${escapeHtml(totalValue)}</div>
         </div>
       </div>`:`
-      <div style="margin:12px 16px 15px;padding:15px 16px;text-align:right;border-radius:14px;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:750;">Còn tiếp…</div>`;
+      <div style="margin:12px 22px 16px;padding:15px 14px;text-align:right;border-radius:12px;background:#f3f6f8;color:#64748b;font-size:13px;font-weight:750;">Còn tiếp…</div>`;
     const host=document.createElement('div');
     host.setAttribute('aria-hidden','true');
     host.style.position='fixed';
@@ -146,19 +144,19 @@
     host.style.pointerEvents='none';
     host.style.zIndex='-1';
     const page=document.createElement('div');
-    page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:#142238;font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;border-radius:18px;overflow:hidden;`;
+    page.style.cssText=`box-sizing:border-box;width:${WIDTH}px;min-height:${MIN_HEIGHT}px;background:#fff;color:#142238;font-family:${fontFamily};display:flex;flex-direction:column;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;text-size-adjust:100%;border-radius:12px;overflow:hidden;`;
     page.innerHTML=`
-      <div style="box-sizing:border-box;min-height:56px;padding:0 22px;display:flex;align-items:center;gap:11px;background:#173c59;color:#fff;">
+      <div style="box-sizing:border-box;min-height:56px;padding:0 22px;display:flex;align-items:center;gap:11px;background:#203c52;color:#fff;">
         <svg width="23" height="25" viewBox="0 0 24 26" fill="none" aria-hidden="true" style="flex-shrink:0;"><path d="M4 2h16v21l-4-2.5-4 2.5-4-2.5L4 23V2Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 9h8M8 13h8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>
         <span style="height:22px;width:1px;background:#7c9daf;"></span>
         <div style="font-size:15px;font-weight:800;letter-spacing:.045em;line-height:1.3;">${bannerTitle}</div>
       </div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) ${HEADER_META_WIDTH}px;gap:${HEADER_GAP}px;padding:13px 22px 14px;align-items:stretch;box-sizing:border-box;">
-        <div style="min-width:0;padding:15px 13px;background:#f1f5fa;border-radius:15px;border:1px solid #e7edf3;box-sizing:border-box;">
+        <div style="min-width:0;padding:14px 13px;background:#f3f6f8;border-radius:12px;border:1px solid #e5ebef;box-sizing:border-box;">
           <div style="font-size:11px;letter-spacing:.055em;color:#64748b;font-weight:800;">KHÁCH HÀNG</div>
           <div style="margin-top:10px;font-size:21px;line-height:1.3;letter-spacing:-.02em;font-weight:800;color:#142238;overflow-wrap:break-word;">${escapeHtml(options.customer||'Khách hàng')}</div>
         </div>
-        <div style="min-width:0;padding:13px 12px;background:${palette.background};border-radius:15px;border:1px solid #d9e9dd;box-sizing:border-box;text-align:right;">
+        <div style="min-width:0;padding:14px 12px;background:${palette.background};border-radius:12px;border:1px solid #e5ebef;box-sizing:border-box;text-align:right;">
           <div style="font-size:10.5px;letter-spacing:.04em;color:#64748b;font-weight:800;">${metaLabel}</div>
           <div style="margin-top:6px;font-size:22px;line-height:1.2;font-weight:800;color:${palette.code};overflow-wrap:anywhere;">${escapeHtml(metaCode)}</div>
           <div style="margin-top:9px;font-size:11.5px;line-height:1.4;color:#415c75;font-weight:700;overflow-wrap:anywhere;">${escapeHtml([stamp.date,stamp.clock].filter(Boolean).join(' · '))}</div>
@@ -166,7 +164,7 @@
         </div>
       </div>
       <div style="padding:0 22px;flex:0 0 auto;box-sizing:border-box;">
-        <div style="${gridStyle}height:44px;border-radius:10px;background:#f1f4f8;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
+        <div style="${gridStyle}height:44px;border-radius:8px;background:#f3f5f8;color:#53677d;font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
           <div style="text-align:center;">STT</div><div>Tên</div>
           <div style="text-align:center;">SL</div>
           <div style="text-align:right;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
@@ -269,7 +267,7 @@
     const codeY=infoTop+41;
     const stampY=codeY+codeLines.length*26+5;
     const pageY=stampY+stampLines.length*17+6;
-    const infoHeight=Math.max(114,51+customerLines.length*29,
+    const infoHeight=Math.max(110,51+customerLines.length*29,
       pageY-infoTop+pageLines.length*17+14);
     const headerHeight=infoTop+infoHeight+14;
     const rows=items.map((item,index)=>{
@@ -282,7 +280,7 @@
     const bodyHeight=rows.reduce((total,row)=>total+row.height,0);
     const footerTop=bodyTop+bodyHeight+9;
     const isLast=options.isLastPage!==false;
-    const logicalHeight=Math.max(MIN_HEIGHT,footerTop+(isLast?128:72));
+    const logicalHeight=Math.max(MIN_HEIGHT,footerTop+(isLast?124:72));
     if(!Number.isSafeInteger(Math.ceil(logicalHeight*ratio))
       ||logicalHeight*ratio>19500)throw Error('order_png_height_limit');
     paper.width=Math.ceil(width*ratio);
@@ -300,8 +298,8 @@
       ctx.font=style;ctx.fillStyle=color;ctx.textAlign=align;
       ctx.fillText(String(value??''),x,y);
     };
-    // ORDER-UI-383: the same compact navy invoice heading and two clear
-    // information cards as the HTML fallback, drawn without network/fonts.
+    // ORDER-UI-384: same geometry and visual hierarchy as HTML fallback.
+    // Draws offline without dependencies, account changes or order writes.
     const fillRounded=(x,y,w,h,r,color)=>{
       ctx.fillStyle=color;
       if(typeof ctx.beginPath!=='function'||typeof ctx.moveTo!=='function'
@@ -321,7 +319,7 @@
       ctx.quadraticCurveTo(x,y,x+k,y);
       ctx.closePath();ctx.fill();
     };
-    ctx.fillStyle='#173c59';ctx.fillRect(0,0,width,bannerHeight);
+    ctx.fillStyle='#203c52';ctx.fillRect(0,0,width,bannerHeight);
     if(typeof ctx.strokeRect==='function'){
       ctx.strokeStyle='#ffffff';ctx.lineWidth=1.7;
       ctx.strokeRect(22,15,19,25);
@@ -332,8 +330,8 @@
     label(isDraft?'ĐƠN HÀNG TẠM':'HÓA ĐƠN BÁN HÀNG',
       69,18,font(15,800),'#ffffff');
     const cardX=width-margin-HEADER_META_WIDTH;
-    fillRounded(margin,infoTop,HEADER_NAME_WIDTH,infoHeight,15,'#f1f5fa');
-    fillRounded(cardX,infoTop,HEADER_META_WIDTH,infoHeight,15,palette.background);
+    fillRounded(margin,infoTop,HEADER_NAME_WIDTH,infoHeight,12,'#f3f6f8');
+    fillRounded(cardX,infoTop,HEADER_META_WIDTH,infoHeight,12,palette.background);
     label('KHÁCH HÀNG',margin+13,infoTop+16,font(11,800),'#64748b');
     customerLines.forEach((part,i)=>
       label(part,margin+13,infoTop+43+i*28,customerStyle,'#142238'));
@@ -350,7 +348,7 @@
     const xQty=xName+columns.name+gap+columns.qty;
     const xPrice=xQty+gap+columns.price;
     const xTotal=xPrice+gap+columns.amount;
-    fillRounded(margin,tableTop,contentWidth,44,10,'#f1f4f8');
+    fillRounded(margin,tableTop,contentWidth,44,8,'#f3f5f8');
     const captionY=tableTop+14;
     label('STT',xIndex,captionY,font(11,800),'#53677d','center');
     label('TÊN',xName,captionY,font(12,800),'#53677d');
@@ -385,31 +383,27 @@
       line(margin,y-1,width-margin,y,'#e3eaf1');
     }
     if(!isLast){
-      fillRounded(16,footerTop+10,width-32,44,14,'#f1f5f9');
+      fillRounded(margin,footerTop+10,contentWidth,44,12,'#f3f6f8');
       label('Còn tiếp…',width-margin-13,footerTop+22,
         font(13,750),'#64748b','right');
     }else{
       // The printed grand total is the source-provided label, not the
       // sum of rounded visible rows. Never recompute a monetary value here.
-      fillRounded(16,footerTop+10,width-32,102,16,'#eef7f0');
-      line(218,footerTop+25,219,footerTop+95,'#cadbd0');
-      label('Số lượng',32,footerTop+24,font(12,750),'#576878');
+      fillRounded(margin,footerTop+10,contentWidth,98,12,'#f5f8f6');
+      line(220,footerTop+25,221,footerTop+94,'#dce5e0');
+      label('Số lượng',36,footerTop+24,font(12,750),'#576878');
       const qtySummary=String(options.lineCount??items.length)+' mã · '+
         String(options.totalQty??0)+' sản phẩm';
       const qtyLines=wrap(qtySummary,174,font(15,800));
       qtyLines.slice(0,2).forEach((part,i)=>
-        label(part,32,footerTop+51+i*19,font(15,800),'#142238'));
-      label('Tổng thanh toán',width-32,footerTop+22,
+        label(part,36,footerTop+51+i*19,font(15,800),'#142238'));
+      label('Tổng thanh toán',width-36,footerTop+22,
         font(12,750),'#576878','right');
       const total=String(options.totalPriceText??'0');
       let totalSize=28;
-      while(totalSize>14&&measure(total,font(totalSize,800))>160)
+      while(totalSize>14&&measure(total,font(totalSize,800))>176)
         totalSize--;
-      const badgeWidth=Math.max(106,Math.min(184,
-        Math.ceil(measure(total,font(totalSize,800))+26)));
-      fillRounded(width-32-badgeWidth,footerTop+46,
-        badgeWidth,43,22,'#268b4b');
-      label(total,width-45,footerTop+52,font(totalSize,800),'#ffffff','right');
+      label(total,width-36,footerTop+50,font(totalSize,800),'#226c49','right');
     }
     return paper;
   }
