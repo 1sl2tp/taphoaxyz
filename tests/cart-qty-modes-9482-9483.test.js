@@ -122,7 +122,7 @@ test('SPEC-CART-HORIZONTAL-AXIS-20261117: caption and rows lock one shared five-
 });
 
 test('SPEC-CART-HORIZONTAL-AXIS-20261117: model all 5 columns at 320–1440px',()=>{
-  for(const paneWidth of [280,320,340,360,375,390,393,414,428,768,1024,1440]){
+  for(const paneWidth of [320,340,360,375,390,393,414,428,768,1024,1440]){
     for(const mode of ['preview','edit','review']){
       const padding=paneWidth<=360?12:16;
       const track=[24,null,mode==='edit'?96:mode==='review'?56:32,54,69];
