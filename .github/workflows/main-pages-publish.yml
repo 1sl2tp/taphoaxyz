@@ -29,6 +29,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -69,6 +70,27 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
+
+      # GitHub's uploaded artifact can exist before the artifact-list API
+      # indexes it. deploy-pages may otherwise fail with "Found 0 artifact(s)".
+      - name: Wait for uploaded Pages artifact to become discoverable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            ARTIFACT_ID="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" --jq '.artifacts[] | select(.name == "github-pages" and .expired == false) | .id' 2>/dev/null | head -1 || true)"
+            if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+              echo "Pages artifact discoverable: $ARTIFACT_ID"
+              sleep 5
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              echo "::error::Uploaded GitHub Pages artifact was not indexed."
+              exit 1
+            fi
+            sleep 3
+          done
 
       - name: Publish
         id: deployment
