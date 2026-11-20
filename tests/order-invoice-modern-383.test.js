@@ -146,7 +146,9 @@ test('ORDER-UI-387: centered STT/SL and inset money labels align across HTML and
     'HTML and PNG must use the same four dividers and outer frame');
   assert.match(html,/grid-template-columns:38px minmax\(0,1fr\)/,
     'the STT track must be wide enough for its centered caption');
-  assert.equal((html.match(/padding-right:9px/g)||[]).length,8,
+  assert.match(fs.readFileSync('index.html','utf8'),
+    /invoice-insets=20261120-387/,'Web/PWA must request the new invoice renderer');
+  assert.equal((html.match(/padding-right:9px;box-sizing:border-box/g)||[]).length,8,
     'HTML price and total cells need inset on header + all three rows');
 
   const heading=name=>labels.find(x=>x.text===name&&x.y>180&&x.y<250);
