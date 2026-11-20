@@ -30,6 +30,14 @@
   const HEADER_META_WIDTH=154;
   const HEADER_GAP=14;
   const HEADER_NAME_WIDTH=WIDTH-44-HEADER_META_WIDTH-HEADER_GAP;
+  // ORDER-UI-386: the five columns have four real dividers centered in the
+  // existing 8px gaps. Reuse these positions in HTML and Canvas so even the
+  // longest prices/names retain their measured widths, with no clipped ink.
+  function columnRuleOffsets(indexWidth,nameWidth,qtyWidth,priceWidth,gap){
+    const first=indexWidth+gap/2;
+    const second=indexWidth+gap+nameWidth+gap/2;
+    return [first,second,second+qtyWidth+gap,second+qtyWidth+gap+priceWidth+gap];
+  }
   const headerPalette=isDraft=>isDraft
     ?{background:'#fff5eb',accent:'#bd8652',code:'#86531c'}
     :{background:'#f3f6f8',accent:'#748b9c',code:'#203c52'};
@@ -110,6 +118,10 @@
       textWidth(caption.toLocaleUpperCase('vi-VN'),`800 11px ${fontFamily}`))+3);
     const grid=`${indexWidth}px minmax(0,1fr) ${qtyWidth}px ${unitWidth}px ${totalWidth}px`;
     const gridStyle=`display:grid;grid-template-columns:${grid};column-gap:${trackGap}px;align-items:baseline;box-sizing:border-box;width:100%;min-width:0;`;
+    const nameWidth=contentWidth-indexWidth-4*trackGap-qtyWidth-unitWidth-totalWidth;
+    const columnRulesHtml=columnRuleOffsets(indexWidth,nameWidth,qtyWidth,unitWidth,trackGap)
+      .map(x=>`<span data-invoice-grid-rule="column" aria-hidden="true" style="position:absolute;top:0;bottom:0;left:${x}px;width:1px;background:${visual.rowRule};pointer-events:none;"></span>`)
+      .join('');
     const rowsHtml=items.map((item,index)=>`
       <div style="${gridStyle}padding:15px 0;border-bottom:1px solid ${visual.rowRule};min-height:64px;font-size:${numericSize}px;line-height:1.45;">
         <div style="text-align:center;color:${muted};font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;">${escapeHtml(item.index??index+1)}</div>
@@ -179,13 +191,17 @@
         </div>
       </div>
       <div style="padding:0 22px;flex:0 0 auto;box-sizing:border-box;">
-        <div style="${gridStyle}height:44px;border-radius:8px;background:${visual.table};color:${visual.id==="print"?"#555555":"#53677d"};font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
+        <div data-invoice-grid="five-columns" style="position:relative;overflow:hidden;border-radius:8px;">
+        <div style="${gridStyle}height:44px;border-bottom:1px solid ${visual.rowRule};background:${visual.table};color:${visual.id==="print"?"#555555":"#53677d"};font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
           <div style="text-align:center;">STT</div><div>Tên</div>
           <div style="text-align:center;">SL</div>
           <div style="text-align:right;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
           <div style="text-align:right;" title="Thành tiền">${escapeHtml(caption)}</div>
         </div>
         <div>${rowsHtml}</div>
+        ${columnRulesHtml}
+        <span data-invoice-grid-rule="outline" aria-hidden="true" style="position:absolute;inset:0;border:1px solid ${visual.rowRule};border-radius:8px;box-sizing:border-box;pointer-events:none;"></span>
+        </div>
       </div>
       <div style="flex:1 1 auto;min-height:0;"></div>
       ${summary}`;
@@ -402,6 +418,18 @@
       y+=row.height;
       line(margin,y-1,width-margin,y,visual.rowRule);
     }
+    // Draw four continuous vertical rules over the measured gaps, from the
+    // shaded column header to the bottom of the product rows. The Canvas PNG
+    // uses the exact same ruler as the HTML fallback and selected templates.
+    const tableBottom=y;
+    line(margin,tableTop,width-margin,tableTop+1,visual.rowRule);
+    line(margin,bodyTop-1,width-margin,bodyTop,visual.rowRule);
+    for(const offset of columnRuleOffsets(indexWidth,columns.name,columns.qty,columns.price,gap)){
+      const x=margin+offset;
+      line(x,tableTop,x+1,tableBottom,visual.rowRule);
+    }
+    line(margin,tableTop,margin+1,tableBottom,visual.rowRule);
+    line(width-margin-1,tableTop,width-margin,tableBottom,visual.rowRule);
     if(!isLast){
       fillRounded(margin,footerTop+10,contentWidth,44,12,visual.table);
       label('Còn tiếp…',width-margin-13,footerTop+22,

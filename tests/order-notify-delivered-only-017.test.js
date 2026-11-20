@@ -28,5 +28,6 @@ test('mobile/PWA picks up the delivered-only notification code',()=>{
  const html=readFileSync('index.html','utf8');
  const sw=readFileSync('sw.js','utf8');
  assert(html.includes('order-image=20261115-017'));
- assert(sw.includes('taphoa-runtime-v44'));
+ const cacheVersion=Number(sw.match(/CACHE_NAME='taphoa-runtime-v(\d+)'/)?.[1]||0);
+ assert(cacheVersion>=44,'PWA cache must retain delivered-only fix and allow newer releases');
 });
