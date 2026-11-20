@@ -15,7 +15,7 @@ function createHarness(){
     measureText(value){return {width:Array.from(String(value??'')).length*7};},
     setTransform(){},fillRect(x,y,w,h){rectangles.push({x,y,w,h,color:this.fillStyle});},strokeRect(){},beginPath(){},moveTo(){},
     lineTo(){},quadraticCurveTo(){},closePath(){},fill(){},
-    fillText(value,x,y){labels.push({text:String(value),x,y});}
+    fillText(value,x,y){labels.push({text:String(value),x,y,align:this.textAlign});}
   });
   const document={
     body:{appendChild(node){appended.push(node);}},
@@ -121,4 +121,64 @@ test('ORDER-UI-386 prints four continuous vertical separators between five colum
   assert(inner.every((x,index)=>index===0||x>inner[index-1]+10));
   assert(labels.some(x=>x.text==='31.350'),'divider must not alter the source total');
   assert(labels.some(x=>x.text==='18.700'),'divider must not clip/recompute row amounts');
+});
+
+
+test('ORDER-UI-387: centered STT/SL and inset money labels align across HTML and offline PNG',()=>{
+  const {renderer,labels,rectangles}=createHarness();
+  const order={
+    customer:'A Hậu Còi',orderId:'DG430',time:'20/11/2026 11:12',
+    templateId:'print',isDraft:false,items:[
+      {index:1,name:'Mi chinh bat 1*',qtyText:'5',priceText:'935',totalText:'4.675'},
+      {index:2,name:'Mi chinh bat 454 *',qtyText:'5',priceText:'1.265',totalText:'6.325'},
+      {index:3,name:'Mi chinh bat 1.8*',qtyText:'5',priceText:'1.080',totalText:'5.400'}
+    ],lineCount:3,totalQty:15,totalPriceText:'16.400'
+  };
+  const html=renderer.createPage(order).page.innerHTML;
+  const canvas=renderer.renderCanvas(order,1);
+  const rules=[...html.matchAll(/data-invoice-grid-rule="column"[^>]*left:([0-9.]+)px;width:1px/g)]
+    .map(match=>22+Number(match[1]));
+  const pngRules=rectangles
+    .filter(r=>r.w===1&&r.h>170&&r.y>170&&r.y<430)
+    .map(r=>r.x).sort((a,b)=>a-b);
+  assert.equal(rules.length,4,'the 5-column table needs 4 divider gaps');
+  assert.deepEqual(pngRules,[22,...rules,417],
+    'HTML and PNG must use the same four dividers and outer frame');
+  assert.match(html,/grid-template-columns:38px minmax\(0,1fr\)/,
+    'the STT track must be wide enough for its centered caption');
+  assert.match(fs.readFileSync('index.html','utf8'),
+    /invoice-insets=20261120-387/,'Web/PWA must request the new invoice renderer');
+  assert.equal((html.match(/padding-right:9px;box-sizing:border-box/g)||[]).length,8,
+    'HTML price and total cells need inset on header + all three rows');
+
+  const heading=name=>labels.find(x=>x.text===name&&x.y>180&&x.y<250);
+  const stt=heading('STT'),qty=heading('SL');
+  const price=heading('ĐG'),total=heading('TIỀN');
+  assert(stt&&qty&&price&&total,'invoice headings should exist in PNG');
+  assert.equal(stt.align,'center');
+  assert(stt.x-22>=18,'STT must have room between its center and outer frame');
+  assert.equal(qty.align,'center');
+  assert.equal(qty.x,(rules[1]+rules[2])/2,
+    'SL must sit at the exact center between its left and right rules');
+  assert.equal(price.align,'right');
+  assert.equal(total.align,'right');
+  assert(rules[3]-price.x>=14,'unit price must not touch the right-hand divider');
+  assert.equal(418-total.x,9,'amount must have a 9px right inset from the frame');
+
+  const rows=labels.filter(x=>x.y>250&&x.y<500);
+  assert.equal(rows.filter(x=>x.text==='5'&&x.align==='center'&&x.x===qty.x).length,3,
+    'all row quantities must match the SL heading center');
+  for(const value of ['935','1.265','1.080']){
+    assert(rows.some(x=>x.text===value&&x.align==='right'&&x.x===price.x),
+      'unit prices must share the right-inset ruler: '+value);
+  }
+  for(const value of ['4.675','6.325','5.400']){
+    assert(rows.some(x=>x.text===value&&x.align==='right'&&x.x===total.x),
+      'row totals must share the same right-inset ruler: '+value);
+    assert(html.includes(value),'HTML must keep the original amount: '+value);
+  }
+  assert(labels.some(x=>x.text==='16.400'),
+    'summary total must remain sourced, never recomputed');
+  assert(canvas.width===440&&canvas.height>canvas.width,
+    'paper size is unchanged and still portrait');
 });

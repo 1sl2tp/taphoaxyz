@@ -27,6 +27,12 @@
   };
   // ORDER-UI-384: a single restrained visual scale for HTML and Canvas PNG.
   // All content uses a 22px outer axis; only the navy title bleeds to edges.
+  // ORDER-UI-387: the paper and Canvas share one grid geometry.
+  // STT/SL are centered; prices have a dedicated right inset from rules.
+  const TABLE_INDEX_WIDTH=38;
+  const TABLE_GAP=10;
+  const TABLE_MONEY_INSET=9;
+  const TABLE_QTY_MIN=36;
   const HEADER_META_WIDTH=154;
   const HEADER_GAP=14;
   const HEADER_NAME_WIDTH=WIDTH-44-HEADER_META_WIDTH-HEADER_GAP;
@@ -81,16 +87,16 @@
     // UI-PORTRAIT-019: measure the ACTUAL larger glyphs, not 13px old rows.
     // Reduce numeric size only when an unusually long amount would leave
     // the product-name track too narrow. Never clip or round money to fit.
-    const contentWidth=WIDTH-44,trackGap=8,indexWidth=26;
+    const contentWidth=WIDTH-44,trackGap=TABLE_GAP,indexWidth=TABLE_INDEX_WIDTH;
     const widthsFor=size=>{
       const numeric=`750 ${size}px ${fontFamily}`;
       const totalFont=`800 ${size}px ${fontFamily}`;
-      const qty=Math.ceil(Math.max(28,...items.map(i=>
-        textWidth(formatValue(i,'qtyText'),numeric)))+5);
+      const qty=Math.ceil(Math.max(TABLE_QTY_MIN,...items.map(i=>
+        textWidth(formatValue(i,'qtyText'),numeric))));
       const unit=Math.ceil(Math.max(38,...items.map(i=>
-        textWidth(formatValue(i,'priceText'),numeric)))+5);
+        textWidth(formatValue(i,'priceText'),numeric))))+TABLE_MONEY_INSET;
       const amount=Math.ceil(Math.max(53,...items.map(i=>
-        textWidth(formatValue(i,'totalText'),totalFont)))+5);
+        textWidth(formatValue(i,'totalText'),totalFont))))+TABLE_MONEY_INSET;
       return {qty,unit,amount,name:contentWidth-indexWidth-4*trackGap-qty-unit-amount};
     };
     let numericSize=16,metrics=widthsFor(numericSize);
@@ -106,16 +112,17 @@
       ? priceLabels.find(label=>textWidth(label.toLocaleUpperCase('vi-VN'),
           `800 11px ${fontFamily}`)<=unitMax)||'ĐG'
       : 'Đơn giá';
-    const unitWidth=Math.ceil(Math.max(38,unitMax,
+    const unitWidth=Math.ceil(Math.max(38+TABLE_MONEY_INSET,unitMax,
       textWidth(priceCaption.toLocaleUpperCase('vi-VN'),
-        `800 11px ${fontFamily}`))+3);
-    const qtyWidth=Math.ceil(Math.max(30,qtyMax,
-      textWidth('SL',`800 11px ${fontFamily}`))+3);
+        `800 11px ${fontFamily}`)+TABLE_MONEY_INSET));
+    const qtyWidth=Math.ceil(Math.max(TABLE_QTY_MIN,qtyMax,
+      textWidth('SL',`800 11px ${fontFamily}`)+2));
     const labels=['Thành tiền','T.tiền','Tiền','TT'];
     const caption=labels.find(label=>textWidth(label.toLocaleUpperCase('vi-VN'),
-      `800 11px ${fontFamily}`)<=amountMax)||'TT';
-    const totalWidth=Math.ceil(Math.max(53,amountMax,
-      textWidth(caption.toLocaleUpperCase('vi-VN'),`800 11px ${fontFamily}`))+3);
+      `800 11px ${fontFamily}`)<=amountMax-TABLE_MONEY_INSET)||'TT';
+    const totalWidth=Math.ceil(Math.max(53+TABLE_MONEY_INSET,amountMax,
+      textWidth(caption.toLocaleUpperCase('vi-VN'),
+        `800 11px ${fontFamily}`)+TABLE_MONEY_INSET));
     const grid=`${indexWidth}px minmax(0,1fr) ${qtyWidth}px ${unitWidth}px ${totalWidth}px`;
     const gridStyle=`display:grid;grid-template-columns:${grid};column-gap:${trackGap}px;align-items:baseline;box-sizing:border-box;width:100%;min-width:0;`;
     const nameWidth=contentWidth-indexWidth-4*trackGap-qtyWidth-unitWidth-totalWidth;
@@ -130,8 +137,8 @@
           ${item.note?'<div style="font-size:13px;line-height:1.4;margin-top:5px;color:#666666;">'+escapeHtml(item.note)+'</div>':''}
         </div>
         <div style="text-align:center;white-space:nowrap;font-weight:750;color:${milkXInfo(item)?'#dc2626':'#142238'};font-variant-numeric:tabular-nums;">${escapeHtml(item.qtyText)}</div>
-        <div style="text-align:right;white-space:nowrap;font-weight:750;color:${ink};font-variant-numeric:tabular-nums;">${escapeHtml(item.priceText)}</div>
-        <div style="text-align:right;white-space:nowrap;font-weight:800;color:${ink};font-variant-numeric:tabular-nums;">${escapeHtml(item.totalText)}</div>
+        <div style="text-align:right;padding-right:${TABLE_MONEY_INSET}px;box-sizing:border-box;white-space:nowrap;font-weight:750;color:${ink};font-variant-numeric:tabular-nums;">${escapeHtml(item.priceText)}</div>
+        <div style="text-align:right;padding-right:${TABLE_MONEY_INSET}px;box-sizing:border-box;white-space:nowrap;font-weight:800;color:${ink};font-variant-numeric:tabular-nums;">${escapeHtml(item.totalText)}</div>
       </div>`).join('');
     const isDraft=!!options.isDraft;
     const isLast=options.isLastPage!==false;
@@ -195,8 +202,8 @@
         <div style="${gridStyle}height:44px;border-bottom:1px solid ${visual.rowRule};background:${visual.table};color:${visual.id==="print"?"#555555":"#53677d"};font-size:11px;line-height:1.3;font-weight:800;text-transform:uppercase;align-items:center;">
           <div style="text-align:center;">STT</div><div>Tên</div>
           <div style="text-align:center;">SL</div>
-          <div style="text-align:right;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
-          <div style="text-align:right;" title="Thành tiền">${escapeHtml(caption)}</div>
+          <div style="text-align:right;padding-right:${TABLE_MONEY_INSET}px;box-sizing:border-box;" title="Đơn giá" aria-label="Đơn giá">${escapeHtml(priceCaption)}</div>
+          <div style="text-align:right;padding-right:${TABLE_MONEY_INSET}px;box-sizing:border-box;" title="Thành tiền">${escapeHtml(caption)}</div>
         </div>
         <div>${rowsHtml}</div>
         ${columnRulesHtml}
@@ -225,7 +232,7 @@
     if(!paint)throw Error('order_canvas_unavailable');
     const family='"Be Vietnam Pro",-apple-system,BlinkMacSystemFont,Arial,sans-serif';
     const font=(size,weight=600)=>weight+' '+size+'px '+family;
-    const width=WIDTH,margin=22,contentWidth=width-margin*2,gap=8;
+    const width=WIDTH,margin=22,contentWidth=width-margin*2,gap=TABLE_GAP;
     const measure=(value,style)=>{
       paint.font=style;
       return paint.measureText(String(value??'')).width;
@@ -255,16 +262,16 @@
     };
     // UI-PORTRAIT-019 — Five aligned columns. Size the money tracks against
     // actual rendered digits, NEVER use fixed widths or truncate money.
-    const indexWidth=26;
+    const indexWidth=TABLE_INDEX_WIDTH;
     const columnMetrics=size=>{
       const numeric=font(size,750);
       const total=font(size,800);
-      const qty=Math.max(33,Math.ceil(Math.max(...items.map(i=>
-        measure(i.qtyText,numeric))))+5);
-      const price=Math.max(45,Math.ceil(Math.max(...items.map(i=>
-        measure(i.priceText,numeric))))+5);
-      const amount=Math.max(58,Math.ceil(Math.max(...items.map(i=>
-        measure(i.totalText,total))))+5);
+      const qty=Math.max(TABLE_QTY_MIN,Math.ceil(Math.max(...items.map(i=>
+        measure(i.qtyText,numeric)))));
+      const price=Math.max(38,Math.ceil(Math.max(...items.map(i=>
+        measure(i.priceText,numeric)))))+TABLE_MONEY_INSET;
+      const amount=Math.max(53,Math.ceil(Math.max(...items.map(i=>
+        measure(i.totalText,total)))))+TABLE_MONEY_INSET;
       const name=contentWidth-indexWidth-qty-price-amount-gap*4;
       return {qty,price,amount,name};
     };
@@ -381,14 +388,16 @@
       label(part,metaRight,pageY+i*17,pageStyle,'#64748b','right'));
     const xIndex=margin+indexWidth/2;
     const xName=margin+indexWidth+gap;
-    const xQty=xName+columns.name+gap+columns.qty;
-    const xPrice=xQty+gap+columns.price;
-    const xTotal=xPrice+gap+columns.amount;
+    const xQtyStart=xName+columns.name+gap;
+    const xQty=xQtyStart+columns.qty/2;
+    const xPrice=xQtyStart+columns.qty+gap+columns.price-TABLE_MONEY_INSET;
+    const xTotal=xQtyStart+columns.qty+gap+columns.price+gap+
+      columns.amount-TABLE_MONEY_INSET;
     fillRounded(margin,tableTop,contentWidth,44,8,visual.table);
     const captionY=tableTop+14;
     label('STT',xIndex,captionY,font(11,800),'#53677d','center');
     label('TÊN',xName,captionY,font(12,800),'#53677d');
-    label('SL',xQty,captionY,font(12,800),'#53677d','right');
+    label('SL',xQty,captionY,font(12,800),'#53677d','center');
     label('ĐG',xPrice,captionY,font(12,800),'#53677d','right');
     label('TIỀN',xTotal,captionY,font(12,800),'#53677d','right');
     let y=bodyTop;
@@ -412,7 +421,7 @@
       row.notes.forEach((part,i)=>
         label(part,xName,y+13+row.names.length*24+i*19,noteStyle,'#586b82'));
       label(item.qtyText,xQty,y+16,numberStyle,
-        row.milkX?'#dc2626':'#142238','right');
+        row.milkX?'#dc2626':'#142238','center');
       label(item.priceText,xPrice,y+16,numberStyle,'#142238','right');
       label(item.totalText,xTotal,y+16,totalNumberStyle,'#142238','right');
       y+=row.height;
