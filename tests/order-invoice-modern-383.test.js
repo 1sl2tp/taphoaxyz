@@ -9,10 +9,11 @@ const source=fs.readFileSync('src/fixed-ui-portrait-order.js','utf8');
 function createHarness(){
   const labels=[];
   const appended=[];
+  const rectangles=[];
   const ctx=()=>({
     font:'',fillStyle:'',strokeStyle:'',lineWidth:1,textAlign:'',textBaseline:'',
     measureText(value){return {width:Array.from(String(value??'')).length*7};},
-    setTransform(){},fillRect(){},strokeRect(){},beginPath(){},moveTo(){},
+    setTransform(){},fillRect(x,y,w,h){rectangles.push({x,y,w,h,color:this.fillStyle});},strokeRect(){},beginPath(){},moveTo(){},
     lineTo(){},quadraticCurveTo(){},closePath(){},fill(){},
     fillText(value,x,y){labels.push({text:String(value),x,y});}
   });
@@ -25,7 +26,7 @@ function createHarness(){
   };
   const window={};
   vm.runInNewContext(source,{document,window});
-  return {renderer:window.TAPHOA_ORDER_PORTRAIT,labels,appended};
+  return {renderer:window.TAPHOA_ORDER_PORTRAIT,labels,appended,rectangles};
 }
 const example={
   customer:'E Quyên dv',orderId:'DG399',time:'17/11/2026 20:58',
@@ -95,4 +96,29 @@ test('renderer remains purely visual with one canonical entrypoint',()=>{
   assert.doesNotMatch(source,/\bfetch\s*\(|\bpostMessage\s*\(|\btaphoa_debt_ledger\b/);
   assert.match(source,/milkXInfo\(item\)/);
   assert.match(source,/font-variant-numeric:tabular-nums/);
+});
+
+test('ORDER-UI-386 prints four continuous vertical separators between five columns in both HTML and PNG',()=>{
+  const {renderer,rectangles,labels}=createHarness();
+  const data={...example,templateId:'print',items:[
+    {index:1,name:'Mì chính bát 454 *',qtyText:'10',priceText:'1.265',totalText:'12.650'},
+    {index:2,name:'Mì chính bát 1*',qtyText:'20',priceText:'935',totalText:'18.700'}
+  ],lineCount:2,totalQty:30,totalPriceText:'31.350'};
+  const html=renderer.createPage(data).page.innerHTML;
+  assert.match(html,/data-invoice-grid="five-columns"/);
+  const columnRules=[...html.matchAll(/data-invoice-grid-rule="column"[^>]*left:([0-9.]+)px;width:1px/g)]
+    .map(match=>Number(match[1]));
+  assert.equal(columnRules.length,4,'STT | TÊN | SL | ĐG | TIỀN needs 4 vertical rules');
+  assert(columnRules.every((x,index)=>index===0||x>columnRules[index-1]+10),
+    'all rules must occupy separate grid gaps');
+  assert.match(html,/data-invoice-grid-rule="outline"/,'outline must surround actual rows');
+  assert.match(html,/height:44px;border-bottom:1px solid/,'table heading is separated');
+  renderer.renderCanvas(data,1);
+  const verticals=rectangles.filter(rect=>rect.w===1&&rect.h>170&&rect.y>170&&rect.y<400);
+  assert.equal(verticals.length,6,'PNG includes four separators plus left and right frame');
+  const inner=verticals.filter(rect=>rect.x>22&&rect.x<417).map(rect=>rect.x-22);
+  assert.equal(inner.length,4);
+  assert(inner.every((x,index)=>index===0||x>inner[index-1]+10));
+  assert(labels.some(x=>x.text==='31.350'),'divider must not alter the source total');
+  assert(labels.some(x=>x.text==='18.700'),'divider must not clip/recompute row amounts');
 });
