@@ -20,3 +20,12 @@ test('after upload interruption, reload uses existing bytes without replay',asyn
  assert.deepEqual(await h.make().wake(0),[]);assert.equal(h.attached,true);
 });
 test('same worker shares flight and bounds wake frequency',async()=>{const h=harness();h.resume();const w=h.make();const a=w.wake(0),b=w.wake(0);assert.equal(a,b);await a;assert.deepEqual(await w.wake(1),[]);assert.deepEqual(h.counts(),{uploads:1,attaches:1,renders:1})});
+
+test('manual recovery is restricted to one selected order and returns independent outcomes',async()=>{
+ const id='00000000-0000-4000-8000-000000000001';let args;
+ const client={async rpc(n,a){assert.equal(n,'taphoa_order_notice_recover_list');args=a;return {data:[]}}};
+ const w=createRecoveryWorker({client,ownerCurrent:()=>true,renderOriginal:async()=>{throw Error('unexpected render')}});
+ await assert.rejects(w.recoverOrder('DG466'),/invalid_order/);
+ assert.deepEqual(await w.recoverOrder(id),[]);
+ assert.deepEqual(args,{p_limit:10,p_include_historical:true,p_order_id:id});
+});
