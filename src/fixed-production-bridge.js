@@ -1,3 +1,4 @@
+import {createRecoveryWorker} from './core/delivery-recovery.mjs?v=delivery-ack-01';
 import {createAuthService} from './core/auth.js';
 import {createApi} from './core/api.js?v=split-pending-20261116';
 import {orderRpcPayload} from './core/business.js?v=order-image-016';
@@ -475,7 +476,7 @@ async function startSync(){
     );
   syncChannel=channel;
   channel.subscribe(status=>{
-    if(status==='SUBSCRIBED'&&productionOwnerCurrent(context))scheduleRevisionWake();
+    if(status==='SUBSCRIBED'&&productionOwnerCurrent(context)){scheduleRevisionWake();wakeOrderRecoverySafe();}
   });
 }
 
@@ -679,6 +680,31 @@ function orderNoticeTotals(order,items){
     totalPrice:present(order?.tongTien)?numeric(order.tongTien):amount
   };
 }
+function orderNoticePortraitOptions(order,state){
+    const items=Array.isArray(order.items)?order.items:[];
+    if(!items.length||items.length>130)throw Error('order_png_items_invalid');
+    const format=v=>(Number(v)||0).toLocaleString('vi-VN');
+    const displayCode=String(order.displayCode||order.display_code||order.maDon||'').trim();
+    const stamp=order.delivered_at||order.ngay||order.created_at;
+    const stampText=stamp?new Date(stamp).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric',hourCycle:'h23'}):'';
+    const mapped=items.map((item,i)=>{
+      const qty=Number(item.qty??item.sl)||0;
+      const price=Number(item.unit_price??item.gia)||0;
+      return{
+        index:i+1,name:String(item.product_name||item.tenSP||item.ten||item.product_id||''),
+        note:String(item.note||item.ghiChu||'').trim(),
+        qtyText:format(qty),priceText:format(price),totalText:format(qty*price)
+      };
+    });
+    const totals=orderNoticeTotals(order,items);
+    return {
+      isDraft:state==='pending',orderId:displayCode,customer:String(order.tenKH||'Khách hàng'),
+      time:stampText,items:mapped,lineCount:mapped.length,
+      totalQty:totals.totalQty,
+      totalPriceText:format(Math.sign(totals.totalPrice)*Math.round(Math.abs(totals.totalPrice)))
+    };
+
+}
 async function attachOrderNoticePortrait(order,{manual=false,staffCommandId=null}={}){
   // SPEC-MEDIA-UPLOAD-SESSION-20261101: an old notice must not start or
   // continue uploading/attaching images using a new account's credentials.
@@ -714,28 +740,7 @@ async function attachOrderNoticePortrait(order,{manual=false,staffCommandId=null
     // in Android WebView/PWA; html2canvas remains a legacy fallback.
     if(!portrait?.renderCanvas && (!portrait?.createPage||!capture?.captureElement))
       throw Error('portrait_renderer_unavailable');
-    const items=Array.isArray(order.items)?order.items:[];
-    if(!items.length||items.length>130)return false;
-    const format=v=>(Number(v)||0).toLocaleString('vi-VN');
-    const displayCode=String(order.displayCode||order.display_code||order.maDon||'').trim();
-    const stamp=order.delivered_at||order.ngay||order.created_at;
-    const stampText=stamp?new Date(stamp).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric',hourCycle:'h23'}):'';
-    const mapped=items.map((item,i)=>{
-      const qty=Number(item.qty??item.sl)||0;
-      const price=Number(item.unit_price??item.gia)||0;
-      return{
-        index:i+1,name:String(item.product_name||item.tenSP||item.ten||item.product_id||''),
-        note:String(item.note||item.ghiChu||'').trim(),
-        qtyText:format(qty),priceText:format(price),totalText:format(qty*price)
-      };
-    });
-    const totals=orderNoticeTotals(order,items);
-    const portraitOptions={
-      isDraft:state==='pending',orderId:displayCode,customer:String(order.tenKH||'Khách hàng'),
-      time:stampText,items:mapped,lineCount:mapped.length,
-      totalQty:totals.totalQty,
-      totalPriceText:format(Math.sign(totals.totalPrice)*Math.round(Math.abs(totals.totalPrice)))
-    };
+    const portraitOptions=orderNoticePortraitOptions(order,state);
     let canvas=null;
     let primaryError=null;
     if(typeof portrait.renderCanvas==='function'){
@@ -1326,7 +1331,37 @@ async function clearProductMedia(productCode){
   return result;
 }
 
+// Existing Admin session only. Server-side message list is the durable queue.
+// Old deployments with no recovery RPC remain on legacy sends. No business replay.
+let orderRecovery=null;
+async function wakeOrderRecovery(){
+ if(!identity||identity.role!=='admin'||publicAccess||employeeAccess||navigator.onLine===false||document.hidden)return [];
+ const owner=captureProductionOwner();
+ const client=await auth.getClient();
+ if(!productionOwnerCurrent(owner))return [];
+ if(!orderRecovery||!productionOwnerCurrent(orderRecovery.owner)){
+  const worker=createRecoveryWorker({client,ownerCurrent:()=>productionOwnerCurrent(owner),
+   online:()=>navigator.onLine!==false,visible:()=>!document.hidden,
+   renderOriginal:async order=>{
+    if(!productionOwnerCurrent(owner))throw Error('session_changed');
+    const portrait=window.TAPHOA_ORDER_PORTRAIT;
+    if(typeof portrait?.renderCanvas!=='function')throw Error('portrait_renderer_unavailable');
+    const canvas=portrait.renderCanvas(orderNoticePortraitOptions(order,String(order.status||'').toLowerCase()),1.2);
+    try{return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('order_png_encode_failed')),'image/png'))}
+    finally{canvas.width=1;canvas.height=1}
+   }});
+  orderRecovery={owner,worker};
+ }
+ return orderRecovery.worker.wake();
+}
+function wakeOrderRecoverySafe(){void wakeOrderRecovery().catch(error=>{
+ if(String(error?.code||'')!=='PGRST202')console.warn('[taphoa] recovery unavailable');
+});}
+
 window.addEventListener('online',()=>syncOnce().catch(error=>console.warn('taphoa sync',error)));
+window.addEventListener('online',wakeOrderRecoverySafe);
+window.addEventListener('pageshow',wakeOrderRecoverySafe);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)wakeOrderRecoverySafe();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce().catch(error=>console.warn('taphoa sync',error));});
 
 window.TAPHOA_PRODUCTION=Object.freeze({
