@@ -183,4 +183,46 @@ returns jsonb language sql security invoker set search_path=''
 as $$ select v21_private.taphoa_order_notice_recover_attach(p_message_id,p_asset_id,p_size_bytes,p_width_px,p_height_px) $$;
 revoke all on function public.taphoa_order_notice_recover_attach(uuid,uuid,bigint,integer,integer) from public,anon,authenticated;
 grant execute on function public.taphoa_order_notice_recover_attach(uuid,uuid,bigint,integer,integer) to authenticated;
+-- Durable pending discovery: original message envelopes are the source of truth.
+-- No claim, new message or notification is emitted by listing.
+create or replace function v21_private.taphoa_order_notice_recover_list(p_limit integer default 5)
+returns jsonb language plpgsql stable security definer set search_path=''
+as $
+declare ctx jsonb:=public.taphoa_access_context(); actor uuid:=nullif(ctx->>'account_id','')::uuid; result jsonb;
+begin
+ if auth.uid() is null or actor is null or ctx->>'taphoa_role' is distinct from 'admin'
+  or not coalesce((ctx->>'allowed')::boolean,false)
+  or not exists(select 1 from public.v21_accounts a where a.id=actor and a.auth_user_id=auth.uid()
+   and a.role='admin' and a.locked_at is null and a.deleted_at is null)
+ then raise exception 'taphoa_admin_required' using errcode='42501'; end if;
+ select coalesce(jsonb_agg(jsonb_build_object('message_id',q.id,'kind',q.kind,'created_at',q.created_at) order by q.created_at,q.id),'[]'::jsonb)
+ into result
+ from (
+  select m.id,m.created_at,split_part(m.client_id,':',3) as kind
+  from public.v21_messages m
+  join public.taphoa_command_log l on l.command_id::text=split_part(m.client_id,':',2)
+   and l.created_at=m.created_at and l.result->>'ok'='true'
+   and (case split_part(m.client_id,':',3) when 'staff-order' then l.operation in ('save_order','deliver_order') when 'deliver' then l.operation='deliver_order' else l.operation='save_order' end)
+  join public.taphoa_orders o on o.id::text=l.result->'order'->>'id' and o.status='delivered'
+   and o.updated_at=l.created_at and o.customer_account_id::text is not distinct from nullif(l.result->'order'->>'customer_id','')
+   and o.display_prefix||o.display_no::text=l.result->'order'->>'displayCode'
+  left join v21_private.taphoa_order_notice_image_uploads t on t.message_id=m.id
+  where m.sender_account_id=actor and m.deleted_at is null and m.body=''
+   and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|order-edit|deliver|staff-order)
+   and m.created_at between now()-interval '30 days' and now()-interval '20 minutes'
+   and t.attached_at is null and (t.created_at is null or t.created_at<now()-interval '20 minutes')
+   and not exists(select 1 from public.v21_media_assets a where a.message_id=m.id and a.deleted_at is null)
+   and v21_private.taphoa_recovery_order_recipient(actor,m.conversation_id,o.customer_account_id,m.client_id)
+  order by m.created_at,m.id limit least(greatest(coalesce(p_limit,5),1),10)
+ ) q;
+ return result;
+end;
+$;
+revoke all on function v21_private.taphoa_order_notice_recover_list(integer) from public,anon,authenticated;
+grant execute on function v21_private.taphoa_order_notice_recover_list(integer) to authenticated;
+create or replace function public.taphoa_order_notice_recover_list(p_limit integer default 5)
+returns jsonb language sql stable security invoker set search_path=''
+as $ select v21_private.taphoa_order_notice_recover_list(p_limit) $;
+revoke all on function public.taphoa_order_notice_recover_list(integer) from public,anon,authenticated;
+grant execute on function public.taphoa_order_notice_recover_list(integer) to authenticated;
 commit;
