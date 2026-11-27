@@ -185,7 +185,7 @@ revoke all on function public.taphoa_order_notice_recover_attach(uuid,uuid,bigin
 grant execute on function public.taphoa_order_notice_recover_attach(uuid,uuid,bigint,integer,integer) to authenticated;
 -- Durable pending discovery: original message envelopes are the source of truth.
 -- No claim, new message or notification is emitted by listing.
-create or replace function v21_private.taphoa_order_notice_recover_list(p_limit integer default 5,p_include_historical boolean default false)
+create or replace function v21_private.taphoa_order_notice_recover_list(p_limit integer default 5,p_include_historical boolean default false,p_order_id uuid default null)
 returns jsonb language plpgsql stable security definer set search_path=''
 as $$
 declare ctx jsonb:=public.taphoa_access_context(); actor uuid:=nullif(ctx->>'account_id','')::uuid; result jsonb;
@@ -209,6 +209,8 @@ begin
   left join v21_private.taphoa_order_notice_image_uploads t on t.message_id=m.id
   where m.sender_account_id=actor and m.deleted_at is null and m.body=''
    and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|order-edit|deliver|staff-order)$'
+   and (p_include_historical is not true or p_order_id is not null)
+   and (p_order_id is null or o.id=p_order_id)
    and m.created_at between now()-case when p_include_historical is true then interval '30 days' else interval '24 hours' end and now()-interval '20 minutes'
    and t.attached_at is null and (t.created_at is null or t.created_at<now()-interval '20 minutes')
    and not exists(select 1 from public.v21_media_assets a where a.message_id=m.id and a.deleted_at is null)
@@ -218,11 +220,11 @@ begin
  return result;
 end;
 $$;
-revoke all on function v21_private.taphoa_order_notice_recover_list(integer,boolean) from public,anon,authenticated;
-grant execute on function v21_private.taphoa_order_notice_recover_list(integer,boolean) to authenticated;
-create or replace function public.taphoa_order_notice_recover_list(p_limit integer default 5,p_include_historical boolean default false)
+revoke all on function v21_private.taphoa_order_notice_recover_list(integer,boolean,uuid) from public,anon,authenticated;
+grant execute on function v21_private.taphoa_order_notice_recover_list(integer,boolean,uuid) to authenticated;
+create or replace function public.taphoa_order_notice_recover_list(p_limit integer default 5,p_include_historical boolean default false,p_order_id uuid default null)
 returns jsonb language sql stable security invoker set search_path=''
-as $$ select v21_private.taphoa_order_notice_recover_list(p_limit,p_include_historical) $$;
-revoke all on function public.taphoa_order_notice_recover_list(integer,boolean) from public,anon,authenticated;
-grant execute on function public.taphoa_order_notice_recover_list(integer,boolean) to authenticated;
+as $$ select v21_private.taphoa_order_notice_recover_list(p_limit,p_include_historical,p_order_id) $$;
+revoke all on function public.taphoa_order_notice_recover_list(integer,boolean,uuid) from public,anon,authenticated;
+grant execute on function public.taphoa_order_notice_recover_list(integer,boolean,uuid) to authenticated;
 commit;
