@@ -62,6 +62,8 @@ begin
  update public.taphoa_orders set updated_at=now() where id=oid;
  if public.taphoa_order_notice_recover_prepare(mid)->>'reason'<>'order_changed' then raise exception 'stale order'; end if;
  update public.taphoa_orders set updated_at=ts where id=oid;
+ if jsonb_array_length(public.taphoa_order_notice_recover_list(5,false))<>0 then raise exception 'historical auto replay'; end if;
+ if jsonb_array_length(public.taphoa_order_notice_recover_list(5,true))<>1 then raise exception 'historical discovery'; end if;
  result:=public.taphoa_order_notice_recover_prepare(mid);
  asset:=(result->>'asset_id')::uuid;key:=result->>'storage_key';
  if result->>'mode'<>'render_original' or asset=old_asset or result->>'message_id'<>mid::text then raise exception 'expired repair failed %',result; end if;
