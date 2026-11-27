@@ -1334,7 +1334,7 @@ async function clearProductMedia(productCode){
 // Existing Admin session only. Server-side message list is the durable queue.
 // Old deployments with no recovery RPC remain on legacy sends. No business replay.
 let orderRecovery=null;
-async function wakeOrderRecovery(messageId=null){
+async function wakeOrderRecovery(messageId=null,orderId=null){
  if(!identity||identity.role!=='admin'||publicAccess||employeeAccess||navigator.onLine===false||document.hidden)return [];
  const owner=captureProductionOwner();
  const client=await auth.getClient();
@@ -1352,7 +1352,7 @@ async function wakeOrderRecovery(messageId=null){
    }});
   orderRecovery={owner,worker};
  }
- return messageId===null?orderRecovery.worker.wake():orderRecovery.worker.recoverOne(messageId);
+ return orderId!==null?orderRecovery.worker.recoverOrder(orderId):messageId===null?orderRecovery.worker.wake():orderRecovery.worker.recoverOne(messageId);
 }
 function wakeOrderRecoverySafe(){void wakeOrderRecovery().catch(error=>{
  if(String(error?.code||'')!=='PGRST202')console.warn('[taphoa] recovery unavailable');
@@ -1366,7 +1366,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnce()
 
 window.TAPHOA_PRODUCTION=Object.freeze({
   login,restore,openPublicLink,openEmployeeLink,logout,bootstrap,refresh,syncOnce,readSheet,debtLedger,debtCycles,orderCycles,ledgerToRows,
-  saveOrder,deliverOrder,splitPendingOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,recoverOrderNotice:messageId=>wakeOrderRecovery(messageId),createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,resolvePublicOrderLink,
+  saveOrder,deliverOrder,splitPendingOrder,manualShareOrder,manualShareDebt,reverseOrder,deletePending,batchOrders,debtTransaction,repairRecentFinanceImages,recoverOrderNotice:messageId=>wakeOrderRecovery(messageId),recoverOrderNotices:orderId=>wakeOrderRecovery(null,orderId),createCustomer,stockCheckLinks,publicPinState,setPublicPin,employeeSnapshot,saveEmployeeQuantities,saveSharedQuantities,getEmployeeSnapshot,orderDetail,resolvePublicOrderLink,
   productMediaCandidates,marketSearch,setProductMedia,setProductMediaCompare,setProductMediaOwnQc,clearProductMedia,
   customerSpecialPriceCount,customerSpecialPriceMatrix,
   backendOrderId,orderDisplayCode,
