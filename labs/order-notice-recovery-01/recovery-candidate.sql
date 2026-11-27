@@ -5,7 +5,7 @@ begin;
 create or replace function v21_private.taphoa_recovery_order_recipient(
  p_actor uuid,p_room uuid,p_customer uuid,p_client_id text)
 returns boolean language sql stable security invoker set search_path=''
-as $
+as $$
  select exists(
    select 1 from public.v21_conversations c
    join public.v21_accounts a on a.id=case when c.member_a=p_actor then c.member_b else c.member_a end
@@ -17,7 +17,7 @@ as $
          and v21_private.chat_outbound_allowed(p_customer,p_client_id)
        end
  )
-$;
+$$;
 revoke all on function v21_private.taphoa_recovery_order_recipient(uuid,uuid,uuid,text) from public,anon,authenticated;
 create or replace function v21_private.taphoa_order_notice_recover_prepare(p_message_id uuid)
 returns jsonb language plpgsql security definer set search_path=''
@@ -187,7 +187,7 @@ grant execute on function public.taphoa_order_notice_recover_attach(uuid,uuid,bi
 -- No claim, new message or notification is emitted by listing.
 create or replace function v21_private.taphoa_order_notice_recover_list(p_limit integer default 5)
 returns jsonb language plpgsql stable security definer set search_path=''
-as $
+as $$
 declare ctx jsonb:=public.taphoa_access_context(); actor uuid:=nullif(ctx->>'account_id','')::uuid; result jsonb;
 begin
  if auth.uid() is null or actor is null or ctx->>'taphoa_role' is distinct from 'admin'
@@ -217,12 +217,12 @@ begin
  ) q;
  return result;
 end;
-$;
+$$;
 revoke all on function v21_private.taphoa_order_notice_recover_list(integer) from public,anon,authenticated;
 grant execute on function v21_private.taphoa_order_notice_recover_list(integer) to authenticated;
 create or replace function public.taphoa_order_notice_recover_list(p_limit integer default 5)
 returns jsonb language sql stable security invoker set search_path=''
-as $ select v21_private.taphoa_order_notice_recover_list(p_limit) $;
+as $$ select v21_private.taphoa_order_notice_recover_list(p_limit) $$;
 revoke all on function public.taphoa_order_notice_recover_list(integer) from public,anon,authenticated;
 grant execute on function public.taphoa_order_notice_recover_list(integer) to authenticated;
 commit;
