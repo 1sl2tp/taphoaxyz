@@ -31,3 +31,5 @@ jobs:
       - run: node --test labs/order-notice-recovery-01/delivery-policy.test.mjs
 
       - run: node --test labs/order-notice-recovery-01/recovery-worker.test.mjs
+
+      - run: bash labs/order-notice-recovery-01/recovery.concurrent.test.sh
