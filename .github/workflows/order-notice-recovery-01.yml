@@ -1,0 +1,35 @@
+name: ORDER-NOTICE-RECOVERY-01 isolated SQL
+on:
+  pull_request:
+    paths:
+      - 'labs/order-notice-recovery-01/**'
+      - '.github/workflows/order-notice-recovery-01.yml'
+permissions:
+  contents: read
+jobs:
+  recovery-fixture:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture
+          POSTGRES_DB: recovery_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: fixture
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -h localhost -U postgres -d recovery_fixture -v ON_ERROR_STOP=1 -f labs/order-notice-recovery-01/recovery.test.sql
+
+      - run: node --test labs/order-notice-recovery-01/delivery-policy.test.mjs
+
+      - run: node --test labs/order-notice-recovery-01/recovery-worker.test.mjs
+
+      - run: bash labs/order-notice-recovery-01/recovery.concurrent.test.sh

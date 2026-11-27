@@ -604,6 +604,7 @@
   detailShareMenu.style.cssText='position:fixed;z-index:650;width:188px;padding:5px;background:white;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 10px 32px rgba(15,23,42,.17);';
   detailShareMenu.innerHTML=[
     '<button type="button" role="menuitem" data-order-share-action="send" style="display:flex;align-items:center;width:100%;gap:10px;padding:11px 12px;border:0;background:transparent;border-radius:9px;cursor:pointer;text-align:left;color:#0f172a;font:600 14px system-ui"><i class="ph-bold ph-paper-plane-tilt" aria-hidden="true"></i>Gửi đơn</button>',
+    '<button type="button" role="menuitem" data-order-share-action="recover" hidden style="align-items:center;width:100%;gap:10px;padding:11px 12px;border:0;background:transparent;border-radius:9px;cursor:pointer;text-align:left;color:#0f172a;font:600 14px system-ui"><i class="ph-bold ph-arrows-clockwise" aria-hidden="true"></i>Khôi phục ảnh thiếu</button>',
     '<button type="button" role="menuitem" data-order-share-action="save" style="display:flex;align-items:center;width:100%;gap:10px;padding:11px 12px;border:0;background:transparent;border-radius:9px;cursor:pointer;text-align:left;color:#0f172a;font:600 14px system-ui"><i class="ph-bold ph-download-simple" aria-hidden="true"></i>Lưu</button>',
     '<button type="button" role="menuitem" data-order-share-action="copy" style="display:flex;align-items:center;width:100%;gap:10px;padding:11px 12px;border:0;background:transparent;border-radius:9px;cursor:pointer;text-align:left;color:#0f172a;font:600 14px system-ui"><i class="ph-bold ph-copy" aria-hidden="true"></i>Sao chép</button>'
   ].join('');
@@ -619,7 +620,12 @@
     const trigger=detailShareButton;
     if(!trigger)return;
     const rect=trigger.getBoundingClientRect();
-    detailShareMenu.style.top=Math.min(window.innerHeight-154,rect.bottom+8)+'px';
+    const prod=window.TAPHOA_PRODUCTION;
+    const recover=detailShareMenu.querySelector('[data-order-share-action="recover"]');
+    const code=String(document.getElementById('detailModalOrderCode')?.textContent||'').replace(/^Mã đơn\s*:\s*/i,'').trim();
+    recover.hidden=!(prod?.getIdentity?.()?.role==='admin'&&prod?.getAccessMode?.()==='account'&&typeof prod.recoverOrderNotices==='function'&&/^DG[0-9]+$/.test(code));
+    recover.style.display=recover.hidden?'none':'flex';
+    detailShareMenu.style.top=Math.max(8,Math.min(window.innerHeight-(recover.hidden?154:200),rect.bottom+8))+'px';
     detailShareMenu.style.left=Math.max(8,Math.min(window.innerWidth-196,rect.right-188))+'px';
     detailShareMenu.hidden=false;
     trigger.setAttribute('aria-expanded','true');
@@ -682,6 +688,20 @@
       if(sendButton)sendButton.disabled=false;
     }
   }
+  async function recoverDetailOrderImages(){
+    if(manualOrderSendBusy)return;
+    const prod=window.TAPHOA_PRODUCTION;
+    const orderId=resolveDetailBackendOrderId();
+    if(!orderId||prod?.getIdentity?.()?.role!=='admin'||prod?.getAccessMode?.()!=='account')return;
+    manualOrderSendBusy=true;
+    try{
+      const rows=await prod.recoverOrderNotices(orderId);
+      if(!Array.isArray(rows))throw Error('Không xác minh được kết quả khôi phục.');
+      const done=rows.filter(row=>row.state==='attached').length;
+      if(typeof showToast==='function')showToast(rows.length?'Đã gắn '+done+'/'+rows.length+' ảnh thiếu vào tin nhắn gốc.':'Không tìm thấy ảnh thiếu đủ điều kiện khôi phục.',done===rows.length&&done>0?'success':'info');
+    }catch(error){if(typeof showAlertPopup==='function')showAlertPopup('Chưa khôi phục được ảnh',String(error?.message||error));}
+    finally{manualOrderSendBusy=false;}
+  }
   async function saveDetailOrderImage(){
     const artifact=await prepareDetailShareCache();
     if(!artifact?.blob)throw Error('Không tạo được ảnh đơn hàng.');
@@ -710,6 +730,7 @@
     const action=btn.dataset.orderShareAction;
     hideDetailShareMenu();
     if(action==='send'){void sendDetailOrderManually();return;}
+    if(action==='recover'){void recoverDetailOrderImages();return;}
     const promise=action==='save'?saveDetailOrderImage():action==='copy'?copyDetailOrderImage():null;
     if(promise)void promise.catch(error=>{
       if(typeof showAlertPopup==='function')showAlertPopup('Không thực hiện được',String(error?.message||error));
