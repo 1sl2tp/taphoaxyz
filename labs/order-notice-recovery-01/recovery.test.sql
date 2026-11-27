@@ -25,6 +25,7 @@ begin
  update v21_private.taphoa_order_notice_image_uploads set attached_at=now() where message_id=t.message_id;
  return jsonb_build_object('ok',true,'message_id',t.message_id,'asset_id',$2);
 end $$;
+create function public.taphoa_staff_order_image_attach(uuid,uuid,uuid,bigint,integer,integer) returns jsonb language sql as $select public.taphoa_order_notice_image_attach($1,$3,$4,$5,$6)$;
 grant usage on schema v21_private to authenticated;
 \ir recovery-candidate.sql
 do $$
@@ -83,4 +84,35 @@ begin
  if result->>'ok'<>'true' or (select count(*) from public.v21_media_assets)<>1 then raise exception 'idempotent retry'; end if;
  if (select count(*) from public.v21_messages)<>1 or (select count(*) from public.taphoa_orders)<>1 or (select count(*) from public.taphoa_command_log)<>1 then raise exception 'business replay'; end if;
  raise notice 'ORDER-NOTICE-RECOVERY-01 fixture passed';
+end $$;
+
+-- Separate staff recipient, same committed order; customer opt-out does not reroute staff.
+do $$
+declare
+ actor constant uuid:='00000000-0000-4000-8000-000000000001';
+ uid constant uuid:='00000000-0000-4000-8000-000000000002';
+ staff constant uuid:='57fc1306-7030-4955-b174-afffeee2c3d2';
+ room constant uuid:='00000000-0000-4000-8000-000000000014';
+ cid constant uuid:='00000000-0000-4000-8000-000000000006';
+ mid constant uuid:='00000000-0000-4000-8000-000000000017';
+ result jsonb; asset uuid; ts timestamptz;
+begin
+ perform set_config('fixture.uid',uid::text,true);
+ perform set_config('fixture.actor',actor::text,true);
+ perform set_config('fixture.optin','no',true);
+ select created_at into ts from public.taphoa_command_log where command_id=cid;
+ insert into public.v21_accounts values(staff,null,'user','friend',null,null);
+ insert into public.v21_conversations values(room,actor,staff);
+ insert into public.v21_messages values(mid,actor,room,'','taphoa:'||cid||':staff-order',ts,null);
+ update public.v21_accounts set locked_at=now() where id=staff;
+ if public.taphoa_order_notice_recover_prepare(mid)->>'reason'<>'recipient_not_allowed' then raise exception 'locked staff accepted'; end if;
+ update public.v21_accounts set locked_at=null where id=staff;
+ result:=public.taphoa_order_notice_recover_prepare(mid);
+ if result->>'mode'<>'render_original' then raise exception 'staff prepare %',result; end if;
+ asset:=(result->>'asset_id')::uuid;
+ insert into storage.objects(bucket_id,name,metadata,owner_id) values('v21-media',result->>'storage_key',jsonb_build_object('size',100,'mimetype','image/png'),uid::text);
+ result:=public.taphoa_order_notice_recover_attach(mid,asset,100,528,450);
+ if result->>'ok'<>'true' or result->>'message_id'<>mid::text then raise exception 'staff attach'; end if;
+ if (select count(*) from public.v21_media_assets)<>2 then raise exception 'staff/customer media identity'; end if;
+ raise notice 'staff recovery passed';
 end $$;
