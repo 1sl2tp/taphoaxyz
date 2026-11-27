@@ -101,4 +101,74 @@ returns jsonb language sql security invoker set search_path=''
 as $$ select v21_private.taphoa_order_notice_recover_prepare(p_message_id) $$;
 revoke all on function public.taphoa_order_notice_recover_prepare(uuid) from public,anon,authenticated;
 grant execute on function public.taphoa_order_notice_recover_prepare(uuid) to authenticated;
+
+-- Revalidate the exact snapshot at attachment time; do not trust client order IDs.
+create or replace function v21_private.taphoa_order_notice_recover_attach(
+ p_message_id uuid,p_asset_id uuid,p_size_bytes bigint,p_width_px integer,p_height_px integer)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare
+ ctx jsonb:=public.taphoa_access_context();
+ actor uuid:=nullif(ctx->>'account_id','')::uuid;
+ msg public.v21_messages;
+ ord public.taphoa_orders;
+ cmd public.taphoa_command_log;
+ ticket v21_private.taphoa_order_notice_image_uploads;
+ ack jsonb;
+begin
+ if auth.uid() is null or actor is null or ctx->>'taphoa_role' is distinct from 'admin'
+  or not coalesce((ctx->>'allowed')::boolean,false)
+  or not exists(select 1 from public.v21_accounts a where a.id=actor and a.auth_user_id=auth.uid()
+    and a.role='admin' and a.locked_at is null and a.deleted_at is null)
+ then raise exception 'taphoa_admin_required' using errcode='42501'; end if;
+ select * into msg from public.v21_messages m where m.id=p_message_id
+  and m.sender_account_id=actor and m.deleted_at is null and m.body=''
+  and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|deliver)$'
+  and m.created_at>=now()-interval '30 days' for update;
+ if not found then raise exception 'notice_not_eligible' using errcode='42501'; end if;
+ select * into cmd from public.taphoa_command_log l
+ where l.command_id=split_part(msg.client_id,':',2)::uuid
+   and l.operation=case split_part(msg.client_id,':',3) when 'order' then 'save_order' else 'deliver_order' end
+   and l.created_at=msg.created_at and l.result->>'ok'='true';
+ if not found then raise exception 'snapshot_not_found'; end if;
+ select * into ticket from v21_private.taphoa_order_notice_image_uploads t where t.message_id=msg.id
+   and t.asset_id=p_asset_id and t.sender_account_id=actor and t.conversation_id=msg.conversation_id
+   and t.storage_key=actor::text||'/'||msg.conversation_id::text||'/'||p_asset_id::text for update;
+ if not found then raise exception 'ticket_conflict' using errcode='42501'; end if;
+ select * into ord from public.taphoa_orders o where o.id=ticket.order_id
+   and o.id::text=cmd.result->'order'->>'id' and o.status='delivered'
+   and o.customer_account_id::text=cmd.result->'order'->>'customer_id'
+   and o.display_prefix||o.display_no::text=cmd.result->'order'->>'displayCode'
+   and o.updated_at=cmd.created_at for share;
+ if not found then raise exception 'order_changed'; end if;
+ if not exists(select 1 from public.v21_conversations c where c.id=msg.conversation_id
+     and ((c.member_a=actor and c.member_b=ord.customer_account_id)
+       or (c.member_b=actor and c.member_a=ord.customer_account_id)))
+   or not exists(select 1 from public.v21_accounts a where a.id=ord.customer_account_id
+     and a.role='user' and a.contact_group='customer' and a.deleted_at is null and a.locked_at is null)
+   or not v21_private.chat_outbound_allowed(ord.customer_account_id,msg.client_id)
+ then raise exception 'recipient_not_allowed' using errcode='42501'; end if;
+ if exists(select 1 from public.v21_media_assets a where a.message_id=msg.id and a.deleted_at is null and a.id<>p_asset_id)
+ then raise exception 'media_exists_review'; end if;
+ ack:=public.taphoa_order_notice_image_attach(ord.id,p_asset_id,p_size_bytes,p_width_px,p_height_px);
+ if ack->>'ok' is distinct from 'true' or ack->>'message_id' is distinct from msg.id::text
+   or not exists(select 1 from public.v21_media_assets a
+      join storage.objects o on o.bucket_id='v21-media' and o.name=a.storage_key
+       and o.archived_at is null and not o.is_delete_marker
+      where a.id=p_asset_id and a.message_id=msg.id and a.conversation_id=msg.conversation_id
+       and a.owner_account_id=actor and a.deleted_at is null and a.kind='image' and a.mime_type='image/png'
+       and a.storage_key=ticket.storage_key and a.size_bytes=p_size_bytes
+       and a.width_px=p_width_px and a.height_px=p_height_px)
+ then raise exception 'image_ack_unverified'; end if;
+ return jsonb_build_object('ok',true,'message_id',msg.id,'asset_id',p_asset_id,'order_id',ord.id);
+end;
+$$;
+revoke all on function v21_private.taphoa_order_notice_recover_attach(uuid,uuid,bigint,integer,integer) from public,anon,authenticated;
+grant execute on function v21_private.taphoa_order_notice_recover_attach(uuid,uuid,bigint,integer,integer) to authenticated;
+create or replace function public.taphoa_order_notice_recover_attach(
+ p_message_id uuid,p_asset_id uuid,p_size_bytes bigint,p_width_px integer,p_height_px integer)
+returns jsonb language sql security invoker set search_path=''
+as $$ select v21_private.taphoa_order_notice_recover_attach(p_message_id,p_asset_id,p_size_bytes,p_width_px,p_height_px) $$;
+revoke all on function public.taphoa_order_notice_recover_attach(uuid,uuid,bigint,integer,integer) from public,anon,authenticated;
+grant execute on function public.taphoa_order_notice_recover_attach(uuid,uuid,bigint,integer,integer) to authenticated;
 commit;
