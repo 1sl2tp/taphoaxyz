@@ -29,3 +29,5 @@ jobs:
       - run: psql -h localhost -U postgres -d recovery_fixture -v ON_ERROR_STOP=1 -f labs/order-notice-recovery-01/recovery.test.sql
 
       - run: node --test labs/order-notice-recovery-01/delivery-policy.test.mjs
+
+      - run: node --test labs/order-notice-recovery-01/recovery-worker.test.mjs
