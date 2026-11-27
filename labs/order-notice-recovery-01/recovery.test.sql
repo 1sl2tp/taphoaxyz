@@ -25,7 +25,7 @@ begin
  update v21_private.taphoa_order_notice_image_uploads set attached_at=now() where message_id=t.message_id;
  return jsonb_build_object('ok',true,'message_id',t.message_id,'asset_id',$2);
 end $$;
-create function public.taphoa_staff_order_image_attach(uuid,uuid,uuid,bigint,integer,integer) returns jsonb language sql as $select public.taphoa_order_notice_image_attach($1,$3,$4,$5,$6)$;
+create function public.taphoa_staff_order_image_attach(uuid,uuid,uuid,bigint,integer,integer) returns jsonb language sql as $$select public.taphoa_order_notice_image_attach($1,$3,$4,$5,$6)$$;
 grant usage on schema v21_private to authenticated;
 \ir recovery-candidate.sql
 do $$
