@@ -208,7 +208,7 @@ begin
    and o.display_prefix||o.display_no::text=l.result->'order'->>'displayCode'
   left join v21_private.taphoa_order_notice_image_uploads t on t.message_id=m.id
   where m.sender_account_id=actor and m.deleted_at is null and m.body=''
-   and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|order-edit|deliver|staff-order)
+   and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|order-edit|deliver|staff-order)$'
    and m.created_at between now()-interval '30 days' and now()-interval '20 minutes'
    and t.attached_at is null and (t.created_at is null or t.created_at<now()-interval '20 minutes')
    and not exists(select 1 from public.v21_media_assets a where a.message_id=m.id and a.deleted_at is null)
