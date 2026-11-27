@@ -222,7 +222,7 @@ revoke all on function v21_private.taphoa_order_notice_recover_list(integer,bool
 grant execute on function v21_private.taphoa_order_notice_recover_list(integer,boolean) to authenticated;
 create or replace function public.taphoa_order_notice_recover_list(p_limit integer default 5,p_include_historical boolean default false)
 returns jsonb language sql stable security invoker set search_path=''
-as $$ select v21_private.taphoa_order_notice_recover_list(p_limit,p_include_historical) $;
+as $$ select v21_private.taphoa_order_notice_recover_list(p_limit,p_include_historical) $$;
 revoke all on function public.taphoa_order_notice_recover_list(integer,boolean) from public,anon,authenticated;
 grant execute on function public.taphoa_order_notice_recover_list(integer,boolean) to authenticated;
 commit;
