@@ -1,6 +1,24 @@
 -- ORDER-NOTICE-RECOVERY-01 candidate, NOT an applied migration.
--- Customer create/deliver only, exact committed snapshot, no financial/message writes.
+-- Customer create/deliver/edit and pinned staff, exact committed snapshot, no financial replay.
 begin;
+-- Existing pinned staff recipient from taphoa_staff_order_notify; never infer from a name.
+create or replace function v21_private.taphoa_recovery_order_recipient(
+ p_actor uuid,p_room uuid,p_customer uuid,p_client_id text)
+returns boolean language sql stable security invoker set search_path=''
+as $
+ select exists(
+   select 1 from public.v21_conversations c
+   join public.v21_accounts a on a.id=case when c.member_a=p_actor then c.member_b else c.member_a end
+   where c.id=p_room and p_actor in(c.member_a,c.member_b)
+     and a.role='user' and a.deleted_at is null and a.locked_at is null
+     and case when p_client_id like 'taphoa:%:staff-order'
+       then a.id='57fc1306-7030-4955-b174-afffeee2c3d2'::uuid and a.contact_group='friend'
+       else a.id=p_customer and a.contact_group='customer'
+         and v21_private.chat_outbound_allowed(p_customer,p_client_id)
+       end
+ )
+$;
+revoke all on function v21_private.taphoa_recovery_order_recipient(uuid,uuid,uuid,text) from public,anon,authenticated;
 create or replace function v21_private.taphoa_order_notice_recover_prepare(p_message_id uuid)
 returns jsonb language plpgsql security definer set search_path=''
 as $$
@@ -24,12 +42,12 @@ begin
  then raise exception 'taphoa_admin_required' using errcode='42501'; end if;
  select * into msg from public.v21_messages m where m.id=p_message_id
   and m.sender_account_id=actor and m.deleted_at is null and m.body=''
-  and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|deliver)$'
+  and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|deliver|order-edit|staff-order)$'
   and m.created_at>=now()-interval '30 days' for update;
  if not found then return jsonb_build_object('ok',false,'reason','notice_not_eligible'); end if;
  select * into cmd from public.taphoa_command_log l
  where l.command_id=split_part(msg.client_id,':',2)::uuid
-   and l.operation=case split_part(msg.client_id,':',3) when 'order' then 'save_order' else 'deliver_order' end
+   and (case split_part(msg.client_id,':',3) when 'staff-order' then l.operation in ('save_order','deliver_order') when 'deliver' then l.operation='deliver_order' else l.operation='save_order' end)
    and l.created_at=msg.created_at and l.result->>'ok'='true';
  if not found then return jsonb_build_object('ok',false,'reason','snapshot_not_found'); end if;
  snapshot:=cmd.result->'order';
@@ -41,16 +59,11 @@ begin
    return jsonb_build_object('ok',false,'reason','snapshot_invalid');
  end if;
  select * into ord from public.taphoa_orders o where o.id=(snapshot->>'id')::uuid
-  and o.status='delivered' and o.customer_account_id::text=snapshot->>'customer_id'
+  and o.status='delivered' and o.customer_account_id::text is not distinct from nullif(snapshot->>'customer_id','')
   and o.display_prefix||o.display_no::text=snapshot->>'displayCode'
   and o.updated_at=cmd.created_at;
  if not found then return jsonb_build_object('ok',false,'reason','order_changed'); end if;
- if not exists(select 1 from public.v21_conversations c where c.id=msg.conversation_id
-     and ((c.member_a=actor and c.member_b=ord.customer_account_id)
-       or (c.member_b=actor and c.member_a=ord.customer_account_id)))
-   or not exists(select 1 from public.v21_accounts a where a.id=ord.customer_account_id
-     and a.role='user' and a.contact_group='customer' and a.deleted_at is null and a.locked_at is null)
-   or not v21_private.chat_outbound_allowed(ord.customer_account_id,msg.client_id)
+ if not v21_private.taphoa_recovery_order_recipient(actor,msg.conversation_id,ord.customer_account_id,msg.client_id)
  then return jsonb_build_object('ok',false,'reason','recipient_not_allowed'); end if;
  if exists(select 1 from public.v21_media_assets a where a.message_id=msg.id and a.deleted_at is null) then
    return jsonb_build_object('ok',false,'reason','media_exists_review');
@@ -123,12 +136,12 @@ begin
  then raise exception 'taphoa_admin_required' using errcode='42501'; end if;
  select * into msg from public.v21_messages m where m.id=p_message_id
   and m.sender_account_id=actor and m.deleted_at is null and m.body=''
-  and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|deliver)$'
+  and m.client_id ~ '^taphoa:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(order|deliver|order-edit|staff-order)$'
   and m.created_at>=now()-interval '30 days' for update;
  if not found then raise exception 'notice_not_eligible' using errcode='42501'; end if;
  select * into cmd from public.taphoa_command_log l
  where l.command_id=split_part(msg.client_id,':',2)::uuid
-   and l.operation=case split_part(msg.client_id,':',3) when 'order' then 'save_order' else 'deliver_order' end
+   and (case split_part(msg.client_id,':',3) when 'staff-order' then l.operation in ('save_order','deliver_order') when 'deliver' then l.operation='deliver_order' else l.operation='save_order' end)
    and l.created_at=msg.created_at and l.result->>'ok'='true';
  if not found then raise exception 'snapshot_not_found'; end if;
  select * into ticket from v21_private.taphoa_order_notice_image_uploads t where t.message_id=msg.id
@@ -137,20 +150,19 @@ begin
  if not found then raise exception 'ticket_conflict' using errcode='42501'; end if;
  select * into ord from public.taphoa_orders o where o.id=ticket.order_id
    and o.id::text=cmd.result->'order'->>'id' and o.status='delivered'
-   and o.customer_account_id::text=cmd.result->'order'->>'customer_id'
+   and o.customer_account_id::text is not distinct from nullif(cmd.result->'order'->>'customer_id','')
    and o.display_prefix||o.display_no::text=cmd.result->'order'->>'displayCode'
    and o.updated_at=cmd.created_at for share;
  if not found then raise exception 'order_changed'; end if;
- if not exists(select 1 from public.v21_conversations c where c.id=msg.conversation_id
-     and ((c.member_a=actor and c.member_b=ord.customer_account_id)
-       or (c.member_b=actor and c.member_a=ord.customer_account_id)))
-   or not exists(select 1 from public.v21_accounts a where a.id=ord.customer_account_id
-     and a.role='user' and a.contact_group='customer' and a.deleted_at is null and a.locked_at is null)
-   or not v21_private.chat_outbound_allowed(ord.customer_account_id,msg.client_id)
+ if not v21_private.taphoa_recovery_order_recipient(actor,msg.conversation_id,ord.customer_account_id,msg.client_id)
  then raise exception 'recipient_not_allowed' using errcode='42501'; end if;
  if exists(select 1 from public.v21_media_assets a where a.message_id=msg.id and a.deleted_at is null and a.id<>p_asset_id)
  then raise exception 'media_exists_review'; end if;
- ack:=public.taphoa_order_notice_image_attach(ord.id,p_asset_id,p_size_bytes,p_width_px,p_height_px);
+ if msg.client_id like 'taphoa:%:staff-order' then
+   ack:=public.taphoa_staff_order_image_attach(ord.id,cmd.command_id,p_asset_id,p_size_bytes,p_width_px,p_height_px);
+ else
+   ack:=public.taphoa_order_notice_image_attach(ord.id,p_asset_id,p_size_bytes,p_width_px,p_height_px);
+ end if;
  if ack->>'ok' is distinct from 'true' or ack->>'message_id' is distinct from msg.id::text
    or not exists(select 1 from public.v21_media_assets a
       join storage.objects o on o.bucket_id='v21-media' and o.name=a.storage_key
