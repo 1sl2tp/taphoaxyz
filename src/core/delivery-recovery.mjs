@@ -34,11 +34,11 @@ export function createRecoveryWorker({client,ownerCurrent,renderOriginal,online=
   if(ack?.ok!==true||ack.message_id!==row.message_id||ack.asset_id!==t.asset_id)throw Error('unverified_ack');
   return 'attached'
  }
- function wake(now=Date.now(),{historical=false}={}){
+ function wake(now=Date.now()){
   if(running)return running;
   if(!ready()||now-lastRun<60000)return Promise.resolve([]);
   lastRun=now;
-  running=(async()=>{const rows=await call('taphoa_order_notice_recover_list',{p_limit:5,p_include_historical:historical===true});if(!Array.isArray(rows))throw Error('invalid_list');const out=[];
+  running=(async()=>{const rows=await call('taphoa_order_notice_recover_list',{p_limit:5,p_include_historical:false});if(!Array.isArray(rows))throw Error('invalid_list');const out=[];
    for(const row of rows.slice(0,5)){if(!ready())break;let state;try{state=await one(row)}catch{state='interrupted_or_review'}out.push({message_id:row.message_id,state});report(state)}
    return out
   })().finally(()=>{running=null});
@@ -51,5 +51,17 @@ export function createRecoveryWorker({client,ownerCurrent,renderOriginal,online=
   running=one({message_id:messageId}).finally(()=>{running=null});
   return running
  }
- return {wake,recoverOne};
+ function recoverOrder(orderId){
+  if(typeof orderId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId))return Promise.reject(Error('invalid_order'));
+  if(running||!ready())return Promise.reject(Error('recovery_busy_or_offline'));
+  running=(async()=>{
+   const rows=await call('taphoa_order_notice_recover_list',{p_limit:10,p_include_historical:true,p_order_id:orderId});
+   if(!Array.isArray(rows))throw Error('invalid_list');
+   const out=[];
+   for(const row of rows.slice(0,10)){if(!ready())break;let state;try{state=await one(row)}catch{state='interrupted_or_review'}out.push({message_id:row.message_id,state});}
+   return out;
+  })().finally(()=>{running=null});
+  return running;
+ }
+ return {wake,recoverOne,recoverOrder};
 }
