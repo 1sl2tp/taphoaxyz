@@ -44,5 +44,12 @@ export function createRecoveryWorker({client,ownerCurrent,renderOriginal,online=
   })().finally(()=>{running=null});
   return running
  }
- return {wake};
+ // Explicit historical repair is limited to one exact existing message.
+ function recoverOne(messageId){
+  if(typeof messageId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(messageId))return Promise.reject(Error('invalid_message'));
+  if(running||!ready())return Promise.reject(Error('recovery_busy_or_offline'));
+  running=one({message_id:messageId}).finally(()=>{running=null});
+  return running
+ }
+ return {wake,recoverOne};
 }
