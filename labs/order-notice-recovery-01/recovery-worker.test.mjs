@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRecoveryWorker} from './recovery-worker.mjs';
+import {createRecoveryWorker} from '../../src/core/delivery-recovery.mjs';
 function harness(){
  const bytes=new Uint8Array(24);bytes.set([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82]);const v=new DataView(bytes.buffer);v.setUint32(16,528);v.setUint32(20,450);
  const blob=new Blob([bytes],{type:'image/png'});
